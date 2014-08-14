@@ -1,0 +1,44 @@
+{
+	"folders":
+	[
+		{
+			"follow_symlinks": true,
+			"path": "."
+		}
+	],
+	"settings":
+	{
+		"sublimeclang_options":
+		[
+			"-I/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/",
+			"-I/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/HeaderFiles/",
+			"-I/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/",
+			"-I/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/include/",
+			"-I/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/include/c++/",
+			"-I/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/include/c++/x86_64-orionx/",
+			"-I/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/include/freetype2/",
+			"-Wno-documentation",
+			"-std=gnu++1y",
+			"-ferror-limit=0",
+			"-Weverything",
+			"-nostdinc",
+			"-ffreestanding",
+			"-Wno-padded",
+			"-Wno-c++98-compat-pedantic",
+			"-Wno-c++98-compat",
+			"-Wno-cast-align",
+			"-Wno-unreachable-code",
+			"-Wno-gnu",
+			"-Wno-missing-prototypes",
+			"-Wno-switch-enum",
+			"-Wno-pedantic",
+			"-Wno-packed",
+			"-Wno-missing-noreturn",
+			"-Wno-unused-macros",
+			"-Wno-float-equal",
+			"-Wno-loop-analysis",
+			"-Wno-sign-conversion",
+			"-Wno-old-style-cast"
+		]
+	}
+}
