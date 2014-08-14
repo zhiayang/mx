@@ -32,8 +32,8 @@ all: $(SYSROOT)/usr/lib/libc.a
 
 $(SYSROOT)/usr/lib/libc.a: $(COBJ) $(CXXOBJ) $(SOBJ)
 	@echo libc.a
+	@$(AR) rcs $(SYSROOT)/usr/lib/libc.a $(COBJ) $(CXXOBJ) $(SOBJ)
 	@cp $(SYSROOT)/usr/lib/libc.a $(SYSROOT)/usr/lib/libg.a
-	@$(AR) rcs $(SYSROOT)/usr/lib/libg.a $(COBJ) $(CXXOBJ) $(SOBJ)
 	@cp source/platform/support/crt0.o $(SYSROOT)/usr/lib/
 	@cp source/platform/support/crti.o $(SYSROOT)/usr/lib/
 	@cp source/platform/support/crtn.o $(SYSROOT)/usr/lib/

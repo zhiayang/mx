@@ -88,7 +88,13 @@ namespace Filesystems
 			return node;
 		}
 
-		void DeleteNode(IOContext* ioctx, vnode* node);
+		void DeleteNode(IOContext* ioctx, vnode* node)
+		{
+			(void) ioctx;
+			(void) node;
+
+		}
+
 		vnode* Reference(IOContext* ioctx, vnode* node)
 		{
 			assert(ioctx);
@@ -163,9 +169,13 @@ namespace Filesystems
 				return nullptr;
 
 			Filesystem* fs = nullptr;
+			std::string pth;
+			pth += path;
+
 			for(auto v : *mountedfses)
 			{
-				if(*v->mountpoint == path)
+				auto tmp = pth.substr(0, 1);
+				if(pth.substr(0, v->mountpoint->size()) == *v->mountpoint)
 				{
 					fs = v;
 					break;
@@ -180,7 +190,13 @@ namespace Filesystems
 			node->type = VNodeType::File;
 
 			// this ought to fill in the information in node.
-			return fs->driver->Traverse(node, path, nullptr) ? VFS::Open(ioctx, node, flags) : nullptr;
+			assert(fs);
+			assert(fs->driver);
+
+			bool res = fs->driver->Traverse(node, path, nullptr);
+			Log(3, "created node");
+
+			return res ? VFS::Open(ioctx, node, flags) : nullptr;
 		}
 
 		size_t Read(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len)
@@ -217,7 +233,7 @@ namespace Filesystems
 		auto ctx = getctx();
 
 		auto fe = VFS::OpenFile(ctx, path, flags);
-		return fe->fd;
+		return fe ? fe->fd : 0;
 	}
 
 	size_t Read(fd_t fd, void* buf, off_t off, size_t len)

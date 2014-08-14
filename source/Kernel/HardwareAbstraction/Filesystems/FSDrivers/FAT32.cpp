@@ -5,10 +5,8 @@
 
 
 #include <Kernel.hpp>
-#include <StandardIO.hpp>
-#include <String.hpp>
-#include <List.hpp>
 #include <math.h>
+#include <stdlib.h>
 #include <vector>
 #include <sstream>
 
@@ -62,10 +60,14 @@ namespace Filesystems
 	{
 		std::string* name;
 		uint32_t size;
+		uint32_t entrycluster;
 		std::vector<uint32_t>* clusters;
 	};
 
-
+	static vnode_data* tovnd(void* p)
+	{
+		return (vnode_data*) p;
+	}
 
 	FSDriverFat32::FSDriverFat32(Partition* _part) : FSDriver(_part)
 	{
@@ -122,11 +124,15 @@ namespace Filesystems
 		MemoryManager::Physical::FreeDMA(buf, 1);
 	}
 
-
+	FSDriverFat32::~FSDriverFat32()
+	{
+	}
 
 
 	bool FSDriverFat32::Traverse(vnode* node, const char* path, char** symlink)
 	{
+		(void) symlink;
+
 		// vnode is initialised (ie. not null), but its fields are empty.
 		assert(node);
 		assert(path);
@@ -137,10 +143,44 @@ namespace Filesystems
 		auto cn = node;
 
 		auto dirs = split(path, PATH_DELIMTER);
+		// remove the last.
+		auto file = dirs.back();
+
+		dirs.pop_back();
+
 		for(auto v : dirs)
 		{
 			// iterative traverse.
+			auto cdcontent = this->ReadDir(cn);
+			// check each.
+			for(auto d : *cdcontent)
+			{
+				auto vnd = tovnd(d->info->data);
+				assert(vnd);
+				assert(vnd->name);
+
+				if(cn->type == VNodeType::File && *vnd->name == file)
+				{
+					node->info->data = d->info->data;
+					node->info->driver = d->info->driver;
+					node->info->id = d->info->id;
+					node->data = d->data;
+
+					return true;
+				}
+				else if(*tovnd(d->info->data)->name == v)
+				{
+					cn = d;
+
+					// break to continue in outer loop.
+					break;
+				}
+
+				return false;
+			}
 		}
+
+		return false;
 	}
 
 	size_t FSDriverFat32::Read(vnode* node, void* buf, off_t offset, size_t length)
@@ -158,6 +198,10 @@ namespace Filesystems
 
 	}
 
+	std::vector<VFS::vnode*>* FSDriverFat32::ReadDir(VFS::vnode* node)
+	{
+
+	}
 
 
 
@@ -166,6 +210,44 @@ namespace Filesystems
 
 
 
+	std::vector<uint32_t>* FSDriverFat32::GetClusterChain(VFS::vnode* node)
+	{
+		// read the cluster chain
+
+		assert(node);
+		assert(node->info);
+		assert(node->info->data);
+		assert(node->info->driver == this);
+
+		uint32_t Cluster = tovnd(node)->entrycluster;
+		uint32_t cchain = 0;
+		auto ret = new std::vector<uint32_t>();
+
+		auto buf = MemoryManager::Physical::AllocateDMA(1);
+		do
+		{
+			uint32_t FatSector = (uint32_t) this->partition->GetStartLBA() + this->ReservedSectors + (Cluster * 4 / 512);
+			uint32_t FatOffset = (Cluster * 4) % 512;
+
+			// unfortunately we cannot read the entire FAT at once.
+			IO::Read(this->partition->GetStorageDevice(), FatSector, buf, 0x1000);
+
+			uint8_t* clusterchain = (uint8_t*) buf;
+			cchain = *((uint32_t*)&clusterchain[FatOffset]) & 0x0FFFFFFF;
+
+			// cchain is the next cluster in the list.
+			ret->push_back(Cluster);
+
+			Cluster = cchain;
+
+		} while((cchain != 0) && !((cchain & 0x0FFFFFFF) >= 0x0FFFFFF8));
+
+		MemoryManager::Physical::FreeDMA(buf, 1);
+
+		tovnd(node)->clusters = ret;
+		return ret;
+	}
+	}
 
 
 
@@ -780,6 +862,5 @@ namespace Filesystems
 
 
 
-}
 }
 }
