@@ -194,13 +194,13 @@ namespace Multitasking
 		process->Flags					= Flags;
 		process->ProcessID				= NumProcesses;
 		process->CR3					= (uint64_t) PML4;
-		process->FileDescriptors			= new Filesystems::VFS::FileDescriptor[Filesystems::VFS::MaxDescriptors];
 		process->SimpleMessageQueue		= new Library::LinkedList<IPC::SimpleMessage>();
-		process->CurrentSharedMemoryOffset	= 0;
+		process->CurrentSharedMemoryOffset		= 0;
 		process->CurrentFDIndex			= 4;
 		process->AllocatedPageList			= new Library::Vector<uint64_t>();
 		process->VAS					= new Virtual::VirtualAddressSpace(PML4);
 		process->SignalHandlers			= (sighandler_t*) KernelHeap::AllocateChunk(sizeof(sighandler_t) * __SIGCOUNT);
+		process->iocontext				= new Filesystems::IOContext();
 		for(int i = 0; i < __SIGCOUNT; i++)
 			process->SignalHandlers[i] = __signal_ignore;
 
@@ -230,11 +230,11 @@ namespace Multitasking
 			// setup the descriptors.
 			// manually.
 			// stdio:
-			Process* parent = process->Parent;
-			process->FileDescriptors[0].Pointer = parent->FileDescriptors[0].Pointer;
-			process->FileDescriptors[1].Pointer = parent->FileDescriptors[1].Pointer;
-			process->FileDescriptors[2].Pointer = parent->FileDescriptors[2].Pointer;
-			process->FileDescriptors[3].Pointer = parent->FileDescriptors[3].Pointer;
+			// Process* parent = process->Parent;
+			// process->FileDescriptors[0].Pointer = parent->FileDescriptors[0].Pointer;
+			// process->FileDescriptors[1].Pointer = parent->FileDescriptors[1].Pointer;
+			// process->FileDescriptors[2].Pointer = parent->FileDescriptors[2].Pointer;
+			// process->FileDescriptors[3].Pointer = parent->FileDescriptors[3].Pointer;
 		}
 
 		Log("Creating new process in VAS (%s): CR3(phys): %x", name, (uint64_t) PML4);

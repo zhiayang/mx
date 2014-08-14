@@ -59,7 +59,7 @@ namespace Kernel
 	HashMap<string, string>* KernelConfigFile;
 	Time::TimeStruct* SystemTime;
 	ACPI::RootTable* RootACPITable;
-	Filesystems::VFS::Filesystem* RootFS;
+	// Filesystems::VFS::Filesystem* RootFS;
 	CPUID::CPUIDData* KernelCPUID;
 
 
@@ -293,7 +293,7 @@ namespace Kernel
 			if(PCI::MatchVendorDevice(nic, 0x10EC, 0x8139))
 			{
 				Log("Realtek RTL8139 NIC found, initialising driver...");
-				KernelNIC = new NIC::GenericNIC(new NIC::RTL8139(nic));
+				// KernelNIC = new NIC::GenericNIC(new NIC::RTL8139(nic));
 			}
 		}
 
@@ -304,8 +304,8 @@ namespace Kernel
 		LFBBufferAddr = LFBAddr;
 
 		Log("Compatible video card located");
-		Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->Get(0);
-		RootFS = f1->Partitions->Get(0)->GetFilesystem()->RootFS();
+		// Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->Get(0);
+		// RootFS = f1->Partitions->Get(0)->GetFilesystem()->RootFS();
 
 
 		PrintFormatted("Initialising RTC...\n");
@@ -352,151 +352,151 @@ namespace Kernel
 
 
 
-		// Stuff this in a small scope.
-		// Read the configuration file.
-		// This is mainly used for setting the resolution as well as UTC offset.
-		uint16_t PrefResX = 0, PrefResY = 0;
-		{
-			PrintFormatted("Reading Configuration File...\n");
-			Log("Reading Configuration file from /System/Library/Preferences/CorePreferences.plist");
-			ConfigFile::Initialise();
-
-			PrefResX = (uint16_t) ConfigFile::ReadInteger("ResolutionHorizontal");
-			PrefResY = (uint16_t) ConfigFile::ReadInteger("ResolutionVertical");
-			Kernel::SystemTime->UTCOffset = (int8_t) ConfigFile::ReadInteger("UTCTimezone");
-			Time::PrintSeconds = ConfigFile::ReadBoolean("ClockShowSeconds");
-
-			if(PrefResX == 0 || PrefResY == 0)
-			{
-				Log(3, "Invalid resolution -- config file may be corrupted, assuming 800x600");
-				PrefResX = 800;
-				PrefResY = 600;
-			}
-		}
-
-
-		Multitasking::AddToQueue(Multitasking::CreateKernelThread(Network::DHCP::MonitorThread));
-		Multitasking::AddToQueue(Multitasking::CreateKernelThread(Network::DNS::MonitorThread));
-		Network::Initialise();
-		// Symbolicate::Initialise();
-
-
-
-		// Set video mode
-		PrintFormatted("\nInitialising Linear Framebuffer at %x...", LFBAddr);
-		VideoDevice->SetMode(PrefResX, PrefResY, 32);
-		VideoOutput::LinearFramebuffer::Initialise();
-
-		Log("Requested resolution of %dx%d, LFB at %x", PrefResX, PrefResY, LFBAddr);
-
-
-		// scope this.
-		{
-			// Get the set resolution (may be different than our preferred)
-			uint16_t ResX = VideoOutput::LinearFramebuffer::GetResX();
-			uint16_t ResY = VideoOutput::LinearFramebuffer::GetResX();
-
-			// Calculate how many bytes we need. (remember, 4 bytes per pixel)
-			uint32_t bytes = (ResX * ResY) * 4;
-
-			// Get that rounded up to the nearest page
-			bytes = (bytes + (4096 - 1)) / 4096;
-			LFBInPages = bytes;
-
-			// map a bunch of pages for the buffer.
-			for(uint64_t k = 0; k < bytes; k++)
-				Virtual::MapAddress(LFBBufferAddress_INT + (k * 0x1000), Physical::AllocatePage(), 0x07);
-
-			Virtual::MapRegion(LFBAddr, LFBAddr, bytes, 0x07);
-
-			// LFBBufferAddr = LFBBufferAddress_INT;
-		}
-
-		// setup our sockets.
-		Log("Socket subsystem online");
-		{
-			Multitasking::Process* kernel = KernelProcess;
-			kernel->FileDescriptors[0].Pointer = new IPC::IPCSocketEndpoint(0);
-			kernel->FileDescriptors[1].Pointer = new IPC::IPCSocketEndpoint(1);
-			kernel->FileDescriptors[2].Pointer = new IPC::IPCSocketEndpoint(2);
-			kernel->FileDescriptors[3].Pointer = new IPC::IPCSocketEndpoint(3);
-		}
-
-
-		Log("Video mode set");
-
-		Console::Initialise();
-		// Log("Console initialised");
+		// // Stuff this in a small scope.
+		// // Read the configuration file.
+		// // This is mainly used for setting the resolution as well as UTC offset.
+		// uint16_t PrefResX = 0, PrefResY = 0;
 		// {
-		// 	uint8_t* CProg = LoadBinary::LoadFileToMemory("/System/Library/CoreServices/VTConsole.oex");
-		// 	LoadBinary::GenericExecutable* Exec = new LoadBinary::GenericExecutable("VTConsole", CProg);
-		// 	Exec->AutomaticLoadExecutable();
+		// 	PrintFormatted("Reading Configuration File...\n");
+		// 	Log("Reading Configuration file from /System/Library/Preferences/CorePreferences.plist");
+		// 	ConfigFile::Initialise();
 
+		// 	PrefResX = (uint16_t) ConfigFile::ReadInteger("ResolutionHorizontal");
+		// 	PrefResY = (uint16_t) ConfigFile::ReadInteger("ResolutionVertical");
+		// 	Kernel::SystemTime->UTCOffset = (int8_t) ConfigFile::ReadInteger("UTCTimezone");
+		// 	Time::PrintSeconds = ConfigFile::ReadBoolean("ClockShowSeconds");
+
+		// 	if(PrefResX == 0 || PrefResY == 0)
+		// 	{
+		// 		Log(3, "Invalid resolution -- config file may be corrupted, assuming 800x600");
+		// 		PrefResX = 800;
+		// 		PrefResY = 600;
+		// 	}
+		// }
+
+
+		// Multitasking::AddToQueue(Multitasking::CreateKernelThread(Network::DHCP::MonitorThread));
+		// Multitasking::AddToQueue(Multitasking::CreateKernelThread(Network::DNS::MonitorThread));
+		// Network::Initialise();
+		// // Symbolicate::Initialise();
+
+
+
+		// // Set video mode
+		// PrintFormatted("\nInitialising Linear Framebuffer at %x...", LFBAddr);
+		// VideoDevice->SetMode(PrefResX, PrefResY, 32);
+		// VideoOutput::LinearFramebuffer::Initialise();
+
+		// Log("Requested resolution of %dx%d, LFB at %x", PrefResX, PrefResY, LFBAddr);
+
+
+		// // scope this.
+		// {
+		// 	// Get the set resolution (may be different than our preferred)
+		// 	uint16_t ResX = VideoOutput::LinearFramebuffer::GetResX();
+		// 	uint16_t ResY = VideoOutput::LinearFramebuffer::GetResX();
+
+		// 	// Calculate how many bytes we need. (remember, 4 bytes per pixel)
+		// 	uint32_t bytes = (ResX * ResY) * 4;
+
+		// 	// Get that rounded up to the nearest page
+		// 	bytes = (bytes + (4096 - 1)) / 4096;
+		// 	LFBInPages = bytes;
+
+		// 	// map a bunch of pages for the buffer.
+		// 	for(uint64_t k = 0; k < bytes; k++)
+		// 		Virtual::MapAddress(LFBBufferAddress_INT + (k * 0x1000), Physical::AllocatePage(), 0x07);
+
+		// 	Virtual::MapRegion(LFBAddr, LFBAddr, bytes, 0x07);
+
+		// 	// LFBBufferAddr = LFBBufferAddress_INT;
+		// }
+
+		// // setup our sockets.
+		// Log("Socket subsystem online");
+		// {
+		// 	Multitasking::Process* kernel = KernelProcess;
+		// 	kernel->FileDescriptors[0].Pointer = new IPC::IPCSocketEndpoint(0);
+		// 	kernel->FileDescriptors[1].Pointer = new IPC::IPCSocketEndpoint(1);
+		// 	kernel->FileDescriptors[2].Pointer = new IPC::IPCSocketEndpoint(2);
+		// 	kernel->FileDescriptors[3].Pointer = new IPC::IPCSocketEndpoint(3);
+		// }
+
+
+		// Log("Video mode set");
+
+		// Console::Initialise();
+		// // Log("Console initialised");
+		// // {
+		// // 	uint8_t* CProg = LoadBinary::LoadFileToMemory("/System/Library/CoreServices/VTConsole.oex");
+		// // 	LoadBinary::GenericExecutable* Exec = new LoadBinary::GenericExecutable("VTConsole", CProg);
+		// // 	Exec->AutomaticLoadExecutable();
+
+		// // 	Exec->SetApplicationType(Multitasking::ThreadType::NormalApplication);
+		// // 	Exec->Execute();
+
+		// // 	delete[] CProg;
+		// // }
+
+		// IPC::CentralDispatch::InitialiseWindowDispatcher();
+		// Log("Window Dispatcher online");
+
+
+
+
+		// KernelKeyboard = new Keyboard(new PS2Keyboard());
+		// Console::ClearScreen();
+		// Bootscreen::PrintMessage("Loading Orion-X4\n");
+
+		// #if 0
+		// {
+		// 	// experimentation area.
+		// 	Multitasking::GetThread(1)->SignalHandlers[41] = sig;
+		// 	IPC::SendSimpleMessage(1, IPC::MessageTypes::PosixSignal, 41, 0, 0, 0);
+		// 	while(true);
+		// }
+		// #endif
+
+
+
+		// // Bootscreen::Initialise();
+
+		// string bms;
+		// PrintToString(&bms, "Version %d.%d.%d r%02d -- Build %d", VER_MAJOR, VER_MINOR, VER_REVSN, VER_MINRV, X_BUILD_NUMBER);
+		// Bootscreen::PrintMessage(bms.CString());
+
+		// if(false)
+		// {
+		// 	SLEEP(100);
+		// 	Bootscreen::StartProgressBar();
+		// 	SLEEP(500);
+		// }
+		// else
+		// {
+		// 	// SLEEP(300);
+		// }
+
+
+		// // Load the CarbonShell.oex program.
+		// {
+		// 	uint8_t* CProg = LoadBinary::LoadFileToMemory("/System/Library/CoreServices/CarbonShell.oex");
+		// 	LoadBinary::GenericExecutable* Exec = new LoadBinary::GenericExecutable("CarbonShell", CProg);
+		// 	Exec->AutomaticLoadExecutable();
 		// 	Exec->SetApplicationType(Multitasking::ThreadType::NormalApplication);
+
+		// 	IPC::CentralDispatch::AddApplicationToList(Exec->proc->Threads->Front(), Exec->proc);
 		// 	Exec->Execute();
 
 		// 	delete[] CProg;
 		// }
 
-		IPC::CentralDispatch::InitialiseWindowDispatcher();
-		Log("Window Dispatcher online");
+		// Log("Starting TimeService");
+		// // Multitasking::AddToQueue(Multitasking::CreateKernelThread(Kernel::Time::PrintTime));
+		// Console::ClearScreen();
 
-
-
-
-		KernelKeyboard = new Keyboard(new PS2Keyboard());
-		Console::ClearScreen();
-		Bootscreen::PrintMessage("Loading Orion-X4\n");
-
-		#if 0
-		{
-			// experimentation area.
-			Multitasking::GetThread(1)->SignalHandlers[41] = sig;
-			IPC::SendSimpleMessage(1, IPC::MessageTypes::PosixSignal, 41, 0, 0, 0);
-			while(true);
-		}
-		#endif
-
-
-
-		// Bootscreen::Initialise();
-
-		string bms;
-		PrintToString(&bms, "Version %d.%d.%d r%02d -- Build %d", VER_MAJOR, VER_MINOR, VER_REVSN, VER_MINRV, X_BUILD_NUMBER);
-		Bootscreen::PrintMessage(bms.CString());
-
-		if(false)
-		{
-			SLEEP(100);
-			Bootscreen::StartProgressBar();
-			SLEEP(500);
-		}
-		else
-		{
-			// SLEEP(300);
-		}
-
-
-		// Load the CarbonShell.oex program.
-		{
-			uint8_t* CProg = LoadBinary::LoadFileToMemory("/System/Library/CoreServices/CarbonShell.oex");
-			LoadBinary::GenericExecutable* Exec = new LoadBinary::GenericExecutable("CarbonShell", CProg);
-			Exec->AutomaticLoadExecutable();
-			Exec->SetApplicationType(Multitasking::ThreadType::NormalApplication);
-
-			IPC::CentralDispatch::AddApplicationToList(Exec->proc->Threads->Front(), Exec->proc);
-			Exec->Execute();
-
-			delete[] CProg;
-		}
-
-		Log("Starting TimeService");
-		// Multitasking::AddToQueue(Multitasking::CreateKernelThread(Kernel::Time::PrintTime));
-		Console::ClearScreen();
-
-		Log("Kernel entering Central Dispatch mode...");
-		IsKernelInCentralDispatch = true;
-		IPC::CentralDispatch::Initialise();
+		// Log("Kernel entering Central Dispatch mode...");
+		// IsKernelInCentralDispatch = true;
+		// IPC::CentralDispatch::Initialise();
 	}
 
 	void Idle()
@@ -612,12 +612,12 @@ namespace rapidxml
 	}
 }
 
-void operator delete(void* p)
+void operator delete(void* p) noexcept
 {
 	Free_G(p);
 }
 
-void operator delete[](void* p)
+void operator delete[](void* p) noexcept
 {
 	Free_G(p);
 }
@@ -632,10 +632,10 @@ void* operator new[](unsigned long size)
 	return (void*) Allocate_G((uint32_t) size);
 }
 
-void* operator new(unsigned long, void* addr)
-{
-	return addr;
-}
+// void* operator new(unsigned long, void* addr) noexcept
+// {
+// 	return addr;
+// }
 
 
 

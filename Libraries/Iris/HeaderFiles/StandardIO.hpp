@@ -28,10 +28,10 @@ namespace Library
 	}
 }
 
-void operator delete(void* p);
-void operator delete[](void* p);
-void* operator new(unsigned long size);
-void* operator new[](unsigned long size);
-void* operator new(unsigned long, void* addr);
+// void operator delete(void* p);
+// void operator delete[](void* p);
+// void* operator new(unsigned long size);
+// void* operator new[](unsigned long size);
+// void* operator new(unsigned long, void* addr);
 
 

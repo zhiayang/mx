@@ -67,7 +67,9 @@ namespace HardwareAbstraction
 
 			uint64_t CurrentSharedMemoryOffset;
 			Library::LinkedList<IPC::SimpleMessage>* SimpleMessageQueue;
-			Filesystems::VFS::FileDescriptor* FileDescriptors;
+			Filesystems::IOContext* iocontext;
+
+
 			Library::Vector<uint64_t>* AllocatedPageList;
 			MemoryManager::Virtual::VirtualAddressSpace* VAS;
 			uint64_t CurrentFDIndex;
