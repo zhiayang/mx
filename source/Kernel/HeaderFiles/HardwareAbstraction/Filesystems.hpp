@@ -138,7 +138,11 @@ namespace Kernel
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
 					void Stat(VFS::vnode* node, stat* stat) override;
 
-				private:
+					std::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+
+				// private:
+					std::vector<uint32_t>* GetClusterChain(VFS::vnode* node);
+
 					uint16_t BytesPerSector;
 					uint8_t SectorsPerCluster;
 					uint16_t ReservedSectors;

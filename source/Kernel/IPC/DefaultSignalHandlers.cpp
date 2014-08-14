@@ -72,10 +72,10 @@ namespace IPC
 			case SIGPROF:		return TermProc;
 			case SIGWINCH:	return Discard;
 			case SIGINFO:		return Discard;
-			default:		return TermProc;
+			default:			return TermProc;
 		}
 
-		return (sighandler_t) 1;
+		// return (sighandler_t) 1;
 	}
 }
 }

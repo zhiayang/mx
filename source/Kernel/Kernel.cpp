@@ -303,7 +303,7 @@ namespace Kernel
 		LFBBufferAddr = LFBAddr;
 
 		Log("Compatible video card located");
-		// Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->Get(0);
+
 		// RootFS = f1->Partitions->Get(0)->GetFilesystem()->RootFS();
 
 
@@ -312,10 +312,49 @@ namespace Kernel
 		Log("RTC Initialised");
 
 
+		// manual jump start.
+		{
+			using namespace Filesystems;
+			using namespace Filesystems::VFS;
+			Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->Get(0);
+			FSDriverFat32* fs = new FSDriverFat32(f1->Partitions->Get(0));
+
+			// mount root fs from partition 0 at /
+			VFS::Mount(f1->Partitions->Get(0), fs, "/");
+			auto fd = OpenFile("/hello", 0);
+			PrintFormatted("%d\n", fd);
+
+			// vnode* n = new vnode;
+			// n->refcount = 1;
+			// n->type = VNodeType::Folder;
+			// n->info = new fsref;
+
+			// struct vnode_data
+			// {
+			// 	std::string* name;
+			// 	uint32_t size;
+			// 	uint32_t entrycluster;
+			// 	std::vector<uint32_t>* clusters;
+			// };
+
+			// n->info->driver = fs;
+			// n->info->data = new vnode_data;
+			// vnode_data* vnd = (vnode_data*) n->info->data;
+
+			// vnd->entrycluster = 2;
+
+			// auto ret = fs->GetClusterChain(n);
+			// for(auto v : *ret)
+			// {
+			// 	PrintFormatted("%d\n", v);
+			// }
+		}
+
 
 
 		// kernel stops here
 		// for now.
+		PrintFormatted("Kernel Halted\n");
 		UHALT();
 
 
