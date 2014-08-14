@@ -3,7 +3,8 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "HeaderFiles/StandardIO.hpp"
-#include "HeaderFiles/String.hpp"
+#include <string>
+#include <string.h>
 #include <math.h>
 #include "HeaderFiles/Memory.hpp"
 #include "HeaderFiles/Utility.hpp"
@@ -21,18 +22,18 @@ namespace StandardIO
 	{
 	}
 
-	static string* stringtoappend = 0;
+	static std::string* stringtoappend = 0;
 
 	static inline void AppendToString(uint8_t c)
 	{
-		stringtoappend->Append((char) c);
+		stringtoappend += ((char) c);
 	}
 
 
 	uint64_t PrintString(const char* string, int64_t length, void (*pf)(uint8_t))
 	{
 		uint64_t ret = 0;
-		for(uint64_t i = 0; i < (length < 0 ? String::Length(string) : (uint64_t) length); i++)
+		for(uint64_t i = 0; i < (length < 0 ? strlen(string) : (uint64_t) length); i++)
 		{
 			PrintChar((uint8_t) string[i], pf);
 			ret++;
@@ -232,7 +233,7 @@ namespace StandardIO
 			}
 		}
 		char* k = Utility::ConvertToString(num);
-		return PrintString(k, (int64_t) String::Length(k), pf) + ret;
+		return PrintString(k, (int64_t) strlen(k), pf) + ret;
 
 		delete k;
 	}
@@ -317,7 +318,7 @@ namespace StandardIO
 	}
 
 
-	void PrintToString(string* f, const char* str, ...)
+	void PrintToString(std::string* f, const char* str, ...)
 	{
 		stringtoappend = f;
 		va_list args;
@@ -408,7 +409,7 @@ namespace StandardIO
 		char ch = 0;
 		bool b = false;
 
-		uint64_t length = String::Length(string);
+		uint64_t length = strlen(string);
 
 		// char* widthbuf = char[8];
 		// char* precsbuf = char[8];

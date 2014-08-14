@@ -6,7 +6,7 @@
 #include <HardwareAbstraction/Multitasking.hpp>
 #include <HardwareAbstraction/MemoryManager.hpp>
 #include <List.hpp>
-#include <String.hpp>
+#include <string.h>
 #include "../IPC/Dispatchers/CentralDispatch.hpp"
 
 using namespace Kernel;
@@ -216,7 +216,7 @@ namespace Multitasking
 			Kernel::KernelProcess = process;
 		}
 
-		String::Copy(process->Name, name);
+		strcpy(process->Name, name);
 
 
 		NumProcesses++;

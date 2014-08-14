@@ -229,9 +229,9 @@ namespace Time
 		return HardwareAbstraction::Devices::RTC::DidInitialise() ? Kernel::SystemTime->MillisecondsSinceEpoch : 0;
 	}
 
-	void GetHumanReadableTime(Library::string& output)
+	void GetHumanReadableTime(std::string& output)
 	{
-		output.Clear();
+		output.clear();
 		if(HardwareAbstraction::Devices::RTC::DidInitialise())
 			PrintToString(&output, "%d.%02d %s %02ds", Kernel::SystemTime->Hour12F, Kernel::SystemTime->Minute, Kernel::SystemTime->AM ? "am" : "pm", Kernel::SystemTime->Second);
 	}
@@ -361,13 +361,13 @@ namespace Time
 	{
 		uint16_t xpos = Console::GetCharsPerLine() - 1 - (PrintSeconds ? 15 : 11);
 		uint16_t x = 0, y = 0;
-		Library::string spaces;
+		std::string spaces;
 
 		if(PrintSeconds)
-			spaces.Append("              ");
+			spaces += "              ";
 
 		else
-			spaces.Append("           ");
+			spaces += "           ";
 
 		while(true)
 		{
@@ -375,7 +375,7 @@ namespace Time
 			y = Console::GetCursorY();
 
 			Console::MoveCursor(xpos, 0);
-			PrintString(spaces);
+			PrintString(spaces.c_str());
 			Console::MoveCursor(xpos, 0);
 
 			PrintFormatted("%s[ %d.%02d %s ", Kernel::SystemTime->Hour12F < 10 ? " " : "", Kernel::SystemTime->Hour12F + Kernel::SystemTime->UTCOffset, Kernel::SystemTime->Minute, IsAM() ? "am" : "pm");
