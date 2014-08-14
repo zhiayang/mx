@@ -81,7 +81,7 @@ namespace Kernel
 	extern HardwareAbstraction::Devices::NIC::GenericNIC* KernelNIC;
 	extern HardwareAbstraction::ACPI::RootTable* RootACPITable;
 	extern HardwareAbstraction::MemoryManager::MemoryMap::MemoryMap_type* K_MemoryMap;
-	extern HardwareAbstraction::Filesystems::VFS::Filesystem* RootFS;
+	// extern HardwareAbstraction::Filesystems::VFS::Filesystem* RootFS;
 	extern HardwareAbstraction::CPUID::CPUIDData* KernelCPUID;
 	extern HardwareAbstraction::Random* KernelRandom;
 
@@ -157,11 +157,11 @@ namespace Kernel
 
 ;
 
-void operator delete(void* p);
-void operator delete[](void* p);
+void operator delete(void* p) noexcept;
+void operator delete[](void* p) noexcept;
 void* operator new(unsigned long size);
 void* operator new[](unsigned long size);
-void* operator new(unsigned long, void* addr);
+void* operator new(unsigned long, void* addr) noexcept;
 
 
 

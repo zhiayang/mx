@@ -17,12 +17,9 @@ namespace Storage
 	Partition::Partition(StorageDevice* d, uint8_t num, uint64_t slba, uint64_t lbal, Filesystems::FSTypes Type, uint64_t pgh, uint64_t pgl, uint64_t th, uint64_t tl, char* n, bool b)
 	{
 		this->Drive = d;
-
 		this->StartLBA = slba;
 		this->LBALength = lbal;
 		this->PartitionType = Type;
-
-
 
 		this->PartitionGUID_high = pgh;
 		this->PartitionGUID_low = pgl;
@@ -51,7 +48,7 @@ namespace Storage
 			this->GetTypeGUID_S4() == 0x87C0 &&
 			this->GetTypeGUID_S5() == 0x68B6B72699C7))
 		{
-			this->Filesystem = new Filesystems::FAT32(this);
+			// this->Filesystem = new Filesystems::FAT32(this);
 		}
 
 		if(PartitionType == Filesystems::FSTypes::hfsplus ||
@@ -62,7 +59,7 @@ namespace Storage
 			this->GetTypeGUID_S4() == 0xAA11 &&
 			this->GetTypeGUID_S5() == 0x00306543ECAC))
 		{
-			this->Filesystem = new Filesystems::HFSPlus(this);
+			// this->Filesystem = new Filesystems::HFSPlus(this);
 		}
 	}
 

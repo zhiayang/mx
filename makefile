@@ -23,8 +23,7 @@ GCCVERSION	= 4.9.1
 
 WARNINGS	= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-align -Wno-unreachable-code -Wno-gnu -Wno-missing-prototypes -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-sign-conversion -Wno-old-style-cast
 
-
-CXXFLAGS	= -m64 -Weverything -msse3 -g -integrated-as -O2 -fPIC -std=gnu++11 -nostdinc -ffreestanding -mno-red-zone -fno-stack-protector -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -target x86_64-elf -c
+CXXFLAGS	= -m64 -Weverything -msse3 -g -integrated-as -O2 -fPIC -std=gnu++11 -nostdinc -ffreestanding -mno-red-zone -fno-stack-protector -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -target x86_64-elf -c
 
 LDFLAGS	= --gc-sections -z max-page-size=0x1000 -T link.ld -L$(SYSROOT)/usr/lib
 
@@ -46,7 +45,7 @@ CXXDEPS	= $(CXXOBJ:.o=.d)
 
 
 
-LIBRARIES         = -liris_k -lm -lbitmap
+LIBRARIES         = -liris_k -lm -lbitmap -lstdc++
 OUTPUT            = build/kernel.mxa
 
 
@@ -106,6 +105,8 @@ copyheader:
 	@rsync -cmar Libraries/Iris/HeaderFiles/* $(SYSROOT)/usr/include/iris/
 	@rsync -cmar Libraries/libsyscall/*.h $(SYSROOT)/usr/include/sys/
 	@rsync -cmar $(TOOLCHAIN)/x86_64-orionx/include/c++/$(GCCVERSION)/* $(SYSROOT)/usr/include/c++/
+	@rsync -cmar $(SYSROOT)/usr/include/c++/x86_64-orionx/bits/* $(SYSROOT)/usr/include/c++/bits/
+	@# @cp $(TOOLCHAIN)/x86_64-orionx/lib/libstdc++.a $(SYSROOT)/usr/lib/
 
 
 buildlib: $(SYSROOT)/usr/lib/%.a
