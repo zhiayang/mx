@@ -321,33 +321,33 @@ namespace Kernel
 
 			// mount root fs from partition 0 at /
 			VFS::Mount(f1->Partitions->Get(0), fs, "/");
-			auto fd = OpenFile("/hello", 0);
-			PrintFormatted("%d\n", fd);
+			// auto fd = OpenFile("/hello", 0);
+			// PrintFormatted("%d\n", fd);
 
-			// vnode* n = new vnode;
-			// n->refcount = 1;
-			// n->type = VNodeType::Folder;
-			// n->info = new fsref;
+			vnode* n = new vnode;
+			n->refcount = 1;
+			n->type = VNodeType::Folder;
+			n->info = new fsref;
 
-			// struct vnode_data
-			// {
-			// 	std::string* name;
-			// 	uint32_t size;
-			// 	uint32_t entrycluster;
-			// 	std::vector<uint32_t>* clusters;
-			// };
+			struct vnode_data
+			{
+				std::string* name;
+				uint32_t size;
+				uint32_t entrycluster;
+				std::vector<uint32_t>* clusters;
+			};
 
-			// n->info->driver = fs;
-			// n->info->data = new vnode_data;
-			// vnode_data* vnd = (vnode_data*) n->info->data;
+			n->info->driver = fs;
+			n->info->data = new vnode_data;
+			vnode_data* vnd = (vnode_data*) n->info->data;
 
-			// vnd->entrycluster = 2;
+			vnd->entrycluster = 2;
 
-			// auto ret = fs->GetClusterChain(n);
-			// for(auto v : *ret)
-			// {
-			// 	PrintFormatted("%d\n", v);
-			// }
+			auto ret = fs->GetClusterChain(n);
+			for(auto v : *ret)
+			{
+				PrintFormatted("%d\n", v);
+			}
 		}
 
 

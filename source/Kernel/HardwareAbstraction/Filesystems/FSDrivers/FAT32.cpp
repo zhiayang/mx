@@ -219,7 +219,8 @@ namespace Filesystems
 		assert(node->info->data);
 		assert(node->info->driver == this);
 
-		uint32_t Cluster = tovnd(node)->entrycluster;
+		// uint32_t Cluster = tovnd(node)->entrycluster;
+		uint32_t Cluster = 2;
 		uint32_t cchain = 0;
 		auto ret = new std::vector<uint32_t>();
 
