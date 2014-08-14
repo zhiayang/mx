@@ -1,0 +1,165 @@
+#!/bin/bash
+
+# don't run this out of directory.
+# please.
+
+
+# don't change this, the rest of the OS build depends on this.
+# if you like, you can move it and symlink it.
+PREFIX=`pwd`/build/toolchain
+
+# please don't change this
+SYSROOT=`pwd`/build/sysroot
+THREADS=4
+
+# # first check for args.
+# if [ -z "$1" ]; then
+# 	echo "Please pass the size of the OS disk image in MEGABYTES (1024 KB) to ./bootstrap."
+# 	exit
+# fi
+
+
+
+
+mkdir build
+
+echo "=> Setting up sysroot"
+mkdir -p $SYSROOT/usr/include/
+mkdir -p $SYSROOT/usr/lib
+
+cp -r Libraries/libc/include/* $SYSROOT/usr/include/
+cp -r Libraries/libm/include/* $SYSROOT/usr/include/
+# cp -r Libraries/Iris/HeaderFiles/* $SYSROOT/usr/include/c++/
+
+
+cd build
+
+# first, download our patched gcc and binutils.
+echo "=> Downloading binutils and gcc for x86_64-orionx"
+if [ ! -d binutils ]; then
+	git clone -q https://requimrar@bitbucket.org/requimrar/binutils.git
+fi
+
+if [ ! -d gcc ]; then
+	git clone -q https://requimrar@bitbucket.org/requimrar/gcc.git
+fi
+
+echo "=> Proceeding with Sysroot: $SYSROOT, Prefix: $PREFIX"
+
+
+# start building.
+mkdir build-bin build-gcc
+cd build-bin
+echo "=> Configuring binutils"
+../binutils/configure --target=x86_64-orionx --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-werror --disable-nls
+
+echo "=> Compiling binutils"
+make -j$THREADS all
+make -j$THREADS install
+
+echo "=> Configuring gcc"
+cd ../build-gcc
+export PATH="$PREFIX/bin:$PATH"
+../gcc/configure --target=x86_64-orionx --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-werror --disable-nls --enable-languages=c,c++
+
+echo "=> Compiling gcc"
+make -j$THREADS all-gcc
+echo "=> Compiling libgcc"
+make -j$THREADS all-target-libgcc
+
+echo "=> Installing toolchain"
+make -j$THREADS -s install-gcc
+make -j$THREADS -s install-target-libgcc
+
+echo "=> Compiling libstdc++"
+make
+make install
+cd ..
+cd ..
+
+
+rm -rf build/build-bin
+rm -rf build/build-gcc
+
+
+if [ -f build/disk.img ]; then
+	exit
+fi
+
+
+
+
+
+
+
+
+
+
+
+# fuck it, just download it from my dropbox.
+clear
+echo "=> Downloading disk image"
+wget -O build/disk.img https://dl.dropboxusercontent.com/u/20627716/disk.img
+
+
+
+
+
+
+echo "=> Creating disk image of $1 mb"
+# edit if not on mac, life will be easier.
+# depends on virtualbox being installed.
+# seriously.
+
+hdiutil create -megabytes $1 -layout MBRSPUD -fs MS-DOS -volname "mx" -type UDIF build/fat16.dmg
+# actually is fat16.
+
+LINE=`hdiutil attach build/fat16.dmg | sed -n '2p'`
+ARRAY=($LINE)
+DISKID=${ARRAY[0]}
+
+echo "=> Disk ID = $DISKID"
+
+echo "=> Creating FAT32 partition on disk"
+# unmount first, without ejecting.
+diskutil unmount $DISKID
+
+# use newfs_msdos
+newfs_msdos -F 32 -S 512 -P 512 -v "MX" $DISKID
+
+# detach.
+hdiutil detach $DISKID
+
+# convert from dmg to vdi
+vboxmanage convertdd build/fat16.dmg build/fat32.vdi
+
+# finally, vdi to raw img.
+qemu-img convert -O raw build/fat32.vdi build/disk.img
+
+# make partition bootable
+echo -e "flag 1\nwrite\nexit\n" | fdisk -e build/disk.img > /dev/null
+echo -e "\n"
+
+
+# copy grub
+echo "=> Copying GRUB to disk"
+hdiutil attach build/disk.img
+mkdir -p /Volumes/mx/boot/grub
+
+
+
+
+
+
+
+
+
+
+# cleanup
+echo "=> Cleaning up"
+rm build/fat32.vdi
+rm build/fat16.dmg
+
+
+echo "=> Ready!"
+exit
