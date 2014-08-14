@@ -6,6 +6,7 @@
 #include <Utility.hpp>
 #include <Colours.hpp>
 #include <HardwareAbstraction/Devices/StorageDevice.hpp>
+#include <string.h>
 
 using namespace Kernel::HardwareAbstraction::Devices::Storage;
 
@@ -27,7 +28,8 @@ namespace Storage
 		this->PartitionTypeGUID_high = th;
 		this->PartitionTypeGUID_low = tl;
 
-		Library::String::Copy(this->Name, n);
+		// Library::String::Copy(this->Name, n);
+		strcpy(this->Name, n);
 
 		this->Bootable = b;
 

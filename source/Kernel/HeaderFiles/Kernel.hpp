@@ -17,6 +17,7 @@
 #include <HardwareAbstraction/Random.hpp>
 #include <HardwareAbstraction/Devices/NIC.hpp>
 #include <HashMap.hpp>
+#include <string>
 
 // Configurable addresses.
 // Contrary to the name, best not to mess with these.
@@ -75,7 +76,7 @@ namespace Kernel
 	extern Time::TimeStruct* SystemTime;
 	extern HardwareAbstraction::VideoOutput::GenericVideoDevice* VideoDevice;
 	extern HardwareAbstraction::Multitasking::Process* KernelProcess;
-	extern Library::HashMap<Library::string, Library::string>* KernelConfigFile;
+	extern Library::HashMap<std::string, std::string>* KernelConfigFile;
 	extern HardwareAbstraction::Devices::PS2Controller* KernelPS2Controller;
 	extern HardwareAbstraction::Devices::Keyboard* KernelKeyboard;
 	extern HardwareAbstraction::Devices::NIC::GenericNIC* KernelNIC;

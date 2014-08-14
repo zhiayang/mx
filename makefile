@@ -45,7 +45,7 @@ CXXDEPS	= $(CXXOBJ:.o=.d)
 
 
 
-LIBRARIES         = -liris_k -lm -lbitmap -lstdc++
+LIBRARIES         = -lstdc++ -liris_k -lm -lbitmap -lc -lsyscall -lsupc++ -lgcc
 OUTPUT            = build/kernel.mxa
 
 
@@ -71,11 +71,9 @@ $(OUTPUT):  mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) buildu
 	@echo "# Linking object files"
 	@$(LD) $(LDFLAGS) -o build/kernel64.elf source/Kernel/Bootstrap/Start.s.o $(shell find source -name "*.o" ! -name "Start.s.o") $(LIBRARIES)
 
-
 	@echo "# Performing objcopy"
-	@$(OBJCOPY) -O elf32-i386 build/kernel64.elf build/kernel.mxa
+	@$(OBJCOPY) -g -O elf32-i386 build/kernel64.elf build/kernel.mxa
 	@cp $(OUTPUT) /Volumes/mx/boot/kernel.mxa
-
 
 
 %.s.o: %.s
@@ -106,7 +104,8 @@ copyheader:
 	@rsync -cmar Libraries/libsyscall/*.h $(SYSROOT)/usr/include/sys/
 	@rsync -cmar $(TOOLCHAIN)/x86_64-orionx/include/c++/$(GCCVERSION)/* $(SYSROOT)/usr/include/c++/
 	@rsync -cmar $(SYSROOT)/usr/include/c++/x86_64-orionx/bits/* $(SYSROOT)/usr/include/c++/bits/
-	@# @cp $(TOOLCHAIN)/x86_64-orionx/lib/libstdc++.a $(SYSROOT)/usr/lib/
+	@cp $(TOOLCHAIN)/x86_64-orionx/lib/*.a $(SYSROOT)/usr/lib/
+	@cp $(TOOLCHAIN)/lib/gcc/x86_64-orionx/4.9.1/libgcc.a $(SYSROOT)/usr/lib/
 
 
 buildlib: $(SYSROOT)/usr/lib/%.a

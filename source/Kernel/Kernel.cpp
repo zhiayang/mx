@@ -27,7 +27,6 @@ using namespace Kernel::HardwareAbstraction;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
 using namespace Library;
 using namespace Library::StandardIO;
-using Library::string;
 
 
 extern "C" uint64_t KernelEnd;
@@ -56,7 +55,7 @@ namespace Kernel
 
 	// things
 	Multitasking::Process* KernelProcess;
-	HashMap<string, string>* KernelConfigFile;
+	HashMap<std::string, std::string>* KernelConfigFile;
 	Time::TimeStruct* SystemTime;
 	ACPI::RootTable* RootACPITable;
 	// Filesystems::VFS::Filesystem* RootFS;

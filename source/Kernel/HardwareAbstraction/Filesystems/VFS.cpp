@@ -6,6 +6,7 @@
 #include <string.h>
 #include <Kernel.hpp>
 
+using namespace Kernel::HardwareAbstraction::Devices::Storage;
 namespace Kernel {
 namespace HardwareAbstraction {
 namespace Filesystems
@@ -20,6 +21,7 @@ namespace Filesystems
 		struct Filesystem
 		{
 			FSDriver* driver;
+			Partition* partition;
 			std::string* mountpoint;
 			bool ismounted;
 		};
@@ -58,6 +60,7 @@ namespace Filesystems
 			node->data = nullptr;
 			node->info = new fsref;
 			node->refcount = 1;
+			node->type = VNodeType::None;
 
 			node->info->data = nullptr;
 			node->info->driver = fs;
@@ -76,6 +79,7 @@ namespace Filesystems
 			node->data = nullptr;
 			node->info = new fsref;
 			node->refcount = 1;
+			node->type = orig->type;
 
 			node->info->data = nullptr;
 			node->info->driver = orig->info->driver;
@@ -109,12 +113,17 @@ namespace Filesystems
 			return node;
 		}
 
-		void Mount(FSDriver* fs, const char* path)
+		void Mount(Partition* part, FSDriver* fs, const char* path)
 		{
+			assert(part);
+			assert(fs);
+			assert(path);
+
 			auto _fs = new Filesystem;
 			_fs->driver = fs;
 			_fs->ismounted = true;
 			_fs->mountpoint = new std::string(path);
+			_fs->partition = part;
 
 			if(!mountedfses)
 				mountedfses = new std::vector<Filesystem*>();
@@ -163,19 +172,15 @@ namespace Filesystems
 				}
 			}
 
-			if(fs == nullptr)
+			if(fs == nullptr || fs->ismounted == false)
 				return nullptr;
-
-			if(fs->ismounted == false)
-				VFS::Mount(fs->driver, fs->mountpoint->c_str());
 
 			auto node = VFS::CreateNode(ioctx, fs->driver);
 			assert(node);
+			node->type = VNodeType::File;
 
 			// this ought to fill in the information in node.
-			fs->driver->Traverse(node, path, nullptr);
-
-			return VFS::Open(ioctx, node, flags);
+			return fs->driver->Traverse(node, path, nullptr) ? VFS::Open(ioctx, node, flags) : nullptr;
 		}
 
 		size_t Read(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len)

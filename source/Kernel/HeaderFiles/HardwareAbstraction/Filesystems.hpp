@@ -31,6 +31,13 @@ namespace Kernel
 					NOT_FOUND,
 				};
 
+				enum class VNodeType
+				{
+					None,
+					File,
+					Folder,
+				};
+
 				struct fsref
 				{
 					dev_t id;
@@ -43,6 +50,7 @@ namespace Kernel
 					// id_t id;
 					fsref* info;
 					void* data;
+					VNodeType type;
 
 					uint64_t refcount;
 				};
@@ -76,6 +84,9 @@ namespace Kernel
 				vnode* Reference(IOContext* ioctx, vnode* node);
 				vnode* Dereference(IOContext* ioctx, vnode* node);
 
+				void Mount(Devices::Storage::Partition* partition, FSDriver* fs, const char* path);
+				void Unmount(const char* path);
+
 				fileentry* Open(IOContext* ioctx, vnode* node, int flags);
 				fileentry* OpenFile(IOContext* ioctx, const char* path, int flags);
 
@@ -100,19 +111,50 @@ namespace Kernel
 			class FSDriver
 			{
 				public:
+					FSDriver(Devices::Storage::Partition* part) : partition(part) { }
 					virtual ~FSDriver();
-					virtual void Traverse(VFS::vnode* node, const char* path, char** symlink);
+					virtual bool Traverse(VFS::vnode* node, const char* path, char** symlink);
 					virtual size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length);
 					virtual size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length);
 					virtual void Stat(VFS::vnode* node, stat* stat);
+
+					// returns a list of items inside the directory, as vnodes.
+					virtual std::vector<VFS::vnode*>* ReadDir(VFS::vnode* node);
 
 					virtual dev_t GetID() final { return this->fsid; }
 
 				protected:
 					dev_t fsid;
+					Devices::Storage::Partition* partition;
 			};
 
+			class FSDriverFat32 : public FSDriver
+			{
+				public:
+					FSDriverFat32(Devices::Storage::Partition* part);
+					~FSDriverFat32() override;
+					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
+					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
+					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
+					void Stat(VFS::vnode* node, stat* stat) override;
 
+				private:
+					uint16_t BytesPerSector;
+					uint8_t SectorsPerCluster;
+					uint16_t ReservedSectors;
+					uint8_t NumberOfFATs;
+					uint16_t NumberOfDirectories;
+
+					uint32_t TotalSectors;
+					uint32_t HiddenSectors;
+
+					uint32_t FATSectorSize;
+					uint32_t RootDirectoryCluster;
+					uint16_t FSInfoCluster;
+					uint16_t BackupBootCluster;
+
+					uint64_t FirstUsableCluster;
+			};
 
 
 

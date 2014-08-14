@@ -3,6 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
+#include <string.h>
 #include <HardwareAbstraction/LoadBinary.hpp>
 #include <HardwareAbstraction/BinaryFormats/ELF.hpp>
 
@@ -41,7 +42,8 @@ namespace LoadBinary
 
 	GenericExecutable::GenericExecutable(const char* pn, uint8_t* data)
 	{
-		String::Copy((char*) this->procname, pn);
+		// String::Copy((char*) this->procname, pn);
+		strcpy((char*) this->procname, pn);
 		this->buf = data;
 	}
 

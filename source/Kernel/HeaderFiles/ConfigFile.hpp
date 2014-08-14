@@ -4,7 +4,7 @@
 
 #pragma once
 #include <stdint.h>
-#include <String.hpp>
+#include <string>
 
 namespace Kernel
 {
@@ -13,7 +13,7 @@ namespace Kernel
 		void Initialise();
 
 		int64_t ReadInteger(const char* key);
-		Library::string* ReadString(const char* key);
+		std::string* ReadString(const char* key);
 		bool ReadBoolean(const char* key);
 	}
 }
