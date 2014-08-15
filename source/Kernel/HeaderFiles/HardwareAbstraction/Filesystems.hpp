@@ -51,7 +51,7 @@ namespace Kernel
 					fsref* info;
 					void* data;
 					VNodeType type;
-
+					uint64_t attrib;
 					uint64_t refcount;
 				};
 
@@ -140,8 +140,9 @@ namespace Kernel
 
 					std::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 
-				// private:
-					std::vector<uint32_t>* GetClusterChain(VFS::vnode* node);
+				private:
+					uint64_t ClusterToLBA(uint32_t clus);
+					std::vector<uint32_t>* GetClusterChain(VFS::vnode* node, uint64_t* numclus);
 
 					uint16_t BytesPerSector;
 					uint8_t SectorsPerCluster;

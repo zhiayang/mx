@@ -57,11 +57,15 @@ namespace Filesystems
 			assert(ioctx);
 
 			vnode* node = new vnode;
+			memset(node, 0, sizeof(vnode));
+
 			node->data = nullptr;
 			node->info = new fsref;
 			node->refcount = 1;
 			node->type = VNodeType::None;
+			node->attrib = 0;
 
+			memset(node->info, 0, sizeof(fsref));
 			node->info->data = nullptr;
 			node->info->driver = fs;
 			node->info->id = fs->GetID();
@@ -80,6 +84,7 @@ namespace Filesystems
 			node->info = new fsref;
 			node->refcount = 1;
 			node->type = orig->type;
+			node->attrib = orig->attrib;
 
 			node->info->data = nullptr;
 			node->info->driver = orig->info->driver;
@@ -195,6 +200,7 @@ namespace Filesystems
 
 			bool res = fs->driver->Traverse(node, path, nullptr);
 			Log(3, "created node");
+			UHALT();
 
 			return res ? VFS::Open(ioctx, node, flags) : nullptr;
 		}
