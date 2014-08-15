@@ -321,6 +321,8 @@ namespace KernelHeap
 			CreateChunk(c->offset + sz, Alignment * ((oldsize - sz) / Alignment));
 		}
 
+		Memory::Set((void*) (HeapAddress + o), 0, sz);
+
 		return (void*) (HeapAddress + o);
 	}
 

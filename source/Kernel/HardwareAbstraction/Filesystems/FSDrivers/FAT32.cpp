@@ -17,7 +17,7 @@ using namespace Kernel::HardwareAbstraction::Filesystems::VFS;
 
 #define PATH_DELIMTER		'/'
 
-std::vector<std::string>& split(const std::string &s, char delim)
+std::vector<std::string>* split(std::string& s, char delim)
 {
 	auto ret = new std::vector<std::string>();
 
@@ -26,10 +26,12 @@ std::vector<std::string>& split(const std::string &s, char delim)
 	while(std::getline(ss, item, delim))
 	{
 		if(!item.empty())
+		{
 			ret->push_back(item);
+		}
 	}
 
-	return *ret;
+	return ret;
 }
 
 namespace Kernel {
@@ -67,6 +69,11 @@ namespace Filesystems
 	static vnode_data* tovnd(void* p)
 	{
 		return (vnode_data*) p;
+	}
+
+	uint64_t FSDriverFat32::ClusterToLBA(uint32_t cluster)
+	{
+		return this->FirstUsableCluster + cluster * this->SectorsPerCluster - (2 * this->SectorsPerCluster);
 	}
 
 	FSDriverFat32::FSDriverFat32(Partition* _part) : FSDriver(_part)
@@ -141,17 +148,20 @@ namespace Filesystems
 		node->info->data = (void*) vd;
 
 		auto cn = node;
+		std::string pth;
+		pth += path;
 
-		auto dirs = split(path, PATH_DELIMTER);
+		auto dirs = split(pth, PATH_DELIMTER);
+		assert(dirs);
+
 		// remove the last.
-		auto file = dirs.back();
+		auto file = dirs->back();
 
-		dirs.pop_back();
-
-		for(auto v : dirs)
+		for(auto v : *dirs)
 		{
 			// iterative traverse.
 			auto cdcontent = this->ReadDir(cn);
+			assert(cdcontent);
 			// check each.
 			for(auto d : *cdcontent)
 			{
@@ -185,22 +195,68 @@ namespace Filesystems
 
 	size_t FSDriverFat32::Read(vnode* node, void* buf, off_t offset, size_t length)
 	{
-
+		(void) node;
+		(void) buf;
+		(void) offset;
+		(void) length;
+		return 0;
 	}
 
 	size_t FSDriverFat32::Write(vnode* node, const void* buf, off_t offset, size_t length)
 	{
-
+		(void) node;
+		(void) buf;
+		(void) offset;
+		(void) length;
+		return 0;
 	}
 
 	void FSDriverFat32::Stat(vnode* node, stat* stat)
 	{
-
+		(void) node;
+		(void) stat;
 	}
 
 	std::vector<VFS::vnode*>* FSDriverFat32::ReadDir(VFS::vnode* node)
 	{
+		assert(node);
+		assert(node->info);
+		assert(node->info->data);
+		if(tovnd(node)->entrycluster == 0)
+			tovnd(node)->entrycluster = 2;
 
+		// grab its clusters.
+		auto clusters = tovnd(node->info->data)->clusters;
+		uint64_t numclus = 0;
+		if(!clusters)
+		{
+			clusters = tovnd(node->info->data)->clusters = this->GetClusterChain(node, &numclus);
+		}
+
+		// try and read each cluster into a contiguous buffer.
+		uint64_t buf = MemoryManager::Physical::AllocateDMA(((numclus * this->SectorsPerCluster * 512) + 0xFFF) / 0x1000);
+		auto obuf = buf;
+
+		for(auto v : *clusters)
+		{
+			Log(3, "reading lba %d", this->ClusterToLBA(v));
+			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA(v), buf, this->SectorsPerCluster * 512);
+			buf += this->SectorsPerCluster * 512;
+		}
+		buf = obuf;
+
+		// now we have the entire directory read.
+		// time to parse.
+		{
+			uint8_t* c = (uint8_t*) buf;
+			for(int i = 0; i < 32; i++)
+			{
+				PrintFormatted("%#02x ", *c++);
+			}
+		}
+
+		HALT("X");
+		return 0;
 	}
 
 
@@ -210,7 +266,7 @@ namespace Filesystems
 
 
 
-	std::vector<uint32_t>* FSDriverFat32::GetClusterChain(VFS::vnode* node)
+	std::vector<uint32_t>* FSDriverFat32::GetClusterChain(VFS::vnode* node, uint64_t* numclus)
 	{
 		// read the cluster chain
 
@@ -219,19 +275,24 @@ namespace Filesystems
 		assert(node->info->data);
 		assert(node->info->driver == this);
 
-		// uint32_t Cluster = tovnd(node)->entrycluster;
-		uint32_t Cluster = 2;
+		uint32_t Cluster = tovnd(node)->entrycluster;
 		uint32_t cchain = 0;
 		auto ret = new std::vector<uint32_t>();
 
+		uint64_t lastsec = 0;
 		auto buf = MemoryManager::Physical::AllocateDMA(1);
 		do
 		{
 			uint32_t FatSector = (uint32_t) this->partition->GetStartLBA() + this->ReservedSectors + (Cluster * 4 / 512);
 			uint32_t FatOffset = (Cluster * 4) % 512;
 
-			// unfortunately we cannot read the entire FAT at once.
-			IO::Read(this->partition->GetStorageDevice(), FatSector, buf, 0x1000);
+			// check if we even need to read.
+			// since we read 4K, we get 7 more free sectors
+			// optimisation.
+			if(lastsec + 7 > FatSector)
+				IO::Read(this->partition->GetStorageDevice(), FatSector, buf, 0x1000);
+
+			lastsec = FatSector;
 
 			uint8_t* clusterchain = (uint8_t*) buf;
 			cchain = *((uint32_t*)&clusterchain[FatOffset]) & 0x0FFFFFFF;
@@ -240,6 +301,7 @@ namespace Filesystems
 			ret->push_back(Cluster);
 
 			Cluster = cchain;
+			(*numclus)++;
 
 		} while((cchain != 0) && !((cchain & 0x0FFFFFFF) >= 0x0FFFFFF8));
 
