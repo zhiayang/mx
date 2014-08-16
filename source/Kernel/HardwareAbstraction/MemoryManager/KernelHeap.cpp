@@ -38,7 +38,7 @@ namespace KernelHeap
 	static uint64_t SizeOfHeap;
 	static uint64_t SizeOfMeta;
 
-	const uint64_t Alignment = 32;
+	const uint64_t Alignment = 64;
 
 	static Mutex* mtx;
 
@@ -297,6 +297,7 @@ namespace KernelHeap
 		// auto m = AutoMutex(mtx);
 		LOCK(mtx);
 		sz = _round(sz);
+		assert((sz % Alignment) == 0);
 		// loop through each chunk, hoping to find something big enough.
 
 		Chunk* c = 0;
@@ -321,9 +322,10 @@ namespace KernelHeap
 		c->size = sz;
 		setused(c);
 
-		if(oldsize - sz >= Alignment)
+		auto newsize = oldsize - sz;
+		if(newsize >= Alignment)
 		{
-			CreateChunk(c->offset + sz, Alignment * ((oldsize - sz) / Alignment));
+			CreateChunk(c->offset + sz, newsize - (newsize % Alignment));
 		}
 
 		assert(sz % Alignment == 0);

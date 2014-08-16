@@ -144,7 +144,7 @@ namespace Filesystems
 			assert(ioctx->fdarray->fds);
 			assert(node);
 
-			auto fe		= (fileentry*) new uint8_t[0x40];
+			auto fe		= (fileentry*) new uint8_t[0x20];
 			// auto fe		= new fileentry;
 			fe->node	= node;
 			fe->offset	= 0;
