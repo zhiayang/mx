@@ -4,7 +4,6 @@
 
 #pragma once
 #include <stdint.h>
-#include <string>
 
 namespace Kernel
 {
@@ -51,7 +50,7 @@ namespace Kernel
 		void PrintTime();
 
 		uint64_t Now();
-		void GetHumanReadableTime(std::string& output);
+		// void GetHumanReadableTime(std::string& output);
 
 		void AdjustForTimezone();
 

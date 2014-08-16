@@ -42,17 +42,24 @@ namespace PCI
 		uint16_t vendor = 0, device = 0;
 		Library::LinkedList<PCIDevice>* ret = new Library::LinkedList<PCIDevice>();
 
-		for(uint16_t i = 0; i < PCIDevice::PCIDevices->Size(); i++)
+		// for(uint16_t i = 0; i < PCIDevice::PCIDevices->Size(); i++)
+		for(auto dev : *PCIDevice::PCIDevices)
 		{
-			bus = PCIDevice::PCIDevices->Get(i)->GetBus();
-			slot = PCIDevice::PCIDevices->Get(i)->GetSlot();
-			func = PCIDevice::PCIDevices->Get(i)->GetFunction();
+			// bus = PCIDevice::PCIDevices->Get(i)->GetBus();
+			// slot = PCIDevice::PCIDevices->Get(i)->GetSlot();
+			// func = PCIDevice::PCIDevices->Get(i)->GetFunction();
+
+			bus = dev->GetBus();
+			slot = dev->GetSlot();
+			func = dev->GetFunction();
 
 			vendor = PCI::ReadConfig16(PCI::MakeAddr(bus, slot, func), 0);
 			device = (uint16_t)(PCI::ReadConfig32(PCI::MakeAddr(bus, slot, func), 0) >> 16);
 
 			if(vendor == (VendorID == 0xFFFF ? vendor : VendorID) && device == (DeviceID == 0xFFFF ? device : DeviceID))
-				ret->InsertBack(PCIDevice::PCIDevices->Get(i));
+				ret->InsertBack(dev);
+
+				// ret->InsertBack(PCIDevice::PCIDevices->Get(i));
 		}
 
 		return ret;
@@ -66,18 +73,19 @@ namespace PCI
 		Library::LinkedList<PCIDevice>* ret = new Library::LinkedList<PCIDevice>();
 
 
-		for(uint16_t i = 0; i < PCIDevice::PCIDevices->Size(); i++)
+		for(auto dev : *PCIDevice::PCIDevices)
 		{
-			bus = PCIDevice::PCIDevices->Get(i)->GetBus();
-			slot = PCIDevice::PCIDevices->Get(i)->GetSlot();
-			func = PCIDevice::PCIDevices->Get(i)->GetFunction();
+			bus = dev->GetBus();
+			slot = dev->GetSlot();
+			func = dev->GetFunction();
 
 
 			tClass = (uint8_t)(ReadConfig32(MakeAddr(bus, slot, func), 0x08) >> 24);
 			tSubclass = (uint8_t)(ReadConfig32(MakeAddr(bus, slot, func), 0x08) >> 16);
 
 			if(tClass == (c == 0xFF ? tClass : c) && tSubclass == (sc == 0xFF ? tSubclass : sc))
-				ret->InsertBack(PCIDevice::PCIDevices->Get(i));
+				ret->InsertBack(dev);
+				// ret->InsertBack(PCIDevice::PCIDevices->Get(i));
 		}
 
 		return ret;
@@ -167,7 +175,9 @@ namespace PCI
 	{
 		uint16_t vendor = 0;
 		uint8_t headertype = 0;
-		PCIDevice::PCIDevices = new Library::LinkedList<PCIDevice>();
+		// PCIDevice::PCIDevices = new Library::LinkedList<PCIDevice>();
+		PCIDevice::PCIDevices = new rde::list<PCIDevice*>();
+
 		Log("Scanning PCI bus:");
 		for(uint16_t bus = 0; bus < 256; bus++)
 		{
@@ -180,7 +190,9 @@ namespace PCI
 
 					using PCI::PCIDevice;
 					PCIDevice* curdev = new PCI::PCIDevice(bus, slot, 0);
-					PCIDevice::PCIDevices->InsertBack(curdev);
+					// PCIDevice::PCIDevices->InsertBack(curdev);
+					PCIDevice::PCIDevices->push_back(curdev);
+
 
 					uint8_t cl = curdev->GetClass();
 					uint8_t sb = curdev->GetSubclass();
@@ -189,6 +201,7 @@ namespace PCI
 					Log("=> /dev/pci%d > %d:%d, v:%#04x%r, d:%#04x, c:%#02x:%#02x h:%#02x",
 						bus * 32 + slot, bus, slot, vendor, devid, cl, sb, headertype);
 
+		// MemoryManager::KernelHeap::Print();
 
 					if((headertype) & (1 << 7))
 					{
@@ -198,7 +211,8 @@ namespace PCI
 							if(vendor != 0xFFFF)
 							{
 								PCIDevice* devfunc = new PCI::PCIDevice(bus, slot, func);
-								PCIDevice::PCIDevices->InsertBack(devfunc);
+								// PCIDevice::PCIDevices->InsertBack(devfunc);
+								PCIDevice::PCIDevices->push_back(devfunc);
 
 								cl = devfunc->GetClass();
 								sb = devfunc->GetSubclass();
@@ -219,7 +233,7 @@ namespace PCI
 
 
 	// PCI Device class
-	Library::LinkedList<PCIDevice>* PCIDevice::PCIDevices;
+	rde::list<PCIDevice*>* PCIDevice::PCIDevices;
 
 	PCIDevice::PCIDevice(uint16_t b, uint16_t s, uint8_t f)
 	{

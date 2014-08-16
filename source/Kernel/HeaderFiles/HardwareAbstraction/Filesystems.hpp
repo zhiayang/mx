@@ -6,7 +6,8 @@
 #include <stdint.h>
 #include <List.hpp>
 #include "Devices/StorageDevice.hpp"
-#include <vector>
+#include <rdestl/vector.h>
+#include <rdestl/rde_string.h>
 #include <sys/stat.h>
 
 namespace Kernel
@@ -47,7 +48,7 @@ namespace Kernel
 
 				struct vnode
 				{
-					// id_t id;
+					id_t id;
 					fsref* info;
 					void* data;
 					VNodeType type;
@@ -67,13 +68,14 @@ namespace Kernel
 				{
 					FDArray()
 					{
-						this->fds = new std::vector<fileentry>();
+						this->fds = new rde::vector<fileentry>();
 					}
 
-					std::vector<fileentry>* fds;
+					rde::vector<fileentry>* fds;
 				};
 
-				// void Initialise();
+				void Initialise();
+				vnode* NodeFromID(id_t id);
 				fd_t FDFromNode(IOContext* ioctx, vnode* node);
 				vnode* NodeFromFD(IOContext* ioctx, fd_t fd);
 
@@ -119,7 +121,7 @@ namespace Kernel
 					virtual void Stat(VFS::vnode* node, stat* stat);
 
 					// returns a list of items inside the directory, as vnodes.
-					virtual std::vector<VFS::vnode*>* ReadDir(VFS::vnode* node);
+					virtual rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node);
 
 					virtual dev_t GetID() final { return this->fsid; }
 
@@ -138,11 +140,12 @@ namespace Kernel
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
 					void Stat(VFS::vnode* node, stat* stat) override;
 
-					std::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+					rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 
 				private:
+					rde::string* ReadLFN(uint64_t addr);
 					uint64_t ClusterToLBA(uint32_t clus);
-					std::vector<uint32_t>* GetClusterChain(VFS::vnode* node, uint64_t* numclus);
+					rde::vector<uint32_t>* GetClusterChain(VFS::vnode* node, uint64_t* numclus);
 
 					uint16_t BytesPerSector;
 					uint8_t SectorsPerCluster;

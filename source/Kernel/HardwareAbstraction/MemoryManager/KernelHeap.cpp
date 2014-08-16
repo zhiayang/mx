@@ -15,16 +15,12 @@ using namespace Kernel::HardwareAbstraction::MemoryManager;
 
 using namespace Library;
 
+
 #define PARANOIA					0x1
 #define MapFlags					0x7
-
-#if PARANOIA
-	#define fail()					assert(0)
-#else
-	#define fail()					(void (0))
-#endif
-
+#define fail()						assert(0)
 #define printf						Log
+
 
 
 namespace Kernel {
@@ -44,6 +40,8 @@ namespace KernelHeap
 
 	const uint64_t MetaOffset = 32;
 	const uint64_t Alignment = 32;
+
+	static Mutex* mtx;
 
 	struct Chunk
 	{
@@ -94,9 +92,8 @@ namespace KernelHeap
 	static uint64_t GetPageFixed(uint64_t addr)
 	{
 		// simple.
-		// because our heap region is never registered with the virtual allocator as available,
-		// we don't need to let it know
-		Virtual::MapAddress(addr, Physical::AllocatePage(), MapFlags);
+		uint64_t p = Physical::AllocatePage();
+		Virtual::MapAddress(addr, p, 0x3);
 		return addr;
 	}
 
@@ -137,7 +134,8 @@ namespace KernelHeap
 		auto behind = (ChunksInHeap - 1) - at;
 
 		// memcpy.
-		Library::Memory::CopyOverlap((void*) addr(index(at + 1)), (void*) index(at), behind * sizeof(Chunk));
+		memmove((void*) addr(index(at + 1)), (void*) index(at), behind * sizeof(Chunk));
+		memset((void*) addr(index(at)), 0, sizeof(Chunk));
 	}
 
 	void pullfront(uint64_t at)
@@ -151,14 +149,16 @@ namespace KernelHeap
 		// calculate how many chunks to pull
 		auto ahead = (ChunksInHeap - 1) - at;
 
-		Library::Memory::CopyOverlap(c, index(at + 1), ahead * sizeof(Chunk));
+		memset(c, 0, sizeof(Chunk));
+		memmove(c, index(at + 1), ahead * sizeof(Chunk));
+		memset((void*) ((uint64_t) c - 1 + ahead * sizeof(Chunk)), 0, sizeof(Chunk));
 	}
 
 
 
 
 
-	uint64_t round(uint64_t s)
+	uint64_t _round(uint64_t s)
 	{
 		uint64_t remainder = s % Alignment;
 
@@ -234,30 +234,37 @@ namespace KernelHeap
 		c->offset = 0;
 		c->size = 0x1000;
 		setfree(c);
+
+		mtx = new Mutex();
 	}
 
 	void CreateChunk(uint64_t offset, uint64_t size)
 	{
 		uint64_t o = bsearch(offset, [](uint64_t i) -> uint64_t { return index(i)->offset; });
+		if(o < ChunksInHeap)
+		{
+			if(index(o)->offset == offset)
+			{
+				assert("tried to create duplicate chunk" && false);
+			}
+		}
+
 		ChunksInHeap++;
 
-		// create chunk in offset-sorted metalist
+		if(o <= ChunksInHeap)
 		{
-			if(o <= ChunksInHeap)
-			{
-				// check if there are more chunks behind us.
-				// if(o < ChunksInHeap - 1)
-					pushback(o);
+			// check if there are more chunks behind us.
+			if(o < ChunksInHeap - 1)
+				pushback(o);
 
-				// now that's solved, make the chunk.
-				Chunk* c = index(o);
-				c->offset = offset;
-				c->size = size;
-				setfree(c);
-			}
-			else
-				fail();
+			// now that's solved, make the chunk.
+			Chunk* c = index(o);
+			c->offset = offset;
+			c->size = size;
+			setfree(c);
 		}
+		else
+			fail();
 	}
 
 
@@ -286,13 +293,16 @@ namespace KernelHeap
 			CreateChunk(SizeOfHeap * 0x1000, 0x1000);
 		}
 		SizeOfHeap++;
+		printf("expanded heap - newsize %x - phys %x", SizeOfHeap, Virtual::GetMapping(HeapAddress + 0x1000, 0));
+		// UHALT();
 	}
 
 
 
 	void* AllocateChunk(uint64_t sz)
 	{
-		sz = round(sz);
+		auto m = AutoMutex(mtx);
+		sz = _round(sz);
 		// loop through each chunk, hoping to find something big enough.
 
 		Chunk* c = 0;
@@ -321,26 +331,31 @@ namespace KernelHeap
 			CreateChunk(c->offset + sz, Alignment * ((oldsize - sz) / Alignment));
 		}
 
-		Memory::Set((void*) (HeapAddress + o), 0, sz);
+		assert(sz % Alignment == 0);
+		assert(((HeapAddress + o) % Alignment) == 0);
+		// Memory::Set((void*) (HeapAddress + o), 0, sz);
 
+		// Log("alloc %x, size %x", HeapAddress + o, sz);
 		return (void*) (HeapAddress + o);
 	}
 
 	void FreeChunk(void* ptr)
 	{
+		auto m = AutoMutex(mtx);
 		uint64_t p = (uint64_t) ptr;
 		assert(p >= HeapAddress);
 
 		p -= HeapAddress;
+		assert(p % Alignment == 0);
 
 		// this is where the offset-sorted list comes in handy.
 		uint64_t o = bsearch(p, [](uint64_t i) -> uint64_t { return index(i)->offset; });
 		Chunk* self = index(o);
 
-
 		if(self->offset != p)
 		{
-			printf("failure: got offset %llx, expected %llx", p, self->offset);
+			Print();
+			Log(3, "%x pages in heap: %x - got %x, expected %x, index %d, %d CIH", SizeOfHeap, __builtin_return_address(0), p, self->offset, o, ChunksInHeap);
 			fail();
 		}
 
@@ -349,11 +364,20 @@ namespace KernelHeap
 		// do merge here.
 		// check right first, because checking left may modify our own state.
 
-		if(o < ChunksInHeap - 1)
+		if(o + 1 < ChunksInHeap)
 		{
 			// check right neighbour
 			Chunk* right = index(o + 1);
-			assert(self->offset + size(self) == right->offset);
+			if(self->offset + size(self) != right->offset)
+			{
+				printf("failure: %x + %x != %x, %x chunks in heap", self->offset, size(self), right->offset, ChunksInHeap);
+				printf("left(%x):\toffset %x, size %x - %x", o - 1, index(o - 1)->offset, size(index(o - 1)), isfree(index(o - 1)));
+				printf("self(%x):\toffset %x, size %x - %x", o, self->offset, size(self), isfree(index(o)));
+				printf("right(%x):\toffset %x, size %x - %x", o + 1, right->offset, size(right), isfree(index(o + 1)));
+				printf("right2(%x):\toffset %x, size %x - %x", o + 2, index(o + 2)->offset, size(index(o + 2)), isfree(index(o + 2)));
+				fail();
+			}
+
 			if(isfree(right))
 			{
 				self->size += size(right);
@@ -384,10 +408,13 @@ namespace KernelHeap
 				ChunksInHeap--;
 			}
 		}
+		// Log("free %x", p);
 	}
 
 	uint64_t QuerySize(void* ptr)
 	{
+		auto m = AutoMutex(mtx);
+
 		uint64_t p = (uint64_t) ptr;
 		assert(p >= HeapAddress);
 
@@ -410,9 +437,7 @@ namespace KernelHeap
 	void Print()
 	{
 		for(uint64_t i = 0; i < ChunksInHeap; i++)
-			printf("chunk(%lld) => offset %llx, size %llx - %s", i, index(i)->offset, size(index(i)), isfree(index(i)) ? "free" : "used");
-
-		printf("================================================================");
+			Log(3, "chunk(%x) => offset %x, size %x - %x", i, index(i)->offset, size(index(i)), isfree(index(i)) ? 1 : 0);
 	}
 }
 }

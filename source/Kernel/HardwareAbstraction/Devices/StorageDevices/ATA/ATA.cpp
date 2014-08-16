@@ -24,8 +24,8 @@ namespace Storage
 	static uint16_t PrimaryBaseIO			= 0x1F0;
 	static uint16_t SecondaryBaseIO		= 0x170;
 
-	static uint16_t PrimaryControl			= 0x3F6;
-	static uint16_t SecondaryControl		= 0x376;
+	// static uint16_t PrimaryControl			= 0x3F6;
+	// static uint16_t SecondaryControl		= 0x376;
 
 	static uint16_t PrimaryCommand		= 0;
 	static uint16_t SecondaryCommand		= 0;
@@ -96,34 +96,6 @@ namespace Storage
 				UHALT();
 			}
 
-			uint32_t pbio = (uint32_t) PCIDevice::PCIDevices->Get(0)->GetBAR(0);
-			uint32_t pctl = (uint32_t) PCIDevice::PCIDevices->Get(0)->GetBAR(1);
-			uint32_t sbio = (uint32_t) PCIDevice::PCIDevices->Get(0)->GetBAR(2);
-			uint32_t sctl = (uint32_t) PCIDevice::PCIDevices->Get(0)->GetBAR(3);
-
-			if(pbio != 0 && pbio != 1)
-			{
-				PrimaryBaseIO = (uint16_t) pbio;
-				PrimaryCommand = (uint16_t) (pbio + 7);
-			}
-
-			if(pctl != 0 && pctl != 1)
-			{
-				PrimaryControl = (uint16_t) pctl;
-			}
-
-			if(sbio != 0 && sbio != 1)
-			{
-				SecondaryBaseIO = (uint16_t) sbio;
-				SecondaryCommand = (uint16_t)(sbio + 7);
-			}
-
-			if(sctl != 0 && sctl != 1)
-			{
-				SecondaryControl = (uint16_t) sctl;
-			}
-
-
 			ATADrive::ATADrives = new LinkedList<ATADrive>();
 			IdentifyAll(devlist->Front());
 		}
@@ -185,6 +157,10 @@ namespace Storage
 
 		ATADrive* IdentifyDevice(uint16_t BaseIO, bool IsMaster)
 		{
+			bool fl = false;
+			if(BaseIO == PrimaryBaseIO && IsMaster == false)
+				fl = true;
+
 			// Identify the drives on the primary bus
 
 			// Do master drive on primary

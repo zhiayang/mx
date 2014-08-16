@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 #include <List.hpp>
+#include <rdestl/list.h>
 #pragma once
 
 namespace Kernel {
@@ -45,7 +46,8 @@ namespace Devices
 			void PrintPCIDeviceInfo();
 
 
-			static Library::LinkedList<PCIDevice>* PCIDevices;
+			// static Library::LinkedList<PCIDevice>* PCIDevices;
+			static rde::list<PCIDevice*>* PCIDevices;
 
 
 		private:

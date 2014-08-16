@@ -12,8 +12,8 @@ MKISOFS	= /usr/local/bin/mkisofs
 SYSROOT	= ./build/sysroot
 TOOLCHAIN	= ./build/toolchain
 
-CC		= clang
 CXX		= clang++
+# CXX		= build/toolchain/bin/x86_64-orionx-g++
 AS		= build/toolchain/bin/x86_64-orionx-as
 LD		= build/toolchain/bin/x86_64-orionx-ld
 OBJCOPY	= build/toolchain/bin/x86_64-orionx-objcopy
@@ -23,8 +23,11 @@ GCCVERSION	= 4.9.1
 
 WARNINGS	= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-align -Wno-unreachable-code -Wno-gnu -Wno-missing-prototypes -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-sign-conversion -Wno-old-style-cast
 
-CXXFLAGS	= -m64 -Weverything -msse3 -g -integrated-as -O2 -fPIC -std=gnu++11 -nostdinc -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -target x86_64-elf -c
+CXXFLAGS	= -m64 -Weverything -msse3 -g -integrated-as -O2 -fPIC -std=gnu++11 -nostdinc -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -c
 
+# WARNINGS	= -Wno-padded -Wno-cast-align -Wno-unreachable-code -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-sign-conversion -Wno-old-style-cast
+
+# CXXFLAGS	= -Wall -g -O2 -fPIC -std=gnu++11 -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -c
 LDFLAGS	= --gc-sections -z max-page-size=0x1000 -T link.ld -L$(SYSROOT)/usr/lib
 
 
@@ -45,7 +48,7 @@ CXXDEPS	= $(CXXOBJ:.o=.d)
 
 
 
-LIBRARIES         = -lstdc++ -liris_k -lm -lbitmap -lc -lsyscall -lsupc++ -lgcc
+LIBRARIES         = -lstdc++ -liris_k -lm -lbitmap -lc -lsyscall -lsupc++ -lgcc -lrdestl
 OUTPUT            = build/kernel.mxa
 
 

@@ -1,4 +1,3 @@
-
 // FAT32.cpp
 // Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
@@ -7,8 +6,12 @@
 #include <Kernel.hpp>
 #include <math.h>
 #include <stdlib.h>
-#include <vector>
-#include <sstream>
+#include <orion.h>
+#include <string.h>
+
+#include <rdestl/vector.h>
+#include <rdestl/sstream.h>
+#include <rdestl/algorithm.h>
 
 using namespace Library;
 using namespace Library::StandardIO;
@@ -17,19 +20,25 @@ using namespace Kernel::HardwareAbstraction::Filesystems::VFS;
 
 #define PATH_DELIMTER		'/'
 
-std::vector<std::string>* split(std::string& s, char delim)
+rde::vector<rde::string>* split(rde::string& s, char delim)
 {
-	auto ret = new std::vector<std::string>();
+	auto ret = new rde::vector<rde::string>();
+	rde::string item;
 
-	std::stringstream ss(s);
-	std::string item;
-	while(std::getline(ss, item, delim))
+	for(auto c : s)
 	{
-		if(!item.empty())
+		if(c == delim)
 		{
-			ret->push_back(item);
+			if(!item.empty())
+				ret->push_back(item);
+		}
+		else
+		{
+			item.append(c);
 		}
 	}
+	if(ret->size() == 0 && item.length() > 0)
+		ret->push_back(item);
 
 	return ret;
 }
@@ -58,17 +67,35 @@ namespace Filesystems
 
 	} __attribute__ ((packed));
 
+	struct LFNEntry
+	{
+		uint8_t seqnum;
+		uint16_t name1[5];
+		uint8_t attrib;
+		uint8_t type;
+		uint8_t checksum;
+
+		uint16_t name2[6];
+		uint16_t zero;
+		uint16_t name3[2];
+
+	} __attribute__ ((packed));
+
 	struct vnode_data
 	{
-		std::string* name;
-		uint32_t size;
+		rde::string* name;
 		uint32_t entrycluster;
-		std::vector<uint32_t>* clusters;
+		rde::vector<uint32_t>* clusters;
 	};
 
 	static vnode_data* tovnd(void* p)
 	{
 		return (vnode_data*) p;
+	}
+
+	static vnode_data* tovnd(vnode* node)
+	{
+		return (vnode_data*) (node->info->data);
 	}
 
 	uint64_t FSDriverFat32::ClusterToLBA(uint32_t cluster)
@@ -78,6 +105,8 @@ namespace Filesystems
 
 	FSDriverFat32::FSDriverFat32(Partition* _part) : FSDriver(_part)
 	{
+		COMPILE_TIME_ASSERT(sizeof(DirectoryEntry) == sizeof(LFNEntry));
+
 		using namespace Devices::Storage::ATA::PIO;
 		using Devices::Storage::ATADrive;
 
@@ -143,24 +172,36 @@ namespace Filesystems
 		// vnode is initialised (ie. not null), but its fields are empty.
 		assert(node);
 		assert(path);
+		assert(node->info);
+
 
 		auto vd = new vnode_data;
 		node->info->data = (void*) vd;
 
-		auto cn = node;
-		std::string pth;
-		pth += path;
+		rde::string pth;
+		pth.append(path);
+
+
+		// setup cn
+		tovnd(node)->entrycluster = 0;
+		tovnd(node)->clusters = 0;
+		tovnd(node)->name = 0;
+
+		assert(node->info);
 
 		auto dirs = split(pth, PATH_DELIMTER);
 		assert(dirs);
 
 		// remove the last.
 		auto file = dirs->back();
+		vnode* cn = node;
 
 		for(auto v : *dirs)
 		{
 			// iterative traverse.
+			assert(cn);
 			auto cdcontent = this->ReadDir(cn);
+
 			assert(cdcontent);
 			// check each.
 			for(auto d : *cdcontent)
@@ -217,11 +258,13 @@ namespace Filesystems
 		(void) stat;
 	}
 
-	std::vector<VFS::vnode*>* FSDriverFat32::ReadDir(VFS::vnode* node)
+	rde::vector<VFS::vnode*>* FSDriverFat32::ReadDir(VFS::vnode* node)
 	{
 		assert(node);
 		assert(node->info);
 		assert(node->info->data);
+
+
 		if(tovnd(node)->entrycluster == 0)
 			tovnd(node)->entrycluster = 2;
 
@@ -230,32 +273,37 @@ namespace Filesystems
 		uint64_t numclus = 0;
 		if(!clusters)
 		{
-			clusters = tovnd(node->info->data)->clusters = this->GetClusterChain(node, &numclus);
+			clusters = this->GetClusterChain(node, &numclus);
 		}
 
 		// try and read each cluster into a contiguous buffer.
 		uint64_t buf = MemoryManager::Physical::AllocateDMA(((numclus * this->SectorsPerCluster * 512) + 0xFFF) / 0x1000);
 		auto obuf = buf;
 
+		assert(clusters);
 		for(auto v : *clusters)
 		{
-			Log(3, "reading lba %d", this->ClusterToLBA(v));
 			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA(v), buf, this->SectorsPerCluster * 512);
 			buf += this->SectorsPerCluster * 512;
 		}
 		buf = obuf;
 
+		// we can and will allocate vnodes.
+
+		auto name = this->ReadLFN(buf);
+		PrintFormatted("[%s]", name->c_str());
+
 		// now we have the entire directory read.
 		// time to parse.
 		{
-			uint8_t* c = (uint8_t*) buf;
-			for(int i = 0; i < 32; i++)
-			{
-				PrintFormatted("%#02x ", *c++);
-			}
+			// uint8_t* c = (uint8_t*) buf;
+			// for(int i = 0; i < 32; i++)
+			// {
+			// 	PrintFormatted("%#02x ", *c++);
+			// }
 		}
 
-		HALT("X");
+		UHALT();
 		return 0;
 	}
 
@@ -266,7 +314,7 @@ namespace Filesystems
 
 
 
-	std::vector<uint32_t>* FSDriverFat32::GetClusterChain(VFS::vnode* node, uint64_t* numclus)
+	rde::vector<uint32_t>* FSDriverFat32::GetClusterChain(VFS::vnode* node, uint64_t* numclus)
 	{
 		// read the cluster chain
 
@@ -277,7 +325,7 @@ namespace Filesystems
 
 		uint32_t Cluster = tovnd(node)->entrycluster;
 		uint32_t cchain = 0;
-		auto ret = new std::vector<uint32_t>();
+		auto ret = new rde::vector<uint32_t>();
 
 		uint64_t lastsec = 0;
 		auto buf = MemoryManager::Physical::AllocateDMA(1);
@@ -308,9 +356,68 @@ namespace Filesystems
 		MemoryManager::Physical::FreeDMA(buf, 1);
 
 		tovnd(node)->clusters = ret;
+
 		return ret;
 	}
+
+	rde::string* FSDriverFat32::ReadLFN(uint64_t addr)
+	{
+		LFNEntry* ent = (LFNEntry*) addr;
+		uint8_t seqnum = ent->seqnum;
+
+		rde::string* ret = new rde::string;
+		rde::vector<char>* items = new rde::vector<char>();
+		// first seqnum & ~0x40 is the number of entries
+		uint8_t nument = seqnum & ~0x40;
+		for(int i = 0; i < nument; i++)
+		{
+			ent = (LFNEntry*) addr;
+			assert(ent->attrib == 0xF);
+
+			// manually copy sigh
+			char* nm = new char[14];
+			nm[0] = (char) ent->name1[0];
+			nm[1] = (char) ent->name1[1];
+			nm[2] = (char) ent->name1[2];
+			nm[3] = (char) ent->name1[3];
+			nm[4] = (char) ent->name1[4];
+			nm[5] = (char) ent->name2[0];
+			nm[6] = (char) ent->name2[1];
+			nm[7] = (char) ent->name2[2];
+			nm[8] = (char) ent->name2[3];
+			nm[9] = (char) ent->name2[4];
+			nm[10] = (char) ent->name2[5];
+			nm[11] = (char) ent->name3[0];
+			nm[12] = (char) ent->name3[1];
+			nm[13] = 0;
+
+			items->push_back((char) ent->name3[1]);
+			items->push_back((char) ent->name3[0]);
+			items->push_back((char) ent->name2[5]);
+			items->push_back((char) ent->name2[4]);
+			items->push_back((char) ent->name2[3]);
+			items->push_back((char) ent->name2[2]);
+			items->push_back((char) ent->name2[1]);
+			items->push_back((char) ent->name2[0]);
+			items->push_back((char) ent->name1[4]);
+			items->push_back((char) ent->name1[3]);
+			items->push_back((char) ent->name1[2]);
+			items->push_back((char) ent->name1[1]);
+			items->push_back((char) ent->name1[0]);
+
+			addr += sizeof(LFNEntry);
+		}
+
+		for(auto c = items->size() - 1; items->size() > c; c--)
+		{
+			ret->append((*items)[c]);
+		}
+
+		PrintFormatted("[%s]", ret->c_str());
+		UHALT();
+		return ret;
 	}
+}
 
 
 
