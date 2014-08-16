@@ -24,6 +24,13 @@ namespace Kernel
 			class FSDriver;
 			struct IOContext;
 			typedef long fd_t;
+
+			enum Attributes
+			{
+				ReadOnly	= 0x1,
+				Hidden		= 0x2,
+			};
+
 			namespace VFS
 			{
 				enum VFSError
@@ -68,10 +75,10 @@ namespace Kernel
 				{
 					FDArray()
 					{
-						this->fds = new rde::vector<fileentry>();
+						this->fds = new rde::vector<fileentry*>();
 					}
 
-					rde::vector<fileentry>* fds;
+					rde::vector<fileentry*>* fds;
 				};
 
 				void Initialise();
@@ -79,12 +86,12 @@ namespace Kernel
 				fd_t FDFromNode(IOContext* ioctx, vnode* node);
 				vnode* NodeFromFD(IOContext* ioctx, fd_t fd);
 
-				vnode* CreateNode(IOContext* ioctx, FSDriver* fs);
-				vnode* DuplicateNode(IOContext* ioctx, vnode* orig);
-				void DeleteNode(IOContext* ioctx, vnode* node);
+				vnode* CreateNode(FSDriver* fs);
+				vnode* DuplicateNode(vnode* orig);
+				void DeleteNode(vnode* node);
 
-				vnode* Reference(IOContext* ioctx, vnode* node);
-				vnode* Dereference(IOContext* ioctx, vnode* node);
+				vnode* Reference(vnode* node);
+				vnode* Dereference(vnode* node);
 
 				void Mount(Devices::Storage::Partition* partition, FSDriver* fs, const char* path);
 				void Unmount(const char* path);

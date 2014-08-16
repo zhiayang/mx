@@ -14,6 +14,8 @@ namespace Filesystems
 	namespace VFS
 	{
 		static id_t curid = 0;
+		const static long FirstFreeFD = 3;
+
 		struct Filesystem
 		{
 			FSDriver* driver;
@@ -58,17 +60,15 @@ namespace Filesystems
 
 			for(auto v : *ioctx->fdarray->fds)
 			{
-				if(v.fd == fd)
-					return v.node;
+				if(v->fd == fd)
+					return v->node;
 			}
 
 			return nullptr;
 		}
 
-		vnode* CreateNode(IOContext* ioctx, FSDriver* fs)
+		vnode* CreateNode(FSDriver* fs)
 		{
-			assert(ioctx);
-
 			vnode* node = new vnode;
 			memset(node, 0, sizeof(vnode));
 
@@ -90,30 +90,27 @@ namespace Filesystems
 			return node;
 		}
 
-		void DeleteNode(IOContext* ioctx, vnode* node)
+		void DeleteNode(vnode* node)
 		{
-			(void) ioctx;
 			(void) node;
 		}
 
-		vnode* Reference(IOContext* ioctx, vnode* node)
+		vnode* Reference(vnode* node)
 		{
-			assert(ioctx);
 			assert(node);
 			node->refcount++;
 
 			return node;
 		}
 
-		vnode* Dereference(IOContext* ioctx, vnode* node)
+		vnode* Dereference(vnode* node)
 		{
-			assert(ioctx);
 			assert(node);
 
 			node->refcount--;
 			if(node->refcount == 0)
 			{
-				DeleteNode(ioctx, node);
+				DeleteNode(node);
 				return nullptr;
 			}
 
@@ -151,9 +148,11 @@ namespace Filesystems
 			fe->node	= node;
 			fe->offset	= 0;
 			fe->flags	= flags;
-			fe->fd		= ioctx->fdarray->fds->size();
+			fe->fd		= FirstFreeFD + ioctx->fdarray->fds->size();
 
-			ioctx->fdarray->fds->push_back(*fe);
+			ioctx->fdarray->fds->reserve(4);
+			ioctx->fdarray->fds->push_back(fe);
+
 			return fe;
 		}
 
@@ -182,7 +181,7 @@ namespace Filesystems
 			if(fs == nullptr || fs->ismounted == false)
 				return nullptr;
 
-			auto node = VFS::CreateNode(ioctx, fs->driver);
+			auto node = VFS::CreateNode(fs->driver);
 			assert(node);
 			node->type = VNodeType::File;
 
@@ -191,10 +190,12 @@ namespace Filesystems
 			assert(fs->driver);
 
 			bool res = fs->driver->Traverse(node, path, nullptr);
-			Log(3, "created node");
-			UHALT();
-
-			return res ? VFS::Open(ioctx, node, flags) : nullptr;
+			if(res)
+			{
+				auto ret = VFS::Open(ioctx, node, flags);
+				return ret;
+			}
+			else return nullptr;
 		}
 
 		size_t Read(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len)
@@ -229,6 +230,9 @@ namespace Filesystems
 	{
 		assert(path);
 		auto ctx = getctx();
+
+			// MemoryManager::KernelHeap::Print();
+			// UHALT();
 
 		auto fe = VFS::OpenFile(ctx, path, flags);
 		return fe ? fe->fd : 0;

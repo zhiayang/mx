@@ -293,8 +293,6 @@ namespace KernelHeap
 			CreateChunk(SizeOfHeap * 0x1000, 0x1000);
 		}
 		SizeOfHeap++;
-		printf("expanded heap - newsize %x - phys %x", SizeOfHeap, Virtual::GetMapping(HeapAddress + 0x1000, 0));
-		// UHALT();
 	}
 
 
@@ -438,6 +436,8 @@ namespace KernelHeap
 	{
 		for(uint64_t i = 0; i < ChunksInHeap; i++)
 			Log(3, "chunk(%x) => offset %x, size %x - %x", i, index(i)->offset, size(index(i)), isfree(index(i)) ? 1 : 0);
+
+		Log(3, "Done");
 	}
 }
 }
