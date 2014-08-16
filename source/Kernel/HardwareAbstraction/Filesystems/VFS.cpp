@@ -144,13 +144,14 @@ namespace Filesystems
 			assert(ioctx->fdarray->fds);
 			assert(node);
 
+			// auto fe		= (fileentry*) new vnode;
 			auto fe		= new fileentry;
 			fe->node	= node;
 			fe->offset	= 0;
 			fe->flags	= flags;
 			fe->fd		= FirstFreeFD + ioctx->fdarray->fds->size();
 
-			ioctx->fdarray->fds->reserve(4);
+			// ioctx->fdarray->fds->reserve(4);
 			ioctx->fdarray->fds->push_back(fe);
 
 			return fe;
@@ -230,9 +231,6 @@ namespace Filesystems
 	{
 		assert(path);
 		auto ctx = getctx();
-
-			// MemoryManager::KernelHeap::Print();
-			// UHALT();
 
 		auto fe = VFS::OpenFile(ctx, path, flags);
 		return fe ? fe->fd : 0;

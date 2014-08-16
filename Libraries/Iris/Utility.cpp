@@ -105,9 +105,15 @@ namespace Library
 			return result;
 		}
 
-		char* ConvertToString(int64_t num)
+		char* ConvertToString(int64_t num, char* out)
 		{
-			char* dest = new char[32];
+			char* dest;
+			if(out == 0)
+				dest = new char[32];
+
+			else
+				dest = out;
+
 			int result = 0;
 			int64_t copy = num;
 
