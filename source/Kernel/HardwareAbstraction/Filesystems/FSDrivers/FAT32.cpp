@@ -375,22 +375,6 @@ namespace Filesystems
 			assert(ent->attrib == 0xF);
 
 			// manually copy sigh
-			char* nm = new char[14];
-			nm[0] = (char) ent->name1[0];
-			nm[1] = (char) ent->name1[1];
-			nm[2] = (char) ent->name1[2];
-			nm[3] = (char) ent->name1[3];
-			nm[4] = (char) ent->name1[4];
-			nm[5] = (char) ent->name2[0];
-			nm[6] = (char) ent->name2[1];
-			nm[7] = (char) ent->name2[2];
-			nm[8] = (char) ent->name2[3];
-			nm[9] = (char) ent->name2[4];
-			nm[10] = (char) ent->name2[5];
-			nm[11] = (char) ent->name3[0];
-			nm[12] = (char) ent->name3[1];
-			nm[13] = 0;
-
 			items->push_back((char) ent->name3[1]);
 			items->push_back((char) ent->name3[0]);
 			items->push_back((char) ent->name2[5]);
@@ -408,13 +392,13 @@ namespace Filesystems
 			addr += sizeof(LFNEntry);
 		}
 
-		for(auto c = items->size() - 1; items->size() > c; c--)
+		for(auto c = items->size() - 1; c > 0; c--)
 		{
+			if((*items)[c] == 0)
+				break;
+
 			ret->append((*items)[c]);
 		}
-
-		PrintFormatted("[%s]", ret->c_str());
-		UHALT();
 		return ret;
 	}
 }
