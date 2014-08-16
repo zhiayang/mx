@@ -232,10 +232,11 @@ namespace StandardIO
 				ret++;
 			}
 		}
-		char* k = Utility::ConvertToString(num);
-		return PrintString(k, (int64_t) strlen(k), pf) + ret;
+		char out[32] = { 0 };
+		char* k = Utility::ConvertToString(num, out);
+		auto r = PrintString(k, -1, pf) + ret;
 
-		delete k;
+		return r;
 	}
 
 

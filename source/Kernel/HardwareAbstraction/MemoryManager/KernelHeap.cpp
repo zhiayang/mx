@@ -38,8 +38,7 @@ namespace KernelHeap
 	static uint64_t SizeOfHeap;
 	static uint64_t SizeOfMeta;
 
-	const uint64_t MetaOffset = 32;
-	const uint64_t Alignment = 32;
+	const uint64_t Alignment = 64;
 
 	static Mutex* mtx;
 
@@ -61,7 +60,7 @@ namespace KernelHeap
 
 	Chunk* array()
 	{
-		return (Chunk*) (MetadataAddr + MetaOffset);
+		return (Chunk*) MetadataAddr;
 	}
 
 	bool isfree(Chunk* c)
@@ -111,7 +110,7 @@ namespace KernelHeap
 
 	Chunk* index(uint64_t i)
 	{
-		Chunk* arr = (Chunk*) (MetadataAddr + MetaOffset);
+		Chunk* arr = (Chunk*) MetadataAddr;
 		if(i < ChunksInHeap)
 			return &arr[i];
 
@@ -123,7 +122,7 @@ namespace KernelHeap
 	{
 		// memcpy them behind.
 		// but first, check if we have enough space.
-		if((ChunksInHeap + 1) * sizeof(Chunk) + MetaOffset > SizeOfMeta * 0x1000)
+		if((ChunksInHeap + 1) * sizeof(Chunk) > SizeOfMeta * 0x1000)
 		{
 			// we need to expand.
 			uint64_t fixed = GetPageFixed(MetadataAddr + (SizeOfMeta * 0x1000));
@@ -153,9 +152,6 @@ namespace KernelHeap
 		memmove(c, index(at + 1), ahead * sizeof(Chunk));
 		memset((void*) ((uint64_t) c - 1 + ahead * sizeof(Chunk)), 0, sizeof(Chunk));
 	}
-
-
-
 
 
 	uint64_t _round(uint64_t s)
@@ -281,7 +277,6 @@ namespace KernelHeap
 			fail();
 		}
 
-
 		// either create a new chunk, or expand the last one.
 		if(isfree(last))
 		{
@@ -299,7 +294,8 @@ namespace KernelHeap
 
 	void* AllocateChunk(uint64_t sz)
 	{
-		auto m = AutoMutex(mtx);
+		// auto m = AutoMutex(mtx);
+		LOCK(mtx);
 		sz = _round(sz);
 		// loop through each chunk, hoping to find something big enough.
 
@@ -315,6 +311,7 @@ namespace KernelHeap
 		if(c == 0)
 		{
 			ExpandHeap();
+			UNLOCK(mtx);
 			return AllocateChunk(sz);
 		}
 
@@ -331,15 +328,15 @@ namespace KernelHeap
 
 		assert(sz % Alignment == 0);
 		assert(((HeapAddress + o) % Alignment) == 0);
-		// Memory::Set((void*) (HeapAddress + o), 0, sz);
 
-		// Log("alloc %x, size %x", HeapAddress + o, sz);
+		UNLOCK(mtx);
 		return (void*) (HeapAddress + o);
 	}
 
 	void FreeChunk(void* ptr)
 	{
-		auto m = AutoMutex(mtx);
+		// auto m = AutoMutex(mtx);
+		LOCK(mtx);
 		uint64_t p = (uint64_t) ptr;
 		assert(p >= HeapAddress);
 
@@ -361,7 +358,6 @@ namespace KernelHeap
 
 		// do merge here.
 		// check right first, because checking left may modify our own state.
-
 		if(o + 1 < ChunksInHeap)
 		{
 			// check right neighbour
@@ -406,6 +402,13 @@ namespace KernelHeap
 				ChunksInHeap--;
 			}
 		}
+		if(o < LastFree)
+		{
+			assert(isfree(index(o)));
+			LastFree = o;
+		}
+
+		UNLOCK(mtx);
 		// Log("free %x", p);
 	}
 
@@ -434,10 +437,11 @@ namespace KernelHeap
 
 	void Print()
 	{
-		for(uint64_t i = 0; i < ChunksInHeap; i++)
-			Log(3, "chunk(%x) => offset %x, size %x - %x", i, index(i)->offset, size(index(i)), isfree(index(i)) ? 1 : 0);
+		Log(3, "%x chunks in heap", ChunksInHeap);
+		for(uint64_t i = ChunksInHeap - 1; i > 0; i--)
+			Log(1, "chunk(%x) => offset %x, size %x - %x", i, index(i)->offset, size(index(i)), isfree(index(i)) ? 1 : 0);
 
-		Log(3, "Done");
+		Log(1, "Done");
 	}
 }
 }

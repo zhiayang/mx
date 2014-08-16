@@ -14,7 +14,7 @@ namespace Library
 	namespace Utility
 	{
 		int64_t ParseInteger(const char* str, char** endptr, int base);
-		char* ConvertToString(int64_t num);
+		char* ConvertToString(int64_t num, char* out = 0);
 		int64_t ConvertToInt(char* str, uint8_t base = 10);
 
 		uint64_t ReduceBinaryUnits(uint64_t bytes);

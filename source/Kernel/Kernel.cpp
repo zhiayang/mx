@@ -326,6 +326,7 @@ namespace Kernel
 			// mount root fs from partition 0 at /
 			VFS::Mount(f1->Partitions->Get(0), fs, "/");
 			auto fd = OpenFile("/hello", 0);
+			PrintFormatted("%d\n", fd);
 
 			// vnode* n = new vnode;
 			// n->refcount = 1;
