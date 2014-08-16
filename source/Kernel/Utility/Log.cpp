@@ -4,7 +4,6 @@
 
 
 #include <Kernel.hpp>
-#include <string>
 #include <StandardIO.hpp>
 #include <Colours.hpp>
 #include <Console.hpp>
@@ -37,39 +36,39 @@ namespace Kernel
 		if(!ENABLELOGGING)
 			return;
 
-		std::string tm;
-		Time::GetHumanReadableTime(tm);
+		// std::string tm;
+		// // Time::GetHumanReadableTime(tm);
 
-		if(tm.length() > 0)
-			tm.insert(0, " - ");
+		// if(tm.length() > 0)
+		// 	tm.insert(0, " - ");
 
 		LOCK(Mutexes::SerialLog);
 		switch(level)
 		{
 			case 0:
 			default:
-				PrintFormatted(pfso, "[ INFO%s ]: ", tm.c_str());
+				PrintFormatted(pfso, "[ INFO ]: ");
 
 				PrintFormatted(pfso, str, args);
 				PrintString("\n", -1, pfso);
 				break;
 
 			case 1:
-				PrintFormatted(pfso, "[ WARN%s ]: ", tm.c_str());
+				PrintFormatted(pfso, "[ WARN ]: ");
 
 				PrintFormatted(pfso, str, args);
 				PrintString("\n", -1, pfso);
 				break;
 
 			case 2:
-				PrintFormatted(pfsc, "[ SEVR%s ]: ", tm.c_str());
+				PrintFormatted(pfsc, "[ SEVR ]: ");
 
 				PrintFormatted(pfsc, str, args);
 				PrintString("\n", -1, pfsc);
 				break;
 
 			case 3:
-				PrintFormatted(pfsc, "[ CRIT%s ]: ", tm.c_str());
+				PrintFormatted(pfsc, "[ CRIT ]: ");
 
 				PrintFormatted(pfsc, str, args);
 				PrintString("\n", -1, pfsc);

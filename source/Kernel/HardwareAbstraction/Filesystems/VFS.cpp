@@ -2,9 +2,9 @@
 // Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
-#include <string>
 #include <string.h>
 #include <Kernel.hpp>
+#include <rdestl/hash_map.h>
 
 using namespace Kernel::HardwareAbstraction::Devices::Storage;
 namespace Kernel {
@@ -13,11 +13,7 @@ namespace Filesystems
 {
 	namespace VFS
 	{
-		// long FDFromNode(IOContext* ioctx, vnode* node)
-		// {
-
-		// }
-
+		static id_t curid = 0;
 		struct Filesystem
 		{
 			FSDriver* driver;
@@ -35,7 +31,24 @@ namespace Filesystems
 			return proc->iocontext;
 		}
 
-		static std::vector<Filesystem*>* mountedfses;
+		static rde::vector<Filesystem*>* mountedfses;
+		static rde::hash_map<id_t, vnode*>* vnodepool;
+
+		void Initialise()
+		{
+			mountedfses = new rde::vector<Filesystem*>();
+			vnodepool = new rde::hash_map<id_t, vnode*>();
+		}
+
+		// this fetches from the pool. used mainly by fsdrivers to avoid creating duplicate vnodes.
+		vnode* NodeFromID(id_t id)
+		{
+			auto v = vnodepool->find(id);
+			if(v == vnodepool->end())
+				return nullptr;
+
+			return v->second;
+		}
 
 		vnode* NodeFromFD(IOContext* ioctx, fd_t fd)
 		{
@@ -70,25 +83,9 @@ namespace Filesystems
 			node->info->driver = fs;
 			node->info->id = fs->GetID();
 
-			return node;
-		}
-
-		vnode* DuplicateNode(IOContext* ioctx, vnode* orig)
-		{
-			assert(ioctx);
-			assert(orig);
-			assert(orig->info);
-
-			vnode* node = new vnode;
-			node->data = nullptr;
-			node->info = new fsref;
-			node->refcount = 1;
-			node->type = orig->type;
-			node->attrib = orig->attrib;
-
-			node->info->data = nullptr;
-			node->info->driver = orig->info->driver;
-			node->info->id = orig->info->driver->GetID();
+			// add the node to the pool.
+			node->id = curid++;
+			(*vnodepool)[node->id] = node;
 
 			return node;
 		}
@@ -97,7 +94,6 @@ namespace Filesystems
 		{
 			(void) ioctx;
 			(void) node;
-
 		}
 
 		vnode* Reference(IOContext* ioctx, vnode* node)
@@ -136,9 +132,6 @@ namespace Filesystems
 			_fs->mountpoint = new std::string(path);
 			_fs->partition = part;
 
-			if(!mountedfses)
-				mountedfses = new std::vector<Filesystem*>();
-
 			mountedfses->push_back(_fs);
 		}
 
@@ -146,7 +139,6 @@ namespace Filesystems
 		{
 			(void) path;
 		}
-
 
 		fileentry* Open(IOContext* ioctx, vnode* node, int flags)
 		{

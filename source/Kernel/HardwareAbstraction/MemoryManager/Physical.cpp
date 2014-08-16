@@ -10,6 +10,7 @@
 #include <Memory.hpp>
 #include <StandardIO.hpp>
 #include <Colours.hpp>
+#include <rdestl/list.h>
 
 #define CoalesceThreshold	256
 
@@ -34,7 +35,8 @@ namespace Physical
 	extern Kernel::HardwareAbstraction::MemoryManager::MemoryMap::MemoryMap_type* K_MemoryMap;
 
 	static bool DidInit = false;
-	static LinkedList<Pair>* PageList;
+	// static LinkedList<Pair>* PageList;
+	static rde::list<Pair*>* PageList;
 
 	// Define a region of memory in which the VMM gets it's memory from, to create page strucures.
 	uint64_t ReservedRegionForVMM = 0;
@@ -42,7 +44,6 @@ namespace Physical
 	uint64_t OpsSinceLastCoalesce = 0;
 
 	static uint64_t ReservedRegionIndex = 0;
-	static uint64_t PMemManagerLocation;
 	// End legacy crud
 
 	static Mutex* mtx;
@@ -61,9 +62,9 @@ namespace Physical
 
 	void Bootstrap()
 	{
-		ReservedRegionForVMM = PageAlignUp(Kernel::EndOfKernel);
+		ReservedRegionForVMM = 0x00800000;
 		LengthOfReservedRegion = 0x01000000 - ReservedRegionForVMM;
-		PMemManagerLocation = ReservedRegionForVMM + LengthOfReservedRegion;
+		// PMemManagerLocation = ReservedRegionForVMM + LengthOfReservedRegion;
 	}
 
 	void Initialise()
@@ -72,7 +73,8 @@ namespace Physical
 		// See InitialiseFPLs() for an in-depth explanation on this
 		// FPL system.
 		mtx = new Mutex();
-		PageList = new LinkedList<Pair>();
+		// PageList = new LinkedList<Pair>();
+		PageList = new rde::list<Pair*>();
 
 		InitialiseFPLs(Kernel::K_MemoryMap);
 		DidInit = true;
@@ -89,12 +91,14 @@ namespace Physical
 		}
 
 		OpsSinceLastCoalesce++;
-		uint64_t trycount = 0;
-		auto len = PageList->Size();
+		int trycount = 0;
+		// auto len = PageList->Size();
+		auto len = PageList->size();
 
 		begin:
 
-		Pair* p = PageList->Front();
+		// Pair* p = PageList->Front();
+		Pair* p = PageList->front();
 		if(!p)
 		{
 			HALT("Out of physical pages");
@@ -111,7 +115,9 @@ namespace Physical
 		else if(p->LengthInPages == size)
 		{
 			auto raddr = p->BaseAddr;
-			PageList->RemoveFront();
+			// PageList->RemoveFront();
+			PageList->pop_front();
+
 			delete &p;
 
 			return raddr;
@@ -120,7 +126,11 @@ namespace Physical
 		{
 			if(trycount < len)
 			{
-				PageList->InsertBack(PageList->RemoveFront());
+				// PageList->InsertBack(PageList->RemoveFront());
+				auto fr = PageList->front();
+				PageList->pop_front();
+				PageList->push_back(fr);
+
 				trycount++;
 				goto begin;	// dirty
 			}
@@ -140,10 +150,11 @@ namespace Physical
 		uint64_t end = page + (size * 0x1000);
 
 		bool ret = false;
-		for(uint64_t i = 0; i < PageList->Size(); i++)
+		for(int i = 0; i < PageList->size(); i++)
 		{
-			// AddrLengthPair_type* pair = &CurrentFPL->Pairs[i];
-			Pair* pair = PageList->RemoveFront();
+			// Pair* pair = PageList->RemoveFront();
+			Pair* pair = PageList->front();
+			PageList->pop_front();
 
 			// 3 basic conditions
 			// 1. we find a match below a pair's baseaddr
@@ -162,7 +173,8 @@ namespace Physical
 				ret = true;
 			}
 
-			PageList->InsertBack(pair);
+			// PageList->InsertBack(pair);
+			PageList->push_back(pair);
 
 			if(ret)
 				return;
@@ -173,7 +185,8 @@ namespace Physical
 		np->BaseAddr = page;
 		np->LengthInPages = size;
 
-		PageList->InsertBack(np);
+		PageList->push_back(np);
+		// PageList->InsertBack(np);
 	}
 
 
@@ -190,29 +203,6 @@ namespace Physical
 	}
 
 
-	uint64_t AllocateViaPlacement()
-	{
-		// This works perfectly, except it cannot free pages once allocted.
-
-		PMemManagerLocation += 0x1000;
-
-		if(!(MemoryMap::IsMemoryValid(PMemManagerLocation)))
-		{
-			// Check if there are any more 'Available' zones after this one.
-			if(!MemoryMap::CheckForMoreAvailableMemory(PMemManagerLocation))
-			{
-				StandardIO::PrintFormatted("\n%wTried to allocate memory at: %w%x%w\nLast possible memory allocatable is: %x",
-					Colours::Yellow, Colours::Cyan, PMemManagerLocation, Colours::Silver, PMemManagerLocation - 0x1000);
-
-				HALT("Out of Memory!");
-			}
-			else
-			{
-				PMemManagerLocation = MemoryMap::CheckForMoreAvailableMemory(PMemManagerLocation);
-			}
-		}
-		return PMemManagerLocation;
-	}
 
 	uint64_t AllocateDMA(uint64_t size, bool Below4Gb)
 	{
@@ -225,9 +215,12 @@ namespace Physical
 
 		auto mut = AutoMutex(mtx);
 		OpsSinceLastCoalesce++;
-		for(uint64_t i = 0; i < PageList->Size(); i++)
+		for(int i = 0; i < PageList->size(); i++)
 		{
-			Pair* pair = PageList->RemoveFront();
+			// Pair* pair = &PageList->RemoveFront();
+			Pair* pair = PageList->front();
+			PageList->pop_front();
+
 			if(pair->BaseAddr + (size * 0x1000) < 0xFFFFFFFF && pair->LengthInPages >= size)
 			{
 				uint64_t ret = pair->BaseAddr;
@@ -239,11 +232,13 @@ namespace Physical
 					delete pair;
 
 				else
-					PageList->InsertBack(pair);
+					PageList->push_back(pair);
+					// PageList->InsertBack(pair);
 
 				return ret;
 			}
-			PageList->InsertBack(pair);
+			// PageList->InsertBack(pair);
+			PageList->push_back(pair);
 		}
 
 		HALT("Could not satisfy DMA memory request");
@@ -321,16 +316,21 @@ namespace Physical
 				p->BaseAddr = PageAlignUp(MemoryMap->Entries[i].BaseAddress);
 				p->LengthInPages = (PageAlignDown(MemoryMap->Entries[i].Length) / 0x1000) - 1;
 
-				PageList->InsertBack(p);
+				// PageList->InsertBack(p);
+				PageList->push_back(p);
 			}
 		}
 
 		// The bottom-most FPL would be from 1MB up.
 		// However, we must set it to the top of our kernel.
 
-		uint64_t OldBaseAddr = PageList->Front()->BaseAddr;
-		Pair* p = PageList->Front();
-		p->BaseAddr = 0x00800000;
+		// uint64_t OldBaseAddr = PageList->Front()->BaseAddr;
+		// Pair* p = PageList->Front();
+
+		auto OldBaseAddr = PageList->front()->BaseAddr;
+		auto p = PageList->front();
+
+		p->BaseAddr = 0x01000000;
 		p->LengthInPages = p->LengthInPages - ((p->BaseAddr - OldBaseAddr) / 0x1000);
 	}
 
@@ -354,16 +354,22 @@ namespace Physical
 		// if so, merge.
 		// to make sure we don't screw with the list while in the middle of it, go back to the beginning and loop again.
 		// this is a background process anyway so.
-		for(uint64_t i = 0; i < PageList->Size(); i++)
+		for(int i = 0; i < PageList->size(); i++)
 		{
 			bool delp = false;
-			Pair* p = PageList->RemoveFront();
+			// Pair* p = PageList->RemoveFront();
+			auto p = PageList->front();
+			PageList->pop_front();
+
 			uint64_t base = p->BaseAddr;
 			uint64_t end = p->BaseAddr + (p->LengthInPages * 0x1000);
 
-			for(uint64_t k = 0; k < PageList->Size(); k++)
+			for(int k = 0; k < PageList->size(); k++)
 			{
-				Pair* other = PageList->RemoveFront();
+				// Pair* other = PageList->RemoveFront();
+				auto other = PageList->front();
+				PageList->pop_front();
+
 				if(other->BaseAddr == end)
 				{
 					p->LengthInPages += other->LengthInPages;
@@ -383,7 +389,7 @@ namespace Physical
 				delete p;
 			}
 			else
-				PageList->InsertBack(p);
+				PageList->push_back(p);
 		}
 	}
 }
