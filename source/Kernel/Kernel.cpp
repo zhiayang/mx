@@ -323,11 +323,9 @@ namespace Kernel
 			Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->Get(0);
 			FSDriverFat32* fs = new FSDriverFat32(f1->Partitions->Get(0));
 
-
 			// mount root fs from partition 0 at /
 			VFS::Mount(f1->Partitions->Get(0), fs, "/");
 			auto fd = OpenFile("/hello", 0);
-			PrintFormatted("%d\n", fd);
 
 			// vnode* n = new vnode;
 			// n->refcount = 1;

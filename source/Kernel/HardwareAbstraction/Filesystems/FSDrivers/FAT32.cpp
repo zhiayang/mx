@@ -247,6 +247,8 @@ namespace Filesystems
 				assert(vnd);
 				assert(vnd->name);
 
+				PrintFormatted("%s - %s\n", file.c_str(), vnd->name->c_str());
+
 				if(cn->type == VNodeType::File && *vnd->name == file)
 				{
 					node->info->data = d->info->data;
@@ -256,15 +258,13 @@ namespace Filesystems
 
 					return true;
 				}
-				else if(*tovnd(d->info->data)->name == v)
+				else if(!tovnd(d->info->data)->name->compare(v))
 				{
 					cn = d;
 
 					// break to continue in outer loop.
 					break;
 				}
-
-				return false;
 			}
 		}
 
@@ -309,14 +309,13 @@ namespace Filesystems
 		auto clusters = tovnd(node->info->data)->clusters;
 		uint64_t numclus = 0;
 		if(!clusters)
-		{
 			clusters = this->GetClusterChain(node, &numclus);
-		}
 
 		// try and read each cluster into a contiguous buffer.
 		uint64_t dirsize = numclus * this->SectorsPerCluster * 512;
 		uint64_t buf = MemoryManager::Physical::AllocateDMA(((numclus * this->SectorsPerCluster * 512) + 0xFFF) / 0x1000);
 		auto obuf = buf;
+
 
 		assert(clusters);
 		for(auto v : *clusters)
@@ -371,21 +370,26 @@ namespace Filesystems
 
 					for(int i = 0; i < 3 && dirent->ext[i] != ' '; i++)
 						name->append(lowext ? (char) tolower(dirent->ext[i]) : dirent->ext[i]);
-
 				}
 
-				PrintFormatted("[%s]\n", name->c_str());
+				vnode* vn = VFS::CreateNode(this);
+				if(dirent->attrib & ATTR_READONLY)	vn->attrib |= Attributes::ReadOnly;
+				if(dirent->attrib & ATTR_HIDDEN)	vn->attrib |= Attributes::Hidden;
 
+				vn->type = (dirent->attrib & ATTR_FOLDER ? VNodeType::Folder : VNodeType::File);
+
+				auto fsd = new vnode_data;
+				fsd->name = name;
+				vn->info->data = (void*) fsd;
+
+				ret->push_back(vn);
 			}
 			else
 				break;
 
-
-
 			addr += sizeof(LFNEntry);
 		}
 
-		UHALT();
 		return ret;
 	}
 
@@ -411,6 +415,7 @@ namespace Filesystems
 
 		uint64_t lastsec = 0;
 		auto buf = MemoryManager::Physical::AllocateDMA(1);
+		// Log(3, "%x", buf);
 		do
 		{
 			uint32_t FatSector = (uint32_t) this->partition->GetStartLBA() + this->ReservedSectors + (Cluster * 4 / 512);

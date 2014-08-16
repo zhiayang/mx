@@ -85,25 +85,20 @@ namespace Physical
 	{
 		auto mut = AutoMutex(mtx);
 		if(!DidInit)
-		{
-			// return AllocateViaPlacement();
 			return AllocateFromReserved();
-		}
 
 		OpsSinceLastCoalesce++;
 		int trycount = 0;
-		// auto len = PageList->Size();
 		auto len = PageList->size();
 
 		begin:
 
-		// Pair* p = PageList->Front();
-		Pair* p = PageList->front();
-		if(!p)
+		if(PageList->size() == 0)
 		{
 			HALT("Out of physical pages");
 		}
 
+		Pair* p = PageList->front();
 		if(p->LengthInPages > size)
 		{
 			p->LengthInPages -= size;
@@ -115,10 +110,9 @@ namespace Physical
 		else if(p->LengthInPages == size)
 		{
 			auto raddr = p->BaseAddr;
-			// PageList->RemoveFront();
 			PageList->pop_front();
 
-			delete &p;
+			delete p;
 
 			return raddr;
 		}
