@@ -38,7 +38,7 @@ namespace KernelHeap
 	static uint64_t SizeOfHeap;
 	static uint64_t SizeOfMeta;
 
-	const uint64_t Alignment = 64;
+	const uint64_t Alignment = 32;
 
 	static Mutex* mtx;
 
