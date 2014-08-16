@@ -143,7 +143,7 @@ namespace Kernel
 					rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 
 				private:
-					rde::string* ReadLFN(uint64_t addr);
+					rde::string* ReadLFN(uint64_t addr, int& nument);
 					uint64_t ClusterToLBA(uint32_t clus);
 					rde::vector<uint32_t>* GetClusterChain(VFS::vnode* node, uint64_t* numclus);
 
