@@ -81,6 +81,18 @@ namespace Filesystems
 
 	} __attribute__ ((packed));
 
+
+	#define ATTR_READONLY	0x1
+	#define ATTR_HIDDEN		0x2
+	#define ATTR_SYSTEM		0x4
+	#define ATTR_VOLLABEL	0x8
+	#define ATTR_FOLDER		0x10
+	// #define ATTR_ARCHIVE		0x20
+
+	#define ATTR_LFN		(ATTR_READONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLLABEL)
+
+	#define FIRSTCHAR_DELETED	0xE5
+
 	struct vnode_data
 	{
 		rde::string* name;
@@ -97,6 +109,31 @@ namespace Filesystems
 	{
 		return (vnode_data*) (node->info->data);
 	}
+
+	static uint8_t LFNChecksum(char* ShortName)
+	{
+		uint8_t ret = 0;
+		for(int i = 0; i < 11; i++ )
+		{
+			// ret = (ret >>> 1) + ShortName[i]
+			// where >>> is rotate right
+			ret = ((ret & 1) ? 0x80 : 0x00) + (ret >> 1) + ShortName[i];
+		}
+		return ret;
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	uint64_t FSDriverFat32::ClusterToLBA(uint32_t cluster)
 	{
@@ -277,6 +314,7 @@ namespace Filesystems
 		}
 
 		// try and read each cluster into a contiguous buffer.
+		uint64_t dirsize = numclus * this->SectorsPerCluster * 512;
 		uint64_t buf = MemoryManager::Physical::AllocateDMA(((numclus * this->SectorsPerCluster * 512) + 0xFFF) / 0x1000);
 		auto obuf = buf;
 
@@ -288,23 +326,67 @@ namespace Filesystems
 		}
 		buf = obuf;
 
-		// we can and will allocate vnodes.
-
-		auto name = this->ReadLFN(buf);
-		PrintFormatted("[%s]", name->c_str());
-
-		// now we have the entire directory read.
-		// time to parse.
+		auto ret = new rde::vector<VFS::vnode*>();
+		for(uint64_t addr = buf; addr < buf + dirsize; )
 		{
-			// uint8_t* c = (uint8_t*) buf;
-			// for(int i = 0; i < 32; i++)
-			// {
-			// 	PrintFormatted("%#02x ", *c++);
-			// }
+			auto name = new rde::string();
+			uint8_t lfncheck = 0;
+
+			// check if we're on an LFN
+			uint8_t* raw = (uint8_t*) addr;
+			auto dirent = (DirectoryEntry*) raw;
+			if((uint8_t) dirent->name[0] == FIRSTCHAR_DELETED)
+			{
+				addr += sizeof(LFNEntry);
+				continue;
+			}
+			else if(dirent->attrib == ATTR_LFN && dirent->clusterlow == 0)
+			{
+				int nument = 0;
+				delete name;
+				name = this->ReadLFN(addr, nument);
+				lfncheck = ((LFNEntry*) dirent)->checksum;
+
+				addr += (nument * sizeof(LFNEntry));
+				raw = (uint8_t*) addr;
+				dirent = (DirectoryEntry*) raw;
+			}
+
+			if(dirent->name[0] != 0)
+			{
+				if(name->empty() || lfncheck != LFNChecksum((char*) &dirent->name[0]))
+				{
+					bool lowext = false;
+					bool lownm = false;
+					// check for windows-specific lowercase/uppercase bits
+					uint8_t cas = dirent->userattrib;
+					if(cas & 0x8)	lownm = true;
+					if(cas & 0x10)	lowext = true;
+
+					for(int i = 0; i < 8 && dirent->name[i] != ' '; i++)
+						name->append(lownm ? (char) tolower(dirent->name[i]) : dirent->name[i]);
+
+					if(!(dirent->attrib & ATTR_FOLDER) && dirent->ext[0] != ' ')
+						name->append('.');
+
+					for(int i = 0; i < 3 && dirent->ext[i] != ' '; i++)
+						name->append(lowext ? (char) tolower(dirent->ext[i]) : dirent->ext[i]);
+
+				}
+
+				PrintFormatted("[%s]\n", name->c_str());
+
+			}
+			else
+				break;
+
+
+
+			addr += sizeof(LFNEntry);
 		}
 
 		UHALT();
-		return 0;
+		return ret;
 	}
 
 
@@ -337,7 +419,7 @@ namespace Filesystems
 			// check if we even need to read.
 			// since we read 4K, we get 7 more free sectors
 			// optimisation.
-			if(lastsec + 7 > FatSector)
+			if(lastsec == 0 || FatSector > lastsec + 7)
 				IO::Read(this->partition->GetStorageDevice(), FatSector, buf, 0x1000);
 
 			lastsec = FatSector;
@@ -354,13 +436,12 @@ namespace Filesystems
 		} while((cchain != 0) && !((cchain & 0x0FFFFFFF) >= 0x0FFFFFF8));
 
 		MemoryManager::Physical::FreeDMA(buf, 1);
-
 		tovnd(node)->clusters = ret;
 
 		return ret;
 	}
 
-	rde::string* FSDriverFat32::ReadLFN(uint64_t addr)
+	rde::string* FSDriverFat32::ReadLFN(uint64_t addr, int& ret_nument)
 	{
 		LFNEntry* ent = (LFNEntry*) addr;
 		uint8_t seqnum = ent->seqnum;
@@ -399,6 +480,7 @@ namespace Filesystems
 
 			ret->append((*items)[c]);
 		}
+		ret_nument = nument;
 		return ret;
 	}
 }
