@@ -88,7 +88,7 @@ namespace Physical
 			return AllocateFromReserved();
 
 		OpsSinceLastCoalesce++;
-		int trycount = 0;
+		size_t trycount = 0;
 		auto len = PageList->size();
 
 		begin:
@@ -144,7 +144,7 @@ namespace Physical
 		uint64_t end = page + (size * 0x1000);
 
 		bool ret = false;
-		for(int i = 0; i < PageList->size(); i++)
+		for(size_t i = 0; i < PageList->size(); i++)
 		{
 			// Pair* pair = PageList->RemoveFront();
 			Pair* pair = PageList->front();
@@ -209,7 +209,7 @@ namespace Physical
 
 		auto mut = AutoMutex(mtx);
 		OpsSinceLastCoalesce++;
-		for(int i = 0; i < PageList->size(); i++)
+		for(size_t i = 0; i < PageList->size(); i++)
 		{
 			// Pair* pair = &PageList->RemoveFront();
 			Pair* pair = PageList->front();
@@ -348,7 +348,7 @@ namespace Physical
 		// if so, merge.
 		// to make sure we don't screw with the list while in the middle of it, go back to the beginning and loop again.
 		// this is a background process anyway so.
-		for(int i = 0; i < PageList->size(); i++)
+		for(size_t i = 0; i < PageList->size(); i++)
 		{
 			bool delp = false;
 			// Pair* p = PageList->RemoveFront();
@@ -358,7 +358,7 @@ namespace Physical
 			uint64_t base = p->BaseAddr;
 			uint64_t end = p->BaseAddr + (p->LengthInPages * 0x1000);
 
-			for(int k = 0; k < PageList->size(); k++)
+			for(size_t k = 0; k < PageList->size(); k++)
 			{
 				// Pair* other = PageList->RemoveFront();
 				auto other = PageList->front();

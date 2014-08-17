@@ -286,7 +286,7 @@ namespace Filesystems
 		if(!vnd->clusters)
 			vnd->clusters = this->GetClusterChain(node, &numclus);
 
-		assert(vnd->clusters->size() == (int) numclus);
+		assert(vnd->clusters->size() == numclus);
 
 		// check that offset is not more than size
 		if(offset > vnd->filesize)
@@ -330,6 +330,8 @@ namespace Filesystems
 
 	void FSDriverFat32::Stat(vnode* node, stat* stat)
 	{
+		// we really just need the dirent.
+
 		(void) node;
 		(void) stat;
 	}
@@ -349,7 +351,7 @@ namespace Filesystems
 		if(!clusters)
 			clusters = this->GetClusterChain(node, &numclus);
 
-		assert((int) numclus == clusters->size());
+		assert(numclus == clusters->size());
 
 		// try and read each cluster into a contiguous buffer.
 		uint64_t dirsize = numclus * this->SectorsPerCluster * 512;

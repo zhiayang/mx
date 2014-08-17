@@ -115,7 +115,7 @@ public:
     typedef TAllocator															allocator_type;
 	typedef node_iterator<node*, value_type*, value_type&>						iterator;
 	typedef node_iterator<const node*, const value_type*, const value_type&>	const_iterator;
-    typedef int																	size_type;
+    typedef size_t																	size_type;
 	static const size_type														kNodeSize = sizeof(node);
 	static const size_type														kInitialCapacity = 64;
 
@@ -396,7 +396,7 @@ private:
 
 		const hash_value_t hash = hash_func(key);
         *out_hash = hash;
-        uint32 i = hash & m_capacityMask;
+        uint32_t i = hash & m_capacityMask;
 
         node* n = m_nodes + i;
 		if (n->hash == hash && m_keyEqualFunc(key, n->data.first))
@@ -405,7 +405,7 @@ private:
         node* freeNode(0);
         if (n->is_deleted())
 			freeNode = n;
-		uint32 numProbes(0);
+		uint32_t numProbes(0);
         // Guarantees loop termination.
         RDE_ASSERT(m_numUsed < m_capacity);
         while (!n->is_unused())
@@ -423,12 +423,12 @@ private:
 	node* lookup(const key_type& key) const
 	{
 		const hash_value_t hash = hash_func(key);
-        uint32 i = hash & m_capacityMask;
+        uint32_t i = hash & m_capacityMask;
         node* n = m_nodes + i;
 		if (n->hash == hash && m_keyEqualFunc(key, n->data.first))
 			return n;
 
-		uint32 numProbes(0);
+		uint32_t numProbes(0);
         // Guarantees loop termination.
         RDE_ASSERT(m_capacity == 0 || m_numUsed < m_capacity);
         while (!n->is_unused())
@@ -451,16 +451,16 @@ private:
 
 		const node* it = nodes;
 		const node* itEnd = nodes + capacity;
-		const uint32 mask = new_capacity - 1;
+		const uint32_t mask = new_capacity - 1;
 		while (it != itEnd)
 		{
 			if (it->is_occupied())
 			{
 				const hash_value_t hash = it->hash;
-				uint32 i = hash & mask;
+				uint32_t i = hash & mask;
 
 				node* n = new_nodes + i;
-				uint32 numProbes(0);
+				uint32_t numProbes(0);
 				while (!n->is_unused())
 				{
 					++numProbes;
@@ -533,7 +533,7 @@ private:
 	node*			m_nodes;
 	int				m_size;
 	int				m_capacity;
-	uint32			m_capacityMask;
+	uint32_t			m_capacityMask;
 	int				m_numUsed;
 	THashFunc       m_hashFunc;
 	TKeyEqualFunc	m_keyEqualFunc;

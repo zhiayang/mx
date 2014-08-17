@@ -17,28 +17,24 @@ namespace internal
 		char	x;
 		T		y;
 	};
-#ifdef _MSC_VER
-	__declspec(align(16)) struct aligned16 { uint64 member[2]; };
-#else
-    struct __attribute__ ((aligned (16))) aligned16 { uint64 member[2]; } ;
-#endif
-    
+    struct __attribute__ ((aligned (16))) aligned16 { uint64_t member[2]; } ;
+
 #pragma warning(pop)
 	template<size_t N> struct type_with_alignment
 	{
 		typedef char err_invalid_alignment[N > 0 ? -1 : 1];
 	};
 	template<> struct type_with_alignment<0> {};
-	template<> struct type_with_alignment<1> { uint8 member; };
-	template<> struct type_with_alignment<2> { uint16 member; };
-	template<> struct type_with_alignment<4> { uint32 member; };
-	template<> struct type_with_alignment<8> { uint64 member; };
+	template<> struct type_with_alignment<1> { uint8_t member; };
+	template<> struct type_with_alignment<2> { uint16_t member; };
+	template<> struct type_with_alignment<4> { uint32_t member; };
+	template<> struct type_with_alignment<8> { uint64_t member; };
 	template<> struct type_with_alignment<16> { aligned16 member; };
 }
 template<typename T>
 struct alignof
 {
-	enum 
+	enum
 	{
 		res = offsetof(internal::alignof_helper<T>, y)
 	};
