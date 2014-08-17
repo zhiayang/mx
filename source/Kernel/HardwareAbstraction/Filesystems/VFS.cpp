@@ -253,6 +253,9 @@ namespace Filesystems
 	size_t Read(fd_t fd, void* buf, off_t off, size_t len)
 	{
 		auto ctx = getctx();
+		if(fd < 0)
+			return 0;
+
 		auto node = VFS::NodeFromFD(ctx, fd);
 		if(node == nullptr)
 			return 0;
@@ -263,6 +266,8 @@ namespace Filesystems
 	size_t Write(fd_t fd, void* buf, off_t off, size_t len)
 	{
 		auto ctx = getctx();
+		if(fd < 0)
+			return 0;
 
 		auto node = VFS::NodeFromFD(ctx, fd);
 		if(node == nullptr)
@@ -274,6 +279,8 @@ namespace Filesystems
 	VFSError Stat(fd_t fd, struct stat* out)
 	{
 		auto ctx = getctx();
+		if(fd < 0)
+			return VFSError::NOT_FOUND;
 
 		auto node = VFS::NodeFromFD(ctx, fd);
 		if(node == nullptr)

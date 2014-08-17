@@ -23,28 +23,6 @@ using namespace Kernel::HardwareAbstraction::Filesystems::VFS;
 
 #define PATH_DELIMTER		'/'
 
-rde::vector<rde::string>* split(rde::string& s, char delim)
-{
-	auto ret = new rde::vector<rde::string>();
-	rde::string item;
-
-	for(auto c : s)
-	{
-		if(c == delim)
-		{
-			if(!item.empty())
-				ret->push_back(item);
-		}
-		else
-		{
-			item.append(c);
-		}
-	}
-	if(ret->size() == 0 && item.length() > 0)
-		ret->push_back(item);
-
-	return ret;
-}
 
 namespace Kernel {
 namespace HardwareAbstraction {
@@ -150,6 +128,31 @@ namespace Filesystems
 		return mktime(&ts);
 	}
 
+	static rde::vector<rde::string>* split(rde::string& s, char delim)
+	{
+		auto ret = new rde::vector<rde::string>();
+		rde::string item;
+
+		for(auto c : s)
+		{
+			if(c == delim)
+			{
+				if(!item.empty())
+				{
+					ret->push_back(item);
+					item.clear();
+				}
+			}
+			else
+				item.append(c);
+		}
+
+		if(item.length() > 0)
+			ret->push_back(item);
+
+		return ret;
+	}
+
 
 
 
@@ -241,9 +244,7 @@ namespace Filesystems
 		auto vd = new vnode_data;
 		node->info->data = (void*) vd;
 
-		rde::string pth;
-		pth.append(path);
-
+		rde::string pth = rde::string(path);
 
 		// setup cn
 		tovnd(node)->entrycluster = 0;
@@ -254,6 +255,10 @@ namespace Filesystems
 
 		auto dirs = split(pth, PATH_DELIMTER);
 		assert(dirs);
+		assert(dirs->size() > 0);
+
+		size_t levels = dirs->size();
+		size_t curlvl = 1;
 
 		// remove the last.
 		auto file = dirs->back();
@@ -261,11 +266,15 @@ namespace Filesystems
 
 		for(auto v : *dirs)
 		{
+			Log(3, "%x", cn->id);
+			bool found = false;
 			// iterative traverse.
 			assert(cn);
+			assert(cn->info);
+			assert(cn->info->data);
 			auto cdcontent = this->ReadDir(cn);
-
 			assert(cdcontent);
+
 			// check each.
 			for(auto d : *cdcontent)
 			{
@@ -273,7 +282,7 @@ namespace Filesystems
 				assert(vnd);
 				assert(vnd->name);
 
-				if(cn->type == VNodeType::File && *vnd->name == file)
+				if(curlvl == levels && cn->type == VNodeType::File && *vnd->name == file)
 				{
 					node->info->data = d->info->data;
 					node->info->driver = d->info->driver;
@@ -282,14 +291,21 @@ namespace Filesystems
 
 					return true;
 				}
-				else if(!tovnd(d->info->data)->name->compare(v))
+				else if(*vnd->name == v)
 				{
+					found = true;
 					cn = d;
-
-					// break to continue in outer loop.
 					break;
 				}
 			}
+			if(!found)
+			{
+				delete cdcontent;
+				return false;
+			}
+
+			delete cdcontent;
+			curlvl++;
 		}
 
 		return false;
@@ -333,10 +349,8 @@ namespace Filesystems
 		uint64_t dma = MemoryManager::Physical::AllocateDMA((cluslen * this->SectorsPerCluster * 512 + 0xFFF) / 0x1000);
 		uint64_t obuf = dma;
 
-		Log(1, "%x clusters to read", cluslen);
 		for(auto i = skippedclus; i < skippedclus + cluslen; i++)
 		{
-			// Log(1, "reading cluster %x", i);
 			StandardIO::PrintFormatted("r");
 			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA((*vnd->clusters)[(int) i]), dma, this->SectorsPerCluster * 512);
 			dma += this->SectorsPerCluster * 512;
@@ -391,12 +405,14 @@ namespace Filesystems
 		if(tovnd(node)->entrycluster == 0)
 			tovnd(node)->entrycluster = 2;
 
+
 		// grab its clusters.
 		auto clusters = tovnd(node->info->data)->clusters;
 		uint64_t numclus = 0;
 		if(!clusters)
 			clusters = this->GetClusterChain(node, &numclus);
 
+		assert(clusters);
 		assert(numclus == clusters->size());
 
 		// try and read each cluster into a contiguous buffer.
@@ -471,9 +487,13 @@ namespace Filesystems
 				// (if we need it. don't call getclusterchain() every time, especially for sibling directories that we're not interested in)
 
 				auto fsd = new vnode_data;
+				memset(fsd, 0, sizeof(vnode_data));
+
 				fsd->name = name;
 				fsd->entrycluster = ((uint32_t) (dirent->clusterhigh << 16)) | dirent->clusterlow;
 				fsd->filesize = dirent->filesize;
+				fsd->clusters = nullptr;
+
 				memcpy(&fsd->dirent, dirent, sizeof(DirectoryEntry));
 
 				vn->info->data = (void*) fsd;
@@ -508,6 +528,8 @@ namespace Filesystems
 		uint32_t Cluster = tovnd(node)->entrycluster;
 		uint32_t cchain = 0;
 		auto ret = new rde::vector<uint32_t>();
+
+
 
 		uint64_t lastsec = 0;
 		auto buf = MemoryManager::Physical::AllocateDMA(2);
