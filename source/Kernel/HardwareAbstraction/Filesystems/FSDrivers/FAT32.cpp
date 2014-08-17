@@ -98,6 +98,7 @@ namespace Filesystems
 		rde::string* name;
 		uint32_t entrycluster;
 		rde::vector<uint32_t>* clusters;
+		uint32_t filesize;
 	};
 
 	static vnode_data* tovnd(void* p)
@@ -287,6 +288,14 @@ namespace Filesystems
 
 		assert(vnd->clusters->size() == (int) numclus);
 
+		// check that offset is not more than size
+		if(offset > vnd->filesize)
+			return 0;
+
+		// clamp length to the filesize.
+		if(length > vnd->filesize - offset)
+			length = vnd->filesize - offset;
+
 		// because we can read from offsets, don't read all clusters if we can.
 		uint64_t skippedclus = offset / (this->SectorsPerCluster * 512);
 		uint64_t clusoffset = offset - (skippedclus * this->SectorsPerCluster * 512);
@@ -331,7 +340,6 @@ namespace Filesystems
 		assert(node->info);
 		assert(node->info->data);
 
-
 		if(tovnd(node)->entrycluster == 0)
 			tovnd(node)->entrycluster = 2;
 
@@ -347,7 +355,6 @@ namespace Filesystems
 		uint64_t dirsize = numclus * this->SectorsPerCluster * 512;
 		uint64_t buf = MemoryManager::Physical::AllocateDMA(((numclus * this->SectorsPerCluster * 512) + 0xFFF) / 0x1000);
 		auto obuf = buf;
-
 
 		assert(clusters);
 		for(auto v : *clusters)
@@ -413,10 +420,12 @@ namespace Filesystems
 				// setup fs data
 				// we need to fill in the 'entrycluster' value in the vnode
 				// so that getclusterchain() can get the rest.
+				// (if we need it. don't call getclusterchain() every time, especially for sibling directories that we're not interested in)
 
 				auto fsd = new vnode_data;
 				fsd->name = name;
 				fsd->entrycluster = ((uint32_t) (dirent->clusterhigh << 16)) | dirent->clusterlow;
+				fsd->filesize = dirent->filesize;
 
 				vn->info->data = (void*) fsd;
 
