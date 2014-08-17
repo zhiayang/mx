@@ -4,7 +4,6 @@
 
 
 #include <Kernel.hpp>
-#include <String.hpp>
 #include <StandardIO.hpp>
 #include <Colours.hpp>
 #include <Console.hpp>
@@ -37,43 +36,39 @@ namespace Kernel
 		if(!ENABLELOGGING)
 			return;
 
-		string tm;
-		Time::GetHumanReadableTime(tm);
+		// std::string tm;
+		// // Time::GetHumanReadableTime(tm);
 
-		if(tm.Length() > 0)
-			tm.Prepend(" - ");
+		// if(tm.length() > 0)
+		// 	tm.insert(0, " - ");
 
 		LOCK(Mutexes::SerialLog);
 		switch(level)
 		{
 			case 0:
 			default:
-				PrintFormatted(pfso, "[ INFO%s ]: ", tm.CString());
+				PrintFormatted(pfso, "[ INFO ]: ");
 
 				PrintFormatted(pfso, str, args);
 				PrintString("\n", -1, pfso);
 				break;
 
 			case 1:
-				PrintFormatted(pfso, "[ WARN%s ]: ", tm.CString());
+				PrintFormatted(pfso, "[ WARN ]: ");
 
 				PrintFormatted(pfso, str, args);
 				PrintString("\n", -1, pfso);
 				break;
 
 			case 2:
-				PrintFormatted(pfsc, "[ SEVR%s ]: ", tm.CString());
-
-				// PrintFormatted("%wLOG%r: [ %k2/%SEVERE%r ]: ", Colours::DarkCyan, Colours::Orange, Colours::Orange);
+				PrintFormatted(pfsc, "[ SEVR ]: ");
 
 				PrintFormatted(pfsc, str, args);
 				PrintString("\n", -1, pfsc);
 				break;
 
 			case 3:
-				PrintFormatted(pfsc, "[ CRIT%s ]: ", tm.CString());
-
-				// PrintFormatted("%wLOG%r: [%k3/%wCRITICAL%r]: ", Colours::DarkCyan, Colours::Red, Colours::Red);
+				PrintFormatted(pfsc, "[ CRIT ]: ");
 
 				PrintFormatted(pfsc, str, args);
 				PrintString("\n", -1, pfsc);

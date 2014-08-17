@@ -6,6 +6,9 @@
 #include <stdint.h>
 #include <List.hpp>
 #include "Devices/StorageDevice.hpp"
+#include <rdestl/vector.h>
+#include <rdestl/rde_string.h>
+#include <sys/stat.h>
 
 namespace Kernel
 {
@@ -19,196 +22,137 @@ namespace Kernel
 		namespace Filesystems
 		{
 			class FSDriver;
+			struct IOContext;
+			typedef long fd_t;
+
+			enum Attributes
+			{
+				ReadOnly	= 0x1,
+				Hidden		= 0x2,
+			};
 
 			namespace VFS
 			{
-				enum class FSObjectTypes
+				enum VFSError
 				{
-					Invalid,
+					NO_ERROR = 0,
+					NOT_FOUND,
+				};
+
+				enum class VNodeType
+				{
+					None,
 					File,
 					Folder,
-					Filesystem,
-					Socket,
-					IPCSocket
 				};
 
-				extern const uint8_t Attr_ReadOnly;
-				extern const uint8_t Attr_Hidden;
-
-				class Filesystem;
-				class FSObject
+				struct fsref
 				{
-					public:
-						FSObject(FSObjectTypes type);
-						FSObject(const FSObject& other);
-						virtual ~FSObject();
-
-						virtual const char* Name();
-						virtual const char* Path();
-						virtual FSObject* Parent();
-						virtual Filesystem* RootFS();
-						virtual uint8_t Attributes();
-						virtual bool Exists();
-						FSObjectTypes Type;
-
-					protected:
-						FSObject* parent;
-						char* _name;
-						char* _path;
-						Filesystem* rootfs;
-						uint8_t _attributes;
-						bool _exists;
+					dev_t id;
+					void* data;
+					FSDriver* driver;
 				};
 
-				class Folder : public FSObject
+				struct vnode
 				{
-					public:
-						Folder(const char* path, uint64_t clus, Filesystem* rfs, uint8_t attr);
-						Folder(const char* path);
-
-						virtual const char* Name() override;
-						virtual const char* Path() override;
-						virtual Folder* Parent() override;
-						virtual uint8_t Attributes() override;
-						virtual Filesystem* RootFS() override;
-						virtual bool Exists() override;
-
-						uint64_t Cluster();
-
-					private:
-						uint64_t _cluster;
+					id_t id;
+					fsref* info;
+					void* data;
+					VNodeType type;
+					uint64_t attrib;
+					uint64_t refcount;
 				};
 
-				class File : public FSObject
+				struct fileentry
 				{
-					public:
-						File(const char* nm, uint64_t sz, uint64_t cluster, Filesystem* rfs, uint8_t attr);
-						File(const char* path);
-
-						virtual const char* Name() override;
-						virtual const char* Path() override;
-						virtual Folder* Parent() override;
-						virtual uint8_t Attributes() override;
-						virtual Filesystem* RootFS() override;
-						virtual bool Exists() override;
-
-						uint64_t FileSize();
-						uint64_t Cluster();
-						uint64_t Read(uint8_t* buffer, uint64_t length = 0);
-						uint64_t Write(uint8_t* buffer, uint64_t length = 0);
-						uint64_t Append(uint8_t* buffer, uint64_t length = 0, uint64_t offset = 0);
-
-					private:
-						uint64_t _FileSize;
-						uint64_t _Cluster;
+					vnode* node;
+					off_t offset;
+					uint64_t flags;
+					fd_t fd;
 				};
 
-
-				class Filesystem : public FSObject
+				struct FDArray
 				{
-					public:
-						Filesystem(const char* name, FSDriver* fsdriver);
+					FDArray()
+					{
+						this->fds = new rde::vector<fileentry*>();
+					}
 
-						virtual const char* Name() override;
-						virtual FSObject* Parent() override;
-						virtual const char* Path() override;
-						virtual Filesystem* RootFS() override;
-						virtual uint8_t Attributes() override;
-						virtual bool Exists() override;
-
-						FSObject* GetFSObject(const char* path);
-						FSDriver* GetFSDriver();
-						static Library::LinkedList<Filesystem>* Filesystems;
-
-					private:
-						FSDriver* fsdriver;
+					rde::vector<fileentry*>* fds;
 				};
 
-				Filesystem* GetFilesystem(const char* path);
+				void Initialise();
+				vnode* NodeFromID(id_t id);
+				fd_t FDFromNode(IOContext* ioctx, vnode* node);
+				vnode* NodeFromFD(IOContext* ioctx, fd_t fd);
 
-				// userspace fd things.
-				extern const uint64_t MaxDescriptors;
-				extern const uint64_t ReservedStreams;
-				struct FileDescriptor
-				{
-					FSObject* Pointer;
-				};
+				vnode* CreateNode(FSDriver* fs);
+				vnode* DuplicateNode(vnode* orig);
+				void DeleteNode(vnode* node);
 
-				uint64_t GetAndIncrementDescriptor(Kernel::HardwareAbstraction::Multitasking::Process* proc);
-				uint64_t OpenFile(const char* path, uint8_t mode);
-				uint64_t FileSize(uint64_t fd);
-				void CloseFile(uint64_t fd);
-				uint64_t ReadFile(uint64_t fd, uint8_t* buffer, uint64_t length);
-				uint64_t WriteFile(uint64_t fd, uint8_t* buffer, uint64_t length);
+				vnode* Reference(vnode* node);
+				vnode* Dereference(vnode* node);
 
-				uint64_t OpenFolder(const char* path);
-				void CloseFolder(uint64_t fd);
-				Library::LinkedList<char>* ListObjects(uint64_t fd, Library::LinkedList<char>* output, uint64_t* items);
+				void Mount(Devices::Storage::Partition* partition, FSDriver* fs, const char* path);
+				void Unmount(const char* path);
+
+				fileentry* Open(IOContext* ioctx, vnode* node, int flags);
+				fileentry* OpenFile(IOContext* ioctx, const char* path, int flags);
+
+				size_t Read(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len);
+				size_t Write(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len);
 			}
 
+			fd_t OpenFile(const char* path, int flags);
+			size_t Read(fd_t fd, void* buf, off_t off, size_t len);
+			size_t Write(fd_t fd, void* buf, off_t off, size_t len);
 
+			struct IOContext
+			{
+				IOContext()
+				{
+					this->fdarray = new VFS::FDArray();
+				}
 
-
-
+				VFS::FDArray* fdarray;
+			};
 
 			class FSDriver
 			{
 				public:
-					FSDriver(FSTypes type);
+					FSDriver(Devices::Storage::Partition* part) : partition(part) { }
 					virtual ~FSDriver();
+					virtual bool Traverse(VFS::vnode* node, const char* path, char** symlink);
+					virtual size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length);
+					virtual size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length);
+					virtual void Stat(VFS::vnode* node, stat* stat);
 
-					virtual Devices::Storage::Partition* GetPartition();
-					virtual VFS::Filesystem* RootFS();
+					// returns a list of items inside the directory, as vnodes.
+					virtual rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node);
 
-					virtual void PrintInfo();
-					virtual VFS::Folder* GetRootFolder() = 0;
-					virtual Library::LinkedList<VFS::FSObject>* GetFSObjects(VFS::Folder* start) = 0;
-
-					virtual void ReadFile(VFS::File* File, uint64_t Address, uint64_t length) = 0;
-					virtual void WriteFile(VFS::File* File, uint64_t Address, uint64_t length) = 0;
-					virtual void AppendFile(VFS::File* File, uint64_t Address, uint64_t length, uint64_t offset) = 0;
-
-					FSTypes Type;
+					virtual dev_t GetID() final { return this->fsid; }
 
 				protected:
-					Devices::Storage::Partition* ParentPartition;
-					VFS::Filesystem* rootfs;
+					dev_t fsid;
+					Devices::Storage::Partition* partition;
 			};
 
-			class FAT32 : public FSDriver
+			class FSDriverFat32 : public FSDriver
 			{
 				public:
-					FAT32(Devices::Storage::Partition* Parent);
+					FSDriverFat32(Devices::Storage::Partition* part);
+					~FSDriverFat32() override;
+					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
+					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
+					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
+					void Stat(VFS::vnode* node, stat* stat) override;
 
-
-					virtual VFS::Folder* GetRootFolder() override;
-					virtual void ReadFile(VFS::File* File, uint64_t Address, uint64_t length) override;
-					virtual void WriteFile(VFS::File* File, uint64_t Address, uint64_t length) override;
-					virtual void AppendFile(VFS::File* File, uint64_t Address, uint64_t length, uint64_t offset) override;
-					virtual Library::LinkedList<VFS::FSObject>* GetFSObjects(VFS::Folder* start) override;
-					virtual void PrintInfo() override;
-
-
-					uint16_t		GetBytesPerSector();
-					uint8_t			GetSectorsPerCluster();
-					uint16_t		GetReservedSectors();
-					uint8_t			GetNumberOfFATS();
-					uint16_t		GetNumberOfDirectories();
-
-					uint32_t		GetTotalSectors();
-					uint32_t		GetHiddenSectors();
-					uint32_t		GetFATSectorSize();
-					uint32_t		GetRootDirectoryCluster();
-
-					uint16_t		GetFSInfoCluster();
-					uint16_t		GetBackupBootCluster();
-					uint32_t		GetFirstUsableCluster();
-
+					rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 
 				private:
-					char*			GetFileName(const char* filename);
-					char*			GetFolderName(const char* foldername);
-					uint32_t		AllocateCluster(uint32_t PreviousCluster = 0);
+					rde::string* ReadLFN(uint64_t addr, int& nument);
+					uint64_t ClusterToLBA(uint32_t clus);
+					rde::vector<uint32_t>* GetClusterChain(VFS::vnode* node, uint64_t* numclus);
 
 					uint16_t BytesPerSector;
 					uint8_t SectorsPerCluster;
@@ -225,58 +169,137 @@ namespace Kernel
 					uint16_t BackupBootCluster;
 
 					uint64_t FirstUsableCluster;
-
 			};
 
 
 
-			class HFSPlus : public FSDriver
-			{
-				struct VolumeHeader_type
-				{
-					uint8_t signature[2];
-					uint16_t version;
-					uint32_t attributes;
-					uint32_t lastmountedversion;
-					uint32_t journalinfoblock;
 
-					uint32_t createdate;
-					uint32_t modifydate;
-					uint32_t backupdate;
-					uint32_t checkeddate;
+			// class FSDriver
+			// {
+			// 	public:
+			// 		FSDriver(FSTypes type);
+			// 		virtual ~FSDriver();
 
-					uint32_t filecount;
-					uint32_t foldercount;
+			// 		virtual Devices::Storage::Partition* GetPartition();
+			// 		virtual VFS::Filesystem* RootFS();
 
-					uint32_t blocksize;
-					uint32_t totalblocks;
-					uint32_t freeblocks;
+			// 		virtual void PrintInfo();
+			// 		virtual VFS::Folder* GetRootFolder() = 0;
+			// 		virtual Library::LinkedList<VFS::FSObject>* GetFSObjects(VFS::Folder* start) = 0;
 
-					uint32_t nextalloc;
-					uint32_t resourceclumpsize;
-					uint32_t dataclumpsize;
+			// 		virtual void ReadFile(VFS::File* File, uint64_t Address, uint64_t length) = 0;
+			// 		virtual void WriteFile(VFS::File* File, uint64_t Address, uint64_t length) = 0;
+			// 		virtual void AppendFile(VFS::File* File, uint64_t Address, uint64_t length, uint64_t offset) = 0;
 
+			// 		FSTypes Type;
 
+			// 	protected:
+			// 		Devices::Storage::Partition* ParentPartition;
+			// 		VFS::Filesystem* rootfs;
+			// };
 
-					uint32_t writecount;
-					uint64_t encodingbitmap;
-					uint32_t finderinfo[8];
-				} __attribute__ ((packed));
+			// class FAT32 : public FSDriver
+			// {
+			// 	public:
+			// 		FAT32(Devices::Storage::Partition* Parent);
 
 
-				public:
-					HFSPlus(Devices::Storage::Partition* parent);
+			// 		virtual VFS::Folder* GetRootFolder() override;
+			// 		virtual void ReadFile(VFS::File* File, uint64_t Address, uint64_t length) override;
+			// 		virtual void WriteFile(VFS::File* File, uint64_t Address, uint64_t length) override;
+			// 		virtual void AppendFile(VFS::File* File, uint64_t Address, uint64_t length, uint64_t offset) override;
+			// 		virtual Library::LinkedList<VFS::FSObject>* GetFSObjects(VFS::Folder* start) override;
+			// 		virtual void PrintInfo() override;
 
-					virtual VFS::Folder* GetRootFolder() override;
-					virtual void ReadFile(VFS::File* File, uint64_t Address, uint64_t length) override;
-					virtual void WriteFile(VFS::File* File, uint64_t Address, uint64_t length) override;
-					virtual void AppendFile(VFS::File* File, uint64_t Address, uint64_t length, uint64_t offset) override;
-					virtual Library::LinkedList<VFS::FSObject>* GetFSObjects(VFS::Folder* start) override;
-					virtual void PrintInfo() override;
 
-				private:
-					VolumeHeader_type* volumeheader;
-			};
+			// 		uint16_t		GetBytesPerSector();
+			// 		uint8_t			GetSectorsPerCluster();
+			// 		uint16_t		GetReservedSectors();
+			// 		uint8_t			GetNumberOfFATS();
+			// 		uint16_t		GetNumberOfDirectories();
+
+			// 		uint32_t		GetTotalSectors();
+			// 		uint32_t		GetHiddenSectors();
+			// 		uint32_t		GetFATSectorSize();
+			// 		uint32_t		GetRootDirectoryCluster();
+
+			// 		uint16_t		GetFSInfoCluster();
+			// 		uint16_t		GetBackupBootCluster();
+			// 		uint32_t		GetFirstUsableCluster();
+
+
+			// 	private:
+			// 		char*			GetFileName(const char* filename);
+			// 		char*			GetFolderName(const char* foldername);
+			// 		uint32_t		AllocateCluster(uint32_t PreviousCluster = 0);
+
+			// 		uint16_t BytesPerSector;
+			// 		uint8_t SectorsPerCluster;
+			// 		uint16_t ReservedSectors;
+			// 		uint8_t NumberOfFATs;
+			// 		uint16_t NumberOfDirectories;
+
+			// 		uint32_t TotalSectors;
+			// 		uint32_t HiddenSectors;
+
+			// 		uint32_t FATSectorSize;
+			// 		uint32_t RootDirectoryCluster;
+			// 		uint16_t FSInfoCluster;
+			// 		uint16_t BackupBootCluster;
+
+			// 		uint64_t FirstUsableCluster;
+
+			// };
+
+
+
+			// class HFSPlus : public FSDriver
+			// {
+			// 	struct VolumeHeader_type
+			// 	{
+			// 		uint8_t signature[2];
+			// 		uint16_t version;
+			// 		uint32_t attributes;
+			// 		uint32_t lastmountedversion;
+			// 		uint32_t journalinfoblock;
+
+			// 		uint32_t createdate;
+			// 		uint32_t modifydate;
+			// 		uint32_t backupdate;
+			// 		uint32_t checkeddate;
+
+			// 		uint32_t filecount;
+			// 		uint32_t foldercount;
+
+			// 		uint32_t blocksize;
+			// 		uint32_t totalblocks;
+			// 		uint32_t freeblocks;
+
+			// 		uint32_t nextalloc;
+			// 		uint32_t resourceclumpsize;
+			// 		uint32_t dataclumpsize;
+
+
+
+			// 		uint32_t writecount;
+			// 		uint64_t encodingbitmap;
+			// 		uint32_t finderinfo[8];
+			// 	} __attribute__ ((packed));
+
+
+			// 	public:
+			// 		HFSPlus(Devices::Storage::Partition* parent);
+
+			// 		virtual VFS::Folder* GetRootFolder() override;
+			// 		virtual void ReadFile(VFS::File* File, uint64_t Address, uint64_t length) override;
+			// 		virtual void WriteFile(VFS::File* File, uint64_t Address, uint64_t length) override;
+			// 		virtual void AppendFile(VFS::File* File, uint64_t Address, uint64_t length, uint64_t offset) override;
+			// 		virtual Library::LinkedList<VFS::FSObject>* GetFSObjects(VFS::Folder* start) override;
+			// 		virtual void PrintInfo() override;
+
+			// 	private:
+			// 		VolumeHeader_type* volumeheader;
+			// };
 
 			namespace MBR
 			{

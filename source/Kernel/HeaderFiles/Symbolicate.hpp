@@ -8,13 +8,13 @@
 namespace Kernel {
 namespace Symbolicate
 {
-	struct LineNamePair
-	{
-		uint64_t line;
-		Library::string* name;
-	};
+	// struct LineNamePair
+	// {
+	// 	uint64_t line;
+	// 	Library::string* name;
+	// };
 
-	void Initialise();
-	LineNamePair* ResolveAddress(uint64_t addr);
+	// void Initialise();
+	// LineNamePair* ResolveAddress(uint64_t addr);
 }
 }

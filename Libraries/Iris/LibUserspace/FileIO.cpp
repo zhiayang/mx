@@ -3,9 +3,9 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "../HeaderFiles/FileIO.hpp"
-#include "../HeaderFiles/String.hpp"
 #include "../HeaderFiles/List.hpp"
 #include "../HeaderFiles/SystemCall.hpp"
+#include <string.h>
 
 
 namespace Library {
@@ -13,8 +13,8 @@ namespace FileIO
 {
 	File::File(const char* n, uint8_t mode)
 	{
-		this->name = new char[String::Length(n)];
-		String::Copy(this->name, n);
+		this->name = new char[strlen(n)];
+		strcpy(this->name, n);
 		this->fd = SystemCall::OpenFile(n, mode);
 		this->size = SystemCall::GetFileSize(this->fd);
 		this->exists = false;

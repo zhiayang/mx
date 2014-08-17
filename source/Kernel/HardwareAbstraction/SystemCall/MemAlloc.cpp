@@ -9,25 +9,25 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace SystemCalls
 {
-	extern "C" uint64_t Syscall_AllocatePage()
-	{
-		return MemoryManager::Physical::AllocatePage();
-	}
+	// extern "C" uint64_t Syscall_AllocatePage()
+	// {
+	// 	return MemoryManager::Physical::AllocatePage();
+	// }
 
-	extern "C" void Syscall_FreePage(uint64_t p)
-	{
-		MemoryManager::Physical::FreePage(p);
-	}
+	// extern "C" void Syscall_FreePage(uint64_t p)
+	// {
+	// 	MemoryManager::Physical::FreePage(p);
+	// }
 
-	extern "C" void Syscall_MapVirtualAddress(uint64_t v, uint64_t p, uint64_t f)
-	{
-		MemoryManager::Virtual::MapAddress(v, p, f);
-	}
+	// extern "C" void Syscall_MapVirtualAddress(uint64_t v, uint64_t p, uint64_t f)
+	// {
+	// 	MemoryManager::Virtual::MapAddress(v, p, f);
+	// }
 
-	extern "C" void Syscall_UnmapVirtualAddress(uint64_t v)
-	{
-		MemoryManager::Virtual::UnMapAddress(v);
-	}
+	// extern "C" void Syscall_UnmapVirtualAddress(uint64_t v)
+	// {
+	// 	MemoryManager::Virtual::UnMapAddress(v);
+	// }
 }
 }
 }

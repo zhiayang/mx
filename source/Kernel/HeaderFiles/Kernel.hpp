@@ -4,6 +4,11 @@
 
 
 #pragma once
+
+#ifndef ORION_KERNEL
+#define ORION_KERNEL
+#endif
+
 #include <stdint.h>
 #include <Time.hpp>
 #include <HardwareAbstraction/VideoOutput/VideoDevice.hpp>
@@ -17,6 +22,8 @@
 #include <HardwareAbstraction/Random.hpp>
 #include <HardwareAbstraction/Devices/NIC.hpp>
 #include <HashMap.hpp>
+#include <assert.h>
+
 
 // Configurable addresses.
 // Contrary to the name, best not to mess with these.
@@ -75,13 +82,11 @@ namespace Kernel
 	extern Time::TimeStruct* SystemTime;
 	extern HardwareAbstraction::VideoOutput::GenericVideoDevice* VideoDevice;
 	extern HardwareAbstraction::Multitasking::Process* KernelProcess;
-	extern Library::HashMap<Library::string, Library::string>* KernelConfigFile;
 	extern HardwareAbstraction::Devices::PS2Controller* KernelPS2Controller;
 	extern HardwareAbstraction::Devices::Keyboard* KernelKeyboard;
 	extern HardwareAbstraction::Devices::NIC::GenericNIC* KernelNIC;
 	extern HardwareAbstraction::ACPI::RootTable* RootACPITable;
 	extern HardwareAbstraction::MemoryManager::MemoryMap::MemoryMap_type* K_MemoryMap;
-	extern HardwareAbstraction::Filesystems::VFS::Filesystem* RootFS;
 	extern HardwareAbstraction::CPUID::CPUIDData* KernelCPUID;
 	extern HardwareAbstraction::Random* KernelRandom;
 
@@ -95,7 +100,7 @@ namespace Kernel
 	// bool AssertCondition(bool condition, const char* filename, uint64_t line, const char* reason = 0);
 	// void HaltSystem(const char* message, const char* filename, uint64_t line, const char* reason = 0);
 
-	bool AssertCondition(bool condition, const char* filename, const char* line, const char* reason = 0);
+	void AssertCondition(const char* file, int line, const char* func, const char* expr);
 	void HaltSystem(const char* message, const char* filename, const char* line, const char* reason = 0);
 
 
@@ -112,9 +117,6 @@ namespace Kernel
 		void DumpBytes(uint64_t address, uint64_t length);
 	}
 }
-
-
-
 
 
 
@@ -138,30 +140,14 @@ namespace Kernel
 #define STRINGIZE(x) STRINGIZE2(x)
 #define STRINGIZE2(x) #x
 #define LINE_STRING STRINGIZE(__LINE__)
-
-#define ___ASSERT_1(A)		Kernel::AssertCondition(A, __FILE__, LINE_STRING, "")
-#define ___ASSERT_2(A, B)		Kernel::AssertCondition(A, __FILE__, LINE_STRING, B)
-
-
-// The interim macro that simply strips the excess and ends up with the required macro
-#define ___ASSERT_X(x, A, B, FUNC, ...) FUNC
-
-
-
-// The macro that the programmer uses
-#define assert(...)						___ASSERT_X(,##__VA_ARGS__,	\
-								___ASSERT_2(__VA_ARGS__),		\
-								___ASSERT_1(__VA_ARGS__),		\
-													)
-
-
 ;
 
-void operator delete(void* p);
-void operator delete[](void* p);
+
+void operator delete(void* p) noexcept;
+void operator delete[](void* p) noexcept;
 void* operator new(unsigned long size);
 void* operator new[](unsigned long size);
-void* operator new(unsigned long, void* addr);
+void* operator new(unsigned long, void* addr) noexcept;
 
 
 

@@ -30,27 +30,8 @@ namespace Filesystems
 		0xEB14: ext4
 	*/
 
-	FSDriver::FSDriver(FSTypes type)
-	{
-		this->Type = type;
-	}
-
 	FSDriver::~FSDriver()
 	{
-	}
-
-	void FSDriver::PrintInfo()
-	{
-	}
-
-	Partition* FSDriver::GetPartition()
-	{
-		return this->ParentPartition;
-	}
-
-	VFS::Filesystem* FSDriver::RootFS()
-	{
-		return this->rootfs;
 	}
 }
 }

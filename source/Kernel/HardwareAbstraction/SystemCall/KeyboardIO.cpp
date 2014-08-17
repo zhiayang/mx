@@ -8,10 +8,10 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace SystemCalls
 {
-	extern "C" uint8_t Syscall_ReadKeyboardKey()
-	{
-		return Kernel::KernelKeyboard->ReadBuffer();
-	}
+	// extern "C" uint8_t Syscall_ReadKeyboardKey()
+	// {
+	// 	return Kernel::KernelKeyboard->ReadBuffer();
+	// }
 }
 }
 }
