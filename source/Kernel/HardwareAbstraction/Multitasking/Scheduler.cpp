@@ -18,8 +18,8 @@ namespace HardwareAbstraction {
 namespace Multitasking
 {
 	// if, after N number of switches, processes in the low/norm queue don't get to run, run them all to completion.
-	#define LowStarveThreshold	256
-	#define NormStarveThreshold	64
+	#define LowStarveThreshold	1000000
+	#define NormStarveThreshold	1000000
 
 
 	static bool IsFirst = true;
