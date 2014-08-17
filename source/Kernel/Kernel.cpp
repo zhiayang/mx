@@ -327,10 +327,15 @@ namespace Kernel
 			VFS::Mount(f1->Partitions->Get(0), fs, "/");
 			auto fd = OpenFile("/test.txt", 0);
 
+			Log("file opened");
 
 			struct stat st;
 			Stat(fd, &st);
-			PrintFormatted("file is %d bytes", st.st_size);
+			PrintFormatted("file is %d bytes\n", st.st_size);
+
+			void* buf = new uint8_t[st.st_size];
+			auto read = Read(fd, buf, 0, st.st_size);
+			PrintFormatted("read %d bytes", read);
 
 			// PrintFormatted("%d\n", fd);
 

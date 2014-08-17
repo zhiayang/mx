@@ -333,8 +333,11 @@ namespace Filesystems
 		uint64_t dma = MemoryManager::Physical::AllocateDMA((cluslen * this->SectorsPerCluster * 512 + 0xFFF) / 0x1000);
 		uint64_t obuf = dma;
 
+		Log(1, "%x clusters to read", cluslen);
 		for(auto i = skippedclus; i < skippedclus + cluslen; i++)
 		{
+			// Log(1, "reading cluster %x", i);
+			StandardIO::PrintFormatted("r");
 			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA((*vnd->clusters)[(int) i]), dma, this->SectorsPerCluster * 512);
 			dma += this->SectorsPerCluster * 512;
 		}
