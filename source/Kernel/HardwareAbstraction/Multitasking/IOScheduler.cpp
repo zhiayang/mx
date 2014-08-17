@@ -12,7 +12,7 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace IO
 {
-	#define MAX_TRANSFERS	-1
+	#define DIRECTOP	0
 
 	struct IOTransfer
 	{
@@ -87,7 +87,9 @@ namespace IO
 	{
 		Transfers = new rde::list<IOTransfer*>();
 		listmtx = new Mutex();
-		Multitasking::AddToQueue(Multitasking::CreateKernelThread(Scheduler, 2));
+
+		if(!DIRECTOP)
+			Multitasking::AddToQueue(Multitasking::CreateKernelThread(Scheduler, 2));
 	}
 
 	void Read(StorageDevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes)
@@ -100,22 +102,28 @@ namespace IO
 			return;
 		}
 
-		IOTransfer* req = new IOTransfer(dev, pos, buf, bytes);
+		if(DIRECTOP)
+		{
+			dev->Read(pos, buf, bytes);
+		}
+		else
+		{
+			IOTransfer* req = new IOTransfer(dev, pos, buf, bytes);
 
-		req->owningthread = Multitasking::GetCurrentThread();
-		req->writeop = false;
-		req->blockop = true;
-		req->completed = false;
+			req->owningthread = Multitasking::GetCurrentThread();
+			req->writeop = false;
+			req->blockop = true;
+			req->completed = false;
 
-		LOCK(listmtx);
-		Transfers->push_back(req);
-		UNLOCK(listmtx);
+			LOCK(listmtx);
+			Transfers->push_back(req);
+			UNLOCK(listmtx);
 
-		BLOCK();
-		assert(req->completed);
+			BLOCK();
+			assert(req->completed);
 
-		delete req;
-		return;
+			delete req;
+		}
 	}
 
 	void Write(StorageDevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes)
@@ -125,22 +133,28 @@ namespace IO
 		if(bytes == 0 || buf == 0)
 			return;
 
-		IOTransfer* req = new IOTransfer(dev, pos, buf, bytes);
+		if(DIRECTOP)
+		{
+			dev->Write(pos, buf, bytes);
+		}
+		else
+		{
+			IOTransfer* req = new IOTransfer(dev, pos, buf, bytes);
 
-		req->owningthread = Multitasking::GetCurrentThread();
-		req->writeop = true;
-		req->blockop = true;
-		req->completed = false;
+			req->owningthread = Multitasking::GetCurrentThread();
+			req->writeop = true;
+			req->blockop = true;
+			req->completed = false;
 
-		LOCK(listmtx);
-		Transfers->push_back(req);
-		UNLOCK(listmtx);
+			LOCK(listmtx);
+			Transfers->push_back(req);
+			UNLOCK(listmtx);
 
-		BLOCK();
+			BLOCK();
 
-		assert(req->completed == true);
-		delete req;
-		return;
+			assert(req->completed == true);
+			delete req;
+		}
 	}
 
 

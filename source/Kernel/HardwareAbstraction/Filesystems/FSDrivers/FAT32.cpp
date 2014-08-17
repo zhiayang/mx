@@ -266,7 +266,6 @@ namespace Filesystems
 
 		for(auto v : *dirs)
 		{
-			Log(3, "%x", cn->id);
 			bool found = false;
 			// iterative traverse.
 			assert(cn);
@@ -559,7 +558,7 @@ namespace Filesystems
 			uint8_t* clusterchain = (uint8_t*) buf;
 			cchain = *((uint32_t*)&clusterchain[FatOffset]) & 0x0FFFFFFF;
 
-			// Log("sector %x, fat entry offset %x, cluster %x, nextclus = %x", FatSector, FatSector * 512 + FatOffset, Cluster, cchain);
+			Log("sector %x, fat entry offset %x, cluster %x, nextclus = %x", FatSector, FatSector * 512 + FatOffset, Cluster, cchain);
 
 
 			// cchain is the next cluster in the list.
