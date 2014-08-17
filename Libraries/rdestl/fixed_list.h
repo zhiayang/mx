@@ -126,7 +126,7 @@ private:
 
 public:
 	typedef T												value_type;
-	typedef int												size_type;
+	typedef size_t												size_type;
 	typedef node_iterator<node*, T*, T&>					iterator;
 	typedef node_iterator<const node*, const T*, const T&>	const_iterator;
 
@@ -145,7 +145,7 @@ public:
 	fixed_list(const fixed_list& rhs)
 	{
 		get_root()->reset();
-		copy(rhs, 
+		copy(rhs,
 			int_to_type<has_trivial_copy<T>::value>());
 	}
 	explicit fixed_list(e_noinitialize)
@@ -161,7 +161,7 @@ public:
 	{
 		if (this != &rhs)
 		{
-			copy(rhs, 
+			copy(rhs,
 				int_to_type<has_trivial_copy<T>::value>());
 		}
 		return *this;
@@ -249,7 +249,7 @@ public:
 	}
 
 	template<class InputIterator>
-	void assign(InputIterator first, InputIterator last) 
+	void assign(InputIterator first, InputIterator last)
 	{
 		clear();
 		while (first != last)

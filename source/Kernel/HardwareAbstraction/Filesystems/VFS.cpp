@@ -20,9 +20,12 @@ namespace Filesystems
 		{
 			FSDriver* driver;
 			Partition* partition;
-			std::string* mountpoint;
+			rde::string* mountpoint;
 			bool ismounted;
 		};
+
+		static rde::vector<Filesystem*>* mountedfses;
+		static rde::hash_map<id_t, vnode*>* vnodepool;
 
 		static IOContext* getctx()
 		{
@@ -33,8 +36,18 @@ namespace Filesystems
 			return proc->iocontext;
 		}
 
-		static rde::vector<Filesystem*>* mountedfses;
-		static rde::hash_map<id_t, vnode*>* vnodepool;
+		static Filesystem* getfs(rde::string& path)
+		{
+			for(auto v : *mountedfses)
+			{
+				if(path.substr(0, v->mountpoint->length()) == *v->mountpoint)
+				{
+					return v;
+				}
+			}
+			return nullptr;
+		}
+
 
 		void Initialise()
 		{
@@ -126,7 +139,7 @@ namespace Filesystems
 			auto _fs = new Filesystem;
 			_fs->driver = fs;
 			_fs->ismounted = true;
-			_fs->mountpoint = new std::string(path);
+			_fs->mountpoint = new rde::string(path);
 			_fs->partition = part;
 
 			mountedfses->push_back(_fs);
@@ -151,7 +164,6 @@ namespace Filesystems
 			fe->flags	= flags;
 			fe->fd		= FirstFreeFD + ioctx->fdarray->fds->size();
 
-			// ioctx->fdarray->fds->reserve(4);
 			ioctx->fdarray->fds->push_back(fe);
 
 			return fe;
@@ -165,19 +177,8 @@ namespace Filesystems
 			if(!mountedfses)
 				return nullptr;
 
-			Filesystem* fs = nullptr;
-			std::string pth;
-			pth += path;
-
-			for(auto v : *mountedfses)
-			{
-				auto tmp = pth.substr(0, 1);
-				if(pth.substr(0, v->mountpoint->size()) == *v->mountpoint)
-				{
-					fs = v;
-					break;
-				}
-			}
+			rde::string pth = rde::string(path);
+			Filesystem* fs = getfs(pth);
 
 			if(fs == nullptr || fs->ismounted == false)
 				return nullptr;
