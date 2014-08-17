@@ -223,6 +223,18 @@ namespace Filesystems
 			auto fs = node->info->driver;
 			return fs->Write(node, buf, off, len);
 		}
+
+		void Stat(IOContext* ioctx, vnode* node, struct stat* st)
+		{
+			assert(ioctx);
+			assert(node);
+			assert(node->info);
+			assert(node->refcount > 0);
+			assert(node->info->driver);
+
+			auto fs = node->info->driver;
+			fs->Stat(node, st);
+		}
 	}
 
 
@@ -257,6 +269,22 @@ namespace Filesystems
 
 		return VFS::Write(ctx, node, buf, off, len);
 	}
+
+	VFSError Stat(fd_t fd, struct stat* out)
+	{
+		auto ctx = getctx();
+
+		auto node = VFS::NodeFromFD(ctx, fd);
+		if(node == nullptr)
+			return VFSError::NOT_FOUND;
+
+		VFS::Stat(ctx, node, out);
+		return VFSError::NO_ERROR;
+	}
 }
 }
 }
+
+
+
+

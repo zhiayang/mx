@@ -326,11 +326,17 @@ namespace Kernel
 			// mount root fs from partition 0 at /
 			VFS::Mount(f1->Partitions->Get(0), fs, "/");
 			auto fd = OpenFile("/test.txt", 0);
-			PrintFormatted("%d\n", fd);
 
-			auto buf = new uint8_t[512];
-			auto read = Read(fd, buf, 123841, 1024);
-			Log("read %d bytes:\n\n%s", read, buf);
+
+			struct stat st;
+			Stat(fd, &st);
+			PrintFormatted("file is %d bytes", st.st_size);
+
+			// PrintFormatted("%d\n", fd);
+
+			// auto buf = new uint8_t[512];
+			// auto read = Read(fd, buf, 123841, 1024);
+			// Log("read %d bytes:\n\n%s", read, buf);
 		}
 
 

@@ -101,11 +101,13 @@ namespace Kernel
 
 				size_t Read(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len);
 				size_t Write(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len);
+				void Stat(IOContext* ioctx, vnode* node, struct stat* st);
 			}
 
 			fd_t OpenFile(const char* path, int flags);
 			size_t Read(fd_t fd, void* buf, off_t off, size_t len);
 			size_t Write(fd_t fd, void* buf, off_t off, size_t len);
+			VFS::VFSError Stat(fd_t fd, struct stat* out);
 
 			struct IOContext
 			{
@@ -125,7 +127,7 @@ namespace Kernel
 					virtual bool Traverse(VFS::vnode* node, const char* path, char** symlink);
 					virtual size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length);
 					virtual size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length);
-					virtual void Stat(VFS::vnode* node, stat* stat);
+					virtual void Stat(VFS::vnode* node, struct stat* stat);
 
 					// returns a list of items inside the directory, as vnodes.
 					virtual rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node);
@@ -145,7 +147,7 @@ namespace Kernel
 					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
 					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
-					void Stat(VFS::vnode* node, stat* stat) override;
+					void Stat(VFS::vnode* node, struct stat* stat) override;
 
 					rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 
