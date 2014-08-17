@@ -316,7 +316,6 @@ namespace Kernel
 		// manual jump start.
 		{
 			using namespace Filesystems;
-			using namespace Filesystems::VFS;
 
 			VFS::Initialise();
 
@@ -325,7 +324,9 @@ namespace Kernel
 
 			// mount root fs from partition 0 at /
 			VFS::Mount(f1->Partitions->Get(0), fs, "/");
-			auto fd = OpenFile("/test.txt", 0);
+			auto fd = OpenFile("/nonexist.txt", 0);
+			if(fd == -1)
+				HALT("file does not exist");
 
 			Log("file opened");
 
@@ -336,12 +337,6 @@ namespace Kernel
 			void* buf = new uint8_t[st.st_size];
 			auto read = Read(fd, buf, 0, st.st_size);
 			PrintFormatted("read %d bytes", read);
-
-			// PrintFormatted("%d\n", fd);
-
-			// auto buf = new uint8_t[512];
-			// auto read = Read(fd, buf, 123841, 1024);
-			// Log("read %d bytes:\n\n%s", read, buf);
 		}
 
 

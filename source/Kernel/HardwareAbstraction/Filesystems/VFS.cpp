@@ -14,7 +14,7 @@ namespace Filesystems
 	namespace VFS
 	{
 		static id_t curid = 0;
-		const static long FirstFreeFD = 3;
+		const static fd_t FirstFreeFD = 3;
 
 		struct Filesystem
 		{
@@ -197,7 +197,8 @@ namespace Filesystems
 				auto ret = VFS::Open(ioctx, node, flags);
 				return ret;
 			}
-			else return nullptr;
+			else
+				return nullptr;
 		}
 
 		size_t Read(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len)
@@ -246,7 +247,7 @@ namespace Filesystems
 		auto ctx = getctx();
 
 		auto fe = VFS::OpenFile(ctx, path, flags);
-		return fe ? fe->fd : 0;
+		return fe ? fe->fd : -1;
 	}
 
 	size_t Read(fd_t fd, void* buf, off_t off, size_t len)
