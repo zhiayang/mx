@@ -305,12 +305,9 @@ namespace Kernel
 
 		Log("Compatible video card located");
 
-		// RootFS = f1->Partitions->Get(0)->GetFilesystem()->RootFS();
-
-
-		PrintFormatted("Initialising RTC...\n");
-		Devices::RTC::Initialise(0);
-		Log("RTC Initialised");
+		// PrintFormatted("Initialising RTC...\n");
+		// Devices::RTC::Initialise(0);
+		// Log("RTC Initialised");
 
 
 		// manual jump start.
@@ -324,11 +321,12 @@ namespace Kernel
 
 			// mount root fs from partition 0 at /
 			VFS::Mount(f1->Partitions->Get(0), fs, "/");
-			auto fd = OpenFile("/nonexist.txt", 0);
+			auto fd = OpenFile("/Applications/test.txt", 0);
+			// auto fd = OpenFile("/test.txt", 0);
 			if(fd == -1)
 				HALT("file does not exist");
 
-			Log("file opened");
+			PrintFormatted("file opened\n");
 
 			struct stat st;
 			Stat(fd, &st);
