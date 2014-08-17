@@ -273,11 +273,52 @@ namespace Filesystems
 
 	size_t FSDriverFat32::Read(vnode* node, void* buf, off_t offset, size_t length)
 	{
-		(void) node;
-		(void) buf;
-		(void) offset;
-		(void) length;
-		return 0;
+		assert(node);
+		assert(buf);
+		if(length == 0)
+			return 0;
+
+		assert(node->info);
+		assert(node->info->data);
+		assert(node->info->driver == this);
+
+		Log(3, "entryclus = %x", tovnd(node)->entrycluster);
+
+		vnode_data* vnd = tovnd(node);
+		uint64_t numclus = 0;
+		if(!vnd->clusters)
+			vnd->clusters = this->GetClusterChain(node, &numclus);
+
+		assert(vnd->clusters->size() == (int) numclus);
+
+		// for(auto v : *vnd->clusters)
+			// Log("chain: %x", v);
+
+		Log(3, "%d clusters", vnd->clusters->size());
+
+		// because we can read from offsets, don't read all clusters if we can.
+		uint64_t skippedclus = offset / (this->SectorsPerCluster * 512);
+		uint64_t clusoffset = offset - (skippedclus * this->SectorsPerCluster * 512);
+
+		uint64_t cluslen = (length + (this->SectorsPerCluster * 512 - 1)) / (this->SectorsPerCluster * 512);
+		// if we started in the middle of a file, we need to read an additional cluster.
+		if(offset > 0)
+			cluslen++;
+
+		uint64_t dma = MemoryManager::Physical::AllocateDMA((cluslen * this->SectorsPerCluster * 512 + 0xFFF) / 0x1000);
+		uint64_t obuf = dma;
+
+		Log(3, "skippedclus = %x, clusoffset = %x, cluslen = %x, len = %x", skippedclus, clusoffset, cluslen, length);
+		for(auto i = skippedclus; i < skippedclus + cluslen; i++)
+		{
+			Log(3, "reading cluster %x, lba %x", (*vnd->clusters)[(int) i], this->ClusterToLBA((*vnd->clusters)[(int) i]));
+			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA((*vnd->clusters)[(int) i]), dma, this->SectorsPerCluster * 512);
+			dma += this->SectorsPerCluster * 512;
+		}
+
+		dma = obuf;
+		memcpy(buf, (void*) (dma + clusoffset), length);
+		return length;
 	}
 
 	size_t FSDriverFat32::Write(vnode* node, const void* buf, off_t offset, size_t length)
@@ -310,6 +351,8 @@ namespace Filesystems
 		uint64_t numclus = 0;
 		if(!clusters)
 			clusters = this->GetClusterChain(node, &numclus);
+
+		assert((int) numclus == clusters->size());
 
 		// try and read each cluster into a contiguous buffer.
 		uint64_t dirsize = numclus * this->SectorsPerCluster * 512;
@@ -378,8 +421,14 @@ namespace Filesystems
 
 				vn->type = (dirent->attrib & ATTR_FOLDER ? VNodeType::Folder : VNodeType::File);
 
+				// setup fs data
+				// we need to fill in the 'entrycluster' value in the vnode
+				// so that getclusterchain() can get the rest.
+
 				auto fsd = new vnode_data;
 				fsd->name = name;
+				fsd->entrycluster = ((uint32_t) (dirent->clusterhigh << 16)) | dirent->clusterlow;
+
 				vn->info->data = (void*) fsd;
 
 				ret->push_back(vn);
@@ -414,23 +463,35 @@ namespace Filesystems
 		auto ret = new rde::vector<uint32_t>();
 
 		uint64_t lastsec = 0;
-		auto buf = MemoryManager::Physical::AllocateDMA(1);
-		// Log(3, "%x", buf);
+		auto buf = MemoryManager::Physical::AllocateDMA(2);
+		auto obuf = buf;
 		do
 		{
-			uint32_t FatSector = (uint32_t) this->partition->GetStartLBA() + this->ReservedSectors + (Cluster * 4 / 512);
+			uint32_t FatSector = (uint32_t) this->partition->GetStartLBA() + this->ReservedSectors + ((Cluster * 4) / 512);
 			uint32_t FatOffset = (Cluster * 4) % 512;
 
 			// check if we even need to read.
-			// since we read 4K, we get 7 more free sectors
+			// since we read 8K, we get 15 more free sectors
 			// optimisation.
-			if(lastsec == 0 || FatSector > lastsec + 7)
-				IO::Read(this->partition->GetStorageDevice(), FatSector, buf, 0x1000);
+			if(lastsec == 0 || FatSector > lastsec + 15)
+			{
+				// reset the internal offset
+				buf = obuf;
+				IO::Read(this->partition->GetStorageDevice(), FatSector, buf, 0x2000);
+			}
+			else
+			{
+				// but if it is 'cached' in a sense, we need to update the 'buf' value to point to the actual place.
+				buf += (FatSector - lastsec) * 512;
+			}
 
 			lastsec = FatSector;
 
 			uint8_t* clusterchain = (uint8_t*) buf;
 			cchain = *((uint32_t*)&clusterchain[FatOffset]) & 0x0FFFFFFF;
+
+			// Log("sector %x, fat entry offset %x, cluster %x, nextclus = %x", FatSector, FatSector * 512 + FatOffset, Cluster, cchain);
+
 
 			// cchain is the next cluster in the list.
 			ret->push_back(Cluster);
@@ -440,7 +501,8 @@ namespace Filesystems
 
 		} while((cchain != 0) && !((cchain & 0x0FFFFFFF) >= 0x0FFFFFF8));
 
-		MemoryManager::Physical::FreeDMA(buf, 1);
+		buf = obuf;
+		MemoryManager::Physical::FreeDMA(buf, 2);
 		tovnd(node)->clusters = ret;
 
 		return ret;
