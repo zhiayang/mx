@@ -105,9 +105,15 @@ namespace Library
 			return result;
 		}
 
-		char* ConvertToString(int64_t num)
+		char* ConvertToString(int64_t num, char* out)
 		{
-			char* dest = new char[32];
+			char* dest;
+			if(out == 0)
+				dest = new char[32];
+
+			else
+				dest = out;
+
 			int result = 0;
 			int64_t copy = num;
 
@@ -479,14 +485,14 @@ namespace Library
 }
 
 
-namespace __cxxabiv1
-{
-	__extension__ typedef int __guard __attribute__((mode(__DI__)));
-	extern "C" int __cxa_guard_acquire(__cxxabiv1::__guard* g)		{ return !*(char*)(g);	}
-	extern "C" void __cxa_guard_release(__cxxabiv1::__guard* g)		{ *(char*) g = 1;		}
-	extern "C" void __cxa_guard_abort(__cxxabiv1::__guard*)		{ while(true);		}
-	extern "C" void __cxa_pure_virtual()					{ while(true);		}
-}
+// namespace __cxxabiv1
+// {
+// 	__extension__ typedef int __guard __attribute__((mode(__DI__)));
+// 	extern "C" int __cxa_guard_acquire(__cxxabiv1::__guard* g)		{ return !*(char*)(g);	}
+// 	extern "C" void __cxa_guard_release(__cxxabiv1::__guard* g)		{ *(char*) g = 1;		}
+// 	extern "C" void __cxa_guard_abort(__cxxabiv1::__guard*)		{ while(true);		}
+// 	extern "C" void __cxa_pure_virtual()					{ while(true);		}
+// }
 
 
 

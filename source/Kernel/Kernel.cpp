@@ -27,7 +27,6 @@ using namespace Kernel::HardwareAbstraction;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
 using namespace Library;
 using namespace Library::StandardIO;
-using Library::string;
 
 
 extern "C" uint64_t KernelEnd;
@@ -56,10 +55,9 @@ namespace Kernel
 
 	// things
 	Multitasking::Process* KernelProcess;
-	HashMap<string, string>* KernelConfigFile;
 	Time::TimeStruct* SystemTime;
 	ACPI::RootTable* RootACPITable;
-	Filesystems::VFS::Filesystem* RootFS;
+	// Filesystems::VFS::Filesystem* RootFS;
 	CPUID::CPUIDData* KernelCPUID;
 
 
@@ -112,6 +110,18 @@ namespace Kernel
 		MemoryMap::Initialise(MBTStruct);
 		Virtual::Initialise();
 		Physical::Bootstrap();
+		// copy kernel CR3 to somewhere sane-r
+		{
+			uint64_t newcr3 = Physical::AllocateDMA(0x18, false);
+			Memory::Copy((void*) newcr3, (void*) 0x3000, 0x18000);
+
+			// switch to that cr3.
+			Virtual::SwitchPML4T((Virtual::PageMapStructure*) newcr3);
+			asm volatile("mov %0, %%cr3" :: "r"(newcr3));
+			CR3Value = newcr3;
+
+		}
+
 		KernelHeap::Initialise();
 
 		Physical::Initialise();
@@ -152,25 +162,12 @@ namespace Kernel
 			UHALT();
 		}
 
-		// copy kernel CR3 to somewhere sane-r
-		{
-			// uint64_t newcr3 = Physical::AllocatePage_Csontiguous(0x18);
-			uint64_t newcr3 = Physical::AllocateDMA(0x18, false);
-			Memory::Copy64((void*) newcr3, (void*) 0x3000, 0x18000 / 8);
-
-			// switch to that cr3.
-			Virtual::SwitchPML4T((Virtual::PageMapStructure*) newcr3);
-			asm volatile("mov %0, %%cr3" :: "r"(newcr3));
-			CR3Value = newcr3;
-			Log("Moved Kernel CR3 to %x", CR3Value);
-		}
-
 
 		// Copy the kernel memory map elsewhere.
 		{
 			uint64_t a = (uint64_t) K_MemoryMap;
 			uint32_t s = K_MemoryMap->SizeOfThisStructure;
-			K_MemoryMap = (MemoryMap::MemoryMap_type*) Allocate_G(K_MemoryMap->SizeOfThisStructure + sizeof(uint32_t));
+			K_MemoryMap = (MemoryMap::MemoryMap_type*) Allocate_G(K_MemoryMap->SizeOfThisStructure + sizeof(uint64_t));
 			Library::Memory::CopyOverlap((void*) K_MemoryMap, (void*) a, s);
 			Log("Memory map relocation complete");
 		}
@@ -223,6 +220,8 @@ namespace Kernel
 
 		Log("Kernel online");
 
+
+
 		// Initialise the other, less-essential things.
 		PCI::Initialise();
 
@@ -247,14 +246,15 @@ namespace Kernel
 				PrintFormatted("Check your system and try again.\n\n");
 				PrintFormatted("Currently, supported systems include: BGA (Bochs, QEMU, VirtualBox) and SVGA (VMWare)\n");
 				{
-					for(uint16_t num = 0; num < PCI::PCIDevice::PCIDevices->Size(); num++)
+					// for(uint16_t num = 0; num < PCI::PCIDevice::PCIDevices->Size(); num++)
+					for(auto dev : *PCI::PCIDevice::PCIDevices)
 					{
-						PCI::PCIDevice::PCIDevices->Get(num)->PrintPCIDeviceInfo();
+						dev->PrintPCIDeviceInfo();
 
-						if(PCI::PCIDevice::PCIDevices->Get(num)->GetIsMultifunction())
+						if(dev->GetIsMultifunction())
 							PrintFormatted(" ==>%w Multifunction Device", Colours::Yellow);
 
-						if(PCI::MatchVendorDevice(PCI::PCIDevice::PCIDevices->Get(num), 0x1234, 0x1111) || PCI::MatchVendorDevice(PCI::PCIDevice::PCIDevices->Get(num), 0x80EE, 0xBEEF))
+						if(PCI::MatchVendorDevice(dev, 0x1234, 0x1111) || PCI::MatchVendorDevice(dev, 0x80EE, 0xBEEF))
 							PrintFormatted(" ==>%w BGA Compatible Video Card:%w %x", Colours::Cyan, Colours::Orange, GetTrueLFBAddress());
 
 						PrintFormatted("\n");
@@ -293,7 +293,7 @@ namespace Kernel
 			if(PCI::MatchVendorDevice(nic, 0x10EC, 0x8139))
 			{
 				Log("Realtek RTL8139 NIC found, initialising driver...");
-				KernelNIC = new NIC::GenericNIC(new NIC::RTL8139(nic));
+				// KernelNIC = new NIC::GenericNIC(new NIC::RTL8139(nic));
 			}
 		}
 
@@ -304,8 +304,8 @@ namespace Kernel
 		LFBBufferAddr = LFBAddr;
 
 		Log("Compatible video card located");
-		Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->Get(0);
-		RootFS = f1->Partitions->Get(0)->GetFilesystem()->RootFS();
+
+		// RootFS = f1->Partitions->Get(0)->GetFilesystem()->RootFS();
 
 
 		PrintFormatted("Initialising RTC...\n");
@@ -313,10 +313,31 @@ namespace Kernel
 		Log("RTC Initialised");
 
 
+		// manual jump start.
+		{
+			using namespace Filesystems;
+			using namespace Filesystems::VFS;
+
+			VFS::Initialise();
+
+			Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->Get(0);
+			FSDriverFat32* fs = new FSDriverFat32(f1->Partitions->Get(0));
+
+			// mount root fs from partition 0 at /
+			VFS::Mount(f1->Partitions->Get(0), fs, "/");
+			auto fd = OpenFile("/test.txt", 0);
+			PrintFormatted("%d\n", fd);
+
+			auto buf = new uint8_t[512];
+			auto read = Read(fd, buf, 123841, 1024);
+			Log("read %d bytes:\n\n%s", read, buf);
+		}
+
 
 
 		// kernel stops here
 		// for now.
+		PrintFormatted("\n\nKernel Halted\n");
 		UHALT();
 
 
@@ -352,151 +373,151 @@ namespace Kernel
 
 
 
-		// Stuff this in a small scope.
-		// Read the configuration file.
-		// This is mainly used for setting the resolution as well as UTC offset.
-		uint16_t PrefResX = 0, PrefResY = 0;
-		{
-			PrintFormatted("Reading Configuration File...\n");
-			Log("Reading Configuration file from /System/Library/Preferences/CorePreferences.plist");
-			ConfigFile::Initialise();
-
-			PrefResX = (uint16_t) ConfigFile::ReadInteger("ResolutionHorizontal");
-			PrefResY = (uint16_t) ConfigFile::ReadInteger("ResolutionVertical");
-			Kernel::SystemTime->UTCOffset = (int8_t) ConfigFile::ReadInteger("UTCTimezone");
-			Time::PrintSeconds = ConfigFile::ReadBoolean("ClockShowSeconds");
-
-			if(PrefResX == 0 || PrefResY == 0)
-			{
-				Log(3, "Invalid resolution -- config file may be corrupted, assuming 800x600");
-				PrefResX = 800;
-				PrefResY = 600;
-			}
-		}
-
-
-		Multitasking::AddToQueue(Multitasking::CreateKernelThread(Network::DHCP::MonitorThread));
-		Multitasking::AddToQueue(Multitasking::CreateKernelThread(Network::DNS::MonitorThread));
-		Network::Initialise();
-		// Symbolicate::Initialise();
-
-
-
-		// Set video mode
-		PrintFormatted("\nInitialising Linear Framebuffer at %x...", LFBAddr);
-		VideoDevice->SetMode(PrefResX, PrefResY, 32);
-		VideoOutput::LinearFramebuffer::Initialise();
-
-		Log("Requested resolution of %dx%d, LFB at %x", PrefResX, PrefResY, LFBAddr);
-
-
-		// scope this.
-		{
-			// Get the set resolution (may be different than our preferred)
-			uint16_t ResX = VideoOutput::LinearFramebuffer::GetResX();
-			uint16_t ResY = VideoOutput::LinearFramebuffer::GetResX();
-
-			// Calculate how many bytes we need. (remember, 4 bytes per pixel)
-			uint32_t bytes = (ResX * ResY) * 4;
-
-			// Get that rounded up to the nearest page
-			bytes = (bytes + (4096 - 1)) / 4096;
-			LFBInPages = bytes;
-
-			// map a bunch of pages for the buffer.
-			for(uint64_t k = 0; k < bytes; k++)
-				Virtual::MapAddress(LFBBufferAddress_INT + (k * 0x1000), Physical::AllocatePage(), 0x07);
-
-			Virtual::MapRegion(LFBAddr, LFBAddr, bytes, 0x07);
-
-			// LFBBufferAddr = LFBBufferAddress_INT;
-		}
-
-		// setup our sockets.
-		Log("Socket subsystem online");
-		{
-			Multitasking::Process* kernel = KernelProcess;
-			kernel->FileDescriptors[0].Pointer = new IPC::IPCSocketEndpoint(0);
-			kernel->FileDescriptors[1].Pointer = new IPC::IPCSocketEndpoint(1);
-			kernel->FileDescriptors[2].Pointer = new IPC::IPCSocketEndpoint(2);
-			kernel->FileDescriptors[3].Pointer = new IPC::IPCSocketEndpoint(3);
-		}
-
-
-		Log("Video mode set");
-
-		Console::Initialise();
-		// Log("Console initialised");
+		// // Stuff this in a small scope.
+		// // Read the configuration file.
+		// // This is mainly used for setting the resolution as well as UTC offset.
+		// uint16_t PrefResX = 0, PrefResY = 0;
 		// {
-		// 	uint8_t* CProg = LoadBinary::LoadFileToMemory("/System/Library/CoreServices/VTConsole.oex");
-		// 	LoadBinary::GenericExecutable* Exec = new LoadBinary::GenericExecutable("VTConsole", CProg);
-		// 	Exec->AutomaticLoadExecutable();
+		// 	PrintFormatted("Reading Configuration File...\n");
+		// 	Log("Reading Configuration file from /System/Library/Preferences/CorePreferences.plist");
+		// 	ConfigFile::Initialise();
 
+		// 	PrefResX = (uint16_t) ConfigFile::ReadInteger("ResolutionHorizontal");
+		// 	PrefResY = (uint16_t) ConfigFile::ReadInteger("ResolutionVertical");
+		// 	Kernel::SystemTime->UTCOffset = (int8_t) ConfigFile::ReadInteger("UTCTimezone");
+		// 	Time::PrintSeconds = ConfigFile::ReadBoolean("ClockShowSeconds");
+
+		// 	if(PrefResX == 0 || PrefResY == 0)
+		// 	{
+		// 		Log(3, "Invalid resolution -- config file may be corrupted, assuming 800x600");
+		// 		PrefResX = 800;
+		// 		PrefResY = 600;
+		// 	}
+		// }
+
+
+		// Multitasking::AddToQueue(Multitasking::CreateKernelThread(Network::DHCP::MonitorThread));
+		// Multitasking::AddToQueue(Multitasking::CreateKernelThread(Network::DNS::MonitorThread));
+		// Network::Initialise();
+		// // Symbolicate::Initialise();
+
+
+
+		// // Set video mode
+		// PrintFormatted("\nInitialising Linear Framebuffer at %x...", LFBAddr);
+		// VideoDevice->SetMode(PrefResX, PrefResY, 32);
+		// VideoOutput::LinearFramebuffer::Initialise();
+
+		// Log("Requested resolution of %dx%d, LFB at %x", PrefResX, PrefResY, LFBAddr);
+
+
+		// // scope this.
+		// {
+		// 	// Get the set resolution (may be different than our preferred)
+		// 	uint16_t ResX = VideoOutput::LinearFramebuffer::GetResX();
+		// 	uint16_t ResY = VideoOutput::LinearFramebuffer::GetResX();
+
+		// 	// Calculate how many bytes we need. (remember, 4 bytes per pixel)
+		// 	uint32_t bytes = (ResX * ResY) * 4;
+
+		// 	// Get that rounded up to the nearest page
+		// 	bytes = (bytes + (4096 - 1)) / 4096;
+		// 	LFBInPages = bytes;
+
+		// 	// map a bunch of pages for the buffer.
+		// 	for(uint64_t k = 0; k < bytes; k++)
+		// 		Virtual::MapAddress(LFBBufferAddress_INT + (k * 0x1000), Physical::AllocatePage(), 0x07);
+
+		// 	Virtual::MapRegion(LFBAddr, LFBAddr, bytes, 0x07);
+
+		// 	// LFBBufferAddr = LFBBufferAddress_INT;
+		// }
+
+		// // setup our sockets.
+		// Log("Socket subsystem online");
+		// {
+		// 	Multitasking::Process* kernel = KernelProcess;
+		// 	kernel->FileDescriptors[0].Pointer = new IPC::IPCSocketEndpoint(0);
+		// 	kernel->FileDescriptors[1].Pointer = new IPC::IPCSocketEndpoint(1);
+		// 	kernel->FileDescriptors[2].Pointer = new IPC::IPCSocketEndpoint(2);
+		// 	kernel->FileDescriptors[3].Pointer = new IPC::IPCSocketEndpoint(3);
+		// }
+
+
+		// Log("Video mode set");
+
+		// Console::Initialise();
+		// // Log("Console initialised");
+		// // {
+		// // 	uint8_t* CProg = LoadBinary::LoadFileToMemory("/System/Library/CoreServices/VTConsole.oex");
+		// // 	LoadBinary::GenericExecutable* Exec = new LoadBinary::GenericExecutable("VTConsole", CProg);
+		// // 	Exec->AutomaticLoadExecutable();
+
+		// // 	Exec->SetApplicationType(Multitasking::ThreadType::NormalApplication);
+		// // 	Exec->Execute();
+
+		// // 	delete[] CProg;
+		// // }
+
+		// IPC::CentralDispatch::InitialiseWindowDispatcher();
+		// Log("Window Dispatcher online");
+
+
+
+
+		// KernelKeyboard = new Keyboard(new PS2Keyboard());
+		// Console::ClearScreen();
+		// Bootscreen::PrintMessage("Loading Orion-X4\n");
+
+		// #if 0
+		// {
+		// 	// experimentation area.
+		// 	Multitasking::GetThread(1)->SignalHandlers[41] = sig;
+		// 	IPC::SendSimpleMessage(1, IPC::MessageTypes::PosixSignal, 41, 0, 0, 0);
+		// 	while(true);
+		// }
+		// #endif
+
+
+
+		// // Bootscreen::Initialise();
+
+		// string bms;
+		// PrintToString(&bms, "Version %d.%d.%d r%02d -- Build %d", VER_MAJOR, VER_MINOR, VER_REVSN, VER_MINRV, X_BUILD_NUMBER);
+		// Bootscreen::PrintMessage(bms.CString());
+
+		// if(false)
+		// {
+		// 	SLEEP(100);
+		// 	Bootscreen::StartProgressBar();
+		// 	SLEEP(500);
+		// }
+		// else
+		// {
+		// 	// SLEEP(300);
+		// }
+
+
+		// // Load the CarbonShell.oex program.
+		// {
+		// 	uint8_t* CProg = LoadBinary::LoadFileToMemory("/System/Library/CoreServices/CarbonShell.oex");
+		// 	LoadBinary::GenericExecutable* Exec = new LoadBinary::GenericExecutable("CarbonShell", CProg);
+		// 	Exec->AutomaticLoadExecutable();
 		// 	Exec->SetApplicationType(Multitasking::ThreadType::NormalApplication);
+
+		// 	IPC::CentralDispatch::AddApplicationToList(Exec->proc->Threads->Front(), Exec->proc);
 		// 	Exec->Execute();
 
 		// 	delete[] CProg;
 		// }
 
-		IPC::CentralDispatch::InitialiseWindowDispatcher();
-		Log("Window Dispatcher online");
+		// Log("Starting TimeService");
+		// // Multitasking::AddToQueue(Multitasking::CreateKernelThread(Kernel::Time::PrintTime));
+		// Console::ClearScreen();
 
-
-
-
-		KernelKeyboard = new Keyboard(new PS2Keyboard());
-		Console::ClearScreen();
-		Bootscreen::PrintMessage("Loading Orion-X4\n");
-
-		#if 0
-		{
-			// experimentation area.
-			Multitasking::GetThread(1)->SignalHandlers[41] = sig;
-			IPC::SendSimpleMessage(1, IPC::MessageTypes::PosixSignal, 41, 0, 0, 0);
-			while(true);
-		}
-		#endif
-
-
-
-		// Bootscreen::Initialise();
-
-		string bms;
-		PrintToString(&bms, "Version %d.%d.%d r%02d -- Build %d", VER_MAJOR, VER_MINOR, VER_REVSN, VER_MINRV, X_BUILD_NUMBER);
-		Bootscreen::PrintMessage(bms.CString());
-
-		if(false)
-		{
-			SLEEP(100);
-			Bootscreen::StartProgressBar();
-			SLEEP(500);
-		}
-		else
-		{
-			// SLEEP(300);
-		}
-
-
-		// Load the CarbonShell.oex program.
-		{
-			uint8_t* CProg = LoadBinary::LoadFileToMemory("/System/Library/CoreServices/CarbonShell.oex");
-			LoadBinary::GenericExecutable* Exec = new LoadBinary::GenericExecutable("CarbonShell", CProg);
-			Exec->AutomaticLoadExecutable();
-			Exec->SetApplicationType(Multitasking::ThreadType::NormalApplication);
-
-			IPC::CentralDispatch::AddApplicationToList(Exec->proc->Threads->Front(), Exec->proc);
-			Exec->Execute();
-
-			delete[] CProg;
-		}
-
-		Log("Starting TimeService");
-		// Multitasking::AddToQueue(Multitasking::CreateKernelThread(Kernel::Time::PrintTime));
-		Console::ClearScreen();
-
-		Log("Kernel entering Central Dispatch mode...");
-		IsKernelInCentralDispatch = true;
-		IPC::CentralDispatch::Initialise();
+		// Log("Kernel entering Central Dispatch mode...");
+		// IsKernelInCentralDispatch = true;
+		// IPC::CentralDispatch::Initialise();
 	}
 
 	void Idle()
@@ -510,30 +531,10 @@ namespace Kernel
 
 
 
-	bool AssertCondition(bool condition, const char* filename, uint64_t line, const char* reason)
-	{
-		(void) line;
-		if(BOpt_Unlikely(condition))
-			return 0;
-
-		HaltSystem("assert() Failed!", filename, "line dammit", reason);
-		return 1;
-	}
-
-	bool AssertCondition(bool condition, const char* filename, const char* line, const char* reason)
-	{
-		if(BOpt_Unlikely(condition))
-			return 0;
-
-		HaltSystem("assert() Failed!", filename, line, reason);
-		return 1;
-	}
-
-
 	void HaltSystem(const char* message, const char* filename, uint64_t line, const char* reason)
 	{
 		Log("System Halted: %s, %s:%d -- %x", message, filename, line, __builtin_return_address(1));
-		PrintFormatted("\n\n%wERROR: %w%s%r\n%wReason%r: %w%s%r\n%w%s%r -- %wLine %w%d%r%w\n\n%wOrion-X4 has met an unresolvable error, and will now halt.", Colours::Yellow, Colours::Red, message, Colours::DarkCyan, Colours::Orange, !reason ? "None" : reason, Colours::Cyan, filename, Colours::Silver, Colours::Blue, line, Colours::Silver, Colours::Silver);
+		PrintFormatted("\n\nERROR: %s\nReason: %s\n%s -- Line %d, Return Addr %x\n\nOrion-X4 has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 
 
 		UHALT();
@@ -545,6 +546,29 @@ namespace Kernel
 		PrintFormatted("\n\n%wERROR: %w%s%r\n%wReason%r: %w%s%r\n%w%s%r -- %wLine %w%s%r%w\n\n%wOrion-X4 has met an unresolvable error, and will now halt.", Colours::Yellow, Colours::Red, message, Colours::DarkCyan, Colours::Orange, !reason ? "None" : reason, Colours::Cyan, filename, Colours::Silver, Colours::Blue, line, Colours::Silver, Colours::Silver);
 
 		UHALT();
+	}
+
+
+	void AssertCondition(const char* file, int line, const char* func, const char* expr)
+	{
+		(void) line;
+		(void) func;
+		HaltSystem("assert() Failed!", file, line, expr);
+	}
+
+
+	bool AssertCondition(bool condition, const char* filename, const char* line, const char* reason)
+	{
+		if(BOpt_Unlikely(condition))
+			return 0;
+
+		HaltSystem("assert() Failed!", filename, line, reason);
+		return 1;
+	}
+
+	extern "C" void __assert(const char* f, unsigned long l, const char* fn, const char* e)
+	{
+		AssertCondition(f, (int) l, fn, e);
 	}
 
 	uint64_t GetFramebufferAddress()
@@ -612,34 +636,44 @@ namespace rapidxml
 	}
 }
 
-void operator delete(void* p)
+void operator delete(void* p) noexcept
 {
-	Free_G(p);
+	KernelHeap::FreeChunk(p);
 }
 
-void operator delete[](void* p)
+void operator delete[](void* p) noexcept
 {
-	Free_G(p);
+	KernelHeap::FreeChunk(p);
 }
 
 void* operator new(unsigned long size)
 {
-	return (void*) Allocate_G((uint32_t) size);
+	return (void*) KernelHeap::AllocateChunk(size);
 }
 
 void* operator new[](unsigned long size)
 {
-	return (void*) Allocate_G((uint32_t) size);
+	return (void*) KernelHeap::AllocateChunk(size);
 }
 
-void* operator new(unsigned long, void* addr)
+extern "C" void* malloc(size_t s)
 {
-	return addr;
+	return KernelHeap::AllocateChunk(s);
 }
+extern "C" void free(void* ptr)
+{
+	KernelHeap::FreeChunk(ptr);
+}
+extern "C" void* realloc(void* ptr, size_t size)
+{
+	void* np = KernelHeap::AllocateChunk(size);
+	size_t os = KernelHeap::QuerySize(ptr);
 
+	Memory::Copy(np, ptr, os);
+	KernelHeap::FreeChunk(ptr);
 
-
-
+	return np;
+}
 
 
 

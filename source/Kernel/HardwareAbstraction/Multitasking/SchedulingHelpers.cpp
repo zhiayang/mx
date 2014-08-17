@@ -6,7 +6,7 @@
 #include <Kernel.hpp>
 #include <StandardIO.hpp>
 #include <List.hpp>
-#include <String.hpp>
+#include <string.h>
 
 using namespace Kernel;
 using namespace Library;
@@ -254,17 +254,17 @@ namespace Multitasking
 		LinkedList<Thread>* list = new LinkedList<Thread>();
 		for(uint64_t s = 0; s < ThreadList_HighPrio->Size(); s++)
 		{
-			if(Library::String::Compare(n, ThreadList_HighPrio->Get(s)->Parent->Name))
+			if(strcmp(n, ThreadList_HighPrio->Get(s)->Parent->Name) == 0)
 				list->InsertFront(ThreadList_HighPrio->Get(s));
 		}
 		for(uint64_t s = 0; s < ThreadList_HighPrio->Size(); s++)
 		{
-			if(Library::String::Compare(n, ThreadList_NormPrio->Get(s)->Parent->Name))
+			if(strcmp(n, ThreadList_NormPrio->Get(s)->Parent->Name) == 0)
 				list->InsertFront(ThreadList_NormPrio->Get(s));
 		}
 		for(uint64_t s = 0; s < ThreadList_LowPrio->Size(); s++)
 		{
-			if(Library::String::Compare(n, ThreadList_LowPrio->Get(s)->Parent->Name))
+			if(strcmp(n, ThreadList_LowPrio->Get(s)->Parent->Name) == 0)
 				list->InsertFront(ThreadList_LowPrio->Get(s));
 		}
 
@@ -273,7 +273,7 @@ namespace Multitasking
 
 		for(uint64_t s = 0; s < SleepList->Size(); s++)
 		{
-			if(Library::String::Compare(n, SleepList->Get(s)->Parent->Name))
+			if(strcmp(n, SleepList->Get(s)->Parent->Name) == 0)
 				list->InsertFront(SleepList->Get(s));
 		}
 
