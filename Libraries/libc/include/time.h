@@ -60,12 +60,17 @@ typedef struct timespec timespec;
 #define CLOCK_REALTIME	0
 #endif
 
+
+time_t timegm(tm* tm);
+tm* gmtime(const time_t* timer);
+tm* gmtime_r(const time_t* time_ptr, tm* ret);
+
+
 clock_t clock();
 double difftime(time_t end, time_t beginning);
 time_t mktime(tm* tms);
 time_t time(time_t* timer);
 char* asctime(const tm* timeptr);
-tm* gmtime(const time_t* timer);
 tm* localtime(const time_t* timer);
 char* ctime(const time_t* timer);
 size_t strftime(char* ptr, size_t maxsize, const char* fmt, const struct tm* timeptr);

@@ -8,10 +8,13 @@
 #include <stdlib.h>
 #include <orion.h>
 #include <string.h>
+#include <time.h>
 
 #include <rdestl/vector.h>
 #include <rdestl/sstream.h>
 #include <rdestl/algorithm.h>
+
+#include <sys/stat.h>
 
 using namespace Library;
 using namespace Library::StandardIO;
@@ -99,6 +102,8 @@ namespace Filesystems
 		uint32_t entrycluster;
 		rde::vector<uint32_t>* clusters;
 		uint32_t filesize;
+
+		DirectoryEntry dirent;
 	};
 
 	static vnode_data* tovnd(void* p)
@@ -123,7 +128,27 @@ namespace Filesystems
 		return ret;
 	}
 
+	static time_t datetounix(uint16_t dosdate, uint16_t dostime)
+	{
+		uint8_t year	= (dosdate & 0xFE00) >> 9;
+		uint8_t month	= (dosdate & 0x1E0) >> 5;
+		uint8_t day	= dosdate & 0x1F;
 
+		uint8_t hour	= (dostime & 0xF800) >> 11;
+		uint8_t minute	= (dostime & 0x7E0) >> 5;
+		uint8_t sec2	= (dostime & 0x1F);
+
+		tm ts;
+		ts.tm_year	= year;
+		ts.tm_mon	= month;
+		ts.tm_mday	= day;
+
+		ts.tm_hour	= hour;
+		ts.tm_min	= minute;
+		ts.tm_sec	= sec2 * 2;
+
+		return mktime(&ts);
+	}
 
 
 
@@ -328,12 +353,29 @@ namespace Filesystems
 		return 0;
 	}
 
-	void FSDriverFat32::Stat(vnode* node, stat* stat)
+	void FSDriverFat32::Stat(vnode* node, struct stat* stat)
 	{
 		// we really just need the dirent.
+		assert(node);
+		assert(node->info);
+		assert(node->info->data);
+		assert(node->info->driver == this);
 
-		(void) node;
-		(void) stat;
+		assert(stat);
+		DirectoryEntry* dirent = &tovnd(node)->dirent;
+
+		stat->st_dev		= 0;
+		stat->st_ino		= 0;
+		stat->st_mode		= 0;
+		stat->st_nlink		= 0;
+		stat->st_uid		= 0;
+		stat->st_gid		= 0;
+		stat->st_size		= tovnd(node)->filesize;
+		stat->st_blksize	= (tovnd(node)->filesize + (512 - 1)) / 512;
+		stat->st_blocks		= stat->st_blksize;
+		stat->st_atime		= datetounix(dirent->accessdate, 0);
+		stat->st_mtime		= datetounix(dirent->modifieddate, dirent->modifiedtime);
+		stat->st_ctime		= datetounix(dirent->createdate, dirent->createtime);
 	}
 
 	rde::vector<VFS::vnode*>* FSDriverFat32::ReadDir(VFS::vnode* node)
@@ -341,6 +383,7 @@ namespace Filesystems
 		assert(node);
 		assert(node->info);
 		assert(node->info->data);
+		assert(node->info->driver == this);
 
 		if(tovnd(node)->entrycluster == 0)
 			tovnd(node)->entrycluster = 2;
@@ -428,6 +471,7 @@ namespace Filesystems
 				fsd->name = name;
 				fsd->entrycluster = ((uint32_t) (dirent->clusterhigh << 16)) | dirent->clusterlow;
 				fsd->filesize = dirent->filesize;
+				memcpy(&fsd->dirent, dirent, sizeof(DirectoryEntry));
 
 				vn->info->data = (void*) fsd;
 

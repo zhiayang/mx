@@ -99,12 +99,12 @@ typedef int64_t suseconds_t;
 
 #ifndef __time_t
 #define __time_t
-typedef uint64_t time_t;
+typedef int64_t time_t;
 #endif
 
 #ifndef __timer_t
 #define __timer_t
-typedef uint64_t timer_t;
+typedef int64_t timer_t;
 #endif
 
 #ifndef __uid_t
