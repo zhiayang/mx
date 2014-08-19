@@ -321,6 +321,8 @@ namespace Kernel
 
 			// mount root fs from partition 0 at /
 			VFS::Mount(f1->Partitions->Get(0), fs, "/");
+			Log("Root FS Mounted at /");
+
 			auto fd = OpenFile("/Applications/test.txt", 0);
 			// auto fd = OpenFile("/test.txt", 0);
 			if(fd == -1)

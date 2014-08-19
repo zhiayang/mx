@@ -24,7 +24,7 @@ namespace Filesystems
 			bool ismounted;
 		};
 
-		static rde::vector<Filesystem*>* mountedfses;
+		static Library::Vector<Filesystem*>* mountedfses;
 		static rde::hash_map<id_t, vnode*>* vnodepool;
 
 		static IOContext* getctx()
@@ -51,7 +51,7 @@ namespace Filesystems
 
 		void Initialise()
 		{
-			mountedfses = new rde::vector<Filesystem*>();
+			mountedfses = new Library::Vector<Filesystem*>();
 			vnodepool = new rde::hash_map<id_t, vnode*>();
 		}
 
@@ -142,7 +142,7 @@ namespace Filesystems
 			_fs->mountpoint = new rde::string(path);
 			_fs->partition = part;
 
-			mountedfses->push_back(_fs);
+			mountedfses->InsertBack(_fs);
 		}
 
 		void Unmount(const char* path)
@@ -162,9 +162,9 @@ namespace Filesystems
 			fe->node	= node;
 			fe->offset	= 0;
 			fe->flags	= flags;
-			fe->fd		= FirstFreeFD + ioctx->fdarray->fds->size();
+			fe->fd		= FirstFreeFD + ioctx->fdarray->fds->Size();
 
-			ioctx->fdarray->fds->push_back(fe);
+			ioctx->fdarray->fds->InsertBack(fe);
 
 			return fe;
 		}
