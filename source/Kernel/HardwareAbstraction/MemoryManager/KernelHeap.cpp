@@ -38,677 +38,677 @@ static uint64_t GetPageFixed(uint64_t addr)
 // void Print()
 // everything else is implementation defined.
 
-namespace Kernel {
-namespace HardwareAbstraction {
-namespace MemoryManager {
-namespace KernelHeap
-{
-	// bookkeeping
-	static uint64_t SizeOfHeap;
-	static uint64_t HeapAddress;
-	static uint64_t HeapEnd;
-
-	#define FREE_HEADER_MAGIC		0xF1EEC0DE
-	#define USED_HEADER_MAGIC	0xDEADC0DE
-	#define FOOTER_MAGIC		0xC0DEBABE
-	#define ALIGNMENT			64
-
-	#define fail()				assert(0)
-
-	struct _header
-	{
-		uint64_t size;
-		uint32_t magic;
-		uint32_t owningtid;
-
-	} __attribute__ ((packed));
-
-	struct _footer
-	{
-		_header* hdr;
-		uint32_t magic;
-		uint32_t pad;
-
-	} __attribute__ ((packed));
-
-	bool _verify(_header* hdr)
-	{
-		if(hdr->magic == FREE_HEADER_MAGIC || hdr->magic == USED_HEADER_MAGIC)
-			return true;
-
-		else
-		{
-			StandardIO::PrintFormatted("false: [%x - %x - %x, %x]\n", hdr, hdr->magic, __builtin_return_address(0), __builtin_return_address(1));
-			return false;
-		}
-	}
-	bool _verify(_footer* ftr)
-	{
-		if(ftr->magic == FOOTER_MAGIC)
-			return true;
-
-		else
-		{
-			StandardIO::PrintFormatted("[%x (%x) - %x, %x, %x]", ftr, ftr->hdr, ftr->magic, __builtin_return_address(0), __builtin_return_address(1));
-			return false;
-		}
-	}
-
-
-	_header* verify(_header* hdr)		{ assert(_verify(hdr)); return hdr; }
-	_footer* verify(_footer* ftr)		{ assert(_verify(ftr)); return ftr; }
-
-	_header* header(uint64_t addr)	{ return verify((_header*) addr); }
-	_footer* footer(uint64_t addr)		{ return verify((_footer*) addr); }
-
-	_header* mkheader(uint64_t at, size_t size)
-	{
-		_header* h = (_header*) at;
-		h->magic = FREE_HEADER_MAGIC;
-		h->owningtid = 0;
-		h->size = size;
-
-		return verify(h);
-	}
-
-	_footer* mkfooter(uint64_t at, _header* hdr)
-	{
-		_footer* ftr = (_footer*) at;
-		ftr->hdr = verify(hdr);
-		ftr->magic = FOOTER_MAGIC;
-		ftr->pad = 0;
-
-		return verify(ftr);
-	}
-
-	_footer* footer(_header* hdr)
-	{
-		verify(hdr);
-		return footer((uint64_t) hdr + sizeof(_header) + hdr->size);
-	}
-
-	_header* left(_header* hdr)
-	{
-		verify(hdr);
-		return verify(footer((uint64_t) hdr - sizeof(_footer))->hdr);
-	}
-
-	_header* right(_header* hdr)
-	{
-		verify(hdr);
-		verify(footer((uint64_t) hdr + hdr->size));
-		return verify(header((uint64_t) hdr + hdr->size + sizeof(_footer)));
-	}
-
-	bool isfree(_header* hdr)
-	{
-		verify(hdr);
-		if(hdr->magic == FREE_HEADER_MAGIC)
-			return true;
-
-		else
-			return false;
-	}
-
-	void setfree(_header* hdr)
-	{
-		verify(hdr)->magic = FREE_HEADER_MAGIC;
-	}
-
-	void setfree(_footer* ftr)
-	{
-		setfree(verify(ftr->hdr));
-	}
-
-	void setused(_header* hdr)
-	{
-		verify(hdr)->magic = USED_HEADER_MAGIC;
-	}
-
-	void setused(_footer* ftr)
-	{
-		setfree(verify(ftr->hdr));
-	}
-
-	size_t calcoverhead(size_t s)
-	{
-		return s > sizeof(_header) + sizeof(_footer) ? s - sizeof(_header) - sizeof(_footer) : 0;
-	}
-
-	uint64_t _round(uint64_t s)
-	{
-		uint64_t remainder = s % ALIGNMENT;
-
-		if(remainder == 0)
-			return s;
-
-		return s + ALIGNMENT - remainder;
-	}
-
-
-	void Initialise()
-	{
-		SizeOfHeap = 1;
-		HeapAddress = GetPageFixed(KernelHeapAddress);
-		HeapEnd = HeapAddress + 0x1000;
-
-		auto hdr = mkheader(HeapAddress, calcoverhead(0x1000));
-		mkfooter(HeapAddress + sizeof(_header) + hdr->size, hdr);
-	}
-
-	void ExpandHeap()
-	{
-		// get the last chunk.
-		_footer* ftr = footer(HeapEnd - sizeof(_footer));
-		GetPageFixed(HeapEnd);
-		if(isfree(ftr->hdr))
-		{
-			// add to its header's size, then move the footer
-			verify(ftr->hdr)->size += 0x1000;
-			auto f = mkfooter(HeapEnd + 0x1000 - sizeof(_footer), ftr->hdr);
-			memset(ftr, 0, sizeof(_footer));
-
-			verify(f);
-		}
-		else
-		{
-			auto hdr = mkheader(HeapEnd, calcoverhead(0x1000));
-			mkfooter(HeapEnd + 0x1000 - sizeof(_footer), hdr);
-			setfree(hdr);
-		}
-
-		SizeOfHeap++;
-		HeapEnd += 0x1000;
-	}
-
-	void* AllocateChunk(size_t sz)
-	{
-		sz = _round(sz);
-		uint64_t ptr = HeapAddress;
-		_header* hdr = nullptr;
-		while(ptr < HeapEnd)
-		{
-			_header* h = header(ptr);
-			if(isfree(h))
-			{
-				hdr = h;
-				break;
-			}
-
-			ptr += sizeof(_header) + h->size + sizeof(_footer);
-		}
-
-		if(hdr == nullptr)
-		{
-			ExpandHeap();
-			return AllocateChunk(sz);
-		}
-
-		// set it to used.
-		verify(hdr);
-		setused(hdr);
-
-		auto oldsz = hdr->size;
-		if(oldsz - sz > sizeof(_header) + sizeof(_footer) + ALIGNMENT)
-		{
-			// we have enough space
-			// make a new header right after the previous footer
-			auto nh = mkheader((uint64_t) hdr + sizeof(_header) + sz, oldsz - sz - sizeof(_header) - sizeof(_footer));
-			mkfooter((uint64_t) hdr + sizeof(_header) + verify(hdr)->size, nh);
-			setfree(nh);
-		}
-
-		Log("allocated %x bytes at %x", sz, (uint64_t) hdr + sizeof(_header));
-		return (void*) ((uint64_t) hdr + sizeof(_header));
-	}
-
-	void FreeChunk(void* ptr)
-	{
-	}
-
-	size_t QuerySize(void* ptr)
-	{
-		return 0;
-	}
-
-	void Print()
-	{
-	}
-}
-}
-}
-}
-
-
-
-
-
-
-
-
-// #define PARANOIA					0x1
-// #define MapFlags					0x7
-// #define fail()						assert(0)
-// #define printf						Log
-
 // namespace Kernel {
 // namespace HardwareAbstraction {
 // namespace MemoryManager {
 // namespace KernelHeap
 // {
-// 	// book keeping
-// 	static uint64_t ChunksInHeap;
-// 	static uint64_t LastFree;
-
-// 	static uint64_t MetadataAddr;
-// 	static uint64_t HeapAddress;
-
+// 	// bookkeeping
 // 	static uint64_t SizeOfHeap;
-// 	static uint64_t SizeOfMeta;
+// 	static uint64_t HeapAddress;
+// 	static uint64_t HeapEnd;
 
-// 	const uint64_t Alignment = 64;
+// 	#define FREE_HEADER_MAGIC		0xF1EEC0DE
+// 	#define USED_HEADER_MAGIC	0xDEADC0DE
+// 	#define FOOTER_MAGIC		0xC0DEBABE
+// 	#define ALIGNMENT			64
 
-// 	static Mutex* mtx;
+// 	#define fail()				assert(0)
 
-// 	struct Chunk
+// 	struct _header
 // 	{
-// 		uint64_t offset;
 // 		uint64_t size;
-// 	};
+// 		uint32_t magic;
+// 		uint32_t owningtid;
 
-// 	uint64_t addr(Chunk* c)
+// 	} __attribute__ ((packed));
+
+// 	struct _footer
 // 	{
-// 		return (uint64_t) c;
-// 	}
+// 		_header* hdr;
+// 		uint32_t magic;
+// 		uint32_t pad;
 
-// 	Chunk* chunk(uint64_t addr)
+// 	} __attribute__ ((packed));
+
+// 	bool _verify(_header* hdr)
 // 	{
-// 		return (Chunk*) addr;
-// 	}
-
-// 	Chunk* array()
-// 	{
-// 		return (Chunk*) MetadataAddr;
-// 	}
-
-// 	bool isfree(Chunk* c)
-// 	{
-// 		return c->size & 0x1;
-// 	}
-
-// 	void setfree(Chunk* c)
-// 	{
-// 		c->size |= 0x1;
-// 	}
-
-// 	void setused(Chunk* c)
-// 	{
-// 		c->size &= ~0x1;
-// 	}
-
-// 	uint64_t size(Chunk* c)
-// 	{
-// 		return c->size & ~0x1;
-// 	}
-
-// 	uint64_t midpoint(uint64_t a, uint64_t b)
-// 	{
-// 		return a + ((b - a) / 2);
-// 	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-// 	Chunk* index(uint64_t i)
-// 	{
-// 		Chunk* arr = (Chunk*) MetadataAddr;
-// 		if(i < ChunksInHeap)
-// 			return &arr[i];
+// 		if(hdr->magic == FREE_HEADER_MAGIC || hdr->magic == USED_HEADER_MAGIC)
+// 			return true;
 
 // 		else
-// 			return nullptr;
-// 	}
-
-// 	void pushback(uint64_t at)
-// 	{
-// 		// memcpy them behind.
-// 		// but first, check if we have enough space.
-// 		if((ChunksInHeap + 1) * sizeof(Chunk) > SizeOfMeta * 0x1000)
 // 		{
-// 			// we need to expand.
-// 			uint64_t fixed = GetPageFixed(MetadataAddr + (SizeOfMeta * 0x1000));
-// 			assert(fixed == MetadataAddr + (SizeOfMeta * 0x1000));
-// 			SizeOfMeta++;
+// 			StandardIO::PrintFormatted("false: [%x - %x - %x, %x]\n", hdr, hdr->magic, __builtin_return_address(0), __builtin_return_address(1));
+// 			return false;
 // 		}
-
-// 		auto behind = (ChunksInHeap - 1) - at;
-
-// 		// memcpy.
-// 		memcpy((void*) index(at + 1), (void*) index(at), behind * sizeof(Chunk));
-// 		memset((void*) index(at), 0, sizeof(Chunk));
 // 	}
-
-// 	void pullfront(uint64_t at)
+// 	bool _verify(_footer* ftr)
 // 	{
-// 		// essentially deletes a chunk.
-// 		// 'at' contains the index of the chunk to delete.
-// 		void* c = index(at);
-// 		if(at == ChunksInHeap - 1)
-// 			return;
+// 		if(ftr->magic == FOOTER_MAGIC)
+// 			return true;
 
-// 		// calculate how many chunks to pull
-// 		auto ahead = (ChunksInHeap - 1) - at;
-
-// 		memset(c, 0, sizeof(Chunk));
-// 		memmove(c, index(at + 1), ahead * sizeof(Chunk));
-// 		memset((void*) ((uint64_t) c - 1 + ahead * sizeof(Chunk)), 0, sizeof(Chunk));
+// 		else
+// 		{
+// 			StandardIO::PrintFormatted("[%x (%x) - %x, %x, %x]", ftr, ftr->hdr, ftr->magic, __builtin_return_address(0), __builtin_return_address(1));
+// 			return false;
+// 		}
 // 	}
 
+
+// 	_header* verify(_header* hdr)		{ assert(_verify(hdr)); return hdr; }
+// 	_footer* verify(_footer* ftr)		{ assert(_verify(ftr)); return ftr; }
+
+// 	_header* header(uint64_t addr)	{ return verify((_header*) addr); }
+// 	_footer* footer(uint64_t addr)		{ return verify((_footer*) addr); }
+
+// 	_header* mkheader(uint64_t at, size_t size)
+// 	{
+// 		_header* h = (_header*) at;
+// 		h->magic = FREE_HEADER_MAGIC;
+// 		h->owningtid = 0;
+// 		h->size = size;
+
+// 		return verify(h);
+// 	}
+
+// 	_footer* mkfooter(uint64_t at, _header* hdr)
+// 	{
+// 		_footer* ftr = (_footer*) at;
+// 		ftr->hdr = verify(hdr);
+// 		ftr->magic = FOOTER_MAGIC;
+// 		ftr->pad = 0;
+
+// 		return verify(ftr);
+// 	}
+
+// 	_footer* footer(_header* hdr)
+// 	{
+// 		verify(hdr);
+// 		return footer((uint64_t) hdr + sizeof(_header) + hdr->size);
+// 	}
+
+// 	_header* left(_header* hdr)
+// 	{
+// 		verify(hdr);
+// 		return verify(footer((uint64_t) hdr - sizeof(_footer))->hdr);
+// 	}
+
+// 	_header* right(_header* hdr)
+// 	{
+// 		verify(hdr);
+// 		verify(footer((uint64_t) hdr + hdr->size));
+// 		return verify(header((uint64_t) hdr + hdr->size + sizeof(_footer)));
+// 	}
+
+// 	bool isfree(_header* hdr)
+// 	{
+// 		verify(hdr);
+// 		if(hdr->magic == FREE_HEADER_MAGIC)
+// 			return true;
+
+// 		else
+// 			return false;
+// 	}
+
+// 	void setfree(_header* hdr)
+// 	{
+// 		verify(hdr)->magic = FREE_HEADER_MAGIC;
+// 	}
+
+// 	void setfree(_footer* ftr)
+// 	{
+// 		setfree(verify(ftr->hdr));
+// 	}
+
+// 	void setused(_header* hdr)
+// 	{
+// 		verify(hdr)->magic = USED_HEADER_MAGIC;
+// 	}
+
+// 	void setused(_footer* ftr)
+// 	{
+// 		setfree(verify(ftr->hdr));
+// 	}
+
+// 	size_t calcoverhead(size_t s)
+// 	{
+// 		return s > sizeof(_header) + sizeof(_footer) ? s - sizeof(_header) - sizeof(_footer) : 0;
+// 	}
 
 // 	uint64_t _round(uint64_t s)
 // 	{
-// 		uint64_t remainder = s % Alignment;
+// 		uint64_t remainder = s % ALIGNMENT;
 
 // 		if(remainder == 0)
 // 			return s;
 
-// 		return s + Alignment - remainder;
+// 		return s + ALIGNMENT - remainder;
 // 	}
 
 
-
-
-
-
-// 	uint64_t bsearch(uint64_t key, uint64_t (*getkey)(uint64_t ind))
-// 	{
-// 		uint64_t imin = 0;
-// 		uint64_t imax = ChunksInHeap - 1;
-// 		uint64_t remaining = ChunksInHeap;
-
-// 		while(imax >= imin && remaining > 0)
-// 		{
-// 			// calculate the midpoint for roughly equal partition
-// 			auto imid = midpoint(imin, imax);
-
-// 			// determine which subarray to search
-// 			if(getkey(imid) < key)
-// 			{
-// 				if(imid < ChunksInHeap)
-// 					imin = imid + 1;
-
-// 				else
-// 					break;
-// 			}
-
-// 			else if(getkey(imid) > key)
-// 			{
-// 				if(imid > 0)
-// 					imax = imid - 1;
-
-// 				else
-// 					break;
-// 			}
-
-// 			else if(getkey(imid) == key)
-// 				return imid;
-
-// 			remaining--;
-// 		}
-
-// 		return imin;
-// 	}
-
-
-
-
-
-
-
-
-// 	// implementation:
 // 	void Initialise()
 // 	{
-// 		MetadataAddr = GetPageFixed(KernelHeapMetadata);
-// 		HeapAddress = GetPageFixed(KernelHeapAddress);
-
 // 		SizeOfHeap = 1;
-// 		SizeOfMeta = 1;
-// 		ChunksInHeap = 1;
-// 		LastFree = 0;
+// 		HeapAddress = GetPageFixed(KernelHeapAddress);
+// 		HeapEnd = HeapAddress + 0x1000;
 
-// 		Chunk* c = index(0);
-// 		c->offset = 0;
-// 		c->size = 0x1000;
-// 		setfree(c);
-
-// 		mtx = new Mutex();
+// 		auto hdr = mkheader(HeapAddress, calcoverhead(0x1000));
+// 		mkfooter(HeapAddress + sizeof(_header) + hdr->size, hdr);
 // 	}
-
-// 	void CreateChunk(uint64_t offset, uint64_t size)
-// 	{
-// 		uint64_t o = bsearch(offset, [](uint64_t i) -> uint64_t { return index(i)->offset; });
-// 		if(o < ChunksInHeap)
-// 		{
-// 			if(index(o)->offset == offset)
-// 			{
-// 				assert("tried to create duplicate chunk" && false);
-// 			}
-// 		}
-
-// 		size = _round(size);
-
-// 		if(o <= ChunksInHeap)
-// 		{
-// 			// check if there are more chunks behind us.
-// 			if(o + 1 < ChunksInHeap)
-// 				pushback(o);
-
-// 			// now that's solved, make the chunk.
-// 			ChunksInHeap++;
-// 			Chunk* c = index(o);
-// 			c->offset = offset;
-// 			c->size = size;
-// 			setfree(c);
-// 		}
-// 		else
-// 			fail();
-// 	}
-
 
 // 	void ExpandHeap()
 // 	{
-// 		// expand the heap.
-// 		GetPageFixed(HeapAddress + (SizeOfHeap * 0x1000));
-
-// 		// always offset sorted;
-// 		Chunk* last = index(ChunksInHeap - 1);
-// 		if(last->offset + size(last) != (SizeOfHeap * 0x1000))
+// 		// get the last chunk.
+// 		_footer* ftr = footer(HeapEnd - sizeof(_footer));
+// 		GetPageFixed(HeapEnd);
+// 		if(isfree(ftr->hdr))
 // 		{
-// 			printf("failure: %llx + %llx != %llx\n", last->offset, size(last), SizeOfHeap * 0x1000);
-// 			fail();
-// 		}
+// 			// add to its header's size, then move the footer
+// 			verify(ftr->hdr)->size += 0x1000;
+// 			auto f = mkfooter(HeapEnd + 0x1000 - sizeof(_footer), ftr->hdr);
+// 			memset(ftr, 0, sizeof(_footer));
 
-// 		// either create a new chunk, or expand the last one.
-// 		if(isfree(last))
-// 		{
-// 			last->size += 0x1000;
-// 			setfree(last);
+// 			verify(f);
 // 		}
 // 		else
 // 		{
-// 			CreateChunk(SizeOfHeap * 0x1000, 0x1000);
+// 			auto hdr = mkheader(HeapEnd, calcoverhead(0x1000));
+// 			mkfooter(HeapEnd + 0x1000 - sizeof(_footer), hdr);
+// 			setfree(hdr);
 // 		}
+
 // 		SizeOfHeap++;
+// 		HeapEnd += 0x1000;
 // 	}
 
-// 	void* AllocateChunk(uint64_t sz)
+// 	void* AllocateChunk(size_t sz)
 // 	{
-// 		// auto m = AutoMutex(mtx);
-// 		LOCK(mtx);
 // 		sz = _round(sz);
-// 		assert((sz % Alignment) == 0);
-// 		// loop through each chunk, hoping to find something big enough.
-
-// 		Chunk* c = 0;
-// 		for(uint64_t i = LastFree; i < ChunksInHeap; i++)
+// 		uint64_t ptr = HeapAddress;
+// 		_header* hdr = nullptr;
+// 		while(ptr < HeapEnd)
 // 		{
-// 			if(size(index(i)) >= sz && isfree(index(i)))
+// 			_header* h = header(ptr);
+// 			if(isfree(h))
 // 			{
-// 				c = index(i);
+// 				hdr = h;
 // 				break;
 // 			}
+
+// 			ptr += sizeof(_header) + h->size + sizeof(_footer);
 // 		}
-// 		if(c == 0)
+
+// 		if(hdr == nullptr)
 // 		{
 // 			ExpandHeap();
-// 			UNLOCK(mtx);
-// 			Print();
 // 			return AllocateChunk(sz);
 // 		}
 
-// 		uint64_t o = c->offset;
-// 		uint64_t oldsize = size(c);
+// 		// set it to used.
+// 		verify(hdr);
+// 		setused(hdr);
 
-// 		c->size = sz;
-// 		setused(c);
-
-// 		auto newsize = oldsize - sz;
-// 		if(newsize >= Alignment)
+// 		auto oldsz = hdr->size;
+// 		if(oldsz - sz > sizeof(_header) + sizeof(_footer) + ALIGNMENT)
 // 		{
-// 			CreateChunk(c->offset + sz, newsize - (newsize % Alignment));
+// 			// we have enough space
+// 			// make a new header right after the previous footer
+// 			auto nh = mkheader((uint64_t) hdr + sizeof(_header) + sz, oldsz - sz - sizeof(_header) - sizeof(_footer));
+// 			mkfooter((uint64_t) hdr + sizeof(_header) + verify(hdr)->size, nh);
+// 			setfree(nh);
 // 		}
 
-// 		assert(sz % Alignment == 0);
-// 		assert(o % Alignment == 0);
-
-// 		UNLOCK(mtx);
-// 		return (void*) (HeapAddress + o);
+// 		Log("allocated %x bytes at %x", sz, (uint64_t) hdr + sizeof(_header));
+// 		return (void*) ((uint64_t) hdr + sizeof(_header));
 // 	}
 
 // 	void FreeChunk(void* ptr)
 // 	{
-// 		// auto m = AutoMutex(mtx);
-// 		LOCK(mtx);
-// 		uint64_t p = (uint64_t) ptr;
-// 		assert(p >= HeapAddress);
-
-// 		p -= HeapAddress;
-// 		assert(p % Alignment == 0);
-
-// 		// this is where the offset-sorted list comes in handy.
-// 		uint64_t o = bsearch(p, [](uint64_t i) -> uint64_t { return index(i)->offset; });
-// 		Chunk* self = index(o);
-
-// 		if(self->offset != p)
-// 		{
-// 			Print();
-// 			Log(3, "%x pages in heap: %x - got %x, expected %x, index %d, %d CIH", SizeOfHeap, __builtin_return_address(0), p, self->offset, o, ChunksInHeap);
-// 			fail();
-// 		}
-
-// 		setfree(self);
-
-// 		// do merge here.
-// 		// check right first, because checking left may modify our own state.
-// 		if(o + 1 < ChunksInHeap)
-// 		{
-// 			// check right neighbour
-// 			Chunk* right = index(o + 1);
-// 			if(self->offset + size(self) != right->offset)
-// 			{
-// 				printf("failure: %x + %x != %x, %x chunks in heap", self->offset, size(self), right->offset, ChunksInHeap);
-// 				printf("left(%x):\toffset %x, size %x - %x", o - 1, index(o - 1)->offset, size(index(o - 1)), isfree(index(o - 1)));
-// 				printf("self(%x):\toffset %x, size %x - %x", o, self->offset, size(self), isfree(index(o)));
-// 				printf("right(%x):\toffset %x, size %x - %x", o + 1, right->offset, size(right), isfree(index(o + 1)));
-// 				printf("right2(%x):\toffset %x, size %x - %x", o + 2, index(o + 2)->offset, size(index(o + 2)), isfree(index(o + 2)));
-// 				fail();
-// 			}
-
-// 			if(isfree(right))
-// 			{
-// 				self->size += size(right);
-// 				setfree(self);
-
-// 				pullfront(o + 1);
-// 				ChunksInHeap--;
-// 			}
-// 		}
-// 		if(o > 0)
-// 		{
-// 			// check left neighbour
-// 			Chunk* left = index(o - 1);
-// 			if(left->offset + size(left) != self->offset)
-// 			{
-// 				printf("failure: %llx + %llx != %llx\n", left->offset, size(left), self->offset);
-// 				fail();
-// 			}
-
-// 			if(isfree(left))
-// 			{
-// 				// do merge
-// 				left->size += size(self);
-// 				setfree(left);
-
-// 				// delete us.
-// 				pullfront(o);
-// 				ChunksInHeap--;
-// 			}
-// 		}
-// 		if(o < LastFree)
-// 		{
-// 			assert(isfree(index(o)));
-// 			LastFree = o;
-// 		}
-
-// 		UNLOCK(mtx);
-// 		// Log("free %x", p);
 // 	}
 
-// 	uint64_t QuerySize(void* ptr)
+// 	size_t QuerySize(void* ptr)
 // 	{
-// 		auto m = AutoMutex(mtx);
-
-// 		uint64_t p = (uint64_t) ptr;
-// 		assert(p >= HeapAddress);
-
-// 		p -= HeapAddress;
-
-// 		// this is where the offset-sorted list comes in handy.
-// 		uint64_t o = bsearch(p, [](uint64_t i) -> uint64_t { return index(i)->offset; });
-// 		Chunk* self = index(o);
-
-
-// 		if(self->offset != p)
-// 		{
-// 			printf("failure: got offset %llx, expected %llx", p, self->offset);
-// 			fail();
-// 		}
-
-// 		return size(self);
+// 		return 0;
 // 	}
 
 // 	void Print()
 // 	{
-// 		Log(3, "%x chunks in heap", ChunksInHeap);
-// 		for(uint64_t i = ChunksInHeap - 1; i > 0; i--)
-// 			Log(1, "chunk(%x) => offset %x, size %x - %x", i, index(i)->offset, size(index(i)), isfree(index(i)) ? 1 : 0);
-
-// 		Log(1, "Done");
 // 	}
 // }
 // }
 // }
 // }
+
+
+
+
+
+
+
+
+#define PARANOIA					0x1
+#define MapFlags					0x7
+#define fail()						assert(0)
+#define printf						Log
+
+namespace Kernel {
+namespace HardwareAbstraction {
+namespace MemoryManager {
+namespace KernelHeap
+{
+	// book keeping
+	static uint64_t ChunksInHeap;
+	static uint64_t LastFree;
+
+	static uint64_t MetadataAddr;
+	static uint64_t HeapAddress;
+
+	static uint64_t SizeOfHeap;
+	static uint64_t SizeOfMeta;
+
+	const uint64_t Alignment = 64;
+
+	static Mutex* mtx;
+
+	struct Chunk
+	{
+		uint64_t offset;
+		uint64_t size;
+	};
+
+	uint64_t addr(Chunk* c)
+	{
+		return (uint64_t) c;
+	}
+
+	Chunk* chunk(uint64_t addr)
+	{
+		return (Chunk*) addr;
+	}
+
+	Chunk* array()
+	{
+		return (Chunk*) MetadataAddr;
+	}
+
+	bool isfree(Chunk* c)
+	{
+		return c->size & 0x1;
+	}
+
+	void setfree(Chunk* c)
+	{
+		c->size |= 0x1;
+	}
+
+	void setused(Chunk* c)
+	{
+		c->size &= ~0x1;
+	}
+
+	uint64_t size(Chunk* c)
+	{
+		return c->size & ~0x1;
+	}
+
+	uint64_t midpoint(uint64_t a, uint64_t b)
+	{
+		return a + ((b - a) / 2);
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+	Chunk* index(uint64_t i)
+	{
+		Chunk* arr = (Chunk*) MetadataAddr;
+		if(i < ChunksInHeap)
+			return &arr[i];
+
+		else
+			return nullptr;
+	}
+
+	void pushback(uint64_t at)
+	{
+		// memcpy them behind.
+		// but first, check if we have enough space.
+		if((ChunksInHeap + 1) * sizeof(Chunk) > SizeOfMeta * 0x1000)
+		{
+			HALT("");
+			// we need to expand.
+			uint64_t fixed = GetPageFixed(MetadataAddr + (SizeOfMeta * 0x1000));
+			assert(fixed == MetadataAddr + (SizeOfMeta * 0x1000));
+			SizeOfMeta++;
+		}
+
+		auto behind = (ChunksInHeap - 1) - at;
+
+		// memcpy.
+		memcpy((void*) index(at + 1), (void*) index(at), behind * sizeof(Chunk));
+		memset((void*) index(at), 0, sizeof(Chunk));
+	}
+
+	void pullfront(uint64_t at)
+	{
+		// essentially deletes a chunk.
+		// 'at' contains the index of the chunk to delete.
+		void* c = index(at);
+		if(at == ChunksInHeap - 1)
+			return;
+
+		// calculate how many chunks to pull
+		auto ahead = (ChunksInHeap - 1) - at;
+
+		memset(c, 0, sizeof(Chunk));
+		memmove(c, index(at + 1), ahead * sizeof(Chunk));
+		memset((void*) ((uint64_t) c - 1 + ahead * sizeof(Chunk)), 0, sizeof(Chunk));
+	}
+
+
+	uint64_t _round(uint64_t s)
+	{
+		uint64_t remainder = s % Alignment;
+
+		if(remainder == 0)
+			return s;
+
+		return s + Alignment - remainder;
+	}
+
+
+
+
+
+
+	uint64_t bsearch(uint64_t key, uint64_t (*getkey)(uint64_t ind))
+	{
+		uint64_t imin = 0;
+		uint64_t imax = ChunksInHeap - 1;
+		uint64_t remaining = ChunksInHeap;
+
+		while(imax >= imin && remaining > 0)
+		{
+			// calculate the midpoint for roughly equal partition
+			auto imid = midpoint(imin, imax);
+
+			// determine which subarray to search
+			if(getkey(imid) < key)
+			{
+				if(imid < ChunksInHeap)
+					imin = imid + 1;
+
+				else
+					break;
+			}
+
+			else if(getkey(imid) > key)
+			{
+				if(imid > 0)
+					imax = imid - 1;
+
+				else
+					break;
+			}
+
+			else if(getkey(imid) == key)
+				return imid;
+
+			remaining--;
+		}
+
+		return imin;
+	}
+
+
+
+
+
+
+
+
+	// implementation:
+	void Initialise()
+	{
+		MetadataAddr = GetPageFixed(KernelHeapMetadata);
+		HeapAddress = GetPageFixed(KernelHeapAddress);
+
+		SizeOfHeap = 1;
+		SizeOfMeta = 1;
+		ChunksInHeap = 1;
+		LastFree = 0;
+
+		Chunk* c = index(0);
+		c->offset = 0;
+		c->size = 0x1000;
+		setfree(c);
+
+		mtx = new Mutex();
+	}
+
+	void CreateChunk(uint64_t offset, uint64_t size)
+	{
+		uint64_t o = bsearch(offset, [](uint64_t i) -> uint64_t { return index(i)->offset; });
+		if(o < ChunksInHeap)
+		{
+			if(index(o)->offset == offset)
+			{
+				assert("tried to create duplicate chunk" && false);
+			}
+		}
+
+		size = _round(size);
+
+		if(o <= ChunksInHeap)
+		{
+			// check if there are more chunks behind us.
+			if(o + 1 < ChunksInHeap)
+				pushback(o);
+
+			// now that's solved, make the chunk.
+			ChunksInHeap++;
+			Chunk* c = index(o);
+			c->offset = offset;
+			c->size = size;
+			setfree(c);
+		}
+		else
+			fail();
+	}
+
+
+	void ExpandHeap()
+	{
+		// expand the heap.
+		GetPageFixed(HeapAddress + (SizeOfHeap * 0x1000));
+
+		// always offset sorted;
+		Chunk* last = index(ChunksInHeap - 1);
+		if(last->offset + size(last) != (SizeOfHeap * 0x1000))
+		{
+			printf("failure: %llx + %llx != %llx\n", last->offset, size(last), SizeOfHeap * 0x1000);
+			fail();
+		}
+
+		// either create a new chunk, or expand the last one.
+		if(isfree(last))
+		{
+			last->size += 0x1000;
+			setfree(last);
+		}
+		else
+		{
+			CreateChunk(SizeOfHeap * 0x1000, 0x1000);
+		}
+		SizeOfHeap++;
+	}
+
+	void* AllocateChunk(uint64_t sz)
+	{
+		// auto m = AutoMutex(mtx);
+		LOCK(mtx);
+		sz = _round(sz);
+		assert((sz % Alignment) == 0);
+		// loop through each chunk, hoping to find something big enough.
+
+		Chunk* c = 0;
+		for(uint64_t i = LastFree; i < ChunksInHeap; i++)
+		{
+			if(size(index(i)) >= sz && isfree(index(i)))
+			{
+				c = index(i);
+				break;
+			}
+		}
+		if(c == 0)
+		{
+			ExpandHeap();
+			UNLOCK(mtx);
+			return AllocateChunk(sz);
+		}
+
+		uint64_t o = c->offset;
+		uint64_t oldsize = size(c);
+
+		c->size = sz;
+		setused(c);
+
+		auto newsize = oldsize - sz;
+		if(newsize >= Alignment)
+		{
+			CreateChunk(c->offset + sz, newsize - (newsize % Alignment));
+		}
+
+		assert(sz % Alignment == 0);
+		assert(o % Alignment == 0);
+
+		UNLOCK(mtx);
+		return (void*) (HeapAddress + o);
+	}
+
+	void FreeChunk(void* ptr)
+	{
+		// auto m = AutoMutex(mtx);
+		LOCK(mtx);
+		uint64_t p = (uint64_t) ptr;
+		assert(p >= HeapAddress);
+
+		p -= HeapAddress;
+		assert(p % Alignment == 0);
+
+		// this is where the offset-sorted list comes in handy.
+		uint64_t o = bsearch(p, [](uint64_t i) -> uint64_t { return index(i)->offset; });
+		Chunk* self = index(o);
+
+		if(self->offset != p)
+		{
+			Print();
+			Log(3, "%x pages in heap: %x - got %x, expected %x, index %d, %d CIH", SizeOfHeap, __builtin_return_address(0), p, self->offset, o, ChunksInHeap);
+			fail();
+		}
+
+		setfree(self);
+
+		// do merge here.
+		// check right first, because checking left may modify our own state.
+		if(o + 1 < ChunksInHeap)
+		{
+			// check right neighbour
+			Chunk* right = index(o + 1);
+			if(self->offset + size(self) != right->offset)
+			{
+				printf("failure: %x + %x != %x, %x chunks in heap", self->offset, size(self), right->offset, ChunksInHeap);
+				printf("left(%x):\toffset %x, size %x - %x", o - 1, index(o - 1)->offset, size(index(o - 1)), isfree(index(o - 1)));
+				printf("self(%x):\toffset %x, size %x - %x", o, self->offset, size(self), isfree(index(o)));
+				printf("right(%x):\toffset %x, size %x - %x", o + 1, right->offset, size(right), isfree(index(o + 1)));
+				printf("right2(%x):\toffset %x, size %x - %x", o + 2, index(o + 2)->offset, size(index(o + 2)), isfree(index(o + 2)));
+				fail();
+			}
+
+			if(isfree(right))
+			{
+				self->size += size(right);
+				setfree(self);
+
+				pullfront(o + 1);
+				ChunksInHeap--;
+			}
+		}
+		if(o > 0)
+		{
+			// check left neighbour
+			Chunk* left = index(o - 1);
+			if(left->offset + size(left) != self->offset)
+			{
+				printf("failure: %llx + %llx != %llx\n", left->offset, size(left), self->offset);
+				fail();
+			}
+
+			if(isfree(left))
+			{
+				// do merge
+				left->size += size(self);
+				setfree(left);
+
+				// delete us.
+				pullfront(o);
+				ChunksInHeap--;
+			}
+		}
+		if(o < LastFree)
+		{
+			assert(isfree(index(o)));
+			LastFree = o;
+		}
+
+		UNLOCK(mtx);
+		// Log("free %x", p);
+	}
+
+	uint64_t QuerySize(void* ptr)
+	{
+		auto m = AutoMutex(mtx);
+
+		uint64_t p = (uint64_t) ptr;
+		assert(p >= HeapAddress);
+
+		p -= HeapAddress;
+
+		// this is where the offset-sorted list comes in handy.
+		uint64_t o = bsearch(p, [](uint64_t i) -> uint64_t { return index(i)->offset; });
+		Chunk* self = index(o);
+
+
+		if(self->offset != p)
+		{
+			printf("failure: got offset %llx, expected %llx", p, self->offset);
+			fail();
+		}
+
+		return size(self);
+	}
+
+	void Print()
+	{
+		Log(3, "%x chunks in heap", ChunksInHeap);
+		for(uint64_t i = ChunksInHeap - 1; i > 0; i--)
+			Log(1, "chunk(%x) => offset %x, size %x - %x", i, index(i)->offset, size(index(i)), isfree(index(i)) ? 1 : 0);
+
+		Log(1, "Done");
+	}
+}
+}
+}
+}
 
 
 

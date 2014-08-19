@@ -10,7 +10,6 @@
 #include <string.h>
 #include <time.h>
 
-#include <rdestl/vector.h>
 #include <rdestl/sstream.h>
 #include <rdestl/algorithm.h>
 
@@ -78,7 +77,7 @@ namespace Filesystems
 	{
 		rde::string* name;
 		uint32_t entrycluster;
-		rde::vector<uint32_t>* clusters;
+		Vector<uint32_t>* clusters;
 		uint32_t filesize;
 
 		DirectoryEntry dirent;
@@ -128,27 +127,27 @@ namespace Filesystems
 		return mktime(&ts);
 	}
 
-	static rde::vector<rde::string>* split(rde::string& s, char delim)
+	static Vector<rde::string*>* split(rde::string& s, char delim)
 	{
-		auto ret = new rde::vector<rde::string>();
-		rde::string item;
+		auto ret = new Vector<rde::string*>();
+		rde::string* item = new rde::string();
 
 		for(auto c : s)
 		{
 			if(c == delim)
 			{
-				if(!item.empty())
+				if(!item->empty())
 				{
-					ret->push_back(item);
-					item.clear();
+					ret->InsertBack(item);
+					item = new rde::string();
 				}
 			}
 			else
-				item.append(c);
+				item->append(c);
 		}
 
-		if(item.length() > 0)
-			ret->push_back(item);
+		if(item->length() > 0)
+			ret->InsertBack(item);
 
 		return ret;
 	}
@@ -255,22 +254,29 @@ namespace Filesystems
 
 		auto dirs = split(pth, PATH_DELIMTER);
 		assert(dirs);
-		assert(dirs->size() > 0);
+		assert(dirs->Size() > 0);
 
-		size_t levels = dirs->size();
+		size_t levels = dirs->Size();
 		size_t curlvl = 1;
 
 		// remove the last.
-		auto file = dirs->back();
+		auto file = dirs->Back();
 		vnode* cn = node;
+
+		for(auto d : *dirs)
+		{
+			PrintFormatted("[%s]", d->c_str());
+		}
 
 		for(auto v : *dirs)
 		{
 			bool found = false;
+
 			// iterative traverse.
 			assert(cn);
 			assert(cn->info);
 			assert(cn->info->data);
+
 			auto cdcontent = this->ReadDir(cn);
 			assert(cdcontent);
 
@@ -281,7 +287,7 @@ namespace Filesystems
 				assert(vnd);
 				assert(vnd->name);
 
-				if(curlvl == levels && cn->type == VNodeType::File && *vnd->name == file)
+				if(curlvl == levels && cn->type == VNodeType::File && *vnd->name == *file)
 				{
 					node->info->data = d->info->data;
 					node->info->driver = d->info->driver;
@@ -290,7 +296,7 @@ namespace Filesystems
 
 					return true;
 				}
-				else if(*vnd->name == v)
+				else if(*vnd->name == *v)
 				{
 					found = true;
 					cn = d;
@@ -326,7 +332,7 @@ namespace Filesystems
 		if(!vnd->clusters)
 			vnd->clusters = this->GetClusterChain(node, &numclus);
 
-		assert(vnd->clusters->size() == numclus);
+		assert(vnd->clusters->Size() == numclus);
 
 		// check that offset is not more than size
 		if(offset > vnd->filesize)
@@ -394,25 +400,27 @@ namespace Filesystems
 		stat->st_ctime		= datetounix(dirent->createdate, dirent->createtime);
 	}
 
-	rde::vector<VFS::vnode*>* FSDriverFat32::ReadDir(VFS::vnode* node)
+	Vector<VFS::vnode*>* FSDriverFat32::ReadDir(VFS::vnode* node)
 	{
 		assert(node);
 		assert(node->info);
 		assert(node->info->data);
 		assert(node->info->driver == this);
 
+
 		if(tovnd(node)->entrycluster == 0)
 			tovnd(node)->entrycluster = 2;
 
 
 		// grab its clusters.
-		auto clusters = tovnd(node->info->data)->clusters;
+		auto clusters = tovnd(node)->clusters;
 		uint64_t numclus = 0;
 		if(!clusters)
 			clusters = this->GetClusterChain(node, &numclus);
 
+
 		assert(clusters);
-		assert(numclus == clusters->size());
+		assert(numclus == clusters->Size());
 
 		// try and read each cluster into a contiguous buffer.
 		uint64_t dirsize = numclus * this->SectorsPerCluster * 512;
@@ -427,7 +435,7 @@ namespace Filesystems
 		}
 		buf = obuf;
 
-		auto ret = new rde::vector<VFS::vnode*>();
+		auto ret = new Vector<VFS::vnode*>();
 		for(uint64_t addr = buf; addr < buf + dirsize; )
 		{
 			auto name = new rde::string();
@@ -497,7 +505,7 @@ namespace Filesystems
 
 				vn->info->data = (void*) fsd;
 
-				ret->push_back(vn);
+				ret->InsertBack(vn);
 			}
 			else
 				break;
@@ -515,7 +523,7 @@ namespace Filesystems
 
 
 
-	rde::vector<uint32_t>* FSDriverFat32::GetClusterChain(VFS::vnode* node, uint64_t* numclus)
+	Vector<uint32_t>* FSDriverFat32::GetClusterChain(VFS::vnode* node, uint64_t* numclus)
 	{
 		// read the cluster chain
 
@@ -523,12 +531,11 @@ namespace Filesystems
 		assert(node->info);
 		assert(node->info->data);
 		assert(node->info->driver == this);
+		PrintFormatted("(%x)", node->info->data);
 
 		uint32_t Cluster = tovnd(node)->entrycluster;
 		uint32_t cchain = 0;
-		auto ret = new rde::vector<uint32_t>();
-
-
+		auto ret = new Vector<uint32_t>();
 
 		uint64_t lastsec = 0;
 		auto buf = MemoryManager::Physical::AllocateDMA(2);
@@ -553,22 +560,21 @@ namespace Filesystems
 				buf += (FatSector - lastsec) * 512;
 			}
 
+
 			lastsec = FatSector;
 
 			uint8_t* clusterchain = (uint8_t*) buf;
 			cchain = *((uint32_t*)&clusterchain[FatOffset]) & 0x0FFFFFFF;
 
-			Log("sector %x, fat entry offset %x, cluster %x, nextclus = %x", FatSector, FatSector * 512 + FatOffset, Cluster, cchain);
-
-
 			// cchain is the next cluster in the list.
-			ret->push_back(Cluster);
+			ret->InsertBack(Cluster);
 
 			Cluster = cchain;
 			(*numclus)++;
 
 		} while((cchain != 0) && !((cchain & 0x0FFFFFFF) >= 0x0FFFFFF8));
 
+		PrintFormatted("(done)\n");
 		buf = obuf;
 		MemoryManager::Physical::FreeDMA(buf, 2);
 		tovnd(node)->clusters = ret;

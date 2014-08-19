@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <List.hpp>
 #include "Devices/StorageDevice.hpp"
-#include <rdestl/vector.h>
+#include <Vector.hpp>
 #include <rdestl/rde_string.h>
 #include <sys/stat.h>
 
@@ -75,10 +75,10 @@ namespace Kernel
 				{
 					FDArray()
 					{
-						this->fds = new rde::vector<fileentry*>();
+						this->fds = new Library::Vector<fileentry*>();
 					}
 
-					rde::vector<fileentry*>* fds;
+					Library::Vector<fileentry*>* fds;
 				};
 
 				void Initialise();
@@ -130,7 +130,7 @@ namespace Kernel
 					virtual void Stat(VFS::vnode* node, struct stat* stat);
 
 					// returns a list of items inside the directory, as vnodes.
-					virtual rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node);
+					virtual Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node);
 
 					virtual dev_t GetID() final { return this->fsid; }
 
@@ -149,12 +149,12 @@ namespace Kernel
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
 					void Stat(VFS::vnode* node, struct stat* stat) override;
 
-					rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+					Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 
 				private:
 					rde::string* ReadLFN(uint64_t addr, int& nument);
 					uint64_t ClusterToLBA(uint32_t clus);
-					rde::vector<uint32_t>* GetClusterChain(VFS::vnode* node, uint64_t* numclus);
+					Library::Vector<uint32_t>* GetClusterChain(VFS::vnode* node, uint64_t* numclus);
 
 					uint16_t BytesPerSector;
 					uint8_t SectorsPerCluster;
