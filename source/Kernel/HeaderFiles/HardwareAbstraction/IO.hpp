@@ -18,6 +18,12 @@ namespace IO
 	void* ScheduleRead(Devices::Storage::StorageDevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes);
 	void* ScheduleWrite(Devices::Storage::StorageDevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes);
 	bool CheckStatus(void* request);
+
+	namespace Manager
+	{
+		void Write(void* data, size_t length);
+		size_t Read(void* outbuf, size_t length);
+	}
 }
 }
 }
