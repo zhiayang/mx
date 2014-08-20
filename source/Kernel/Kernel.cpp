@@ -110,6 +110,7 @@ namespace Kernel
 		MemoryMap::Initialise(MBTStruct);
 		Virtual::Initialise();
 		Physical::Bootstrap();
+		KernelHeap::Initialise();
 		// copy kernel CR3 to somewhere sane-r
 		{
 			uint64_t newcr3 = Physical::AllocateDMA(0x18, false);
@@ -119,10 +120,7 @@ namespace Kernel
 			Virtual::SwitchPML4T((Virtual::PageMapStructure*) newcr3);
 			asm volatile("mov %0, %%cr3" :: "r"(newcr3));
 			CR3Value = newcr3;
-
 		}
-
-		KernelHeap::Initialise();
 
 		Physical::Initialise();
 
@@ -134,6 +132,7 @@ namespace Kernel
 		// we use this to store page mappings.
 		// TODO: move to temp mapping scheme, where physical pages can come from anywhere.
 		Log("PMM Reserved Region from %x to %x", Physical::ReservedRegionForVMM, Physical::ReservedRegionForVMM + Physical::LengthOfReservedRegion);
+
 
 
 		// Start the less crucial but still important services.
@@ -305,32 +304,52 @@ namespace Kernel
 
 		Log("Compatible video card located");
 
-		// RootFS = f1->Partitions->Get(0)->GetFilesystem()->RootFS();
-
-
-		PrintFormatted("Initialising RTC...\n");
-		Devices::RTC::Initialise(0);
-		Log("RTC Initialised");
+		// PrintFormatted("Initialising RTC...\n");
+		// Devices::RTC::Initialise(0);
+		// Log("RTC Initialised");
 
 
 		// manual jump start.
 		{
 			using namespace Filesystems;
-			using namespace Filesystems::VFS;
 
 			VFS::Initialise();
+			VFS::InitIO();
 
 			Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->Get(0);
 			FSDriverFat32* fs = new FSDriverFat32(f1->Partitions->Get(0));
 
 			// mount root fs from partition 0 at /
 			VFS::Mount(f1->Partitions->Get(0), fs, "/");
-			auto fd = OpenFile("/test.txt", 0);
-			PrintFormatted("%d\n", fd);
+			Log("Root FS Mounted at /");
 
-			auto buf = new uint8_t[512];
-			auto read = Read(fd, buf, 123841, 1024);
-			Log("read %d bytes:\n\n%s", read, buf);
+			Write(1, (void*) "Hello, World!", 0, 13);
+
+
+			// open fds for stdin, stdout and stderr.
+			// KernelKeyboard = new Keyboard(new PS2Keyboard());
+
+
+
+			// auto fd = OpenFile("/apps/test.txt", 0);
+			// // auto fd = OpenFile("/test.txt", 0);
+
+			// if(fd == -1)
+			// {
+			// 	KernelHeap::Print();
+			// 	HALT("file does not exist");
+			// }
+
+			// PrintFormatted("file opened\n");
+
+			// struct stat st;
+			// Stat(fd, &st);
+			// PrintFormatted("file is %d bytes\n", st.st_size);
+
+			// void* buf = new uint8_t[st.st_size];
+			// auto read = Read(fd, buf, 0, st.st_size);
+			// PrintFormatted("read %d bytes:\n\n", read);
+			// PrintFormatted("%s", buf);
 		}
 
 
@@ -338,7 +357,7 @@ namespace Kernel
 		// kernel stops here
 		// for now.
 		PrintFormatted("\n\nKernel Halted\n");
-		UHALT();
+		while(true);
 
 
 

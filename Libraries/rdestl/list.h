@@ -54,9 +54,9 @@ private:
 		typedef bidirectional_iterator_tag	iterator_category;
 
         explicit node_iterator(): m_node(NULL) {/**/}
-		
+
         explicit node_iterator(TNodePtr node):	m_node(node) {/**/}
-        
+
 		template<typename UNodePtr, typename UPtr, typename URef>
 		node_iterator(const node_iterator<UNodePtr, UPtr, URef>& rhs)
 		:	m_node(rhs.node())
@@ -117,7 +117,7 @@ private:
 public:
 	typedef T													value_type;
 	typedef TAllocator											allocator_type;
-	typedef int 												size_type;
+	typedef size_t 												size_type;
 	typedef node_iterator<node*, T*, T&>						iterator;
 	typedef node_iterator<const node*, const T*, const T&>	const_iterator;
 	static const std::size_t									kNodeSize = sizeof(node);
@@ -128,7 +128,7 @@ public:
 		m_root.reset();
 	}
 	template<class InputIterator>
-	list(InputIterator first, InputIterator last, 
+	list(InputIterator first, InputIterator last,
 		const allocator_type& allocator = allocator_type())
 	:	m_allocator(allocator)
 	{
@@ -216,7 +216,7 @@ public:
 	}
 
 	template<class InputIterator>
-	void assign(InputIterator first, InputIterator last) 
+	void assign(InputIterator first, InputIterator last)
 	{
 		clear();
 		while (first != last)

@@ -14,15 +14,21 @@ namespace Filesystems
 	namespace VFS
 	{
 		static id_t curid = 0;
-		const static long FirstFreeFD = 3;
+		static fd_t FirstFreeFD = 0;
 
 		struct Filesystem
 		{
 			FSDriver* driver;
 			Partition* partition;
-			std::string* mountpoint;
+			rde::string* mountpoint;
 			bool ismounted;
 		};
+
+		static Library::Vector<Filesystem*>* mountedfses;
+		static rde::hash_map<id_t, vnode*>* vnodepool;
+
+		FSDriver* driver_stdin;
+		FSDriver* driver_stdout;
 
 		static IOContext* getctx()
 		{
@@ -33,13 +39,37 @@ namespace Filesystems
 			return proc->iocontext;
 		}
 
-		static rde::vector<Filesystem*>* mountedfses;
-		static rde::hash_map<id_t, vnode*>* vnodepool;
+		static Filesystem* getfs(rde::string& path)
+		{
+			for(auto v : *mountedfses)
+			{
+				if(strcmp(path.substr(0, math::min(path.length(), v->mountpoint->length())).c_str(), v->mountpoint->c_str()) == 0)
+					return v;
+			}
+
+			return nullptr;
+		}
+
 
 		void Initialise()
 		{
-			mountedfses = new rde::vector<Filesystem*>();
+			mountedfses = new Library::Vector<Filesystem*>();
 			vnodepool = new rde::hash_map<id_t, vnode*>();
+		}
+
+		void InitIO()
+		{
+			auto ConsoleFSD = new FSDriverConsole();
+			driver_stdin = new FSDriverStdin();
+			driver_stdout = new FSDriverStdout();
+
+			Mount(nullptr, ConsoleFSD, "/dev/console");
+			Mount(nullptr, driver_stdin, "/dev/stdin");
+			Mount(nullptr, driver_stdout, "/dev/stdout");
+
+			auto ctx = getctx();
+			OpenFile(ctx, "/dev/stdin", 0);
+			OpenFile(ctx, "/dev/stdout", 0);
 		}
 
 		// this fetches from the pool. used mainly by fsdrivers to avoid creating duplicate vnodes.
@@ -70,6 +100,8 @@ namespace Filesystems
 		vnode* CreateNode(FSDriver* fs)
 		{
 			vnode* node = new vnode;
+
+			assert(node);
 			memset(node, 0, sizeof(vnode));
 
 			node->data = nullptr;
@@ -86,7 +118,6 @@ namespace Filesystems
 			// add the node to the pool.
 			node->id = curid++;
 			(*vnodepool)[node->id] = node;
-
 			return node;
 		}
 
@@ -119,17 +150,19 @@ namespace Filesystems
 
 		void Mount(Partition* part, FSDriver* fs, const char* path)
 		{
-			assert(part);
 			assert(fs);
+			if(fs->GetType() == FSDriverType::Physical)
+				assert(part);
+
 			assert(path);
 
 			auto _fs = new Filesystem;
 			_fs->driver = fs;
 			_fs->ismounted = true;
-			_fs->mountpoint = new std::string(path);
+			_fs->mountpoint = new rde::string(path);
 			_fs->partition = part;
 
-			mountedfses->push_back(_fs);
+			mountedfses->InsertBack(_fs);
 		}
 
 		void Unmount(const char* path)
@@ -144,15 +177,13 @@ namespace Filesystems
 			assert(ioctx->fdarray->fds);
 			assert(node);
 
-			auto fe		= (fileentry*) new uint8_t[0x20];
-			// auto fe		= new fileentry;
+			auto fe		= new fileentry;
 			fe->node	= node;
 			fe->offset	= 0;
 			fe->flags	= flags;
-			fe->fd		= FirstFreeFD + ioctx->fdarray->fds->size();
+			fe->fd		= FirstFreeFD + ioctx->fdarray->fds->Size();
 
-			// ioctx->fdarray->fds->reserve(4);
-			ioctx->fdarray->fds->push_back(fe);
+			ioctx->fdarray->fds->InsertBack(fe);
 
 			return fe;
 		}
@@ -165,19 +196,8 @@ namespace Filesystems
 			if(!mountedfses)
 				return nullptr;
 
-			Filesystem* fs = nullptr;
-			std::string pth;
-			pth += path;
-
-			for(auto v : *mountedfses)
-			{
-				auto tmp = pth.substr(0, 1);
-				if(pth.substr(0, v->mountpoint->size()) == *v->mountpoint)
-				{
-					fs = v;
-					break;
-				}
-			}
+			rde::string pth = rde::string(path);
+			Filesystem* fs = getfs(pth);
 
 			if(fs == nullptr || fs->ismounted == false)
 				return nullptr;
@@ -196,7 +216,8 @@ namespace Filesystems
 				auto ret = VFS::Open(ioctx, node, flags);
 				return ret;
 			}
-			else return nullptr;
+			else
+				return nullptr;
 		}
 
 		size_t Read(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len)
@@ -222,6 +243,18 @@ namespace Filesystems
 			auto fs = node->info->driver;
 			return fs->Write(node, buf, off, len);
 		}
+
+		void Stat(IOContext* ioctx, vnode* node, struct stat* st)
+		{
+			assert(ioctx);
+			assert(node);
+			assert(node->info);
+			assert(node->refcount > 0);
+			assert(node->info->driver);
+
+			auto fs = node->info->driver;
+			fs->Stat(node, st);
+		}
 	}
 
 
@@ -233,12 +266,15 @@ namespace Filesystems
 		auto ctx = getctx();
 
 		auto fe = VFS::OpenFile(ctx, path, flags);
-		return fe ? fe->fd : 0;
+		return fe ? fe->fd : -1;
 	}
 
 	size_t Read(fd_t fd, void* buf, off_t off, size_t len)
 	{
 		auto ctx = getctx();
+		if(fd < 0)
+			return 0;
+
 		auto node = VFS::NodeFromFD(ctx, fd);
 		if(node == nullptr)
 			return 0;
@@ -249,13 +285,36 @@ namespace Filesystems
 	size_t Write(fd_t fd, void* buf, off_t off, size_t len)
 	{
 		auto ctx = getctx();
+		if(fd < 0)
+			return 0;
 
 		auto node = VFS::NodeFromFD(ctx, fd);
 		if(node == nullptr)
+		{
+			HALT("");
 			return 0;
+		}
 
 		return VFS::Write(ctx, node, buf, off, len);
+	}
+
+	VFSError Stat(fd_t fd, struct stat* out)
+	{
+		auto ctx = getctx();
+		if(fd < 0)
+			return VFSError::NOT_FOUND;
+
+		auto node = VFS::NodeFromFD(ctx, fd);
+		if(node == nullptr)
+			return VFSError::NOT_FOUND;
+
+		VFS::Stat(ctx, node, out);
+		return VFSError::NO_ERROR;
 	}
 }
 }
 }
+
+
+
+

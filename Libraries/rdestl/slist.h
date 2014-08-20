@@ -73,7 +73,7 @@ class slist
 		{
 			return upcast(m_node->next);
 		}
-		
+
 		node_iterator& operator++()
 		{
 			m_node = upcast(m_node->next);
@@ -102,7 +102,7 @@ class slist
 public:
 	typedef T													value_type;
 	typedef TAllocator											allocator_type;
-	typedef int													size_type;
+	typedef size_t													size_type;
 	typedef node_iterator<node*, T*, T&>						iterator;
 	typedef node_iterator<const node*, const T*, const T&>		const_iterator;
 	static const std::size_t									kNodeSize = sizeof(node);
@@ -113,7 +113,7 @@ public:
 		m_root.reset();
 	}
 	template<class InputIterator>
-	slist(InputIterator first, InputIterator last, 
+	slist(InputIterator first, InputIterator last,
 		const allocator_type& allocator = allocator_type())
 	:	m_allocator(allocator)
 	{
@@ -167,7 +167,7 @@ public:
 	}
 
 	template<class InputIterator>
-	void assign(InputIterator first, InputIterator last) 
+	void assign(InputIterator first, InputIterator last)
 	{
 		clear();
 		iterator it(&m_root);
@@ -190,7 +190,7 @@ public:
 			it = nextIt;
 		}
 		m_root.reset();
-	}	
+	}
 	bool empty() const	{ return !m_root.in_list(); }
 	// @todo: consider keeping size member, would make this O(1)
 	// as a policy? via preprocessor macro? TBD

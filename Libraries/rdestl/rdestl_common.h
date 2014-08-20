@@ -4,18 +4,12 @@
 #ifndef RDESTL_STANDALONE
 #	define RDESTL_STANDALONE	1
 #endif
-
+// comment
 #if RDESTL_STANDALONE
-#  ifdef _MSC_VER
-#	include <cassert>
-#	include <cstring>
-#	define RDE_FORCEINLINE	__forceinline
-#  else
 #   include <assert.h>
 #   include <cstdlib>
 #   include <cstring>
 #	define RDE_FORCEINLINE	inline
-#  endif
 
 #	ifdef _DEBUG
 #		undef RDE_DEBUG
@@ -29,15 +23,6 @@
 	{
 		// # Meh. MSVC doesnt seem to have <stdint.h>
 		// @todo	Fixes to make this portable.
-		typedef unsigned char		uint8;
-		typedef unsigned short		uint16;
-		typedef signed long			int32;
-		typedef unsigned long		uint32;
-        #ifdef _MSC_VER
-		typedef unsigned __int64	uint64;
-        #else
-        typedef unsigned long long	uint64;
-        #endif
 		namespace Sys
 		{
 			RDE_FORCEINLINE void MemCpy(void* to, const void* from, size_t bytes)

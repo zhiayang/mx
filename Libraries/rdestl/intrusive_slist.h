@@ -82,7 +82,7 @@ private:
 class intrusive_slist_base
 {
 public:
-	typedef int	size_type;
+	typedef size_t	size_type;
 
 	intrusive_slist_base();
 	void pop_front()
@@ -175,7 +175,7 @@ public:
 		return iterator(v);
 	}
 	// O(1)
-	static const_iterator get_iterator(const value_type* v) 
+	static const_iterator get_iterator(const value_type* v)
 	{
 		RDE_ASSERT(v->in_list());
 		return const_iterator(v);

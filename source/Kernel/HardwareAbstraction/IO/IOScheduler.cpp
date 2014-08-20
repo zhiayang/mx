@@ -3,7 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
-#include <List.hpp>
+#include <rdestl/list.h>
 
 using namespace Library;
 using namespace Kernel::HardwareAbstraction::Devices::Storage;
@@ -12,7 +12,7 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace IO
 {
-	#define MAX_TRANSFERS	-1
+	#define DIRECTOP	0
 
 	struct IOTransfer
 	{
@@ -30,14 +30,14 @@ namespace IO
 		bool completed;
 	};
 
-	static LinkedList<IOTransfer>* Transfers;
+	static rde::list<IOTransfer*>* Transfers;
 	static Mutex* listmtx;
 
 	static void Scheduler()
 	{
 		while(true)
 		{
-			if(Transfers->Size() == 0)
+			if(Transfers->size() == 0)
 				YieldCPU();
 
 			else
@@ -46,7 +46,9 @@ namespace IO
 				LOCK(listmtx);
 
 				// get the next request, then run it.
-				IOTransfer* req = Transfers->RemoveFront();
+				IOTransfer* req = Transfers->front();
+				Transfers->pop_front();
+
 				assert(req->completed == false);
 
 				// both operations should, at the lowest level, block until the operation is done.
@@ -63,7 +65,10 @@ namespace IO
 
 				// wake the calling thread from its sleep.
 				if(req->blockop)
+				{
+					assert(req->owningthread);
 					Multitasking::WakeForMessage(req->owningthread);
+				}
 
 				UNLOCK(listmtx);
 			}
@@ -80,9 +85,11 @@ namespace IO
 
 	void Initialise()
 	{
-		Transfers = new LinkedList<IOTransfer>();
+		Transfers = new rde::list<IOTransfer*>();
 		listmtx = new Mutex();
-		Multitasking::AddToQueue(Multitasking::CreateKernelThread(Scheduler, 2));
+
+		if(!DIRECTOP)
+			Multitasking::AddToQueue(Multitasking::CreateKernelThread(Scheduler, 2));
 	}
 
 	void Read(StorageDevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes)
@@ -90,24 +97,33 @@ namespace IO
 		// only returns when the data is read, therefore is blocking.
 		assert(dev);
 		if(bytes == 0 || buf == 0)
+		{
+			HALT("");
 			return;
+		}
 
-		IOTransfer* req = new IOTransfer(dev, pos, buf, bytes);
+		if(DIRECTOP)
+		{
+			dev->Read(pos, buf, bytes);
+		}
+		else
+		{
+			IOTransfer* req = new IOTransfer(dev, pos, buf, bytes);
 
-		req->owningthread = Multitasking::GetCurrentThread();
-		req->writeop = false;
-		req->blockop = true;
-		req->completed = false;
+			req->owningthread = Multitasking::GetCurrentThread();
+			req->writeop = false;
+			req->blockop = true;
+			req->completed = false;
 
-		LOCK(listmtx);
-		Transfers->InsertBack(req);
-		UNLOCK(listmtx);
+			LOCK(listmtx);
+			Transfers->push_back(req);
+			UNLOCK(listmtx);
 
-		BLOCK();
+			BLOCK();
+			assert(req->completed);
 
-		assert(req->completed == true);
-		delete req;
-		return;
+			delete req;
+		}
 	}
 
 	void Write(StorageDevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes)
@@ -117,22 +133,28 @@ namespace IO
 		if(bytes == 0 || buf == 0)
 			return;
 
-		IOTransfer* req = new IOTransfer(dev, pos, buf, bytes);
+		if(DIRECTOP)
+		{
+			dev->Write(pos, buf, bytes);
+		}
+		else
+		{
+			IOTransfer* req = new IOTransfer(dev, pos, buf, bytes);
 
-		req->owningthread = Multitasking::GetCurrentThread();
-		req->writeop = true;
-		req->blockop = true;
-		req->completed = false;
+			req->owningthread = Multitasking::GetCurrentThread();
+			req->writeop = true;
+			req->blockop = true;
+			req->completed = false;
 
-		LOCK(listmtx);
-		Transfers->InsertBack(req);
-		UNLOCK(listmtx);
+			LOCK(listmtx);
+			Transfers->push_back(req);
+			UNLOCK(listmtx);
 
-		BLOCK();
+			BLOCK();
 
-		assert(req->completed == true);
-		delete req;
-		return;
+			assert(req->completed == true);
+			delete req;
+		}
 	}
 
 
@@ -157,7 +179,7 @@ namespace IO
 		req->completed = false;
 
 		auto m = AutoMutex(listmtx);
-		Transfers->InsertBack(req);
+		Transfers->push_back(req);
 		return (void*) req;
 	}
 
@@ -176,7 +198,7 @@ namespace IO
 		req->completed = false;
 
 		auto m = AutoMutex(listmtx);
-		Transfers->InsertBack(req);
+		Transfers->push_back(req);
 		return (void*) req;
 	}
 

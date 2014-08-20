@@ -90,7 +90,7 @@ private:
 class intrusive_list_base
 {
 public:
-	typedef int	size_type;
+	typedef size_t	size_type;
 
 	void pop_back()
 	{
@@ -141,7 +141,7 @@ public:
 	}
 
 	void push_back(value_type* v)
-	{		
+	{
 		link(v, &m_root);
 	}
 	void push_front(value_type* v)

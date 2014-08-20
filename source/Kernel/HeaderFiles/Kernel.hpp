@@ -13,7 +13,7 @@
 #include <Time.hpp>
 #include <HardwareAbstraction/VideoOutput/VideoDevice.hpp>
 #include <HardwareAbstraction/Multitasking.hpp>
-#include <HardwareAbstraction/IOScheduler.hpp>
+#include <HardwareAbstraction/IO.hpp>
 #include <HardwareAbstraction/Devices/PS2.hpp>
 #include <HardwareAbstraction/Devices/Keyboard.hpp>
 #include <HardwareAbstraction/ACPI.hpp>
@@ -32,9 +32,9 @@
 // TSS at 0x500-0x800
 #define LFBBufferAddress_INT			0xFFFFFFFD00000000
 #define FPLAddress				0xFFFFFFFF00000000
-#define KernelHeapMetadata			0xFFFFFFFFD0000000
-#define KernelHeapAddress			0xFFFFFFFFE0000000
-#define TemporaryVirtualMapping		0x0000FF000000000
+#define KernelHeapMetadata			0xFFFFFFF000000000
+#define KernelHeapAddress			0xFFFFFFFF00000000
+#define TemporaryVirtualMapping		0x00000FF00000000
 #define DefaultUserStackAddr			0xFFFFFFF0
 
 

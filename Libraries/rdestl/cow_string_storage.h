@@ -1,6 +1,8 @@
 #ifndef RDESTL_COW_STRING_STORAGE_H
 #define RDESTL_COW_STRING_STORAGE_H
 
+#include <stddef.h>
+
 namespace rde
 {
 //=============================================================================
@@ -33,10 +35,10 @@ class cow_string_storage
 	typedef char ERR_CharTypeTooBigSeeM_BufferComment[sizeof(E) <= 2 ? 1 : -1];
 public:
 	typedef E					value_type;
-	typedef int					size_type;
+	typedef size_t					size_type;
 	typedef TAllocator			allocator_type;
 	typedef const value_type*	const_iterator;
-	static const unsigned long	kGranularity = 32;	
+	static const unsigned long	kGranularity = 32;
 
 	explicit cow_string_storage(const allocator_type& allocator)
 	:	m_allocator(allocator)
@@ -53,7 +55,7 @@ public:
 		get_rep()->size = static_cast<short>(len);
 		m_data[len] = 0;
 	}
-	cow_string_storage(const value_type* str, size_type len, 
+	cow_string_storage(const value_type* str, size_type len,
 		const allocator_type& allocator)
 	:	m_allocator(allocator)
 	{
@@ -252,7 +254,7 @@ private:
 	E*			m_data;
 	// @note: hack-ish. sizeof(string_rep) bytes for string_rep, than place for terminating
 	// character (up to 2-bytes!)
-	char		m_buffer[sizeof(string_rep)+2]; 
+	char		m_buffer[sizeof(string_rep)+2];
 	TAllocator	m_allocator;
 };
 
