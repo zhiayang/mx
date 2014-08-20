@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include "Defines.hpp"
 #include "SystemCall.hpp"
-#include "String.hpp"
+#include <string>
 
 namespace Library
 {
@@ -24,14 +24,14 @@ namespace Library
 		void PrintFormatted(void (*pf)(uint8_t), const char* str, va_list);
 		void PrintFormatted(const char* string, va_list);
 
-		void PrintToString(Library::string*, const char* str, ...);
+		void PrintToString(std::string*, const char* str, ...);
 	}
 }
 
-void operator delete(void* p);
-void operator delete[](void* p);
-void* operator new(unsigned long size);
-void* operator new[](unsigned long size);
-void* operator new(unsigned long, void* addr);
+// void operator delete(void* p);
+// void operator delete[](void* p);
+// void* operator new(unsigned long size);
+// void* operator new[](unsigned long size);
+// void* operator new(unsigned long, void* addr);
 
 

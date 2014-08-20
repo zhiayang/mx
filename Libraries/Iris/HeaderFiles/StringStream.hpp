@@ -6,21 +6,21 @@
 #include <stdint.h>
 #include "String.hpp"
 
-namespace Library
-{
-	class StringStream
-	{
-		public:
-			StringStream();
-			StringStream(string& str);
-			StringStream(const char* str);
+// namespace Library
+// {
+// 	class StringStream
+// 	{
+// 		public:
+// 			StringStream();
+// 			StringStream(string& str);
+// 			StringStream(const char* str);
 
-			void write(string& str);
-			string* read(char stop = ' ');
-			string* readline();
+// 			void write(string& str);
+// 			string* read(char stop = ' ');
+// 			string* readline();
 
-		private:
-			int origlength;
-			char* backingstore;
-	};
-}
+// 		private:
+// 			int origlength;
+// 			char* backingstore;
+// 	};
+// }

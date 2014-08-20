@@ -14,6 +14,7 @@
 // #endif
 
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,8 +22,13 @@ extern "C" {
 void __assert(const char* filename, unsigned long line, const char* function_name, const char* expression);
 
 /* Otherwise, declare the normal assert macro. */
-// #if !defined(NDEBUG)
-#define assert(invariant) ((invariant) ? (void) (0) : __assert(__FILE__, __LINE__, __PRETTY_FUNCTION__, #invariant))
+#if defined(ORION_KERNEL)
+namespace Kernel { void AssertCondition(const char*, int, const char*, const char*); }
+
+#define assert(invariant)	((invariant) ? (void) (0) : Kernel::AssertCondition(__FILE__, __LINE__, __PRETTY_FUNCTION__, #invariant))
+#else
+#define assert(invariant)	((invariant) ? (void) (0) : __assert(__FILE__, __LINE__, __PRETTY_FUNCTION__, #invariant))
+#endif
 // #endif
 
 

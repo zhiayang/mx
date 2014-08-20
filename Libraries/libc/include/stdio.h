@@ -101,7 +101,6 @@ int vsprintf(char* str, const char* format, va_list ap);
 #define _IONBF	2	// No buffering.
 
 
-
 #ifdef __cplusplus
 }
 #endif
