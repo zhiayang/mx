@@ -3,13 +3,24 @@
 	[
 		{
 			"follow_symlinks": true,
-			"path": "."
+			"path": ".",
+			"file_exclude_patterns":
+			[
+				"*.cpp.d"
+			],
+			"folder_exclude_patterns":
+			[
+				"build/gcc",
+				"build/binutils",
+				"build/build*",
+			],
 		}
 	],
 	"settings":
 	{
 		"sublimeclang_options":
 		[
+			"--sysroot=/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/",
 			"-I/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/",
 			"-I/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/HeaderFiles/",
 			"-I/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/",
