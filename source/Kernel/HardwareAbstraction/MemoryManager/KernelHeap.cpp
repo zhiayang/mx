@@ -54,16 +54,6 @@ namespace KernelHeap
 		uint64_t size;
 	};
 
-	// static uint64_t addr(Chunk* c)
-	// {
-	// 	return (uint64_t) c;
-	// }
-
-	// static Chunk* chunk(uint64_t addr)
-	// {
-	// 	return (Chunk*) addr;
-	// }
-
 	static bool isfree(Chunk* c)
 	{
 		return c->size & 0x1;
@@ -137,11 +127,12 @@ namespace KernelHeap
 	{
 		// essentially deletes a chunk.
 		// 'at' contains the index of the chunk to delete.
+		CheckAndExpandMeta();
+
 		void* c = index(at);
 		if(at == ChunksInHeap - 1)
 			return;
 
-		CheckAndExpandMeta();
 
 		// calculate how many chunks to pull
 		auto ahead = (ChunksInHeap - 1) - at;
@@ -288,9 +279,6 @@ namespace KernelHeap
 			CreateChunk(SizeOfHeap * 0x1000, 0x1000);
 		}
 		SizeOfHeap++;
-
-
-		CheckAndExpandMeta();
 	}
 
 	void* AllocateChunk(uint64_t sz)
@@ -333,7 +321,6 @@ namespace KernelHeap
 		assert(o % Alignment == 0);
 
 		UNLOCK(mtx);
-		CheckAndExpandMeta();
 		return (void*) (HeapAddress + o);
 	}
 
@@ -412,7 +399,6 @@ namespace KernelHeap
 			LastFree = o;
 		}
 
-		CheckAndExpandMeta();
 		UNLOCK(mtx);
 		// Log("free %x", p);
 	}

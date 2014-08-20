@@ -82,14 +82,10 @@ namespace Filesystems
 
 		vnode* CreateNode(FSDriver* fs)
 		{
-			MemoryManager::KernelHeap::Print();
-			Log("creating node");
 			vnode* node = new vnode;
-			Log("vnode: [%x]", node);
 
 			assert(node);
 			memset(node, 0, sizeof(vnode));
-			Log("cleared vnode");
 
 			node->data = nullptr;
 			node->info = new fsref;
@@ -97,7 +93,6 @@ namespace Filesystems
 			node->type = VNodeType::None;
 			node->attrib = 0;
 
-			Log("cleared fsref");
 			memset(node->info, 0, sizeof(fsref));
 			node->info->data = nullptr;
 			node->info->driver = fs;
@@ -105,11 +100,7 @@ namespace Filesystems
 
 			// add the node to the pool.
 			node->id = curid++;
-			Log("added to pool");
 			(*vnodepool)[node->id] = node;
-
-
-			Log("done");
 			return node;
 		}
 
