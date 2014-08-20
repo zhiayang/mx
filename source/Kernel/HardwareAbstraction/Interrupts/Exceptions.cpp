@@ -400,11 +400,11 @@ namespace Interrupts
 		if(r->InterruptID == 14)
 		{
 			// The error code gives us details of what happened.
-			uint8_t PageNotPresent	= !(r->ErrorCode & 0x1);	// Page not present
+			uint8_t PageNotPresent	= !(r->ErrorCode & 0x1);		// Page not present
 			uint8_t PageAccess		= r->ErrorCode & 0x2;		// Write operation?
-			uint8_t PageSupervisor	= r->ErrorCode & 0x4;		// Processor was in user-mode?
+			uint8_t PageSupervisor		= r->ErrorCode & 0x4;		// Processor was in user-mode?
 			uint8_t PageReservedBits	= r->ErrorCode & 0x8;		// Overwritten CPU-reserved bits of page entry?
-			uint8_t PageInstructionFetch	= r->ErrorCode & 0x10;	// Caused by an instruction fetch?
+			uint8_t PageInstructionFetch	= r->ErrorCode & 0x10;		// Caused by an instruction fetch?
 
 
 			PrintFormatted("%wPage Fault Error Codes:\n", Colours::Green);

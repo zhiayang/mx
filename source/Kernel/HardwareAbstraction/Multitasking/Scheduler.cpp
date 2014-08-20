@@ -17,11 +17,6 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace Multitasking
 {
-	// if, after N number of switches, processes in the low/norm queue don't get to run, run them all to completion.
-	#define LowStarveThreshold	256
-	#define NormStarveThreshold	64
-
-
 	static bool IsFirst = true;
 	LinkedList<Thread>* SleepList;
 	static LinkedList<Thread>* PendingSleepList;
@@ -67,14 +62,16 @@ namespace Multitasking
 	uint64_t GetCurrentThreadID()			{ return CurrentThread->ThreadID;					}
 	uint64_t GetCurrentProcessID()		{ return CurrentThread->Parent->ProcessID;				}
 
+	// if, after N number of switches, processes in the low/norm queue don't get to run, run them all to completion.
+	#define LowStarveThreshold	512
+	#define NormStarveThreshold	128
 
 	Thread* GetNextThread()
 	{
 		ScheduleCount++;
 		Thread* r;
 
-		if(ThreadList_HighPrio->Size() > 0 && NormStarvationLevel < NormStarveThreshold && NormStarvedRemaining == 0
-			&& LowStarvationLevel < LowStarveThreshold && LowStarvedRemaining == 0)
+		if(ThreadList_HighPrio->Size() > 0 && NormStarvedRemaining == 0 && LowStarvedRemaining == 0)
 		{
 			r = ThreadList_HighPrio->RemoveFront();
 			ThreadList_HighPrio->InsertBack(r);
@@ -82,7 +79,7 @@ namespace Multitasking
 			NormStarvationLevel++;
 			LowStarvationLevel++;
 		}
-		else if(ThreadList_NormPrio->Size() > 0 && LowStarvationLevel < LowStarveThreshold && LowStarvedRemaining == 0)
+		else if(ThreadList_NormPrio->Size() > 0 && LowStarvedRemaining == 0)
 		{
 			r = ThreadList_NormPrio->RemoveFront();
 			ThreadList_NormPrio->InsertBack(r);
@@ -90,32 +87,28 @@ namespace Multitasking
 			LowStarvationLevel++;
 
 			// check if we're starved.
-			if(NormStarvationLevel >= NormStarveThreshold)
-			{
-				// we are.
+			if(NormStarvedRemaining == 0 && NormStarvationLevel >= NormStarveThreshold)
 				NormStarvedRemaining = ThreadList_NormPrio->Size();
-				NormStarvationLevel = 0;
-			}
-			if(NormStarvedRemaining > 0)
-			{
+
+			else if(NormStarvedRemaining > 0)
 				NormStarvedRemaining--;
-			}
+
+			if(NormStarvedRemaining == 0)
+				NormStarvationLevel = 0;
 		}
 		else if(ThreadList_LowPrio->Size() > 0)
 		{
 			r = ThreadList_LowPrio->RemoveFront();
 			ThreadList_LowPrio->InsertBack(r);
 
-			if(LowStarvationLevel >= LowStarveThreshold)
-			{
-				// we are.
+			if(LowStarvedRemaining == 0 && LowStarvationLevel >= LowStarveThreshold)
 				LowStarvedRemaining = ThreadList_LowPrio->Size();
-				LowStarvationLevel = 0;
-			}
-			if(LowStarvedRemaining > 0)
-			{
+
+			else if(LowStarvedRemaining > 0)
 				LowStarvedRemaining--;
-			}
+
+			if(LowStarvedRemaining == 0)
+				LowStarvationLevel = 0;
 		}
 		else
 		{

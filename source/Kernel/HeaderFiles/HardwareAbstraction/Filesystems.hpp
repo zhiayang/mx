@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <List.hpp>
 #include "Devices/StorageDevice.hpp"
-#include <rdestl/vector.h>
+#include <Vector.hpp>
 #include <rdestl/rde_string.h>
 #include <sys/stat.h>
 
@@ -41,7 +41,7 @@ namespace Kernel
 
 				enum class VNodeType
 				{
-					None,
+					None = 0,
 					File,
 					Folder,
 				};
@@ -75,13 +75,18 @@ namespace Kernel
 				{
 					FDArray()
 					{
-						this->fds = new rde::vector<fileentry*>();
+						this->fds = new Library::Vector<fileentry*>();
 					}
 
-					rde::vector<fileentry*>* fds;
+					Library::Vector<fileentry*>* fds;
 				};
 
+				extern FSDriver* driver_stdin;
+				extern FSDriver* driver_stdout;
+
 				void Initialise();
+				void InitIO();
+
 				vnode* NodeFromID(id_t id);
 				fd_t FDFromNode(IOContext* ioctx, vnode* node);
 				vnode* NodeFromFD(IOContext* ioctx, fd_t fd);
@@ -101,11 +106,20 @@ namespace Kernel
 
 				size_t Read(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len);
 				size_t Write(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len);
+				void Stat(IOContext* ioctx, vnode* node, struct stat* st);
 			}
 
 			fd_t OpenFile(const char* path, int flags);
 			size_t Read(fd_t fd, void* buf, off_t off, size_t len);
 			size_t Write(fd_t fd, void* buf, off_t off, size_t len);
+			VFS::VFSError Stat(fd_t fd, struct stat* out);
+
+			enum class FSDriverType
+			{
+				Invalid = 0,
+				Physical,
+				Virtual
+			};
 
 			struct IOContext
 			{
@@ -120,21 +134,62 @@ namespace Kernel
 			class FSDriver
 			{
 				public:
-					FSDriver(Devices::Storage::Partition* part) : partition(part) { }
+					FSDriver(Devices::Storage::Partition* part, FSDriverType type) : partition(part), _type(type) { }
 					virtual ~FSDriver();
 					virtual bool Traverse(VFS::vnode* node, const char* path, char** symlink);
 					virtual size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length);
 					virtual size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length);
-					virtual void Stat(VFS::vnode* node, stat* stat);
+					virtual void Stat(VFS::vnode* node, struct stat* stat);
 
 					// returns a list of items inside the directory, as vnodes.
-					virtual rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node);
+					virtual Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node);
 
 					virtual dev_t GetID() final { return this->fsid; }
+					virtual FSDriverType GetType() final { return this->_type; }
 
 				protected:
-					dev_t fsid;
 					Devices::Storage::Partition* partition;
+					FSDriverType _type;
+					dev_t fsid;
+			};
+
+			class FSDriverConsole : public FSDriver
+			{
+				public:
+					FSDriverConsole();
+					~FSDriverConsole() override;
+					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
+					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
+					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
+					void Stat(VFS::vnode* node, struct stat* stat) override;
+
+					Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+			};
+
+			class FSDriverStdin : public FSDriver
+			{
+				public:
+					FSDriverStdin();
+					~FSDriverStdin() override;
+					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
+					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
+					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
+					void Stat(VFS::vnode* node, struct stat* stat) override;
+
+					Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+			};
+
+			class FSDriverStdout : public FSDriver
+			{
+				public:
+					FSDriverStdout();
+					~FSDriverStdout() override;
+					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
+					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
+					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
+					void Stat(VFS::vnode* node, struct stat* stat) override;
+
+					Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 			};
 
 			class FSDriverFat32 : public FSDriver
@@ -145,14 +200,14 @@ namespace Kernel
 					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
 					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
-					void Stat(VFS::vnode* node, stat* stat) override;
+					void Stat(VFS::vnode* node, struct stat* stat) override;
 
-					rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+					Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 
 				private:
 					rde::string* ReadLFN(uint64_t addr, int& nument);
 					uint64_t ClusterToLBA(uint32_t clus);
-					rde::vector<uint32_t>* GetClusterChain(VFS::vnode* node, uint64_t* numclus);
+					Library::Vector<uint32_t>* GetClusterChain(VFS::vnode* node, uint64_t* numclus);
 
 					uint16_t BytesPerSector;
 					uint8_t SectorsPerCluster;

@@ -10,7 +10,7 @@ namespace internal
 {
 struct rb_tree_base
 {
-	typedef int	size_type;
+	typedef size_t	size_type;
 	enum color_e
 	{
 		red,
@@ -111,7 +111,7 @@ public:
 		return new_node;
 	}
 
-	node* find_node(const key_type& key) 
+	node* find_node(const key_type& key)
 	{
 		node* iter(m_root);
 		while (iter != &ms_sentinel)
@@ -308,7 +308,7 @@ public:
 					grandparent->color = red;
 					iter = grandparent;
 				}
-				else 
+				else
 				{
 					if (iter == iter->parent->right)
 					{

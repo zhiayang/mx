@@ -25,7 +25,11 @@ struct stat
 	time_t		st_mtime;	// time of last modification
 	time_t		st_ctime;	// time of last status change
 };
-typedef struct stat stat;
+
+int stat(const char* path, struct stat* buf);
+int fstat(int fd, struct stat* buf);
+int lstat(const char* path, struct stat* buf);
+
 
 #ifdef __cplusplus
 }

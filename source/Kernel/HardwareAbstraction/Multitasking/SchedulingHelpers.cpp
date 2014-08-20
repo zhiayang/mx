@@ -73,7 +73,7 @@ namespace Multitasking
 			t->State = STATE_NORMAL;
 		}
 
-		// YieldCPU();
+		YieldCPU();
 	}
 
 
