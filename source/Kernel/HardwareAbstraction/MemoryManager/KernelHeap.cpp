@@ -24,268 +24,6 @@ static uint64_t GetPageFixed(uint64_t addr)
 	return addr;
 }
 
-// We have more than one heap implementation in this file.
-// from top-bottom, they are:
-// In place heap chunk (header + footer system)
-// new-heap, featured in orion-x4/failures/new-heap
-// old old heap, original orion-x4 heap.
-//
-// This is the standard interface required:
-// void Initialise()
-// void* AllocateChunk(size_t)
-// void FreeChunk(void*)
-// size_t QuerySize(void*)
-// void Print()
-// everything else is implementation defined.
-
-// namespace Kernel {
-// namespace HardwareAbstraction {
-// namespace MemoryManager {
-// namespace KernelHeap
-// {
-// 	// bookkeeping
-// 	static uint64_t SizeOfHeap;
-// 	static uint64_t HeapAddress;
-// 	static uint64_t HeapEnd;
-
-// 	#define FREE_HEADER_MAGIC		0xF1EEC0DE
-// 	#define USED_HEADER_MAGIC	0xDEADC0DE
-// 	#define FOOTER_MAGIC		0xC0DEBABE
-// 	#define ALIGNMENT			64
-
-// 	#define fail()				assert(0)
-
-// 	struct _header
-// 	{
-// 		uint64_t size;
-// 		uint32_t magic;
-// 		uint32_t owningtid;
-
-// 	} __attribute__ ((packed));
-
-// 	struct _footer
-// 	{
-// 		_header* hdr;
-// 		uint32_t magic;
-// 		uint32_t pad;
-
-// 	} __attribute__ ((packed));
-
-// 	bool _verify(_header* hdr)
-// 	{
-// 		if(hdr->magic == FREE_HEADER_MAGIC || hdr->magic == USED_HEADER_MAGIC)
-// 			return true;
-
-// 		else
-// 		{
-// 			StandardIO::PrintFormatted("false: [%x - %x - %x, %x]\n", hdr, hdr->magic, __builtin_return_address(0), __builtin_return_address(1));
-// 			return false;
-// 		}
-// 	}
-// 	bool _verify(_footer* ftr)
-// 	{
-// 		if(ftr->magic == FOOTER_MAGIC)
-// 			return true;
-
-// 		else
-// 		{
-// 			StandardIO::PrintFormatted("[%x (%x) - %x, %x, %x]", ftr, ftr->hdr, ftr->magic, __builtin_return_address(0), __builtin_return_address(1));
-// 			return false;
-// 		}
-// 	}
-
-
-// 	_header* verify(_header* hdr)		{ assert(_verify(hdr)); return hdr; }
-// 	_footer* verify(_footer* ftr)		{ assert(_verify(ftr)); return ftr; }
-
-// 	_header* header(uint64_t addr)	{ return verify((_header*) addr); }
-// 	_footer* footer(uint64_t addr)		{ return verify((_footer*) addr); }
-
-// 	_header* mkheader(uint64_t at, size_t size)
-// 	{
-// 		_header* h = (_header*) at;
-// 		h->magic = FREE_HEADER_MAGIC;
-// 		h->owningtid = 0;
-// 		h->size = size;
-
-// 		return verify(h);
-// 	}
-
-// 	_footer* mkfooter(uint64_t at, _header* hdr)
-// 	{
-// 		_footer* ftr = (_footer*) at;
-// 		ftr->hdr = verify(hdr);
-// 		ftr->magic = FOOTER_MAGIC;
-// 		ftr->pad = 0;
-
-// 		return verify(ftr);
-// 	}
-
-// 	_footer* footer(_header* hdr)
-// 	{
-// 		verify(hdr);
-// 		return footer((uint64_t) hdr + sizeof(_header) + hdr->size);
-// 	}
-
-// 	_header* left(_header* hdr)
-// 	{
-// 		verify(hdr);
-// 		return verify(footer((uint64_t) hdr - sizeof(_footer))->hdr);
-// 	}
-
-// 	_header* right(_header* hdr)
-// 	{
-// 		verify(hdr);
-// 		verify(footer((uint64_t) hdr + hdr->size));
-// 		return verify(header((uint64_t) hdr + hdr->size + sizeof(_footer)));
-// 	}
-
-// 	bool isfree(_header* hdr)
-// 	{
-// 		verify(hdr);
-// 		if(hdr->magic == FREE_HEADER_MAGIC)
-// 			return true;
-
-// 		else
-// 			return false;
-// 	}
-
-// 	void setfree(_header* hdr)
-// 	{
-// 		verify(hdr)->magic = FREE_HEADER_MAGIC;
-// 	}
-
-// 	void setfree(_footer* ftr)
-// 	{
-// 		setfree(verify(ftr->hdr));
-// 	}
-
-// 	void setused(_header* hdr)
-// 	{
-// 		verify(hdr)->magic = USED_HEADER_MAGIC;
-// 	}
-
-// 	void setused(_footer* ftr)
-// 	{
-// 		setfree(verify(ftr->hdr));
-// 	}
-
-// 	size_t calcoverhead(size_t s)
-// 	{
-// 		return s > sizeof(_header) + sizeof(_footer) ? s - sizeof(_header) - sizeof(_footer) : 0;
-// 	}
-
-// 	uint64_t _round(uint64_t s)
-// 	{
-// 		uint64_t remainder = s % ALIGNMENT;
-
-// 		if(remainder == 0)
-// 			return s;
-
-// 		return s + ALIGNMENT - remainder;
-// 	}
-
-
-// 	void Initialise()
-// 	{
-// 		SizeOfHeap = 1;
-// 		HeapAddress = GetPageFixed(KernelHeapAddress);
-// 		HeapEnd = HeapAddress + 0x1000;
-
-// 		auto hdr = mkheader(HeapAddress, calcoverhead(0x1000));
-// 		mkfooter(HeapAddress + sizeof(_header) + hdr->size, hdr);
-// 	}
-
-// 	void ExpandHeap()
-// 	{
-// 		// get the last chunk.
-// 		_footer* ftr = footer(HeapEnd - sizeof(_footer));
-// 		GetPageFixed(HeapEnd);
-// 		if(isfree(ftr->hdr))
-// 		{
-// 			// add to its header's size, then move the footer
-// 			verify(ftr->hdr)->size += 0x1000;
-// 			auto f = mkfooter(HeapEnd + 0x1000 - sizeof(_footer), ftr->hdr);
-// 			memset(ftr, 0, sizeof(_footer));
-
-// 			verify(f);
-// 		}
-// 		else
-// 		{
-// 			auto hdr = mkheader(HeapEnd, calcoverhead(0x1000));
-// 			mkfooter(HeapEnd + 0x1000 - sizeof(_footer), hdr);
-// 			setfree(hdr);
-// 		}
-
-// 		SizeOfHeap++;
-// 		HeapEnd += 0x1000;
-// 	}
-
-// 	void* AllocateChunk(size_t sz)
-// 	{
-// 		sz = _round(sz);
-// 		uint64_t ptr = HeapAddress;
-// 		_header* hdr = nullptr;
-// 		while(ptr < HeapEnd)
-// 		{
-// 			_header* h = header(ptr);
-// 			if(isfree(h))
-// 			{
-// 				hdr = h;
-// 				break;
-// 			}
-
-// 			ptr += sizeof(_header) + h->size + sizeof(_footer);
-// 		}
-
-// 		if(hdr == nullptr)
-// 		{
-// 			ExpandHeap();
-// 			return AllocateChunk(sz);
-// 		}
-
-// 		// set it to used.
-// 		verify(hdr);
-// 		setused(hdr);
-
-// 		auto oldsz = hdr->size;
-// 		if(oldsz - sz > sizeof(_header) + sizeof(_footer) + ALIGNMENT)
-// 		{
-// 			// we have enough space
-// 			// make a new header right after the previous footer
-// 			auto nh = mkheader((uint64_t) hdr + sizeof(_header) + sz, oldsz - sz - sizeof(_header) - sizeof(_footer));
-// 			mkfooter((uint64_t) hdr + sizeof(_header) + verify(hdr)->size, nh);
-// 			setfree(nh);
-// 		}
-
-// 		Log("allocated %x bytes at %x", sz, (uint64_t) hdr + sizeof(_header));
-// 		return (void*) ((uint64_t) hdr + sizeof(_header));
-// 	}
-
-// 	void FreeChunk(void* ptr)
-// 	{
-// 	}
-
-// 	size_t QuerySize(void* ptr)
-// 	{
-// 		return 0;
-// 	}
-
-// 	void Print()
-// 	{
-// 	}
-// }
-// }
-// }
-// }
-
-
-
-
-
-
-
-
 #define PARANOIA					0x1
 #define MapFlags					0x7
 #define fail()						assert(0)
@@ -316,44 +54,50 @@ namespace KernelHeap
 		uint64_t size;
 	};
 
-	uint64_t addr(Chunk* c)
-	{
-		return (uint64_t) c;
-	}
+	// static uint64_t addr(Chunk* c)
+	// {
+	// 	return (uint64_t) c;
+	// }
 
-	Chunk* chunk(uint64_t addr)
-	{
-		return (Chunk*) addr;
-	}
+	// static Chunk* chunk(uint64_t addr)
+	// {
+	// 	return (Chunk*) addr;
+	// }
 
-	Chunk* array()
-	{
-		return (Chunk*) MetadataAddr;
-	}
-
-	bool isfree(Chunk* c)
+	static bool isfree(Chunk* c)
 	{
 		return c->size & 0x1;
 	}
 
-	void setfree(Chunk* c)
+	static void setfree(Chunk* c)
 	{
 		c->size |= 0x1;
 	}
 
-	void setused(Chunk* c)
+	static void setused(Chunk* c)
 	{
 		c->size &= ~0x1;
 	}
 
-	uint64_t size(Chunk* c)
+	static uint64_t size(Chunk* c)
 	{
 		return c->size & ~0x1;
 	}
 
-	uint64_t midpoint(uint64_t a, uint64_t b)
+	static uint64_t midpoint(uint64_t a, uint64_t b)
 	{
 		return a + ((b - a) / 2);
+	}
+
+	static void CheckAndExpandMeta()
+	{
+		if((ChunksInHeap + 2) * sizeof(Chunk) > SizeOfMeta * 0x1000)
+		{
+			// we need to expand.
+			uint64_t fixed = GetPageFixed(MetadataAddr + (SizeOfMeta * 0x1000));
+			assert(fixed == MetadataAddr + (SizeOfMeta * 0x1000));
+			SizeOfMeta++;
+		}
 	}
 
 
@@ -366,9 +110,7 @@ namespace KernelHeap
 
 
 
-
-
-	Chunk* index(uint64_t i)
+	static Chunk* index(uint64_t i)
 	{
 		Chunk* arr = (Chunk*) MetadataAddr;
 		if(i < ChunksInHeap)
@@ -382,14 +124,7 @@ namespace KernelHeap
 	{
 		// memcpy them behind.
 		// but first, check if we have enough space.
-		if((ChunksInHeap + 1) * sizeof(Chunk) > SizeOfMeta * 0x1000)
-		{
-			HALT("");
-			// we need to expand.
-			uint64_t fixed = GetPageFixed(MetadataAddr + (SizeOfMeta * 0x1000));
-			assert(fixed == MetadataAddr + (SizeOfMeta * 0x1000));
-			SizeOfMeta++;
-		}
+		CheckAndExpandMeta();
 
 		auto behind = (ChunksInHeap - 1) - at;
 
@@ -405,6 +140,8 @@ namespace KernelHeap
 		void* c = index(at);
 		if(at == ChunksInHeap - 1)
 			return;
+
+		CheckAndExpandMeta();
 
 		// calculate how many chunks to pull
 		auto ahead = (ChunksInHeap - 1) - at;
@@ -497,6 +234,7 @@ namespace KernelHeap
 
 	void CreateChunk(uint64_t offset, uint64_t size)
 	{
+		CheckAndExpandMeta();
 		uint64_t o = bsearch(offset, [](uint64_t i) -> uint64_t { return index(i)->offset; });
 		if(o < ChunksInHeap)
 		{
@@ -550,6 +288,9 @@ namespace KernelHeap
 			CreateChunk(SizeOfHeap * 0x1000, 0x1000);
 		}
 		SizeOfHeap++;
+
+
+		CheckAndExpandMeta();
 	}
 
 	void* AllocateChunk(uint64_t sz)
@@ -592,6 +333,7 @@ namespace KernelHeap
 		assert(o % Alignment == 0);
 
 		UNLOCK(mtx);
+		CheckAndExpandMeta();
 		return (void*) (HeapAddress + o);
 	}
 
@@ -670,6 +412,7 @@ namespace KernelHeap
 			LastFree = o;
 		}
 
+		CheckAndExpandMeta();
 		UNLOCK(mtx);
 		// Log("free %x", p);
 	}
