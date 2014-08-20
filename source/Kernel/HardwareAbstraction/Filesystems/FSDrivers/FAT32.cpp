@@ -263,11 +263,6 @@ namespace Filesystems
 		auto file = dirs->Back();
 		vnode* cn = node;
 
-		for(auto d : *dirs)
-		{
-			PrintFormatted("[%s]", d->c_str());
-		}
-
 		for(auto v : *dirs)
 		{
 			bool found = false;
@@ -436,15 +431,24 @@ namespace Filesystems
 		buf = obuf;
 
 		auto ret = new Vector<VFS::vnode*>();
+		auto count = 0;
+
+		Log(3, "{%x} - %x, disk offset %x", dirsize, buf, this->ClusterToLBA(clusters->Front()) * 512);
 		for(uint64_t addr = buf; addr < buf + dirsize; )
 		{
+			count++;
 			auto name = new rde::string();
 			uint8_t lfncheck = 0;
 
 			// check if we're on an LFN
 			uint8_t* raw = (uint8_t*) addr;
 			auto dirent = (DirectoryEntry*) raw;
-			if((uint8_t) dirent->name[0] == FIRSTCHAR_DELETED)
+			// Log(3, "[%x]", raw);
+
+			if(dirent->name[0] == 0)
+				break;
+
+			else if((uint8_t) dirent->name[0] == FIRSTCHAR_DELETED)
 			{
 				addr += sizeof(LFNEntry);
 				continue;
@@ -480,9 +484,12 @@ namespace Filesystems
 
 					for(int i = 0; i < 3 && dirent->ext[i] != ' '; i++)
 						name->append(lowext ? (char) tolower(dirent->ext[i]) : dirent->ext[i]);
+
 				}
+				Log(3, "[%s]", name->c_str());
 
 				vnode* vn = VFS::CreateNode(this);
+
 				if(dirent->attrib & ATTR_READONLY)	vn->attrib |= Attributes::ReadOnly;
 				if(dirent->attrib & ATTR_HIDDEN)	vn->attrib |= Attributes::Hidden;
 
@@ -494,6 +501,7 @@ namespace Filesystems
 				// (if we need it. don't call getclusterchain() every time, especially for sibling directories that we're not interested in)
 
 				auto fsd = new vnode_data;
+				Log(3, "fsd -> %x", fsd);
 				memset(fsd, 0, sizeof(vnode_data));
 
 				fsd->name = name;
@@ -507,9 +515,8 @@ namespace Filesystems
 
 				ret->InsertBack(vn);
 			}
-			else
-				break;
 
+			Log(3, "(%x)", count);
 			addr += sizeof(LFNEntry);
 		}
 

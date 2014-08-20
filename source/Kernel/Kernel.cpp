@@ -110,6 +110,7 @@ namespace Kernel
 		MemoryMap::Initialise(MBTStruct);
 		Virtual::Initialise();
 		Physical::Bootstrap();
+		KernelHeap::Initialise();
 		// copy kernel CR3 to somewhere sane-r
 		{
 			uint64_t newcr3 = Physical::AllocateDMA(0x18, false);
@@ -119,10 +120,7 @@ namespace Kernel
 			Virtual::SwitchPML4T((Virtual::PageMapStructure*) newcr3);
 			asm volatile("mov %0, %%cr3" :: "r"(newcr3));
 			CR3Value = newcr3;
-
 		}
-
-		KernelHeap::Initialise();
 
 		Physical::Initialise();
 
@@ -134,6 +132,7 @@ namespace Kernel
 		// we use this to store page mappings.
 		// TODO: move to temp mapping scheme, where physical pages can come from anywhere.
 		Log("PMM Reserved Region from %x to %x", Physical::ReservedRegionForVMM, Physical::ReservedRegionForVMM + Physical::LengthOfReservedRegion);
+
 
 
 		// Start the less crucial but still important services.
@@ -323,10 +322,13 @@ namespace Kernel
 			VFS::Mount(f1->Partitions->Get(0), fs, "/");
 			Log("Root FS Mounted at /");
 
-			auto fd = OpenFile("/Applications/test.txt", 0);
+			auto fd = OpenFile("/apps/test.txt", 0);
 			// auto fd = OpenFile("/test.txt", 0);
 			if(fd == -1)
+			{
+				KernelHeap::Print();
 				HALT("file does not exist");
+			}
 
 			PrintFormatted("file opened\n");
 
