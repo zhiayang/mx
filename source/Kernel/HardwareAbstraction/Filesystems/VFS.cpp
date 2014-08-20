@@ -14,7 +14,7 @@ namespace Filesystems
 	namespace VFS
 	{
 		static id_t curid = 0;
-		const static fd_t FirstFreeFD = 3;
+		static fd_t FirstFreeFD = 0;
 
 		struct Filesystem
 		{
@@ -26,6 +26,9 @@ namespace Filesystems
 
 		static Library::Vector<Filesystem*>* mountedfses;
 		static rde::hash_map<id_t, vnode*>* vnodepool;
+
+		FSDriver* driver_stdin;
+		FSDriver* driver_stdout;
 
 		static IOContext* getctx()
 		{
@@ -40,11 +43,10 @@ namespace Filesystems
 		{
 			for(auto v : *mountedfses)
 			{
-				if(path.substr(0, v->mountpoint->length()) == *v->mountpoint)
-				{
+				if(strcmp(path.substr(0, math::min(path.length(), v->mountpoint->length())).c_str(), v->mountpoint->c_str()) == 0)
 					return v;
-				}
 			}
+
 			return nullptr;
 		}
 
@@ -53,6 +55,21 @@ namespace Filesystems
 		{
 			mountedfses = new Library::Vector<Filesystem*>();
 			vnodepool = new rde::hash_map<id_t, vnode*>();
+		}
+
+		void InitIO()
+		{
+			auto ConsoleFSD = new FSDriverConsole();
+			driver_stdin = new FSDriverStdin();
+			driver_stdout = new FSDriverStdout();
+
+			Mount(nullptr, ConsoleFSD, "/dev/console");
+			Mount(nullptr, driver_stdin, "/dev/stdin");
+			Mount(nullptr, driver_stdout, "/dev/stdout");
+
+			auto ctx = getctx();
+			OpenFile(ctx, "/dev/stdin", 0);
+			OpenFile(ctx, "/dev/stdout", 0);
 		}
 
 		// this fetches from the pool. used mainly by fsdrivers to avoid creating duplicate vnodes.
@@ -133,8 +150,10 @@ namespace Filesystems
 
 		void Mount(Partition* part, FSDriver* fs, const char* path)
 		{
-			assert(part);
 			assert(fs);
+			if(fs->GetType() == FSDriverType::Physical)
+				assert(part);
+
 			assert(path);
 
 			auto _fs = new Filesystem;
@@ -158,8 +177,7 @@ namespace Filesystems
 			assert(ioctx->fdarray->fds);
 			assert(node);
 
-			auto fe		= (fileentry*) new uint8_t[0x20];
-			// auto fe		= new fileentry;
+			auto fe		= new fileentry;
 			fe->node	= node;
 			fe->offset	= 0;
 			fe->flags	= flags;
@@ -272,7 +290,10 @@ namespace Filesystems
 
 		auto node = VFS::NodeFromFD(ctx, fd);
 		if(node == nullptr)
+		{
+			HALT("");
 			return 0;
+		}
 
 		return VFS::Write(ctx, node, buf, off, len);
 	}
