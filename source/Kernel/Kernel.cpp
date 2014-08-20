@@ -322,8 +322,8 @@ namespace Kernel
 			VFS::Mount(f1->Partitions->Get(0), fs, "/");
 			Log("Root FS Mounted at /");
 
-			auto fd = OpenFile("/apps/test.txt", 0);
-			// auto fd = OpenFile("/test.txt", 0);
+			// auto fd = OpenFile("/apps/test.txt", 0);
+			auto fd = OpenFile("/test.txt", 0);
 			if(fd == -1)
 			{
 				KernelHeap::Print();
@@ -338,7 +338,8 @@ namespace Kernel
 
 			void* buf = new uint8_t[st.st_size];
 			auto read = Read(fd, buf, 0, st.st_size);
-			PrintFormatted("read %d bytes", read);
+			PrintFormatted("read %d bytes:\n\n", read);
+			PrintFormatted("%s", buf);
 		}
 
 

@@ -41,7 +41,7 @@ namespace Kernel
 
 				enum class VNodeType
 				{
-					None,
+					None = 0,
 					File,
 					Folder,
 				};

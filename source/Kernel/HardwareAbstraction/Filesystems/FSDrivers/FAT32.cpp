@@ -282,7 +282,7 @@ namespace Filesystems
 				assert(vnd);
 				assert(vnd->name);
 
-				if(curlvl == levels && cn->type == VNodeType::File && *vnd->name == *file)
+				if(curlvl == levels && d->type == VNodeType::File && strcmp(vnd->name->c_str(), file->c_str()) == 0)
 				{
 					node->info->data = d->info->data;
 					node->info->driver = d->info->driver;
@@ -291,7 +291,7 @@ namespace Filesystems
 
 					return true;
 				}
-				else if(*vnd->name == *v)
+				else if(strcmp(vnd->name->c_str(), v->c_str()) == 0)
 				{
 					found = true;
 					cn = d;
@@ -433,7 +433,6 @@ namespace Filesystems
 		auto ret = new Vector<VFS::vnode*>();
 		auto count = 0;
 
-		Log(3, "{%x} - %x, disk offset %x", dirsize, buf, this->ClusterToLBA(clusters->Front()) * 512);
 		for(uint64_t addr = buf; addr < buf + dirsize; )
 		{
 			count++;
@@ -486,7 +485,6 @@ namespace Filesystems
 						name->append(lowext ? (char) tolower(dirent->ext[i]) : dirent->ext[i]);
 
 				}
-				Log(3, "[%s]", name->c_str());
 
 				vnode* vn = VFS::CreateNode(this);
 
@@ -501,7 +499,6 @@ namespace Filesystems
 				// (if we need it. don't call getclusterchain() every time, especially for sibling directories that we're not interested in)
 
 				auto fsd = new vnode_data;
-				Log(3, "fsd -> %x", fsd);
 				memset(fsd, 0, sizeof(vnode_data));
 
 				fsd->name = name;
@@ -516,7 +513,6 @@ namespace Filesystems
 				ret->InsertBack(vn);
 			}
 
-			Log(3, "(%x)", count);
 			addr += sizeof(LFNEntry);
 		}
 
@@ -538,7 +534,6 @@ namespace Filesystems
 		assert(node->info);
 		assert(node->info->data);
 		assert(node->info->driver == this);
-		PrintFormatted("(%x)", node->info->data);
 
 		uint32_t Cluster = tovnd(node)->entrycluster;
 		uint32_t cchain = 0;
@@ -581,7 +576,6 @@ namespace Filesystems
 
 		} while((cchain != 0) && !((cchain & 0x0FFFFFFF) >= 0x0FFFFFF8));
 
-		PrintFormatted("(done)\n");
 		buf = obuf;
 		MemoryManager::Physical::FreeDMA(buf, 2);
 		tovnd(node)->clusters = ret;
