@@ -168,7 +168,7 @@ namespace Filesystems
 		return this->FirstUsableCluster + cluster * this->SectorsPerCluster - (2 * this->SectorsPerCluster);
 	}
 
-	FSDriverFat32::FSDriverFat32(Partition* _part) : FSDriver(_part)
+	FSDriverFat32::FSDriverFat32(Partition* _part) : FSDriver(_part, FSDriverType::Physical)
 	{
 		COMPILE_TIME_ASSERT(sizeof(DirectoryEntry) == sizeof(LFNEntry));
 
@@ -351,7 +351,6 @@ namespace Filesystems
 
 		for(auto i = skippedclus; i < skippedclus + cluslen; i++)
 		{
-			StandardIO::PrintFormatted("r");
 			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA((*vnd->clusters)[(int) i]), dma, this->SectorsPerCluster * 512);
 			dma += this->SectorsPerCluster * 512;
 		}

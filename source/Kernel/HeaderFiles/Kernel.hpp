@@ -13,7 +13,7 @@
 #include <Time.hpp>
 #include <HardwareAbstraction/VideoOutput/VideoDevice.hpp>
 #include <HardwareAbstraction/Multitasking.hpp>
-#include <HardwareAbstraction/IOScheduler.hpp>
+#include <HardwareAbstraction/IO.hpp>
 #include <HardwareAbstraction/Devices/PS2.hpp>
 #include <HardwareAbstraction/Devices/Keyboard.hpp>
 #include <HardwareAbstraction/ACPI.hpp>

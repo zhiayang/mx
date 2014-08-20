@@ -314,6 +314,7 @@ namespace Kernel
 			using namespace Filesystems;
 
 			VFS::Initialise();
+			VFS::InitIO();
 
 			Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->Get(0);
 			FSDriverFat32* fs = new FSDriverFat32(f1->Partitions->Get(0));
@@ -322,24 +323,33 @@ namespace Kernel
 			VFS::Mount(f1->Partitions->Get(0), fs, "/");
 			Log("Root FS Mounted at /");
 
+			Write(1, (void*) "Hello, World!", 0, 13);
+
+
+			// open fds for stdin, stdout and stderr.
+			// KernelKeyboard = new Keyboard(new PS2Keyboard());
+
+
+
 			// auto fd = OpenFile("/apps/test.txt", 0);
-			auto fd = OpenFile("/test.txt", 0);
-			if(fd == -1)
-			{
-				KernelHeap::Print();
-				HALT("file does not exist");
-			}
+			// // auto fd = OpenFile("/test.txt", 0);
 
-			PrintFormatted("file opened\n");
+			// if(fd == -1)
+			// {
+			// 	KernelHeap::Print();
+			// 	HALT("file does not exist");
+			// }
 
-			struct stat st;
-			Stat(fd, &st);
-			PrintFormatted("file is %d bytes\n", st.st_size);
+			// PrintFormatted("file opened\n");
 
-			void* buf = new uint8_t[st.st_size];
-			auto read = Read(fd, buf, 0, st.st_size);
-			PrintFormatted("read %d bytes:\n\n", read);
-			PrintFormatted("%s", buf);
+			// struct stat st;
+			// Stat(fd, &st);
+			// PrintFormatted("file is %d bytes\n", st.st_size);
+
+			// void* buf = new uint8_t[st.st_size];
+			// auto read = Read(fd, buf, 0, st.st_size);
+			// PrintFormatted("read %d bytes:\n\n", read);
+			// PrintFormatted("%s", buf);
 		}
 
 
@@ -347,7 +357,7 @@ namespace Kernel
 		// kernel stops here
 		// for now.
 		PrintFormatted("\n\nKernel Halted\n");
-		UHALT();
+		while(true);
 
 
 
