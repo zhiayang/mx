@@ -51,7 +51,9 @@ namespace Filesystems
 		(void) buf;
 		(void) offset;
 		(void) length;
-		return 0;
+
+		// line buffer it.
+		return IO::Manager::Read(buf, length);
 	}
 
 	size_t FSDriverStdin::Write(VFS::vnode* node, const void* buf, off_t offset, size_t length)

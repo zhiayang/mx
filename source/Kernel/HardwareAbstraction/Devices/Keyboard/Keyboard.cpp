@@ -8,40 +8,7 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace Devices
 {
-	Keyboard::Keyboard(Keyboard* dev)
-	{
-		this->ActualDevice = dev;
-		this->Enabled = false;
-	}
 
-	Keyboard::~Keyboard()
-	{
-	}
-
-	void Keyboard::HandleKeypress()
-	{
-		this->ActualDevice->HandleKeypress();
-	}
-
-	uint8_t Keyboard::ReadBuffer()
-	{
-		return this->ActualDevice->ReadBuffer();
-	}
-
-	void Keyboard::Enable()
-	{
-		this->Enabled = true;
-	}
-
-	void Keyboard::Disable()
-	{
-		this->Enabled = false;
-	}
-
-	bool Keyboard::ItemsInBuffer()
-	{
-		return this->ActualDevice->ItemsInBuffer();
-	}
 }
 }
 }
