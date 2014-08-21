@@ -14,8 +14,8 @@ namespace Devices
 	class Keyboard
 	{
 		public:
-			Keyboard(Keyboard* dev);
-			virtual ~Keyboard();
+			Keyboard() { }
+			virtual ~Keyboard() { }
 			void Enable();
 			void Disable();
 
@@ -24,7 +24,6 @@ namespace Devices
 			virtual bool ItemsInBuffer();
 
 		protected:
-			Keyboard* ActualDevice;
 			bool Enabled;
 	};
 
@@ -33,16 +32,14 @@ namespace Devices
 		public:
 			PS2Keyboard();
 
-			void HandleKeypress();
-			uint8_t ReadBuffer();
+			void HandleKeypress() override;
+			uint8_t ReadBuffer() override;
+			bool ItemsInBuffer() override;
+
 			void DecodeScancode();
 			uint8_t Translate(uint8_t sc);
-			bool ItemsInBuffer();
 
 		private:
-			// Library::CircularBuffer<uint8_t>* Buffer;
-			// Library::CircularBuffer<uint8_t>* ByteBuffer;
-
 			Library::CircularMemoryBuffer* Buffer;
 			Library::CircularMemoryBuffer* ByteBuffer;
 			uint8_t TranslateE0(uint8_t sc);

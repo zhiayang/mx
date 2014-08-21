@@ -50,67 +50,55 @@ CleanUp:
 
 
 Fail:
-	// push %rdi
-
-	// mov $FailString, %rdi
-	// call Syscall_PrintString
-	// pop %rdi
-
 	jmp CleanUp
 
 
 
 ExitProc:
-	// call Syscall_ExitProc
-	jmp CleanUp
-
-PrintChar:
-	// call Syscall_PrintChar
-	jmp CleanUp
-
-PrintString:
-	// call Syscall_PrintString
+	call Syscall_ExitProc
 	jmp CleanUp
 
 InstallIRQ:
-	// call Syscall_InstallIRQHandler
+	call Syscall_InstallIRQHandler
 	jmp CleanUp
 
 InstallIRQNoRegs:
-	// call Syscall_InstallIRQHandlerNoRegs
+	call Syscall_InstallIRQHandlerNoRegs
 	jmp CleanUp
+
+
 
 
 CreateThread:
-	// call Syscall_CreateThread
+	call Syscall_CreateThread
 	jmp CleanUp
 
 SpawnProcess:
-	// call Syscall_SpawnProcess
+	call Syscall_SpawnProcess
 	jmp CleanUp
 
 SimpleToProcesss:
-	// call IPC_SimpleToProcess
+	call IPC_SimpleToProcess
 	jmp CleanUp
 
 SimpleToThread:
-	// call IPC_SimpleToThread
+	call IPC_SimpleToThread
 	jmp CleanUp
 
 GetSimpleMessage:
-	// call IPC_GetSimpleMessage
+	call IPC_GetSimpleMessage
 	jmp CleanUp
 
 Sleep:
-	// call Syscall_Sleep
+	call Syscall_Sleep
 	jmp CleanUp
 
 Yield:
-	// call Syscall_Yield
+	call Syscall_Yield
 	jmp CleanUp
 
 Block:
-	// call Syscall_Block
+	call Syscall_Block
 	jmp CleanUp
 
 InstallSigHandler:
@@ -118,11 +106,11 @@ InstallSigHandler:
 	jmp CleanUp
 
 GetPID:
-	// call Syscall_GetPID
+	call Syscall_GetPID
 	jmp CleanUp
 
 GetParentPID:
-	// call Syscall_GetParentPID
+	call Syscall_GetParentPID
 	jmp CleanUp
 
 
@@ -140,23 +128,23 @@ OpenIPCSocket:
 	jmp CleanUp
 
 OpenAnyFD:
-	// call Syscall_OpenAny
+	call Syscall_OpenAny
 	jmp CleanUp
 
 CloseAnyFD:
-	// call Syscall_CloseAny
+	call Syscall_CloseAny
 	jmp CleanUp
 
 ReadAnyFD:
-	// call Syscall_ReadAny
+	call Syscall_ReadAny
 	jmp CleanUp
 
 WriteAnyFD:
-	// call Syscall_WriteAny
+	call Syscall_WriteAny
 	jmp CleanUp
 
 MemoryMapAnonymous:
-	// call Syscall_MMapAnon
+	call Syscall_MMapAnon
 	jmp CleanUp
 
 MemoryMapFile:
@@ -174,31 +162,29 @@ FailString:
 .align 8
 SyscallTable:
 	.quad	ExitProc			// 0
-	.quad	PrintChar			// 1
-	.quad	PrintString			// 2
-	.quad	InstallIRQ			// 3
-	.quad	InstallIRQNoRegs		// 4
+	.quad	InstallIRQ			// 1
+	.quad	InstallIRQNoRegs		// 2
 
-	.quad	CreateThread			// 5
-	.quad	SpawnProcess			// 6
-	.quad	SimpleToProcesss		// 7
-	.quad	SimpleToThread		// 8
-	.quad	GetSimpleMessage		// 9
-	.quad	Sleep				// 10
-	.quad	Yield				// 11
-	.quad	Block				// 12
-	.quad	InstallSigHandler		// 13
-	.quad	GetPID				// 14
-	.quad	GetParentPID			// 15
+	.quad	CreateThread			// 3
+	.quad	SpawnProcess			// 4
+	.quad	SimpleToProcesss		// 5
+	.quad	SimpleToThread		// 6
+	.quad	GetSimpleMessage		// 7
+	.quad	Sleep				// 8
+	.quad	Yield				// 9
+	.quad	Block				// 10
+	.quad	InstallSigHandler		// 11
+	.quad	GetPID				// 12
+	.quad	GetParentPID			// 13
 
-	.quad	OpenFile			// 16	note: DEPRECATED. Prefer OpenAnyFD.
-	.quad	OpenIPCSocket		// 17
-	.quad	OpenAnyFD			// 18
-	.quad	CloseAnyFD			// 19
-	.quad	ReadAnyFD			// 20
-	.quad	WriteAnyFD			// 21
-	.quad	MemoryMapAnonymous	// 22
-	.quad	MemoryMapFile		// 23
+	.quad	OpenFile			// 14
+	.quad	OpenIPCSocket		// 15
+	.quad	OpenAnyFD			// 16
+	.quad	CloseAnyFD			// 17
+	.quad	ReadAnyFD			// 18
+	.quad	WriteAnyFD			// 19
+	.quad	MemoryMapAnonymous	// 20
+	.quad	MemoryMapFile		// 21
 
 EndSyscallTable:
 

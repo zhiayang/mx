@@ -22,6 +22,9 @@ namespace Manager
 
 	size_t Read(void* outbuf, size_t length)
 	{
+		if(!buffer)
+			buffer = new Library::CircularMemoryBuffer(BUFFER_SIZE);
+
 		size_t read = buffer->ByteCount();
 		buffer->Read((uint8_t*) outbuf, length);
 		return read;

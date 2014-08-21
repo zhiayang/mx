@@ -287,15 +287,6 @@ namespace IPC
 	}
 
 
-
-	extern "C" void IPC_MemoryToProcess(uint64_t, MessageTypes, void*, uint64_t, void (*)())
-	{
-	}
-
-	extern "C" void IPC_MemoryToThread(uint64_t, MessageTypes, void*, uint64_t, void (*)())
-	{
-	}
-
 	extern "C" void IPC_SimpleToProcess(uint64_t TargetPID, MessageTypes Type, uint64_t D1, uint64_t D2, uint64_t D3, void (*Callback)())
 	{
 		SendSimpleMessageToProcess(TargetPID, Type, D1, D2, D3, Callback);
@@ -304,12 +295,6 @@ namespace IPC
 	extern "C" void IPC_SimpleToThread(uint64_t ThreadID, MessageTypes Type, uint64_t D1, uint64_t D2, uint64_t D3, void (*Callback)())
 	{
 		SendSimpleMessage(ThreadID, Type, D1, D2, D3, Callback);
-	}
-
-	extern "C" MemoryMessage* IPC_GetMemoryMessage()
-	{
-		// return GetMemoryMessage();
-		return 0;
 	}
 
 	extern "C" SimpleMessage* IPC_GetSimpleMessage()

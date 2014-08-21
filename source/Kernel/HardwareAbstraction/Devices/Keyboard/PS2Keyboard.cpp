@@ -18,7 +18,7 @@ namespace Devices
 	static bool Shifting = false;
 	static bool CapsLock = false;
 
-	PS2Keyboard::PS2Keyboard() : Keyboard(this)
+	PS2Keyboard::PS2Keyboard()
 	{
 		IOPort::ReadByte(PS2::DataPort);
 		// this->Buffer = new CircularBuffer<uint8_t>(BufferSize);

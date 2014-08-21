@@ -42,7 +42,6 @@ namespace LoadBinary
 
 	GenericExecutable::GenericExecutable(const char* pn, uint8_t* data)
 	{
-		// String::Copy((char*) this->procname, pn);
 		strcpy((char*) this->procname, pn);
 		this->buf = data;
 	}
