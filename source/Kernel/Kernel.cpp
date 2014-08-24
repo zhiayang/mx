@@ -340,7 +340,7 @@ namespace Kernel
 
 			// while(true);
 			BLOCK();
-			delete[] buf;
+			// delete[] buf;
 
 
 			// uint8_t* buffer = new uint8_t[64];

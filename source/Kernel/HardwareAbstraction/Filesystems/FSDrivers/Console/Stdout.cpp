@@ -61,8 +61,6 @@ namespace Filesystems
 		(void) offset;
 		(void) length;
 
-		HALT("");
-
 		assert(buf);
 		// offset is ignored.
 		if(length == 0)

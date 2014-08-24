@@ -8,6 +8,7 @@
 
 int main()
 {
-	Library::SystemCall::Write(1, (uint8_t*) "HELLO, WORLD", 12);
+	// asm volatile("xor %%r10, %%r10; int $0xF8" ::: );
+	Library::SystemCall::Write(1, (uint8_t*) "Hello, World!!", 13);
 	while(true);
 }
