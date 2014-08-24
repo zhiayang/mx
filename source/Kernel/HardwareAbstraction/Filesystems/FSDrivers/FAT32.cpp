@@ -347,7 +347,6 @@ namespace Filesystems
 		uint64_t dma = MemoryManager::Physical::AllocateDMA((cluslen * this->SectorsPerCluster * 512 + 0xFFF) / 0x1000);
 		uint64_t obuf = dma;
 
-		Log(3, "%x", this->ClusterToLBA((*vnd->clusters)[skippedclus]));
 		for(auto i = skippedclus; i < skippedclus + cluslen; i++)
 		{
 			// Log(3, "call");

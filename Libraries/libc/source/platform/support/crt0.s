@@ -6,11 +6,7 @@
 
 .global _start
 _start:
-	call main
 
-lp:
-	jmp lp
-/*
 	// Set up end of the stack frame linked list.
 	movq $0, %rbp
 	pushq %rbp
@@ -31,16 +27,13 @@ lp:
 	popq %rdi
 	popq %rsi
 
+
 	// Run main
 	call main
 
 	// Terminate the process with the exit code.
 	mov %rax, %rdi
 	call exit
-
-
-
-*/
 
 
 
