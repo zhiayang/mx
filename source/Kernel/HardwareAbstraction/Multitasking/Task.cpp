@@ -240,8 +240,8 @@ namespace Multitasking
 			// setup the descriptors.
 			// manually.
 			using namespace Filesystems::VFS;
-			OpenFile(process->Parent->iocontext, "/dev/stdin", 0);
-			OpenFile(process->Parent->iocontext, "/dev/stdout", 0);
+			assert(OpenFile(process->iocontext, "/dev/stdin", 0)->fd == 0);
+			assert(OpenFile(process->iocontext, "/dev/stdout", 0)->fd == 1);
 		}
 
 		Log("Creating new process in VAS (%s): CR3(phys): %x, PID %d", name, (uint64_t) PML4, process->ProcessID);

@@ -31,7 +31,6 @@ namespace SystemCalls
 
 	extern "C" uint64_t Syscall_WriteAny(uint64_t fd, const void* dat, uint64_t size)
 	{
-		HALT("");
 		return Write(fd, (void*) dat, size);
 	}
 }
