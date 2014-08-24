@@ -107,7 +107,7 @@ namespace Virtual
 			}
 
 			// else we just continue as normal.
-			Log(1, "Couldn't satisfy request to allocate virtual address at %x", addr);
+			Log(1, "Couldn't satisfy request to allocate virtual address at %x, return address(0) = %x", addr, __builtin_return_address(0));
 		}
 
 
@@ -762,14 +762,17 @@ namespace Virtual
 
 
 		PageMapStructure* PML4 = (PageMapStructure*) Physical::AllocateFromReserved();
-		Virtual::MapAddress((uint64_t) PML4, (uint64_t) PML4, 0x07, PML4);
-		Virtual::MapAddress((uint64_t) PML4, (uint64_t) PML4, 0x03, true);
+		memset(PML4, 0, 0x1000);
+
+		Virtual::MapAddress((uint64_t) PML4, (uint64_t) PML4, 0x03);
 		PML4->Entry[I_RECURSIVE_SLOT] = (uint64_t) PML4 | I_Present | I_ReadWrite;
 
 		// do it here.
 		{
 			if(!(PML4->Entry[0] & I_Present))
 				PML4->Entry[0] = Physical::AllocateFromReserved() | I_Present | I_ReadWrite | I_UserAccess;
+			else
+				Log(3, "%x", PML4->Entry[0]);
 
 			((PageMapStructure*) (PML4->Entry[0]))->Entry[0] = (uint64_t) pt;
 
@@ -782,6 +785,7 @@ namespace Virtual
 			PML4->Entry[511] = (uint64_t) kernelpml4->Entry[511] | 0x6;
 		}
 
+		Virtual::MapAddress((uint64_t) PML4, (uint64_t) PML4, 0x07, PML4);
 
 		// Map 8 MB, includes the kernel.
 		for(uint64_t i = 0; i < (8 * 0x01000000); i += 0x1000)

@@ -617,19 +617,19 @@ namespace StandardIO
 					case 'q':
 						// Change colour for the next word (up to a non-alphabetical character)
 						WordColour = va_arg(args, uint32_t);
-						SystemCall::SetTextColour(WordColour);
+						// SystemCall::SetTextColour(WordColour);
 						break;
 
 					case 'w':
 						// Change colour for the statement until changed back
 						ForeverColour = va_arg(args, uint32_t);
-						SystemCall::SetTextColour(ForeverColour);
+						// SystemCall::SetTextColour(ForeverColour);
 						break;
 
 					case 'k':
 						// Change colour for the next character only
 						CharColour = va_arg(args, uint32_t);
-						SystemCall::SetTextColour(CharColour);
+						// SystemCall::SetTextColour(CharColour);
 						break;
 
 					case 'r':
@@ -637,7 +637,7 @@ namespace StandardIO
 						CharColour = 0xFFFFFFFF;
 						WordColour = 0xFFFFFFFF;
 						ForeverColour = 0xFFFFFFFF;
-						SystemCall::SetTextColour(CharColour);
+						// SystemCall::SetTextColour(CharColour);
 						break;
 
 
@@ -730,18 +730,18 @@ namespace StandardIO
 				if(WordColour != 0xFFFFFFFF && !(c >= 65 && c <= 122))
 				{
 					WordColour = 0xFFFFFFFF;
-					SystemCall::SetTextColour(WordColour);
+					// SystemCall::SetTextColour(WordColour);
 				}
 				if(CharColour != 0xFFFFFFFF)
 				{
 					CharColour = 0xFFFFFFFF;
-					SystemCall::SetTextColour(CharColour);
+					// SystemCall::SetTextColour(CharColour);
 				}
 			}
 		}
 
 		ForeverColour = 0xFFFFFFFF;
-		SystemCall::SetTextColour(ForeverColour);
+		// SystemCall::SetTextColour(ForeverColour);
 	}
 }
 }

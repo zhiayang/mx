@@ -116,6 +116,7 @@ namespace Kernel
 			size_t Write(fd_t fd, void* buf, size_t len);
 			void Seek(fd_t, off_t offset, int origin);
 			VFS::VFSError Stat(fd_t fd, struct stat* out);
+			fd_t Duplicate(fd_t old);
 
 			enum class FSDriverType
 			{

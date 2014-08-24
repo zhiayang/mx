@@ -106,6 +106,7 @@ namespace Multitasking
 	void AddToQueue(Process* Proc)
 	{
 		ProcessList->InsertFront(Proc);
+
 		for(uint8_t d = 0; d < Proc->Threads->Size(); d++)
 		{
 			AddToQueue(Proc->Threads->Get(d));

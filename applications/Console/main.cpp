@@ -1,12 +1,13 @@
-// close.cpp
+// main.cpp
 // Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
-#include "../../include/unistd.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/syscall.h>
 
-extern "C" int close(int fd)
+int main()
 {
-	Library::SystemCall::Close(fd);
-	return 0;
+	Library::SystemCall::Write(1, (uint8_t*) "HELLO, WORLD", 12);
+	while(true);
 }

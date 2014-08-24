@@ -8,5 +8,5 @@
 
 extern "C" ssize_t write(int fildes, const void* buf, size_t nbyte)
 {
-	return Library::SystemCall::WriteToAny(fildes, (uint8_t*) buf, nbyte);
+	return Library::SystemCall::Write(fildes, (uint8_t*) buf, nbyte);
 }
