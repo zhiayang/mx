@@ -281,6 +281,21 @@ namespace Filesystems
 
 			fe->offset += offset;
 		}
+
+		fileentry* Duplicate(IOContext* ctx, fileentry* old)
+		{
+			assert(ctx);
+
+			fileentry* fe	= new fileentry;
+			fe->node	= old->node;
+			fe->offset	= 0;
+			fe->flags	= old->flags;
+			fe->fd		= FirstFreeFD + ctx->fdarray->fds->Size();
+			fe->id		= curfeid++;
+
+			ctx->fdarray->fds->InsertBack(fe);
+			return fe;
+		}
 	}
 
 
@@ -354,6 +369,20 @@ namespace Filesystems
 			return;
 
 		VFS::Seek(fe, offset, origin);
+	}
+
+	fd_t Duplicate(fd_t old)
+	{
+		auto ctx = getctx();
+		if(old < 0)
+			// todo: set errno
+			return -1;
+
+		auto fe = VFS::FileEntryFromFD(ctx, old);
+		if(fe == nullptr)
+			return -1;
+
+		return VFS::Duplicate(ctx, fe)->fd;
 	}
 }
 }

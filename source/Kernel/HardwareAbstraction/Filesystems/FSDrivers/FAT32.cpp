@@ -10,9 +10,7 @@
 #include <string.h>
 #include <time.h>
 
-#include <rdestl/sstream.h>
-#include <rdestl/algorithm.h>
-
+#include <rdestl/vector.h>
 #include <sys/stat.h>
 
 using namespace Library;

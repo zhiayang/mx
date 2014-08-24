@@ -8,5 +8,5 @@
 extern "C" int open(const char* path, int flags)
 {
 	// TODO: flags ignored for now
-	return (int) Library::SystemCall::OpenAny(path, flags);
+	return (int) Library::SystemCall::Open(path, flags);
 }

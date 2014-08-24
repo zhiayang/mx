@@ -62,6 +62,8 @@ namespace LoadBinary
 			this->proc = elf->proc;
 			delete elf;
 		}
+		else
+			HALT("enosup");
 	}
 }
 }

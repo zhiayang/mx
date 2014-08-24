@@ -308,7 +308,7 @@ namespace Kernel
 		// Devices::RTC::Initialise(0);
 		// Log("RTC Initialised");
 
-		KernelKeyboard = new PS2Keyboard();
+		// KernelKeyboard = new PS2Keyboard();
 		// manual jump start.
 		{
 			using namespace Filesystems;
@@ -325,34 +325,52 @@ namespace Kernel
 			VFS::Mount(f1->Partitions->Get(0), fs, "/");
 			Log("Root FS Mounted at /");
 
-			uint8_t* buffer = new uint8_t[64];
-			while(Read(0, (void*) buffer, 15) == 0);
-
-			Write(1, (void*) buffer, 15);
-
-
-
-
-
-			auto fd = OpenFile("/apps/test.txt", 0);
-			// // auto fd = OpenFile("/test.txt", 0);
-
-			if(fd == -1)
-			{
-				KernelHeap::Print();
-				HALT("file does not exist");
-			}
-
-			PrintFormatted("file opened\n");
+			auto fd = OpenFile("/apps/core/console.x", 0);
+			if(fd < 0)
+				HALT("");
 
 			struct stat st;
 			Stat(fd, &st);
-			PrintFormatted("file is %d bytes\n", st.st_size);
 
-			void* buf = new uint8_t[st.st_size];
-			auto read = Read(fd, buf, st.st_size);
-			PrintFormatted("read %d bytes:\n\n", read);
-			PrintFormatted("%s", buf);
+			auto buf = new uint8_t[st.st_size];
+			Read(fd, (void*) buf, st.st_size);
+			LoadBinary::GenericExecutable* Exec = new LoadBinary::GenericExecutable("console", buf);
+			Exec->AutomaticLoadExecutable();
+			Exec->Execute();
+
+			// while(true);
+			BLOCK();
+			delete[] buf;
+
+
+			// uint8_t* buffer = new uint8_t[64];
+			// while(Read(0, (void*) buffer, 15) == 0);
+
+			// Write(1, (void*) buffer, 15);
+
+
+
+
+
+			// auto fd = OpenFile("/apps/test.txt", 0);
+			// // // auto fd = OpenFile("/test.txt", 0);
+
+			// if(fd == -1)
+			// {
+			// 	KernelHeap::Print();
+			// 	HALT("file does not exist");
+			// }
+
+			// PrintFormatted("file opened\n");
+
+			// struct stat st;
+			// Stat(fd, &st);
+			// PrintFormatted("file is %d bytes\n", st.st_size);
+
+			// void* buf = new uint8_t[st.st_size];
+			// auto read = Read(fd, buf, st.st_size);
+			// PrintFormatted("read %d bytes:\n\n", read);
+			// PrintFormatted("%s", buf);
 		}
 
 

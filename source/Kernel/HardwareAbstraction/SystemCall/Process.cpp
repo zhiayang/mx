@@ -28,6 +28,8 @@ namespace SystemCalls
 	{
 		UNUSED(retval);
 
+		HALT("");
+
 		// needs to kill the entire process chain.
 		Multitasking::Process* proc = Multitasking::GetCurrentProcess();
 		Multitasking::Kill(proc);
@@ -55,7 +57,6 @@ namespace SystemCalls
 		finalflag |= 0x4;
 
 		// fetch a physical page.
-		// start the virt countdown.
 		size = (size + 0xFFF) / 0x1000;
 		return Virtual::AllocatePage(size, addr, finalflag);
 	}
