@@ -440,7 +440,6 @@ namespace Filesystems
 			// check if we're on an LFN
 			uint8_t* raw = (uint8_t*) addr;
 			auto dirent = (DirectoryEntry*) raw;
-			// Log(3, "[%x]", raw);
 
 			if(dirent->name[0] == 0)
 				break;
