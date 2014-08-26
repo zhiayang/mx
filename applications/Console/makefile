@@ -13,14 +13,16 @@ CXXSRC	= $(shell find . -name "*.cpp")
 CXXOPT	= /Volumes/mx/apps/core/console.x
 
 
-.PHONY: all
+.PHONY: all createdir
 
 all: $(CXXOPT)
 	@:
 
-$(CXXOPT): $(CXXSRC)
+$(CXXOPT): $(CXXSRC) createdir ../../build/sysroot/usr/lib/libc.a
 	@$(CXX) $(CXXFLAGS) -o $@ $(CXXSRC)
 	@echo "userspace: console"
 
 
 
+createdir:
+	@mkdir -p $(dir $(CXXOPT))

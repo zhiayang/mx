@@ -16,12 +16,6 @@ CXXOPT	= /Volumes/mx/hello
 
 .PHONY: all
 
-all: $(CXXOPT)
+all:
 	@:
-
-$(CXXOPT): HelloSpamTest.cpp
-	@$(CXX) $(CXXFLAGS) -o $@ HelloSpamTest.cpp
-	@echo "userspace: HelloSpamTest.oex"
-
-
 
