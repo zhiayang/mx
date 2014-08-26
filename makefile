@@ -70,7 +70,7 @@ all: $(OUTPUT)
 build: $(OUTPUT)
 	# built
 
-$(OUTPUT):  mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) builduserspace
+$(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) builduserspace
 	@echo "# Linking object files"
 	@$(LD) $(LDFLAGS) -o build/kernel64.elf source/Kernel/Bootstrap/Start.s.o $(shell find source -name "*.o" ! -name "Start.s.o") $(LIBRARIES)
 

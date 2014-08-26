@@ -8,6 +8,7 @@
 
 int main()
 {
-	Library::SystemCall::Write(1, "hello, world!\n", 13);
+	// Library::SystemCall::Write(1, "hello, world!\n", 13);
+	printf("HELLO, WORLD");
 	while(true);
 }
