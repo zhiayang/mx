@@ -4,11 +4,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/syscall.h>
+#include <sys/stat.h>
 
 int main()
 {
-	// Library::SystemCall::Write(1, "hello, world!\n", 13);
-	printf("HELLO, WORLD");
+	struct stat st;
+	stat("/boot/grub/menu.lst", &st);
+
+	printf("%d bytes\n\n", st.st_size);
+
+
+
 	while(true);
 }

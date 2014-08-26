@@ -53,7 +53,6 @@ namespace Filesystems
 		(void) length;
 
 		// line buffer it.
-		HALT("");
 		return IO::Manager::Read(buf, length);
 	}
 
