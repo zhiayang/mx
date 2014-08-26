@@ -325,6 +325,12 @@ namespace Kernel
 			VFS::Mount(f1->Partitions->Get(0), fs, "/");
 			Log("Root FS Mounted at /");
 
+			auto menulst = OpenFile("/boot/grub/menu.lst", 0);
+			struct stat m;
+			Stat(menulst, &m);
+			PrintFormatted("%d bytes\n\n", m.st_size);
+
+
 			auto fd = OpenFile("/apps/core/console.x", 0);
 			if(fd < 0)
 				HALT("file not found");
