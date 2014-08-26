@@ -89,8 +89,8 @@ namespace Library
 		SimpleMessage* GetSimpleMessage();
 
 		uint64_t MMap_Anonymous(uint64_t addr, uint64_t size, uint64_t prot, uint64_t flags);
-		uint64_t Read(uint64_t sd, uint8_t* buffer, uint64_t length);
-		uint64_t Write(uint64_t sd, uint8_t* buffer, uint64_t length);
+		uint64_t Read(uint64_t sd, void* buffer, uint64_t length);
+		uint64_t Write(uint64_t sd, const void* buffer, uint64_t length);
 		uint64_t Open(const char* path, uint64_t flags);
 		void Close(uint64_t fd);
 

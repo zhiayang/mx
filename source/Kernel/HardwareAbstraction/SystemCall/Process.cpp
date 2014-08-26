@@ -58,7 +58,9 @@ namespace SystemCalls
 
 		// fetch a physical page.
 		size = (size + 0xFFF) / 0x1000;
-		return Virtual::AllocatePage(size, addr, finalflag);
+
+		auto ret = Virtual::AllocatePage(size, addr, finalflag);
+		return ret;
 	}
 
 	extern "C" void Syscall_Sleep(int64_t milliseconds)

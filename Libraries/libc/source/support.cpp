@@ -27,7 +27,7 @@ extern "C" void init_libc()
 	stdin	= &_stdin;
 	stdout	= &_stdout;
 	stderr	= &_stderr;
-	stdlog = &_stdlog;
+	stdlog	= &_stdlog;
 
 	// init heap
 	Heap::Initialise();

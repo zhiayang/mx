@@ -123,7 +123,7 @@ mountdisk:
 
 cleandisk:
 	@find /Volumes/mx -name "*.mxa" | xargs rm
-	-@rm /Volumes/mx/hello
+	@find /Volumes/mx -name "*.x" | xargs rm
 
 clean: cleandisk
 	@echo "# Cleaning directory tree"
