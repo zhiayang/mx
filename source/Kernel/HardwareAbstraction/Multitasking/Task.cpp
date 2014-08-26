@@ -126,7 +126,7 @@ namespace Multitasking
 			// Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, k);
 			// Virtual::MapRegion(k, k, DefaultRing3StackSize / 0x1000, 0x3);
 
-			k = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, Parent->CR3);
+			k = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS);
 			auto pk = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
 			Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x3, Parent->VAS->PML4);
 			Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x3);

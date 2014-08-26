@@ -117,12 +117,12 @@ namespace SystemCall
 		Syscall1Param(17, fd);
 	}
 
-	uint64_t Read(uint64_t sd, uint8_t* buffer, uint64_t length)
+	uint64_t Read(uint64_t sd, void* buffer, uint64_t length)
 	{
 		return Syscall3Param(18, sd, (uint64_t) buffer, length);
 	}
 
-	uint64_t Write(uint64_t sd, uint8_t* buffer, uint64_t length)
+	uint64_t Write(uint64_t sd, const void* buffer, uint64_t length)
 	{
 		return Syscall3Param(19, sd, (uint64_t) buffer, length);
 	}

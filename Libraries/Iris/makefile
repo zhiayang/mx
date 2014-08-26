@@ -13,7 +13,6 @@ CXXFLAGS	= -g -Wall -O2 -fPIC -std=gnu++11 -mno-red-zone -fno-exceptions -fno-rt
 
 CXXSRC	= $(shell find . -name "*.cpp" -maxdepth 1)
 CXXSRCK	= $(shell find LibKernel -name "*.cpp")
-CXXSRCU	= $(shell find LibUserspace -name "*.cpp")
 SYSROOT	= ../../build/sysroot
 
 CXXHDR	= $(shell find . -name "*.hpp")

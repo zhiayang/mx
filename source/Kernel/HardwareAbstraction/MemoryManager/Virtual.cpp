@@ -227,6 +227,7 @@ namespace Virtual
 		uint64_t virt = AllocateVirtual(size, addr);
 
 		MapRegion(virt, phys, size, flags);
+
 		return virt;
 	}
 
@@ -402,11 +403,8 @@ namespace Virtual
 		if(other)
 			Virtual::MapAddress((uint64_t) PageTable, (uint64_t) PageTable, 0x7);
 
+
 		PageTable->Entry[PageTableIndex] = PhysAddr | Flags;
-		invlpg(PML);
-		invlpg(PDPT);
-		invlpg(PageDirectory);
-		invlpg(PageTable);
 
 		if(other)
 		{
@@ -415,120 +413,6 @@ namespace Virtual
 			Virtual::UnMapAddress((uint64_t) PDPT);
 			Virtual::UnMapAddress((uint64_t) PML);
 		}
-		return;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		// // FIX FOR ALLOCATERESERVED:
-		// // change the system to reserve a region in the virtual address space for temporary mappings.
-		// // when creating a new strucutre, allocate_nomap a page, then map it to this temporary region
-		// // to modify it.
-
-		// bool DidMapPML4 = false;
-
-		// if(PML4 == 0)
-		// 	PML4 = GetCurrentPML4T();
-
-		// else if((uint64_t) PML4 != (uint64_t) GetCurrentPML4T())
-		// {
-		// 	DidMapPML4 = true;
-		// 	MapAddress((uint64_t) PML4, (uint64_t) PML4, 0x03, DoNotUnmap);
-		// }
-
-		// VirtAddr &= I_AlignMask;
-		// PhysAddr &= I_AlignMask;
-
-
-		// // First, find out which page we will need.
-
-		// uint64_t PageTableIndex			= I_PT_INDEX(VirtAddr);
-		// uint64_t PageDirectoryIndex			= I_PD_INDEX(VirtAddr);
-		// uint64_t PageDirectoryPointerTableIndex	= I_PDPT_INDEX(VirtAddr);
-		// uint64_t PML4TIndex				= I_PML4_INDEX(VirtAddr);
-
-		// assert(PageTableIndex < 512);
-		// assert(PageDirectoryIndex < 512);
-		// assert(PageDirectoryPointerTableIndex < 512);
-		// assert(PML4TIndex < 512);
-
-		// if(PML4TIndex == I_RECURSIVE_SLOT)
-		// {
-		// 	// We can't map 510, we need that for our recursive mapping.
-		// 	HALT("Tried to map to PML4[510]! (RESTRICTED, KERNEL USE)");
-		// }
-
-		// if(!PML4)
-		// 	HALT("PML4 Corrupted!");
-
-
-		// // Now we know where all the stuff is at, let's start mapping.
-		// // First, we check if the desired PDPT is present:
-
-		// if(!(PML4->Entry[PML4TIndex] & I_Present))
-		// {
-		// 	PML4->Entry[PML4TIndex] = Physical::AllocateFromReserved() | (Flags | 0x1);
-		// 	invlpg(PML4);
-		// }
-
-		// // Continue with our business here.
-		// // Check the PD:
-		// PageMapStructure* PDPT = (PageMapStructure*)(PML4->Entry[PML4TIndex] & I_AlignMask);
-
-		// if(!(PDPT->Entry[PageDirectoryPointerTableIndex] & I_Present))
-		// {
-		// 	PDPT->Entry[PageDirectoryPointerTableIndex] = Physical::AllocateFromReserved() | (Flags | 0x1);
-		// 	invlpg(PDPT);
-		// }
-
-		// // Next, we must check if the Page Table is present:
-		// PageMapStructure* PageDirectory = (PageMapStructure*)(PDPT->Entry[PageDirectoryPointerTableIndex] & I_AlignMask);
-
-		// if(!(PageDirectory->Entry[PageDirectoryIndex] & I_Present))
-		// {
-		// 	PageDirectory->Entry[PageDirectoryIndex] = Physical::AllocateFromReserved() | (Flags | 0x1);
-		// 	invlpg(PageDirectory);
-		// }
-
-		// PageMapStructure* PageTable = (PageMapStructure*)(PageDirectory->Entry[PageDirectoryIndex] & I_AlignMask);
-		// // we can only use actual flags for the page-entry -- if we decide to map a guard page, the higher-level structures still
-		// // need to be marked present.
-
-		// PageTable->Entry[PageTableIndex] = (PhysAddr & I_AlignMask) | Flags;
-		// invlpg(PageTable);
-
-		// if(DidMapPML4)
-		// {
-		// 	if((uint64_t) PML4 != GetKernelCR3() && !DoNotUnmap)
-		// 	{
-		// 		UnMapAddress((uint64_t) PML4);
-		// 	}
-		// }
-
-		// return;
 	}
 
 
@@ -605,9 +489,7 @@ namespace Virtual
 	void MapRegion(uint64_t VirtAddr, uint64_t PhysAddr, uint64_t LengthInPages, uint64_t Flags, PageMapStructure* PML4)
 	{
 		for(uint64_t i = 0; i < LengthInPages; i++)
-		{
 			MapAddress(VirtAddr + (i * 0x1000), PhysAddr + (i * 0x1000), Flags, PML4);
-		}
 	}
 
 	void UnMapRegion(uint64_t VirtAddr, uint64_t LengthInPages, PageMapStructure* PML4)
