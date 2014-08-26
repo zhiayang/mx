@@ -7,7 +7,7 @@ CXX		= ../../build/toolchain/bin/x86_64-orionx-g++
 AS		= ../../build/toolchain/bin/x86_64-orionx-as
 LD		= ../../build/toolchain/bin/x86_64-orionx-ld
 
-CXXFLAGS	= -Wall -Os -std=gnu++11
+CXXFLAGS	= -Wall -s -Os -std=gnu++11 -I../../build/sysroot/usr/local/include/freetype2
 
 CXXSRC	= $(shell find . -name "*.cpp")
 CXXOPT	= /Volumes/mx/apps/core/console.x
@@ -18,11 +18,9 @@ CXXOPT	= /Volumes/mx/apps/core/console.x
 all: $(CXXOPT)
 	@:
 
-$(CXXOPT): $(CXXSRC) createdir ../../build/sysroot/usr/lib/libc.a
-	@$(CXX) $(CXXFLAGS) -o $@ $(CXXSRC)
+$(CXXOPT): $(CXXSRC) createdir
+	@$(CXX) $(CXXFLAGS) -o $@ $(CXXSRC) -lfreetype
 	@echo "userspace: console"
-
-
 
 createdir:
 	@mkdir -p $(dir $(CXXOPT))

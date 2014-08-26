@@ -6,6 +6,6 @@
 
 extern "C" size_t fread(void* ptr, size_t size, size_t count, FILE* stream)
 {
-	read((int) stream->fd, ptr, size * count);
+	read((int) stream->__fd, ptr, size * count);
 	return count;
 }

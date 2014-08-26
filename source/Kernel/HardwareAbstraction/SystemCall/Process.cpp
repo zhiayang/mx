@@ -28,8 +28,6 @@ namespace SystemCalls
 	{
 		UNUSED(retval);
 
-		HALT("");
-
 		// needs to kill the entire process chain.
 		Multitasking::Process* proc = Multitasking::GetCurrentProcess();
 		Multitasking::Kill(proc);

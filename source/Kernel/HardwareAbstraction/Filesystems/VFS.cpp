@@ -212,7 +212,10 @@ namespace Filesystems
 			Filesystem* fs = getfs(pth);
 
 			if(fs == nullptr || fs->ismounted == false)
+			{
+				Log(3, "filesystem not mounted");
 				return nullptr;
+			}
 
 			auto node = VFS::CreateNode(fs->driver);
 			assert(node);
@@ -229,7 +232,9 @@ namespace Filesystems
 				return ret;
 			}
 			else
+			{
 				return nullptr;
+			}
 		}
 
 		size_t Read(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len)

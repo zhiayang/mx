@@ -234,7 +234,7 @@ namespace Multitasking
 
 	void Kill(Process* p)
 	{
-		Log("Killing %d threads of process %s", p->Threads->Size(), p->Name);
+		Log("Killing %d thread%s of process %s", p->Threads->Size(), p->Threads->Size() == 1 ? "" : "s", p->Name);
 		for(uint64_t k = 0; k < p->Threads->Size(); k++)
 		{
 			Kill(p->Threads->Get(k));

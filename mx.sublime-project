@@ -29,7 +29,8 @@
 			"-I/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/include/",
 			"-I/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/include/c++/",
 			"-I/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/include/c++/x86_64-orionx/",
-			"-I/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/include/freetype2/",
+			"-I/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/local/include/freetype2/",
+			"-Wno-documentation-unknown-command",
 			"-Wno-documentation",
 			"-std=gnu++1y",
 			"-ferror-limit=0",
@@ -51,7 +52,7 @@
 			"-Wno-float-equal",
 			"-Wno-loop-analysis",
 			"-Wno-sign-conversion",
-			"-Wno-old-style-cast"
+			"-Wno-old-style-cast",
 		]
 	}
 }

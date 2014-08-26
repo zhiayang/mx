@@ -39,8 +39,8 @@
 #define LONG_MAX		__LONG_MAX__
 #define ULONG_MAX		((1 << (CHAR_BIT * __SIZEOF_LONG__)) - 1)
 
-#define LLONG_MIN		(-__LLONG_MAX__ - 1)
-#define LLONG_MAX		__LLONG_MAX__
+#define LLONG_MIN		(-__LONG_LONG_MAX__ - 1)
+#define LLONG_MAX		__LONG_LONG_MAX__
 #define ULLONG_MAX		((1 << (CHAR_BIT * __SIZEOF_LONG_LONG__)) - 1)
 
 #endif
