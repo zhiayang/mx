@@ -11,7 +11,7 @@
 #include "HeaderFiles/SystemCall.hpp"
 #include "HeaderFiles/Defines.hpp"
 #include "HeaderFiles/Heap.hpp"
-
+#include <stdlib.h>
 
 namespace Library {
 namespace StandardIO
@@ -217,7 +217,7 @@ namespace StandardIO
 		if(num < 0){ PrintChar('-', pf); ret++; }
 		if(Width != -1)
 		{
-			uint64_t n = (uint64_t) math::abs(num);
+			uint64_t n = (uint64_t) __abs(num);
 			uint8_t k = 0;
 			while(n > 0)
 			{
@@ -249,10 +249,10 @@ namespace StandardIO
 		}
 
 		// Put integer part first
-		PrintInteger_Signed((int64_t) math::trunc(fl), -1, pf);
+		PrintInteger_Signed((int64_t) trunc(fl), -1, pf);
 		PrintChar('.', pf);
 
-		if(math::trunc(fl) == fl)
+		if(trunc(fl) == fl)
 		{
 			return (uint8_t) precision;
 		}
@@ -263,7 +263,7 @@ namespace StandardIO
 		}
 
 		// Get decimal part
-		fl -= math::trunc(fl);
+		fl -= trunc(fl);
 
 		uint32_t digit = 0;
 		while(fl > 0 && precision > 0)
@@ -271,7 +271,7 @@ namespace StandardIO
 			fl *= 10;
 
 			if(precision == 1)
-				digit = (uint32_t) math::round(fl);
+				digit = (uint32_t) round(fl);
 
 			else
 				digit = (uint32_t) fl;
@@ -617,19 +617,19 @@ namespace StandardIO
 					case 'q':
 						// Change colour for the next word (up to a non-alphabetical character)
 						WordColour = va_arg(args, uint32_t);
-						SystemCall::SetTextColour(WordColour);
+						// SystemCall::SetTextColour(WordColour);
 						break;
 
 					case 'w':
 						// Change colour for the statement until changed back
 						ForeverColour = va_arg(args, uint32_t);
-						SystemCall::SetTextColour(ForeverColour);
+						// SystemCall::SetTextColour(ForeverColour);
 						break;
 
 					case 'k':
 						// Change colour for the next character only
 						CharColour = va_arg(args, uint32_t);
-						SystemCall::SetTextColour(CharColour);
+						// SystemCall::SetTextColour(CharColour);
 						break;
 
 					case 'r':
@@ -637,7 +637,7 @@ namespace StandardIO
 						CharColour = 0xFFFFFFFF;
 						WordColour = 0xFFFFFFFF;
 						ForeverColour = 0xFFFFFFFF;
-						SystemCall::SetTextColour(CharColour);
+						// SystemCall::SetTextColour(CharColour);
 						break;
 
 
@@ -730,18 +730,18 @@ namespace StandardIO
 				if(WordColour != 0xFFFFFFFF && !(c >= 65 && c <= 122))
 				{
 					WordColour = 0xFFFFFFFF;
-					SystemCall::SetTextColour(WordColour);
+					// SystemCall::SetTextColour(WordColour);
 				}
 				if(CharColour != 0xFFFFFFFF)
 				{
 					CharColour = 0xFFFFFFFF;
-					SystemCall::SetTextColour(CharColour);
+					// SystemCall::SetTextColour(CharColour);
 				}
 			}
 		}
 
 		ForeverColour = 0xFFFFFFFF;
-		SystemCall::SetTextColour(ForeverColour);
+		// SystemCall::SetTextColour(ForeverColour);
 	}
 }
 }

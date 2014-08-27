@@ -19,7 +19,7 @@ extern "C" FILE* fopen(const char* fname, const char* mode)
 		return NULL;
 
 	FILE* ret = (FILE*) malloc(sizeof(FILE));
-	ret->fd = fd;
+	ret->__fd = fd;
 
 	return ret;
 }
@@ -31,14 +31,14 @@ extern "C" FILE* freopen(const char* path, const char* mode, FILE* str)
 	(void) mode;
 
 
-	close((int) str->fd);
+	close((int) str->__fd);
 
 	// TODO: handle flags
 	int fd = open(path, O_RDWR);
 
 	if(fd)
 	{
-		str->fd = fd;
+		str->__fd = fd;
 		return str;
 	}
 	else
@@ -51,14 +51,14 @@ extern "C" FILE* fdopen(int fd, const char* mode)
 	(void) mode;
 
 	FILE* ret = (FILE*) malloc(sizeof(FILE));
-	ret->fd = fd;
+	ret->__fd = fd;
 
 	return ret;
 }
 
 extern "C" int fileno(FILE* str)
 {
-	return (int) str->fd;
+	return (int) str->__fd;
 }
 
 

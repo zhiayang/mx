@@ -42,7 +42,6 @@ namespace LoadBinary
 
 	GenericExecutable::GenericExecutable(const char* pn, uint8_t* data)
 	{
-		// String::Copy((char*) this->procname, pn);
 		strcpy((char*) this->procname, pn);
 		this->buf = data;
 	}
@@ -63,6 +62,8 @@ namespace LoadBinary
 			this->proc = elf->proc;
 			delete elf;
 		}
+		else
+			HALT("enosup");
 	}
 }
 }

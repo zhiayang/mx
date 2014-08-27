@@ -6,7 +6,8 @@
 #include <HardwareAbstraction/LoadBinary.hpp>
 #include <../IPC/Dispatchers/CentralDispatch.hpp>
 
-
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-macros"
 #define PROT_EXEC		(1<<0)
 #define PROT_WRITE		(1<<1)
 #define PROT_READ		(1<<2)
@@ -17,110 +18,102 @@
 
 #define MAP_ANONYMOUS	(1<<2)
 #define MAP_FIXED		(1<<3)
+#pragma clang diagnostic pop
 
 namespace Kernel {
 namespace HardwareAbstraction {
 namespace SystemCalls
 {
-	// extern "C" uint64_t Syscall_MMapAnon(uint64_t addr, uint64_t size, uint64_t prot, uint64_t flags)
-	// {
-	// 	using namespace MemoryManager;
-	// 	// flags is one of MAP_*
-	// 	// prot is one of PROT_*
+	extern "C" void Syscall_ExitProc(uint64_t retval)
+	{
+		UNUSED(retval);
 
-	// 	uint64_t finalflag = 0x1;
-	// 	if(prot & PROT_WRITE)
-	// 		finalflag |= 0x2;
+		// needs to kill the entire process chain.
+		Multitasking::Process* proc = Multitasking::GetCurrentProcess();
+		Multitasking::Kill(proc);
+	}
 
-	// 	if(prot & PROT_WRITE)
-	// 		;
+	extern "C" uint64_t Syscall_MMapAnon(uint64_t addr, uint64_t size, uint64_t prot, uint64_t flags)
+	{
+		using namespace MemoryManager;
+		// flags is one of MAP_*
+		// prot is one of PROT_*
 
-	// 	if(prot & PROT_EXEC)
-	// 		;
+		uint64_t finalflag = 0x1;
+		if(prot & PROT_WRITE)
+			finalflag |= 0x2;
 
-	// 	if(flags & MAP_FIXED && addr == 0)
-	// 		return 0;
+		if(prot & PROT_WRITE)
+			;
 
-	// 	finalflag |= 0x4;
+		if(prot & PROT_EXEC)
+			;
 
-	// 	// fetch a physical page.
-	// 	// start the virt countdown.
-	// 	size = (size + 0xFFF) / 0x1000;
-	// 	return Virtual::AllocatePage(size, addr, finalflag);
-	// }
+		if(flags & MAP_FIXED && addr == 0)
+			return 0;
 
-	// extern "C" void Syscall_ExitProc(uint64_t retval)
-	// {
-	// 	UNUSED(retval);
+		finalflag |= 0x4;
 
-	// 	// needs to kill the entire process chain.
-	// 	Multitasking::Process* proc = Multitasking::GetCurrentProcess();
-	// 	Multitasking::Kill(proc);
-	// }
+		// fetch a physical page.
+		size = (size + 0xFFF) / 0x1000;
 
-	// extern "C" void Syscall_Sleep(int64_t milliseconds)
-	// {
-	// 	Kernel::HardwareAbstraction::Multitasking::Sleep(milliseconds);
-	// }
+		auto ret = Virtual::AllocatePage(size, addr, finalflag);
+		return ret;
+	}
 
-	// extern "C" uint64_t Syscall_GetCR3()
-	// {
-	// 	return 0;
-	// }
+	extern "C" void Syscall_Sleep(int64_t milliseconds)
+	{
+		Multitasking::Sleep(milliseconds);
+	}
 
-	// extern "C" void Syscall_InvlPg(uint64_t p)
-	// {
-	// 	asm volatile("invlpg (%0)" : : "a" (p));
-	// }
+	extern "C" void Syscall_Yield()
+	{
+		YieldCPU();
+	}
 
-	// extern "C" void Syscall_CreateThread(uint64_t ptr)
-	// {
-	// 	void (*t)() = (void(*)())(ptr);
-	// 	Multitasking::Process* p = Multitasking::GetCurrentProcess();
-	// 	Multitasking::AddToQueue(Multitasking::CreateThread(p, t));
-	// }
+	extern "C" void Syscall_Block()
+	{
+		Multitasking::Block(1);
+	}
 
-	// extern "C" void Syscall_SpawnProcess(const char* ExecutableFilename, const char* ProcessName)
-	// {
-	// 	// using Filesystems::VFS::File;
-	// 	// File* file = new File(ExecutableFilename);
-	// 	// if(!file->Exists())
-	// 	// {
-	// 	// 	Log("Requested file %s does not exist.", ExecutableFilename);
-	// 	// }
+	extern "C" void Syscall_CreateThread(uint64_t ptr)
+	{
+		void (*t)() = (void(*)())(ptr);
+		Multitasking::Process* p = Multitasking::GetCurrentProcess();
+		Multitasking::AddToQueue(Multitasking::CreateThread(p, t));
+	}
 
-	// 	// uint8_t* prog = LoadBinary::LoadFileToMemory(file->Path());
+	extern "C" void Syscall_SpawnProcess(const char* ExecutableFilename, const char* ProcessName)
+	{
+		auto fd = Filesystems::OpenFile(ExecutableFilename, 0);
+		if(fd == -1)
+			// todo: set errno
+			return;
 
-	// 	// LoadBinary::GenericExecutable* Exec = new LoadBinary::GenericExecutable(ProcessName, prog);
-	// 	// Exec->AutomaticLoadExecutable();
+		struct stat s;
+		Filesystems::Stat(fd, &s);
+		uint8_t* prog = new uint8_t[s.st_size];
+
+		LoadBinary::GenericExecutable* Exec = new LoadBinary::GenericExecutable(ProcessName, prog);
+		Exec->AutomaticLoadExecutable();
+
+		Exec->SetApplicationType(Multitasking::ThreadType::NormalApplication);
+		IPC::CentralDispatch::AddApplicationToList(Exec->proc->Threads->Front(), Exec->proc);
+
+		Exec->Execute();
+		delete[] prog;
+	}
 
 
-	// 	// Exec->SetApplicationType(Multitasking::ThreadType::NormalApplication);
-	// 	// IPC::CentralDispatch::AddApplicationToList(Exec->proc->Threads->Front(), Exec->proc);
+	extern "C" uint64_t Syscall_GetPID()
+	{
+		return Multitasking::GetCurrentProcess()->ProcessID;
+	}
 
-	// 	// Exec->Execute();
-	// 	// delete[] prog;
-	// }
-
-	// extern "C" void Syscall_Yield()
-	// {
-	// 	YieldCPU();
-	// }
-
-	// extern "C" void Syscall_Block()
-	// {
-	// 	Multitasking::Block(1);
-	// }
-
-	// extern "C" uint64_t Syscall_GetPID()
-	// {
-	// 	return Multitasking::GetCurrentProcess()->ProcessID;
-	// }
-
-	// extern "C" uint64_t Syscall_GetParentPID()
-	// {
-	// 	return Multitasking::GetCurrentProcess()->Parent->ProcessID;
-	// }
+	extern "C" uint64_t Syscall_GetParentPID()
+	{
+		return Multitasking::GetCurrentProcess()->Parent->ProcessID;
+	}
 }
 }
 }

@@ -12,11 +12,11 @@ PREFIX=`pwd`/build/toolchain
 SYSROOT=`pwd`/build/sysroot
 THREADS=4
 
-# # first check for args.
-# if [ -z "$1" ]; then
-# 	echo "Please pass the size of the OS disk image in MEGABYTES (1024 KB) to ./bootstrap."
-# 	exit
-# fi
+# first check for args.
+if [ -z "$1" ]; then
+	echo "Please pass the size of the OS disk image in MEGABYTES (1024 KB) to ./bootstrap."
+	exit
+fi
 
 
 
@@ -29,7 +29,6 @@ mkdir -p $SYSROOT/usr/lib
 
 cp -r Libraries/libc/include/* $SYSROOT/usr/include/
 cp -r Libraries/libm/include/* $SYSROOT/usr/include/
-# cp -r Libraries/Iris/HeaderFiles/* $SYSROOT/usr/include/c++/
 
 
 cd build
@@ -51,29 +50,29 @@ echo "=> Proceeding with Sysroot: $SYSROOT, Prefix: $PREFIX"
 mkdir build-bin build-gcc
 cd build-bin
 echo "=> Configuring binutils"
-../binutils/configure --target=x86_64-orionx --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-werror --disable-nls
+# ../binutils/configure --target=x86_64-orionx --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-werror --disable-nls > /dev/null
 
 echo "=> Compiling binutils"
-make -j$THREADS all
-make -j$THREADS install
+# make -j$THREADS all > /dev/null
+# make -j$THREADS install > /dev/null
 
 echo "=> Configuring gcc"
 cd ../build-gcc
 export PATH="$PREFIX/bin:$PATH"
-../gcc/configure --target=x86_64-orionx --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-werror --disable-nls --enable-languages=c,c++
+# ../gcc/configure --target=x86_64-orionx --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-werror --disable-nls --enable-languages=c,c++ > /dev/null
 
 echo "=> Compiling gcc"
-make -j$THREADS all-gcc
+# make -j$THREADS all-gcc > /dev/null
 echo "=> Compiling libgcc"
-make -j$THREADS all-target-libgcc
+# make -j$THREADS all-target-libgcc > /dev/null
 
 echo "=> Installing toolchain"
-make -j$THREADS -s install-gcc
-make -j$THREADS -s install-target-libgcc
+# make -j$THREADS -s install-gcc > /dev/null
+# make -j$THREADS -s install-target-libgcc > /dev/null
 
 echo "=> Compiling libstdc++"
-make
-make install
+# make > /dev/null
+# make install > /dev/null
 cd ..
 cd ..
 
@@ -82,9 +81,9 @@ rm -rf build/build-bin
 rm -rf build/build-gcc
 
 
-if [ -f build/disk.img ]; then
-	exit
-fi
+# if [ -f build/disk.img ]; then
+	# exit
+# fi
 
 
 
@@ -92,14 +91,6 @@ fi
 
 
 
-
-
-
-
-# fuck it, just download it from my dropbox.
-clear
-echo "=> Downloading disk image"
-wget -O build/disk.img https://dl.dropboxusercontent.com/u/20627716/disk.img
 
 
 
@@ -108,58 +99,60 @@ wget -O build/disk.img https://dl.dropboxusercontent.com/u/20627716/disk.img
 
 echo "=> Creating disk image of $1 mb"
 # edit if not on mac, life will be easier.
-# depends on virtualbox being installed.
 # seriously.
 
-hdiutil create -megabytes $1 -layout MBRSPUD -fs MS-DOS -volname "mx" -type UDIF build/fat16.dmg
-# actually is fat16.
+# use 'dd' to create.
+BLOCKSIZE=$(($1 * 1024 * 1024 / 512))
+DISKNAME=build/disk.img
 
-LINE=`hdiutil attach build/fat16.dmg | sed -n '2p'`
-ARRAY=($LINE)
-DISKID=${ARRAY[0]}
+# create the image first
+dd if=/dev/zero of=$DISKNAME bs=512 count=$BLOCKSIZE &> /dev/null
 
-echo "=> Disk ID = $DISKID"
+# run fdisk on it
+echo -e "y\nedit 1\n0B\nn\n2047\n\nflag 1\nwrite\nexit\n" | fdisk -e $DISKNAME > /dev/null
 
-echo "=> Creating FAT32 partition on disk"
-# unmount first, without ejecting.
-diskutil unmount $DISKID
+# separate the things.
+dd if=$DISKNAME of=build/mbr.img bs=512 count=2047 &> /dev/null
+dd if=$DISKNAME of=build/fs.img bs=512 skip=2047 &> /dev/null
 
-# use newfs_msdos
-newfs_msdos -F 32 -S 512 -P 512 -v "MX" $DISKID
+# EDIT HERE FOR NON MAC
+# mount the image
+IDENTIFER=`hdiutil attach -nomount build/fs.img`
 
-# detach.
-hdiutil detach $DISKID
+# make the fat32 image.
+newfs_msdos -F 32 -v "MX" $IDENTIFER &> /dev/null
 
-# convert from dmg to vdi
-vboxmanage convertdd build/fat16.dmg build/fat32.vdi
+# detach
+hdiutil detach $IDENTIFER
 
-# finally, vdi to raw img.
-qemu-img convert -O raw build/fat32.vdi build/disk.img
+# recombine
+cat build/mbr.img build/fs.img > $DISKNAME
 
-# make partition bootable
-echo -e "flag 1\nwrite\nexit\n" | fdisk -e build/disk.img > /dev/null
-echo -e "\n"
+# mount the entire image
+hdiutil attach $DISKNAME
 
+# copy over grub files
+mkdir -p /Volumes/MX/boot/grub
+cp grub/* /Volumes/MX/boot/grub/
 
-# copy grub
-echo "=> Copying GRUB to disk"
-hdiutil attach build/disk.img
-mkdir -p /Volumes/mx/boot/grub
+# create a quick grub floppy.
+dd if=grub/stage1 of=grub.img count=1 bs=512 &> /dev/null
+dd if=grub/stage2 of=grub.img seek=1 bs=512 &> /dev/null
 
+# give the user instructions
+echo "=> Installing GRUB"
+echo "You should see a shell grub>"
+echo "Enter these commands:"
+echo "root (hd0,0)"
+echo -e "setup (hd0)\n\n"
+echo "Press Command-Q to close QEMU once you're done."
+qemu-system-x86_64 -boot a -fda grub.img -hda $DISKNAME
 
-
-
-
-
-
-
-
-
-# cleanup
+echo "=> GRUB setup complete."
 echo "=> Cleaning up"
-rm build/fat32.vdi
-rm build/fat16.dmg
-
-
+rm grub.img
+rm build/fs.img
+rm build/mbr.img
+hdiutil detach -quiet $IDENTIFER
 echo "=> Ready!"
 exit

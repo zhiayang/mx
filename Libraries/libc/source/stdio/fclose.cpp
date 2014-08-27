@@ -9,10 +9,10 @@
 
 extern "C" int fclose(FILE* file)
 {
-	if(!file || file->fd < 4)
+	if(!file || file->__fd < 4)
 		return EOF;
 
-	close((int) file->fd);
+	close((int) file->__fd);
 	free(file);
 	return 0;
 }

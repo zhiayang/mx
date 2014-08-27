@@ -19,8 +19,6 @@ namespace LoadBinary
 
 
 
-	uint8_t* LoadFileToMemory(const char* filename);
-
 	class GenericExecutable
 	{
 		public:

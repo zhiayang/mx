@@ -6,9 +6,8 @@
 #include <Kernel.hpp>
 #include <StandardIO.hpp>
 #include <List.hpp>
-#include <AVLTree.hpp>
 #include <String.hpp>
-
+#include <stdlib.h>
 
 using namespace Kernel;
 using namespace Library;
@@ -36,11 +35,11 @@ namespace Multitasking
 	static uint64_t ScheduleCount = 0;
 	bool SchedulerEnabled = true;
 
-	static uint64_t LowStarvationLevel = 0;
-	static uint64_t NormStarvationLevel = 0;
+	// static uint64_t LowStarvationLevel = 0;
+	// static uint64_t NormStarvationLevel = 0;
 
-	static uint64_t LowStarvedRemaining = 0;
-	static uint64_t NormStarvedRemaining = 0;
+	// static uint64_t LowStarvedRemaining = 0;
+	// static uint64_t NormStarvedRemaining = 0;
 
 	void Initialise()
 	{
@@ -63,52 +62,34 @@ namespace Multitasking
 	uint64_t GetCurrentProcessID()		{ return CurrentThread->Parent->ProcessID;				}
 
 	// if, after N number of switches, processes in the low/norm queue don't get to run, run them all to completion.
-	#define LowStarveThreshold	512
+	#define LowStarveThreshold	1024
 	#define NormStarveThreshold	128
 
 	Thread* GetNextThread()
 	{
 		ScheduleCount++;
-		Thread* r;
+		Thread* r = nullptr;
 
-		if(ThreadList_HighPrio->Size() > 0 && NormStarvedRemaining == 0 && LowStarvedRemaining == 0)
+		if(ProcessList->Size() > 1)
 		{
-			r = ThreadList_HighPrio->RemoveFront();
-			ThreadList_HighPrio->InsertBack(r);
-
-			NormStarvationLevel++;
-			LowStarvationLevel++;
+			// Log(3, "%d, %d", ThreadList_NormPrio->Size(), ScheduleCount);
 		}
-		else if(ThreadList_NormPrio->Size() > 0 && LowStarvedRemaining == 0)
-		{
-			r = ThreadList_NormPrio->RemoveFront();
-			ThreadList_NormPrio->InsertBack(r);
 
-			LowStarvationLevel++;
-
-			// check if we're starved.
-			if(NormStarvedRemaining == 0 && NormStarvationLevel >= NormStarveThreshold)
-				NormStarvedRemaining = ThreadList_NormPrio->Size();
-
-			else if(NormStarvedRemaining > 0)
-				NormStarvedRemaining--;
-
-			if(NormStarvedRemaining == 0)
-				NormStarvationLevel = 0;
-		}
-		else if(ThreadList_LowPrio->Size() > 0)
+		// Log(3, "%d : %d : %d : %d (%d)", NormStarvationLevel, NormStarvedRemaining, LowStarvationLevel, LowStarvedRemaining, ThreadList_NormPrio->Size());
+		if(ThreadList_LowPrio->Size() > 0 && (ScheduleCount % LowStarveThreshold == 0))
 		{
 			r = ThreadList_LowPrio->RemoveFront();
 			ThreadList_LowPrio->InsertBack(r);
-
-			if(LowStarvedRemaining == 0 && LowStarvationLevel >= LowStarveThreshold)
-				LowStarvedRemaining = ThreadList_LowPrio->Size();
-
-			else if(LowStarvedRemaining > 0)
-				LowStarvedRemaining--;
-
-			if(LowStarvedRemaining == 0)
-				LowStarvationLevel = 0;
+		}
+		else if(ThreadList_NormPrio->Size() > 0 && (ScheduleCount % NormStarveThreshold == 0))
+		{
+			r = ThreadList_NormPrio->RemoveFront();
+			ThreadList_NormPrio->InsertBack(r);
+		}
+		else if(ThreadList_HighPrio->Size() > 0)
+		{
+			r = ThreadList_HighPrio->RemoveFront();
+			ThreadList_HighPrio->InsertBack(r);
 		}
 		else
 		{
@@ -220,7 +201,7 @@ namespace Multitasking
 
 		Thread* p = FetchAndRemoveThread(CurrentThread);
 
-		p->Sleep = (uint32_t) math::abs(time);
+		p->Sleep = (uint32_t) __abs(time);
 		PendingSleepList->InsertBack(p);
 
 		// if time is negative, we called from userspace, so don't nest interrupts.

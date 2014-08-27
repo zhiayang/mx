@@ -5,6 +5,8 @@
 #include <string.h>
 #include <Kernel.hpp>
 #include <rdestl/hash_map.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 using namespace Kernel::HardwareAbstraction::Devices::Storage;
 namespace Kernel {
@@ -14,6 +16,7 @@ namespace Filesystems
 	namespace VFS
 	{
 		static id_t curid = 0;
+		static id_t curfeid = 0;
 		static fd_t FirstFreeFD = 0;
 
 		struct Filesystem
@@ -43,7 +46,7 @@ namespace Filesystems
 		{
 			for(auto v : *mountedfses)
 			{
-				if(strcmp(path.substr(0, math::min(path.length(), v->mountpoint->length())).c_str(), v->mountpoint->c_str()) == 0)
+				if(strcmp(path.substr(0, __min(path.length(), v->mountpoint->length())).c_str(), v->mountpoint->c_str()) == 0)
 					return v;
 			}
 
@@ -82,7 +85,7 @@ namespace Filesystems
 			return v->second;
 		}
 
-		vnode* NodeFromFD(IOContext* ioctx, fd_t fd)
+		fileentry* FileEntryFromFD(IOContext* ioctx, fd_t fd)
 		{
 			assert(ioctx);
 			assert(ioctx->fdarray);
@@ -91,8 +94,17 @@ namespace Filesystems
 			for(auto v : *ioctx->fdarray->fds)
 			{
 				if(v->fd == fd)
-					return v->node;
+					return v;
 			}
+
+			return nullptr;
+		}
+
+		vnode* NodeFromFD(IOContext* ioctx, fd_t fd)
+		{
+			auto ret = FileEntryFromFD(ioctx, fd);
+			if(ret)
+				return ret->node;
 
 			return nullptr;
 		}
@@ -182,6 +194,7 @@ namespace Filesystems
 			fe->offset	= 0;
 			fe->flags	= flags;
 			fe->fd		= FirstFreeFD + ioctx->fdarray->fds->Size();
+			fe->id		= curfeid++;
 
 			ioctx->fdarray->fds->InsertBack(fe);
 
@@ -200,7 +213,10 @@ namespace Filesystems
 			Filesystem* fs = getfs(pth);
 
 			if(fs == nullptr || fs->ismounted == false)
+			{
+				Log(3, "filesystem not mounted");
 				return nullptr;
+			}
 
 			auto node = VFS::CreateNode(fs->driver);
 			assert(node);
@@ -217,7 +233,9 @@ namespace Filesystems
 				return ret;
 			}
 			else
+			{
 				return nullptr;
+			}
 		}
 
 		size_t Read(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len)
@@ -227,8 +245,11 @@ namespace Filesystems
 			assert(node->info);
 			assert(node->refcount > 0);
 			assert(node->info->driver);
+			assert(buf);
 
 			auto fs = node->info->driver;
+			assert(fs);
+
 			return fs->Read(node, buf, off, len);
 		}
 
@@ -255,6 +276,32 @@ namespace Filesystems
 			auto fs = node->info->driver;
 			fs->Stat(node, st);
 		}
+
+		void Seek(fileentry* fe, off_t offset, int origin)
+		{
+			assert(fe);
+			assert(fe->node);
+
+			if(origin == SEEK_SET)
+				fe->offset = 0;
+
+			fe->offset += offset;
+		}
+
+		fileentry* Duplicate(IOContext* ctx, fileentry* old)
+		{
+			assert(ctx);
+
+			fileentry* fe	= new fileentry;
+			fe->node	= old->node;
+			fe->offset	= 0;
+			fe->flags	= old->flags;
+			fe->fd		= FirstFreeFD + ctx->fdarray->fds->Size();
+			fe->id		= curfeid++;
+
+			ctx->fdarray->fds->InsertBack(fe);
+			return fe;
+		}
 	}
 
 
@@ -269,33 +316,37 @@ namespace Filesystems
 		return fe ? fe->fd : -1;
 	}
 
-	size_t Read(fd_t fd, void* buf, off_t off, size_t len)
+	size_t Read(fd_t fd, void* buf, size_t len)
 	{
+		if(len == 0)
+			return 0;
+
 		auto ctx = getctx();
-		if(fd < 0)
+		auto fe = VFS::FileEntryFromFD(ctx, fd);
+		if(fe == nullptr)
 			return 0;
 
-		auto node = VFS::NodeFromFD(ctx, fd);
-		if(node == nullptr)
-			return 0;
-
-		return VFS::Read(ctx, node, buf, off, len);
+		assert(fe->node);
+		auto read = VFS::Read(ctx, fe->node, buf, fe->offset, len);
+		fe->offset += read;
+		return read;
 	}
 
-	size_t Write(fd_t fd, void* buf, off_t off, size_t len)
+	size_t Write(fd_t fd, void* buf, size_t len)
 	{
+		if(len == 0)
+			return 0;
+
 		auto ctx = getctx();
-		if(fd < 0)
+		auto fe = VFS::FileEntryFromFD(ctx, fd);
+		if(fe == nullptr)
 			return 0;
 
-		auto node = VFS::NodeFromFD(ctx, fd);
-		if(node == nullptr)
-		{
-			HALT("");
-			return 0;
-		}
+		assert(fe->node);
+		auto written = VFS::Write(ctx, fe->node, buf, fe->offset, len);
 
-		return VFS::Write(ctx, node, buf, off, len);
+		fe->offset += written;
+		return written;
 	}
 
 	VFSError Stat(fd_t fd, struct stat* out)
@@ -310,6 +361,34 @@ namespace Filesystems
 
 		VFS::Stat(ctx, node, out);
 		return VFSError::NO_ERROR;
+	}
+
+	void Seek(fd_t fd, off_t offset, int origin)
+	{
+		auto ctx = getctx();
+		if(fd < 0)
+			// todo: set errno
+			return;
+
+		auto fe = VFS::FileEntryFromFD(ctx, fd);
+		if(fe == nullptr)
+			return;
+
+		VFS::Seek(fe, offset, origin);
+	}
+
+	fd_t Duplicate(fd_t old)
+	{
+		auto ctx = getctx();
+		if(old < 0)
+			// todo: set errno
+			return -1;
+
+		auto fe = VFS::FileEntryFromFD(ctx, old);
+		if(fe == nullptr)
+			return -1;
+
+		return VFS::Duplicate(ctx, fe)->fd;
 	}
 }
 }

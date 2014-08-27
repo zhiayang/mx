@@ -30,10 +30,10 @@ namespace Multitasking
 		*usp = (uint64_t) Multitasking::ExitThread;
 
 		// kernel thread
-		*--stack = 0x10;				// SS (-8)
+		*--stack = 0x10;					// SS (-8)
 		*--stack = u + DefaultRing3StackSize - 8;	// User stack pointer (-16)
 		*--stack = 0x202;				// RFLAGS (-24)
-		*--stack = 0x08;				// CS (-32)
+		*--stack = 0x08;					// CS (-32)
 		*--stack = (uint64_t) f;				// RIP (-40)
 
 		*--stack = 0;					// R15 (-48)
@@ -74,10 +74,10 @@ namespace Multitasking
 		*--usp = 0;
 
 		// user thread (always)
-		*--stack = 0x23;				// SS
+		*--stack = 0x23;					// SS
 		*--stack = u + DefaultRing3StackSize - 8;	// User stack pointer
 		*--stack = 0x202;				// RFLAGS
-		*--stack = 0x1B;				// CS
+		*--stack = 0x1B;					// CS
 		*--stack = (uint64_t) f;				// RIP (-40)
 
 		*--stack = 0;					// R15 (-48)
@@ -117,15 +117,25 @@ namespace Multitasking
 		// Allocate kernel stack
 		// uint64_t k = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
 
-		uint64_t k = Virtual::AllocatePage(DefaultRing3StackSize / 0x1000);
 		// Virtual::MapRegion(k, k, DefaultRing3StackSize / 0x1000, 0x3);
 
+		uint64_t k = 0;
 		if(Parent->CR3 != GetKernelCR3())
 		{
-			Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, k);
-			Virtual::MapRegion(k, k, DefaultRing3StackSize / 0x1000, 0x3);
+			// uint64_t pk = Virtual::AllocatePage(DefaultRing3StackSize / 0x1000);
+			// Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, k);
+			// Virtual::MapRegion(k, k, DefaultRing3StackSize / 0x1000, 0x3);
+
+			k = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS);
+			auto pk = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
+			Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x3, Parent->VAS->PML4);
+			Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x3);
 
 			// Virtual::MapRegion(k, k, DefaultRing3StackSize / 0x1000, 0x3, (Virtual::PageMapStructure*) Parent->CR3);
+		}
+		else
+		{
+			k = Virtual::AllocatePage(DefaultRing3StackSize / 0x1000);
 		}
 
 		// allocate user stack.
@@ -139,17 +149,17 @@ namespace Multitasking
 
 
 
-		thread->TopOfStack				= k + DefaultRing3StackSize;
-		thread->StackPointer				= thread->TopOfStack;
+		thread->TopOfStack			= k + DefaultRing3StackSize;
+		thread->StackPointer			= thread->TopOfStack;
 		thread->Thread				= Function;
-		thread->State					= 1;
-		thread->ThreadID				= NumThreads;
+		thread->State				= 1;
+		thread->ThreadID			= NumThreads;
 		thread->Parent				= Parent;
-		thread->CurrentSharedMemoryOffset		= 0;
+		thread->CurrentSharedMemoryOffset	= 0;
 		thread->SimpleMessageQueue		= new Library::LinkedList<IPC::SimpleMessage>();
 		thread->Priority				= Priority;
 		thread->ExecutionTime			= 0;
-		thread->InstructionPointer			= 0;
+		thread->InstructionPointer		= 0;
 
 
 		NumThreads++;
@@ -229,15 +239,12 @@ namespace Multitasking
 		{
 			// setup the descriptors.
 			// manually.
-			// stdio:
-			// Process* parent = process->Parent;
-			// process->FileDescriptors[0].Pointer = parent->FileDescriptors[0].Pointer;
-			// process->FileDescriptors[1].Pointer = parent->FileDescriptors[1].Pointer;
-			// process->FileDescriptors[2].Pointer = parent->FileDescriptors[2].Pointer;
-			// process->FileDescriptors[3].Pointer = parent->FileDescriptors[3].Pointer;
+			using namespace Filesystems::VFS;
+			assert(OpenFile(process->iocontext, "/dev/stdin", 0)->fd == 0);
+			assert(OpenFile(process->iocontext, "/dev/stdout", 0)->fd == 1);
 		}
 
-		Log("Creating new process in VAS (%s): CR3(phys): %x", name, (uint64_t) PML4);
+		Log("Creating new process in VAS (%s): CR3(phys): %x, PID %d", name, (uint64_t) PML4, process->ProcessID);
 		return process;
 	}
 

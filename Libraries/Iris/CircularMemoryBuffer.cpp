@@ -4,6 +4,7 @@
 
 #include "HeaderFiles/CircularBuffer.hpp"
 #include <math.h>
+#include <stdlib.h>
 
 namespace Library
 {
@@ -60,8 +61,8 @@ namespace Library
 		uint64_t firstpass = (this->size - this->readp);
 		uint64_t remaining = bytes > firstpass ? bytes - firstpass : 0;
 
-		Memory::Copy(buf, this->backingstore + this->readp, math::min(firstpass, bytes));
-		this->readp = (this->readp + math::min(firstpass, bytes)) % this->size;
+		Memory::Copy(buf, this->backingstore + this->readp, __min(firstpass, bytes));
+		this->readp = (this->readp + __min(firstpass, bytes)) % this->size;
 		if(bytes > firstpass)
 		{
 			Memory::Copy(buf + firstpass, this->backingstore + this->readp, remaining);
@@ -77,7 +78,7 @@ namespace Library
 		if(bytes > this->size)
 			bytes = this->size;
 
-		uint64_t firstpass = math::min(this->size - this->writep, bytes);
+		uint64_t firstpass = __min(this->size - this->writep, bytes);
 		uint64_t remaining = bytes > firstpass ? bytes - firstpass : 0;
 
 		Memory::Copy(this->backingstore + this->writep, buf, firstpass);
