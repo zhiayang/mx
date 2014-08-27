@@ -10,9 +10,7 @@
 #include <string.h>
 #include <time.h>
 
-#include <rdestl/sstream.h>
-#include <rdestl/algorithm.h>
-
+#include <rdestl/vector.h>
 #include <sys/stat.h>
 
 using namespace Library;
@@ -327,7 +325,7 @@ namespace Filesystems
 		if(!vnd->clusters)
 			vnd->clusters = this->GetClusterChain(node, &numclus);
 
-		assert(vnd->clusters->Size() == numclus);
+		// assert(vnd->clusters->Size() == numclus);
 
 		// check that offset is not more than size
 		if(offset > vnd->filesize)
@@ -351,7 +349,8 @@ namespace Filesystems
 
 		for(auto i = skippedclus; i < skippedclus + cluslen; i++)
 		{
-			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA((*vnd->clusters)[(int) i]), dma, this->SectorsPerCluster * 512);
+			// Log(3, "call");
+			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA((*vnd->clusters)[i]), dma, this->SectorsPerCluster * 512);
 			dma += this->SectorsPerCluster * 512;
 		}
 
@@ -441,7 +440,6 @@ namespace Filesystems
 			// check if we're on an LFN
 			uint8_t* raw = (uint8_t*) addr;
 			auto dirent = (DirectoryEntry*) raw;
-			// Log(3, "[%x]", raw);
 
 			if(dirent->name[0] == 0)
 				break;

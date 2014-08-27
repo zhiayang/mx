@@ -3,4 +3,4 @@
 all: buildlib
 
 buildlib:
-	-@find . -mindepth 1 -maxdepth 1 -type d -not -name "output" -not -name "freetype-2.5.3" -exec make -s -C {} \;
+	-@find . -mindepth 1 -maxdepth 1 -type d -not -name "output" -not -name "ports" -exec make -s -C {} \;

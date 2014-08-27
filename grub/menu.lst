@@ -3,6 +3,6 @@ timeout 0
 
 #title Boot from hard disk
 
-title "[mx]"
+title [mx]
 kernel /boot/kernel.mxa
 boot

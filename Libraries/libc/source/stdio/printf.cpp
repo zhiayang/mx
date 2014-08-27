@@ -35,3 +35,12 @@ extern "C" int vsprintf(char* str, const char* format, va_list ap)
 	return vsnprintf(str, LONG_MAX, format, ap);
 }
 
+extern "C" int asprintf(char** result_ptr, const char* format, ...)
+{
+	va_list list;
+	va_start(list, format);
+	int result = vasprintf(result_ptr, format, list);
+	va_end(list);
+	return result;
+}
+

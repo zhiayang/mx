@@ -75,6 +75,16 @@ namespace Heap
 		return a + ((b - a) / 2);
 	}
 
+	static void CheckAndExpandMeta()
+	{
+		if((ChunksInHeap + 2) * sizeof(Chunk) > SizeOfMeta * 0x1000)
+		{
+			// we need to expand.
+			uint64_t fixed = GetPageFixed(MetadataAddr + (SizeOfMeta * 0x1000));
+			assert(fixed == MetadataAddr + (SizeOfMeta * 0x1000));
+			SizeOfMeta++;
+		}
+	}
 
 
 	Chunk* index(uint64_t i)
@@ -91,18 +101,12 @@ namespace Heap
 	{
 		// memcpy them behind.
 		// but first, check if we have enough space.
-		if((ChunksInHeap + 1) * sizeof(Chunk) + MetaOffset > SizeOfMeta * 0x1000)
-		{
-			// we need to expand.
-			uint64_t fixed = GetPageFixed(MetadataAddr + (SizeOfMeta * 0x1000));
-			assert(fixed == MetadataAddr + (SizeOfMeta * 0x1000));
-			SizeOfMeta++;
-		}
-
-		auto behind = (ChunksInHeap - 1) - at;
+		CheckAndExpandMeta();
+		auto behind = ChunksInHeap - at;
 
 		// memcpy.
 		memmove((void*) addr(index(at + 1)), (void*) index(at), behind * sizeof(Chunk));
+		memset((void*) index(at), 0, sizeof(Chunk));
 	}
 
 	void pullfront(uint64_t at)
@@ -110,12 +114,15 @@ namespace Heap
 		// essentially deletes a chunk.
 		// 'at' contains the index of the chunk to delete.
 		void* c = index(at);
+		CheckAndExpandMeta();
+
 		if(at == ChunksInHeap - 1)
 			return;
 
 		// calculate how many chunks to pull
 		auto ahead = (ChunksInHeap - 1) - at;
 
+		memset(c, 0, sizeof(Chunk));
 		memmove(c, index(at + 1), ahead * sizeof(Chunk));
 	}
 
@@ -281,11 +288,19 @@ namespace Heap
 		c->size = sz;
 		setused(c);
 
-		if(oldsize - sz >= Alignment)
+		auto newsize = oldsize - sz;
+		if(newsize >= Alignment)
 		{
-			CreateChunk(c->offset + sz, Alignment * ((oldsize - sz) / Alignment));
+			CreateChunk(c->offset + sz, newsize - (newsize % Alignment));
+		}
+		else
+		{
+			c->size = oldsize;
+			setused(c);
 		}
 
+		assert(sz % Alignment == 0);
+		assert(o % Alignment == 0);
 		return (void*) (HeapAddress + o);
 	}
 
@@ -365,7 +380,6 @@ namespace Heap
 			// this is where the offset-sorted list comes in handy.
 			uint64_t o = bsearch(p, [](uint64_t i) -> uint64_t { return index(i)->offset; });
 			Chunk* self = index(o);
-
 
 			if(self->offset != p)
 			{

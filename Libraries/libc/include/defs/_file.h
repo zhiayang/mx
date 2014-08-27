@@ -14,9 +14,11 @@ extern "C" {
 
 #define	BUFSIZ			1
 
+
 struct _FILE
 {
-	uint64_t fd;
+	uint64_t __fd;
+	uint8_t __PermFlags;
 };
 
 typedef struct _FILE FILE;

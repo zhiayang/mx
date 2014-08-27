@@ -68,6 +68,7 @@ namespace Kernel
 					vnode* node;
 					off_t offset;
 					uint64_t flags;
+					id_t id;
 					fd_t fd;
 				};
 
@@ -107,12 +108,15 @@ namespace Kernel
 				size_t Read(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len);
 				size_t Write(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len);
 				void Stat(IOContext* ioctx, vnode* node, struct stat* st);
+				void Seek(fileentry* fe, off_t offset, int origin);
 			}
 
 			fd_t OpenFile(const char* path, int flags);
-			size_t Read(fd_t fd, void* buf, off_t off, size_t len);
-			size_t Write(fd_t fd, void* buf, off_t off, size_t len);
+			size_t Read(fd_t fd, void* buf, size_t len);
+			size_t Write(fd_t fd, void* buf, size_t len);
+			void Seek(fd_t, off_t offset, int origin);
 			VFS::VFSError Stat(fd_t fd, struct stat* out);
+			fd_t Duplicate(fd_t old);
 
 			enum class FSDriverType
 			{

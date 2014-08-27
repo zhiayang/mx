@@ -7,6 +7,6 @@
 
 extern "C" int close(int fd)
 {
-	Library::SystemCall::CloseAny(fd);
+	Library::SystemCall::Close(fd);
 	return 0;
 }

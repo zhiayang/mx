@@ -16,7 +16,7 @@ namespace IO
 
 	struct IOTransfer
 	{
-		IOTransfer(StorageDevice* d, uint64_t p, uint64_t b, uint64_t s) : device(d), pos(p), out(b), count(s) { }
+		IOTransfer() { }
 		Multitasking::Thread* owningthread;
 		StorageDevice* device;
 
@@ -28,9 +28,11 @@ namespace IO
 		bool blockop;
 		bool writeop;
 		bool completed;
+
+		uint64_t pad;
 	};
 
-	static rde::list<IOTransfer*>* Transfers;
+	static rde::list<IOTransfer>* Transfers;
 	static Mutex* listmtx;
 
 	static void Scheduler()
@@ -46,28 +48,30 @@ namespace IO
 				LOCK(listmtx);
 
 				// get the next request, then run it.
-				IOTransfer* req = Transfers->front();
+				IOTransfer req = Transfers->front();
 				Transfers->pop_front();
 
-				assert(req->completed == false);
+				assert(req.completed == false);
+				assert(req.device);
+				assert(req.owningthread);
 
 				// both operations should, at the lowest level, block until the operation is done.
 				// it doesn't matter anyway (although this does mean that we can only do ops on one device at a time)
 				// TODO.
-				if(req->writeop)
-					req->device->Write(req->pos, req->out, req->count);
+				if(req.writeop)
+					req.device->Write(req.pos, req.out, req.count);
 
 				else
-					req->device->Read(req->pos, req->out, req->count);
+					req.device->Read(req.pos, req.out, req.count);
 
 				// it's most probably done.
-				req->completed = true;
+				req.completed = true;
 
 				// wake the calling thread from its sleep.
-				if(req->blockop)
+				if(req.blockop)
 				{
-					assert(req->owningthread);
-					Multitasking::WakeForMessage(req->owningthread);
+					assert(req.owningthread);
+					Multitasking::WakeForMessage(req.owningthread);
 				}
 
 				UNLOCK(listmtx);
@@ -85,7 +89,7 @@ namespace IO
 
 	void Initialise()
 	{
-		Transfers = new rde::list<IOTransfer*>();
+		Transfers = new rde::list<IOTransfer>();
 		listmtx = new Mutex();
 
 		if(!DIRECTOP)
@@ -108,21 +112,23 @@ namespace IO
 		}
 		else
 		{
-			IOTransfer* req = new IOTransfer(dev, pos, buf, bytes);
+			IOTransfer req;
 
-			req->owningthread = Multitasking::GetCurrentThread();
-			req->writeop = false;
-			req->blockop = true;
-			req->completed = false;
+			req.device		= dev;
+			req.pos			= pos;
+			req.out			= buf;
+			req.count		= bytes;
 
-			LOCK(listmtx);
+			req.owningthread	= Multitasking::GetCurrentThread();
+			req.writeop 		= false;
+			req.blockop		= true;
+
+
+			// LOCK(listmtx);
 			Transfers->push_back(req);
-			UNLOCK(listmtx);
+			// UNLOCK(listmtx);
 
 			BLOCK();
-			assert(req->completed);
-
-			delete req;
 		}
 	}
 
@@ -139,21 +145,26 @@ namespace IO
 		}
 		else
 		{
-			IOTransfer* req = new IOTransfer(dev, pos, buf, bytes);
+			IOTransfer req;
+			if(pos == 0x1D6A)
+			{
+				MemoryManager::KernelHeap::Print();
+				UHALT();
+			}
+			req.device		= dev;
+			req.pos			= pos;
+			req.out			= buf;
+			req.count		= bytes;
 
-			req->owningthread = Multitasking::GetCurrentThread();
-			req->writeop = true;
-			req->blockop = true;
-			req->completed = false;
+			req.owningthread	= Multitasking::GetCurrentThread();
+			req.writeop 		= true;
+			req.blockop		= true;
 
 			LOCK(listmtx);
 			Transfers->push_back(req);
 			UNLOCK(listmtx);
 
 			BLOCK();
-
-			assert(req->completed == true);
-			delete req;
 		}
 	}
 
@@ -166,40 +177,60 @@ namespace IO
 	// returns void pointer (opaque type essentially) to check status.
 	void* ScheduleRead(StorageDevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes)
 	{
-		// only returns when the data is read, therefore is blocking.
-		assert(dev);
-		if(bytes == 0 || buf == 0)
-			return nullptr;
+		// // only returns when the data is read, therefore is blocking.
+		// assert(dev);
+		// if(bytes == 0 || buf == 0)
+		// 	return nullptr;
 
-		IOTransfer* req = new IOTransfer(dev, pos, buf, bytes);
+		// IOTransfer* req = new IOTransfer();
+		// req->device	= dev;
+		// req->pos	= pos;
+		// req->out	= buf;
+		// req->count	= bytes;
 
-		req->owningthread = Multitasking::GetCurrentThread();
-		req->writeop = false;
-		req->blockop = false;
-		req->completed = false;
+		// req->owningthread = Multitasking::GetCurrentThread();
+		// req->writeop = false;
+		// req->blockop = false;
+		// req->completed = false;
 
-		auto m = AutoMutex(listmtx);
-		Transfers->push_back(req);
-		return (void*) req;
+		// auto m = AutoMutex(listmtx);
+		// Transfers->push_back(req);
+		// return (void*) req;
+
+		(void) dev;
+		(void) pos;
+		(void) buf;
+		(void) bytes;
+		return 0;
 	}
 
 	void* ScheduleWrite(StorageDevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes)
 	{
-		// only returns when the data is read, therefore is blocking.
-		assert(dev);
-		if(bytes == 0 || buf == 0)
-			return nullptr;
+		// // only returns when the data is read, therefore is blocking.
+		// assert(dev);
+		// if(bytes == 0 || buf == 0)
+		// 	return nullptr;
 
-		IOTransfer* req = new IOTransfer(dev, pos, buf, bytes);
+		// IOTransfer* req = new IOTransfer();
+		// req->device	= dev;
+		// req->pos	= pos;
+		// req->out	= buf;
+		// req->count	= bytes;
 
-		req->owningthread = Multitasking::GetCurrentThread();
-		req->writeop = true;
-		req->blockop = false;
-		req->completed = false;
+		// req->owningthread = Multitasking::GetCurrentThread();
+		// req->writeop = true;
+		// req->blockop = false;
+		// req->completed = false;
 
-		auto m = AutoMutex(listmtx);
-		Transfers->push_back(req);
-		return (void*) req;
+		// auto m = AutoMutex(listmtx);
+		// Transfers->push_back(req);
+		// return (void*) req;
+
+		(void) dev;
+		(void) pos;
+		(void) buf;
+		(void) bytes;
+		return 0;
 	}
 
 	// if it returns true, expect the object to have been deleted.

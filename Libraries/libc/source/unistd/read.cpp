@@ -7,5 +7,5 @@
 
 extern "C" ssize_t read(int fd, void* buf, size_t count)
 {
-	return Library::SystemCall::ReadFromAny(fd, (uint8_t*) buf, count);
+	return Library::SystemCall::Read(fd, (uint8_t*) buf, count);
 }
