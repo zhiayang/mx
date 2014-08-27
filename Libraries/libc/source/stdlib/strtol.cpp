@@ -8,6 +8,7 @@
 #include "../../include/limits.h"
 #include "../../include/assert.h"
 
+
 #ifndef STRTOL
 #define STRTOL strtol
 #define STRTOL_CHAR char
@@ -34,57 +35,57 @@ static int debase(STRTOL_CHAR c)
 
 // Determine whether a multiplication of two integers would overflow/underflow.
 // This is easy if we have a larger integer type, otherwise we'll be creative.
-template <class T_INT, bool T_INT_IS_UNSIGNED, class T_UNSIGNED_INT, T_INT T_INT_MIN, T_INT T_INT_MAX>
-static bool would_multiplication_overflow(T_INT a, T_INT b)
-{
-	// Prevent accidental divisons by zero in this simple case.
-	if(!a || !b)
-		return false;
+// template <class T_INT, bool T_INT_IS_UNSIGNED, class T_UNSIGNED_INT, T_INT T_INT_MIN, T_INT T_INT_MAX>
+// static bool would_multiplication_overflow(T_INT a, T_INT b)
+// {
+// 	// Prevent accidental divisons by zero in this simple case.
+// 	if(!a || !b)
+// 		return false;
 
-	// Check if we have a 64-bit integer that it is large enough.
-	if(sizeof(T_INT)*2 <= sizeof(int64_t))
-	{
-		int64_t ret_large = (int64_t) a * (int64_t) b;
-		return ret_large < (int64_t) T_INT_MIN ||
-		       (int64_t) T_INT_MAX < ret_large;
-	}
+// 	// Check if we have a 64-bit integer that it is large enough.
+// 	if(sizeof(T_INT)*2 <= sizeof(int64_t))
+// 	{
+// 		int64_t ret_large = (int64_t) a * (int64_t) b;
+// 		return ret_large < (int64_t) T_INT_MIN ||
+// 		       (int64_t) T_INT_MAX < ret_large;
+// 	}
 
-	// Check if we have a 128-bit integer that it is large enough.
-#if 64 <= __WORDSIZE
-	if(sizeof(T_INT)*2 <= sizeof(__int128))
-	{
-		__int128 ret_large = (__int128) a * (__int128) b;
-		return ret_large < (__int128) T_INT_MIN ||
-		       (__int128) T_INT_MAX < ret_large;
-	}
-#endif
+// 	// Check if we have a 128-bit integer that it is large enough.
 
-	// The fallback strategy is to determine the largest b given a that will not
-	// overflow and then see if b is within range. This is trivial if in the
-	// unsigned integer case.
-	if(T_INT_IS_UNSIGNED)
-	{
-		T_INT max_b = a / T_INT_MAX;
-		return max_b < b;
-	}
+// 	if(sizeof(T_INT)*2 <= sizeof(__int128))
+// 	{
+// 		__int128 ret_large = (__int128) a * (__int128) b;
+// 		return ret_large < (__int128) T_INT_MIN ||
+// 		       (__int128) T_INT_MAX < ret_large;
+// 	}
 
-	// We have to deal with some cases for signed integers. We'll assume signed
-	// integers are in two's complement and use - (unsigned int) value to take
-	// the absolute value of a negative value as an unsigned integer in a manner
-	// that is defined in C. Whether we use the smallest or largest value depend
-	// on whether the sign of a and b is identical.
-	else
-	{
-		T_UNSIGNED_INT a_abs = a < 0 ? - (T_UNSIGNED_INT) a : a;
-		T_UNSIGNED_INT b_abs = b < 0 ? - (T_UNSIGNED_INT) b : b;
-		T_UNSIGNED_INT min_abs = - (T_UNSIGNED_INT) T_INT_MIN;
-		T_UNSIGNED_INT max_abs = T_INT_MAX;
-		T_UNSIGNED_INT limit_pos = (0 <= a && 0 <= b) ||(a < 0 && b < 0);
-		T_UNSIGNED_INT limit = limit_pos ? max_abs : min_abs;
-		T_UNSIGNED_INT max_b = a_abs / limit;
-		return max_b < b_abs;
-	}
-}
+
+// 	// The fallback strategy is to determine the largest b given a that will not
+// 	// overflow and then see if b is within range. This is trivial if in the
+// 	// unsigned integer case.
+// 	if(T_INT_IS_UNSIGNED)
+// 	{
+// 		T_INT max_b = a / T_INT_MAX;
+// 		return max_b < b;
+// 	}
+
+// 	// We have to deal with some cases for signed integers. We'll assume signed
+// 	// integers are in two's complement and use - (unsigned int) value to take
+// 	// the absolute value of a negative value as an unsigned integer in a manner
+// 	// that is defined in C. Whether we use the smallest or largest value depend
+// 	// on whether the sign of a and b is identical.
+// 	else
+// 	{
+// 		T_UNSIGNED_INT a_abs = a < 0 ? - (T_UNSIGNED_INT) a : a;
+// 		T_UNSIGNED_INT b_abs = b < 0 ? - (T_UNSIGNED_INT) b : b;
+// 		T_UNSIGNED_INT min_abs = - (T_UNSIGNED_INT) T_INT_MIN;
+// 		T_UNSIGNED_INT max_abs = T_INT_MAX;
+// 		T_UNSIGNED_INT limit_pos = (0 <= a && 0 <= b) ||(a < 0 && b < 0);
+// 		T_UNSIGNED_INT limit = limit_pos ? max_abs : min_abs;
+// 		T_UNSIGNED_INT max_b = a_abs / limit;
+// 		return max_b < b_abs;
+// 	}
+// }
 
 extern "C" STRTOL_INT STRTOL(const STRTOL_CHAR* str, STRTOL_CHAR** endptr, int base)
 {
@@ -150,14 +151,14 @@ extern "C" STRTOL_INT STRTOL(const STRTOL_CHAR* str, STRTOL_CHAR** endptr, int b
 			break;
 
 		// Attempt to multiply the accumulator with the current base.
-		if(would_multiplication_overflow<STRTOL_INT,
-		                                   STRTOL_INT_IS_UNSIGNED,
-		                                   STRTOL_UNSIGNED_INT,
-		                                   STRTOL_INT_MIN,
-		                                   STRTOL_INT_MAX>
-		                                  (result, (STRTOL_INT) base))
-			overflow_occured = true, result = overflow_value;
-		else
+		// if(would_multiplication_overflow<STRTOL_INT,
+		//                                    STRTOL_INT_IS_UNSIGNED,
+		//                                    STRTOL_UNSIGNED_INT,
+		//                                    STRTOL_INT_MIN,
+		//                                    STRTOL_INT_MAX>
+		//                                   (result, (STRTOL_INT) base))
+		// 	overflow_occured = true, result = overflow_value;
+		// else
 		{
 			STRTOL_INT new_result = result * (STRTOL_INT) base;
 			assert( negative || result <= new_result);

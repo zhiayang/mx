@@ -67,8 +67,9 @@ int mbtowc(wchar_t* pwc, const char* pmb, size_t max);
 
 
 
-
-
+#define __min(a, b)		(a > b ? b : a)
+#define __max(a, b)		(a > b ? a : b)
+#define __abs(x)		(x < 0 ? -x : x)
 
 
 
@@ -96,7 +97,7 @@ void			srand	(unsigned int seed);
 void*			bsearch(const void* key, const void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*));
 void			qsort	(void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*));
 int			abs	(int j);
-long int		labs	(long int j);
+long int			labs	(long int j);
 long long		llabs	(long long int j);
 div_t			div	(int numer, int denom);
 ldiv_t			ldiv	(long numer, long denom);

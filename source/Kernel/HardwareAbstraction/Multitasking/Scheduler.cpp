@@ -6,9 +6,8 @@
 #include <Kernel.hpp>
 #include <StandardIO.hpp>
 #include <List.hpp>
-#include <AVLTree.hpp>
 #include <String.hpp>
-
+#include <stdlib.h>
 
 using namespace Kernel;
 using namespace Library;
@@ -202,7 +201,7 @@ namespace Multitasking
 
 		Thread* p = FetchAndRemoveThread(CurrentThread);
 
-		p->Sleep = (uint32_t) math::abs(time);
+		p->Sleep = (uint32_t) __abs(time);
 		PendingSleepList->InsertBack(p);
 
 		// if time is negative, we called from userspace, so don't nest interrupts.

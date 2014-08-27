@@ -9,7 +9,8 @@
 #include "unistd.h"
 #include "defs/_file.h"
 
-#define EOF	(-1)
+#define EOF			(-1)
+#define FILENAME_MAX	255
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,6 +95,8 @@ int sprintf(char* str, const char* format, ...);
 int vprintf(const char* format, va_list ap);
 int vsprintf(char* str, const char* format, va_list ap);
 
+int asprintf(char** result_ptr, const char* format, ...);
+int vasprintf(char** result_ptr, const char* format, va_list ap);
 
 
 #define _IOFBF	0	// Fully buffered.

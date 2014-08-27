@@ -6,6 +6,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "BitmapLibrary.hpp"
 
@@ -93,7 +94,7 @@ namespace BitmapLibrary
 
 	void BitmapImage::Render32Slow(uint16_t x, uint16_t y, void (*r)(uint16_t, uint16_t, uint32_t))
 	{
-		uint32_t imght = (uint32_t) math::abs(this->DIB->GetBitmapHeight());
+		uint32_t imght = (uint32_t) __abs(this->DIB->GetBitmapHeight());
 		uint64_t ptr = (uint64_t) this->ActualBMP + this->Header->BitmapArrayOffset;
 
 		uint64_t rowsize = ((this->DIB->GetBitsPerPixel() * (uint64_t) this->DIB->GetBitmapWidth() + 31) / 32) * 4;
@@ -117,7 +118,7 @@ namespace BitmapLibrary
 
 	void BitmapImage::Render24(uint16_t x, uint16_t y, void (*r)(uint16_t, uint16_t, uint32_t))
 	{
-		uint32_t imght = (uint32_t) math::abs(this->DIB->GetBitmapHeight());
+		uint32_t imght = (uint32_t) __abs(this->DIB->GetBitmapHeight());
 		uint64_t ptr = (uint64_t) this->ActualBMP + this->Header->BitmapArrayOffset;
 
 		uint64_t rowsize = ((this->DIB->GetBitsPerPixel() * (uint64_t) this->DIB->GetBitmapWidth() + 31) / 32) * 4;
@@ -145,7 +146,7 @@ namespace BitmapLibrary
 
 	void BitmapImage::Render32(uint16_t x, uint16_t y, uint32_t fw, uint32_t* fb)
 	{
-		uint32_t imght = (uint32_t) math::abs(this->DIB->GetBitmapHeight());
+		uint32_t imght = (uint32_t) __abs(this->DIB->GetBitmapHeight());
 		uint64_t ptr = (uint64_t) this->ActualBMP + this->Header->BitmapArrayOffset;
 
 		uint64_t rowsize = ((this->DIB->GetBitsPerPixel() * (uint64_t) this->DIB->GetBitmapWidth() + 31) / 32) * 4;
