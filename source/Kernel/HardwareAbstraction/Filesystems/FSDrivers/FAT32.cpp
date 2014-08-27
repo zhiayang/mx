@@ -325,7 +325,7 @@ namespace Filesystems
 		if(!vnd->clusters)
 			vnd->clusters = this->GetClusterChain(node, &numclus);
 
-		assert(vnd->clusters->Size() == numclus);
+		// assert(vnd->clusters->Size() == numclus);
 
 		// check that offset is not more than size
 		if(offset > vnd->filesize)

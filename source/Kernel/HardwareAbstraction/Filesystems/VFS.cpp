@@ -6,6 +6,7 @@
 #include <Kernel.hpp>
 #include <rdestl/hash_map.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 using namespace Kernel::HardwareAbstraction::Devices::Storage;
 namespace Kernel {
@@ -45,7 +46,7 @@ namespace Filesystems
 		{
 			for(auto v : *mountedfses)
 			{
-				if(strcmp(path.substr(0, math::min(path.length(), v->mountpoint->length())).c_str(), v->mountpoint->c_str()) == 0)
+				if(strcmp(path.substr(0, __min(path.length(), v->mountpoint->length())).c_str(), v->mountpoint->c_str()) == 0)
 					return v;
 			}
 

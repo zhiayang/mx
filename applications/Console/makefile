@@ -19,7 +19,7 @@ all: $(CXXOPT)
 	@:
 
 $(CXXOPT): $(CXXSRC) createdir
-	@$(CXX) $(CXXFLAGS) -o $@ $(CXXSRC) -lfreetype
+	@$(CXX) $(CXXFLAGS) -o $@ $(CXXSRC) -lpng -lz
 	@echo "userspace: console"
 
 createdir:

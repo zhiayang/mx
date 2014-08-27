@@ -19,10 +19,10 @@ namespace Heap
 extern "C" void init_libc()
 {
 	// init file descriptors
-	_stdin.fd	= 0;
-	_stdout.fd	= 1;
-	_stderr.fd	= 2;
-	_stdlog.fd	= 3;
+	_stdin.__fd	= 0;
+	_stdout.__fd	= 1;
+	_stderr.__fd	= 2;
+	_stdlog.__fd	= 3;
 
 	stdin	= &_stdin;
 	stdout	= &_stdout;
