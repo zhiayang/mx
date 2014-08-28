@@ -6,8 +6,9 @@
 CXX		= ../../build/toolchain/bin/x86_64-orionx-g++
 AS		= ../../build/toolchain/bin/x86_64-orionx-as
 LD		= ../../build/toolchain/bin/x86_64-orionx-ld
+STRIP		= ../../build/toolchain/bin/x86_64-orionx-strip
 
-CXXFLAGS	= -Wall -s -Os -std=gnu++11 -I../../build/sysroot/usr/local/include/freetype2
+CXXFLAGS	= -Wall -g -Os -std=gnu++11 -I../../build/sysroot/usr/local/include/freetype2
 
 CXXSRC	= $(shell find . -name "*.cpp")
 CXXOPT	= /Volumes/mx/apps/core/console.x
@@ -20,6 +21,7 @@ all: $(CXXOPT)
 
 $(CXXOPT): $(CXXSRC) createdir
 	@$(CXX) $(CXXFLAGS) -o $@ $(CXXSRC) -lpng -lz
+	$(STRIP) --strip-debug $(CXXOPT)
 	@echo "userspace: console"
 
 createdir:

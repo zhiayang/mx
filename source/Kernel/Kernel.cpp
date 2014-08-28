@@ -367,6 +367,8 @@ namespace Kernel
 			VFS::Mount(f1->Partitions->Get(0), fs, "/");
 			Log("Root FS Mounted at /");
 
+
+
 			auto fd = OpenFile("/apps/core/console.x", 0);
 			if(fd < 0)
 				HALT("file not found");
