@@ -31,10 +31,7 @@ namespace LoadBinary
 		void(*EntryPoint)() = (void(*)())(FileHeader->ElfEntry);
 		this->proc = Multitasking::CreateProcess(name, 0x1, EntryPoint);
 
-
 		// temporarily map the process's pml4.
-		Virtual::MapAddress(this->proc->CR3, this->proc->CR3, 0x03, true);
-
 		for(uint64_t k = 0; k < FileHeader->ElfProgramHeaderEntries; k++)
 		{
 			ELF64ProgramHeader_type* ProgramHeader = (ELF64ProgramHeader_type*)(this->buf + FileHeader->ElfProgramHeaderOffset + (k * FileHeader->ElfProgramHeaderEntrySize));
@@ -62,8 +59,6 @@ namespace LoadBinary
 				Virtual::UnMapAddress(TemporaryVirtualMapping + ProgramHeader->ProgramVirtualAddress + (m * 0x1000), true);
 			}
 		}
-
-		Virtual::UnMapAddress(this->proc->CR3, true);
 	}
 
 	ELFExecutable::~ELFExecutable()
