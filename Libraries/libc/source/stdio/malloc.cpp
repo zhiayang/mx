@@ -5,7 +5,9 @@
 #include "../../include/stdint.h"
 #include "../../include/stddef.h"
 #include "../../include/string.h"
+#include "../../include/stdio.h"
 
+#include "../../include/assert.h"
 
 namespace Heap
 {

@@ -33,6 +33,9 @@ namespace PIO
 
 	void ReadSector(ATADrive* dev, uint64_t Sector)
 	{
+		Log(3, "%x", __builtin_return_address(0));
+		HALT("pio");
+
 		SendCommandData(dev, Sector, 1);
 
 		IsWaiting14 = !dev->GetBus();

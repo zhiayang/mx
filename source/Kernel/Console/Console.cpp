@@ -37,7 +37,7 @@ namespace Console
 	void Initialise()
 	{
 		CharsPerLine = (GetResX() - OffsetLeft) / CharWidth - 1;
-		CharsPerPage = CharsPerLine * (GetResY() / 16) - 1;
+		CharsPerPage = CharsPerLine * (GetResY() / CharHeight) - 1;
 		CharsPerColumn = CharsPerPage / CharsPerLine;
 
 		VT_DidInit = true;
@@ -73,14 +73,14 @@ namespace Console
 			if(VT_CursorX > 0)
 			{
 				VT_CursorX--;
-				DrawChar(' ', (VT_CursorX * CharWidth) + OffsetLeft, (VT_CursorY * 16), VT_Colour);
+				DrawChar(' ', (VT_CursorX * CharWidth) + OffsetLeft, (VT_CursorY * CharHeight), VT_Colour);
 			}
 			else if(VT_CursorY > 0)
 			{
 				VT_CursorX = CharsPerLine - 1;
 				VT_CursorY--;
 
-				DrawChar(' ', (VT_CursorX * CharWidth) + OffsetLeft, (VT_CursorY * 16), VT_Colour);
+				DrawChar(' ', (VT_CursorX * CharWidth) + OffsetLeft, (VT_CursorY * CharHeight), VT_Colour);
 			}
 
 			return;
@@ -101,17 +101,17 @@ namespace Console
 
 				return;
 			}
-			DrawChar(c, (VT_CursorX * CharWidth) + OffsetLeft, (VT_CursorY * 16), VT_Colour);
+			DrawChar(c, (VT_CursorX * CharWidth) + OffsetLeft, (VT_CursorY * CharHeight), VT_Colour);
 			VT_CursorX++;
 
 		}
-		else if((VT_CursorX * 8) >= ((GetResX()) - 10))
+		else if((VT_CursorX * CharWidth) >= ((GetResX()) - 10))
 		{
 			// Reached end of line
 			VT_CursorX = 0;
 			VT_CursorY++;
 
-			DrawChar(c, (VT_CursorX * CharWidth) + OffsetLeft, (VT_CursorY * 16), VT_Colour);
+			DrawChar(c, (VT_CursorX * CharWidth) + OffsetLeft, (VT_CursorY * CharHeight), VT_Colour);
 			VT_CursorX = 1;
 		}
 		else
@@ -151,7 +151,7 @@ namespace Console
 			}
 
 			// Normal printing
-			DrawChar(c, (VT_CursorX * CharWidth) + OffsetLeft, (VT_CursorY * 16), VT_Colour);
+			DrawChar(c, (VT_CursorX * CharWidth) + OffsetLeft, (VT_CursorY * CharHeight), VT_Colour);
 			VT_CursorX++;
 		}
 
