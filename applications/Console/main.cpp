@@ -9,187 +9,58 @@
 #include <unistd.h>
 #include <assert.h>
 
-// #include <algorithm>
+#define STB_TRUETYPE_IMPLEMENTATION
+#include <stb_truetype.h>
 
+void putpixel(int x, int y)
+{
+	uint64_t pos = y * 1024 + x;
+	pos *= 4;	// 4 bytes per pixel
 
-// void operator delete(void* p) noexcept
-// {
-// 	free(p);
-// }
+	*((uint32_t*) (0xFD000000 + pos)) = 0xFFFFFFFF;
+}
 
-// void operator delete[](void* p) noexcept
-// {
-// 	free(p);
-// }
+void printchar(stbtt_fontinfo* font, int x, int y, int size, char c)
+{
+	unsigned char *bitmap;
+	int w = 0;
+	int h = 0;
 
-// void* operator new(unsigned long size)
-// {
-// 	printf("[%d]", size);
-// 	return (void*) malloc(size);
-// }
+	bitmap = stbtt_GetCodepointBitmap(font, 0, stbtt_ScaleForPixelHeight(font, size), c, &w, &h, 0,0);
 
-// void* operator new[](unsigned long size)
-// {
-// 	printf("\narr: [%d]\n", size);
-// 	return (void*) malloc(size);
-// }
+	for(int i = 0; i < w; i++)
+	{
+		for(int j = 0; j < h; j++)
+		{
+			if(bitmap[w * j + i])
+				putpixel(x + i, y + j);
+		}
+	}
 
-
-
-// int main()
-// {
-// 	printf("hello, world\n");
-// 	// printf("reading file\n");
-
-
-// 	// png_structp png_ptr;
-// 	// png_infop info_ptr;
-
-// 	// uint8_t sig[8];
-// 	// FILE* infile = fopen("/logo.png", "");
-// 	// fread(&sig, 1, 8, infile);
-// 	// printf("file read\n");
-
-// 	// if(!png_check_sig(sig, 8))
-// 	// {
-// 	// 	printf("invalid png file\n");
-// 	// 	return 1;
-// 	// }
-
-// 	// printf("png file verified\n");
-
-// 	// png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-// 	// if(!png_ptr)
-// 	// {
-// 	// 	printf("out of memory\n");
-// 	// 	return 1;
-// 	// }
-
-// 	// info_ptr = png_create_info_struct(png_ptr);
-// 	// if(!info_ptr)
-// 	// {
-// 	// 	png_destroy_read_struct(&png_ptr, NULL, NULL);
-// 	// 	printf("out of memory");
-// 	// 	return 1;
-// 	// }
-
-// 	// printf("structs created\n");
-
-// 	// png_init_io(png_ptr, infile);
-// 	// png_set_sig_bytes(png_ptr, 8);
-// 	// png_read_info(png_ptr, info_ptr);
-// 	// printf("info read\n");
-
-// 	// uint32_t width = 0;
-// 	// uint32_t height = 0;
-// 	// auto depth = 0;
-// 	// auto ctype = 0;
-// 	// png_get_IHDR(png_ptr, info_ptr, &width, &height, &depth, &ctype, NULL, NULL, NULL);
-
-// 	// printf("info header got. dimensions: %dx%d:%d", width, height, depth);
-// 	// size_t  i, rowbytes;
-// 	// // uint8_t* row_pointers[height];
-
-// 	// uint8_t** row_pointers = (uint8_t**) malloc(height * sizeof(uint8_t*));
-
-// 	// uint8_t* image_data = nullptr;
-
-// 	// png_read_update_info(png_ptr, info_ptr);
-
-// 	// rowbytes = png_get_rowbytes(png_ptr, info_ptr);
-// 	// // *pChannels = (int)png_get_channels(png_ptr, info_ptr);
-
-// 	// if((image_data = (uint8_t*) malloc(rowbytes * height)) == NULL)
-// 	// 	png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
-
-// 	// for(i = 0; i < height; i++)
-// 	// 	row_pointers[i] = image_data + i * rowbytes;
-
-
-// 	// if(ctype == PNG_COLOR_TYPE_PALETTE)
-// 	// {
-// 	// 	png_set_palette_to_rgb(png_ptr);
-// 	// }
-// 	// if(ctype == PNG_COLOR_TYPE_GRAY && depth < 8)
-// 	// {
-// 	// 	printf("fail");
-// 	// 	return 0;
-// 	// }
-// 	// if(png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
-// 	// {
-// 	// 	png_set_tRNS_to_alpha(png_ptr);
-// 	// }
-
-// 	// if(depth == 16)
-// 	// 	png_set_strip_16(png_ptr);
-
-// 	// if(ctype == PNG_COLOR_TYPE_GRAY || ctype == PNG_COLOR_TYPE_GRAY_ALPHA)
-// 	// 	png_set_gray_to_rgb(png_ptr);
-
-
-// 	// // flip the colours
-// 	// png_set_bgr(png_ptr);
-// 	// assert("ENOSUP" && ctype == PNG_COLOR_TYPE_RGBA);
-// 	// png_read_image(png_ptr, row_pointers);
-// 	// printf("done\n\n");
-
-
-
-// 	// size_t x = 0;
-// 	// size_t y = 0;
-// 	// size_t fw = 1024;
-// 	// uint64_t fb = 0xFD000000;
-// 	// uint8_t* ptr = image_data;
-
-
-// 	// for(size_t d = 0; d < height; d++)
-// 	// {
-// 	// 	uint64_t pos = (y * fw + x) * 4;
-// 	// 	memcpy((void*)((uint64_t) fb + pos), (void*) ptr, width * 4);
-
-// 	// 	ptr += 4 * width;
-
-// 	// 	y++;
-// 	// }
-
-// 	// printf("\n\n\n\n\n\n\n\n\n\n\n\n");
-// 	printf("hi");
-
-// 	// uint8_t* ptr = (uint8_t*) malloc(1024);
-// 	uint8_t* ptr = new uint8_t[1024];
-// 	memset(ptr, 0xFF, 1024);
-
-// 	// std::vector<int>* vec = new std::vector<int>();
-// 	// for(int v = 0; v < 4000; v += 100)
-// 	// 	vec->push_back(v);
-
-// 	// for(auto v : *vec)
-// 	// 	printf("[%d]", v);
-
-// 	printf("done");
-
-// 	return 0;
-// }
-
-
-
-#include <vector>
+	stbtt_FreeBitmap(bitmap, NULL);
+}
 
 int main()
 {
-	// uint8_t* ptr = new uint8_t[1024];
-	// memset(ptr, 0xAB, 1024);
+	stbtt_fontinfo font;
+	void* buffer = malloc(500000);
+	fread(buffer, 1, 475160, fopen("/menlo.ttf", "rb"));
+	stbtt_InitFont(&font, (const uint8_t*) buffer, stbtt_GetFontOffsetForIndex((const uint8_t*) buffer, 0));
 
-	// printf("%x", ptr);
+	printchar(&font, 100, 300, 100, 'F');
+	printchar(&font, 150, 300, 100, 'U');
+	printchar(&font, 200, 300, 100, 'C');
+	printchar(&font, 250, 300, 100, 'K');
+	printchar(&font, 300, 300, 100, 'T');
+	printchar(&font, 350, 300, 100, 'H');
+	printchar(&font, 400, 300, 100, 'I');
+	printchar(&font, 450, 300, 100, 'S');
+	printchar(&font, 500, 300, 100, 'S');
+	printchar(&font, 550, 300, 100, 'H');
+	printchar(&font, 600, 300, 100, 'I');
+	printchar(&font, 650, 300, 100, 'T');
 
-	std::vector<int> vec;
-	for(int v = 0; v < 4000; v += 100)
-		vec.push_back(v);
 
-	for(auto v : vec)
-		printf("[%d]", v);
-
-	printf("done");
 	return 0;
 }
 
