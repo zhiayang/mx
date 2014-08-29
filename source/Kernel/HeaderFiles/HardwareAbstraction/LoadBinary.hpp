@@ -17,43 +17,26 @@ namespace LoadBinary
 		RawBinary
 	};
 
+	Multitasking::Process* Load(const char* path, const char* procname, void* a1 = 0, void* a2 = 0, void* a3 = 0, void* a4 = 0, void* a5 = 0, void* a6 = 0);
 
-
-	class GenericExecutable
+	class ExecutableFormat
 	{
 		public:
-			GenericExecutable(ExecutableType type);
-			GenericExecutable(const char* pn, uint8_t* data);
-			virtual ~GenericExecutable();
-			void AutomaticLoadExecutable();
+			virtual ~ExecutableFormat() { }
+			virtual uint64_t GetEntryPoint();
+			virtual void Load(Multitasking::Process* proc);
 
-			void SetPriority(uint8_t Priority);
-			void SetApplicationType(Multitasking::ThreadType type);
-			void Execute();
-
-			ExecutableType Type;
-
-			Multitasking::Process* proc;
-			const char* procname;
-			uint8_t* buf;
+		protected:
+			uint8_t* buffer;
 	};
 
-
-	class ELFExecutable : public GenericExecutable
+	class ELFExecutable : public ExecutableFormat
 	{
 		public:
-			ELFExecutable(const char* name, uint8_t* databuffer);
+			ELFExecutable(uint8_t* buf);
 			~ELFExecutable();
-	};
-
-	class MachOExecutable : public GenericExecutable
-	{
-		public:
-			MachOExecutable(const char* pathname, uint8_t* databuffer);
-			~MachOExecutable();
-
-			void SetPriority(uint8_t Priority);
-			void Execute();
+			virtual uint64_t GetEntryPoint() override;
+			virtual void Load(Multitasking::Process* proc) override;
 	};
 }
 }

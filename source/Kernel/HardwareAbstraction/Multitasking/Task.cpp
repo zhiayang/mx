@@ -86,17 +86,17 @@ namespace Multitasking
 		*--stack = 0;					// R12 (-72)
 		*--stack = 0;					// R11 (-80)
 		*--stack = 0;					// R10 (-88)
-		*--stack = 0;					// R9 (-96)
-		*--stack = 0;					// R8 (-104)
+		*--stack = (uint64_t) p5;			// R9 (-96)
+		*--stack = (uint64_t) p6;			// R8 (-104)
 
-		*--stack = 0;					// RDX (-112)	(envc)
-		*--stack = 0;					// RCX (-120)	(envp)
+		*--stack = (uint64_t) p3;			// RDX (-112)	(envc)
+		*--stack = (uint64_t) p4;			// RCX (-120)	(envp)
 		*--stack = 0;					// RBX (-128)
 		*--stack = 0;					// RAX (-136)
 
 		*--stack = 0;					// RBP (-144)
-		*--stack = 0;					// RSI (-152)	(argv)
-		*--stack = 0;					// RDI (-160)	(argc)
+		*--stack = (uint64_t) p2;			// RSI (-152)	(argv)
+		*--stack = (uint64_t) p1;			// RDI (-160)	(argc)
 
 		thread->StackPointer = (uint64_t) stack;
 	}
@@ -191,7 +191,12 @@ namespace Multitasking
 		return CreateThread(Kernel::KernelProcess, Function, Priority, p1, p2, p3, p4, p5, p6);
 	}
 
-	Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)(), uint8_t Priority)
+	Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)())
+	{
+		return CreateProcess(name, Flags, Function, 1, 0, 0, 0, 0, 0, 0);
+	}
+
+	Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)(), uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
 	{
 		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
 		using Library::LinkedList;
@@ -230,7 +235,7 @@ namespace Multitasking
 
 
 		NumProcesses++;
-		(void) CreateThread(process, Function, Priority);
+		(void) CreateThread(process, Function, Priority, a1, a2, a3, a4, a5, a6);
 
 		if(FirstProc)
 			FirstProc = false;
@@ -247,7 +252,6 @@ namespace Multitasking
 		Log("Creating new process in VAS (%s): CR3(phys): %x, PID %d", name, (uint64_t) PML4, process->ProcessID);
 		return process;
 	}
-
 }
 }
 }

@@ -520,18 +520,18 @@
 	"buffers":
 	[
 		{
-			"file": "applications/Console/makefile",
+			"file": "DisplayServer/makefile",
 			"settings":
 			{
-				"buffer_size": 670,
+				"buffer_size": 689,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "source/Kernel/Kernel.cpp",
+			"file": "Console/main.cpp",
 			"settings":
 			{
-				"buffer_size": 18957,
+				"buffer_size": 1604,
 				"line_ending": "Unix"
 			}
 		}
@@ -803,25 +803,17 @@
 	},
 	"expanded_folders":
 	[
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/Console",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/VideoOutput",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/VideoOutput/LinearFramebuffer",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/Utility"
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/Console",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/DisplayServer"
 	],
 	"file_history":
 	[
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/applications.sublime-project",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/Console/makefile",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/Console/main.cpp",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/DisplayServer/main.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/mx.sublime-project",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/Console/makefile",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/DisplayServer/makefile",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/malloc.cpp",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/stb_truetype.h",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/_heap.cpp",
@@ -847,6 +839,7 @@
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/limits.h",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Filesystems/FSDrivers/FAT32.cpp",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Filesystems/VFS.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/mx.sublime-project",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/defs/_limits.h",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdlib/strtoul.cpp",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/makefile",
@@ -943,13 +936,11 @@
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Devices/Keyboard/Keyboard.cpp",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Filesystems/FSDrivers/Console/Console.cpp",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Devices/PS2/PS2Controller.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/HardwareAbstraction/IO.hpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/Kernel.hpp",
-		"/Users/zhiayang/Library/Application Support/Sublime Text 3/Packages/SublimeClang/SublimeClang.sublime-settings"
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/HardwareAbstraction/IO.hpp"
 	],
 	"find":
 	{
-		"height": 35.0
+		"height": 26.0
 	},
 	"find_in_files":
 	{
@@ -1255,19 +1246,19 @@
 			[
 				{
 					"buffer": 0,
-					"file": "applications/Console/makefile",
+					"file": "DisplayServer/makefile",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 670,
+						"buffer_size": 689,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								613,
-								613
+								459,
+								459
 							]
 						],
 						"settings":
@@ -1283,19 +1274,19 @@
 				},
 				{
 					"buffer": 1,
-					"file": "source/Kernel/Kernel.cpp",
+					"file": "Console/main.cpp",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 18957,
+						"buffer_size": 1604,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								10719,
-								10719
+								675,
+								675
 							]
 						],
 						"settings":
@@ -1304,7 +1295,7 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 6378.0,
+						"translation.y": 40.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
@@ -1315,7 +1306,7 @@
 	],
 	"incremental_find":
 	{
-		"height": 25.0
+		"height": 26.0
 	},
 	"input":
 	{
@@ -1360,10 +1351,10 @@
 	{
 		"height": 100.0
 	},
-	"project": "mx.sublime-project",
+	"project": "applications.sublime-project",
 	"replace":
 	{
-		"height": 64.0
+		"height": 48.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -1525,7 +1516,7 @@
 		[
 			[
 				"",
-				"~/Desktop/Stuff/OSDev/Orion-X4/testbed/testbed.sublime-project"
+				"~/Desktop/Stuff/OSDev/mx/mx.sublime-project"
 			],
 			[
 				"web",

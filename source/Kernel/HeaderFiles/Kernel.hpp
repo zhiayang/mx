@@ -45,21 +45,20 @@
 
 // Global IRQ0 tickrate.
 #define GlobalTickRate		250
-#define GlobalMilliseconds		1000
-
+#define GlobalMilliseconds	1000
 
 // Configuration paramaters
 #define DEBUG			1
 #define SKIPREGDUMP		0
 #define SERIALMIRROR		0
-#define LOGSPAM			0
-#define DMABUFFERSIZE		0x4000
-#define ENABLELOGGING		1
-#define EXTRADELAY			1
+#define LOGSPAM		0
+#define DMABUFFERSIZE	0x4000
+#define ENABLELOGGING	1
+#define EXTRADELAY		1
 
 #define SyscallNumber		0xF8
-#define IPCNumber			0xF9
-#define VolumeMountPoint		"/Volumes"
+#define IPCNumber		0xF9
+#define VolumeMountPoint	"/Volumes/"
 
 
 
@@ -143,8 +142,8 @@ namespace Kernel
 ;
 
 
-void operator delete(void* p) noexcept;
-void operator delete[](void* p) noexcept;
+void operator delete(void* p);
+void operator delete[](void* p);
 void* operator new(unsigned long size);
 void* operator new[](unsigned long size);
 void* operator new(unsigned long, void* addr) noexcept;

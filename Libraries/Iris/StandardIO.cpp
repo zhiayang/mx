@@ -3,7 +3,6 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "HeaderFiles/StandardIO.hpp"
-#include <string>
 #include <string.h>
 #include <math.h>
 #include "HeaderFiles/Memory.hpp"
@@ -22,12 +21,12 @@ namespace StandardIO
 	{
 	}
 
-	static std::string* stringtoappend = 0;
+	// static std::string* stringtoappend = 0;
 
-	static inline void AppendToString(uint8_t c)
-	{
-		stringtoappend += ((char) c);
-	}
+	// static inline void AppendToString(uint8_t c)
+	// {
+	// 	stringtoappend += ((char) c);
+	// }
 
 
 	uint64_t PrintString(const char* string, int64_t length, void (*pf)(uint8_t))
@@ -319,16 +318,16 @@ namespace StandardIO
 	}
 
 
-	void PrintToString(std::string* f, const char* str, ...)
-	{
-		stringtoappend = f;
-		va_list args;
-		va_start(args, str);
-		PrintFormatted(AppendToString, str, args);
-		va_end(args);
+	// void PrintToString(std::string* f, const char* str, ...)
+	// {
+	// 	stringtoappend = f;
+	// 	va_list args;
+	// 	va_start(args, str);
+	// 	PrintFormatted(AppendToString, str, args);
+	// 	va_end(args);
 
-		stringtoappend = 0;
-	}
+	// 	stringtoappend = 0;
+	// }
 
 
 	void PrintFormatted(const char* str, va_list args)
