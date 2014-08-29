@@ -20,7 +20,7 @@ all: $(CXXOPT)
 	@:
 
 $(CXXOPT): $(CXXSRC) createdir
-	@$(CXX) $(CXXFLAGS) -o $@ $(CXXSRC)
+	@$(CXX) $(CXXFLAGS) -o $@ $(CXXSRC) -lfreetype
 	$(STRIP) --strip-debug $(CXXOPT)
 	@echo "userspace: console"
 

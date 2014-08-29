@@ -96,6 +96,9 @@ namespace Multitasking
 			r = CurrentThread;
 		}
 
+		if(r == nullptr)
+			HALT("wtfs");
+
 		return r;
 	}
 
