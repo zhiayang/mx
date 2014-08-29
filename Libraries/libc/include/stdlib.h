@@ -25,6 +25,8 @@
 #include "defs/_file.h"
 #include "defs/_func.h"
 
+#include "malloc.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -43,11 +45,6 @@ typedef struct	{ long long quot; long long rem; }	lldiv_t;
 
 
 
-// malloc and friends
-void*	malloc(size_t size);
-void	free(void* ptr);
-void*	calloc(size_t num, size_t size);
-void*	realloc(void* ptr, size_t newsize);
 
 
 // misc
