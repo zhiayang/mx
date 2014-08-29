@@ -47,18 +47,19 @@ int main()
 	fread(buffer, 1, 475160, fopen("/menlo.ttf", "rb"));
 	stbtt_InitFont(&font, (const uint8_t*) buffer, stbtt_GetFontOffsetForIndex((const uint8_t*) buffer, 0));
 
-	printchar(&font, 100, 300, 100, 'F');
-	printchar(&font, 150, 300, 100, 'U');
-	printchar(&font, 200, 300, 100, 'C');
-	printchar(&font, 250, 300, 100, 'K');
-	printchar(&font, 300, 300, 100, 'T');
-	printchar(&font, 350, 300, 100, 'H');
-	printchar(&font, 400, 300, 100, 'I');
-	printchar(&font, 450, 300, 100, 'S');
-	printchar(&font, 500, 300, 100, 'S');
-	printchar(&font, 550, 300, 100, 'H');
-	printchar(&font, 600, 300, 100, 'I');
-	printchar(&font, 650, 300, 100, 'T');
+	printchar(&font, 100, 300, 100, 'S');
+	printchar(&font, 150, 300, 100, 'C');
+	printchar(&font, 200, 300, 100, 'R');
+	printchar(&font, 250, 300, 100, 'E');
+	printchar(&font, 300, 300, 100, 'W');
+	printchar(&font, 400, 300, 100, 'F');
+	printchar(&font, 450, 300, 100, 'R');
+	printchar(&font, 500, 300, 100, 'E');
+	printchar(&font, 550, 300, 100, 'E');
+	printchar(&font, 600, 300, 100, 'T');
+	printchar(&font, 650, 300, 100, 'Y');
+	printchar(&font, 700, 300, 100, 'P');
+	printchar(&font, 750, 300, 100, 'E');
 
 
 	return 0;
