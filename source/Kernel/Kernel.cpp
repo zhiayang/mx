@@ -304,11 +304,53 @@ namespace Kernel
 
 		Log("Compatible video card located");
 
-		// PrintFormatted("Initialising RTC...\n");
-		// Devices::RTC::Initialise(0);
-		// Log("RTC Initialised");
+		PrintFormatted("Initialising RTC...\n");
+		Devices::RTC::Initialise(0);
+		Log("RTC Initialised");
 
 		KernelKeyboard = new PS2Keyboard();
+
+
+		// setup framebuffer
+		{
+			uint16_t PrefResX = 1024;
+			uint16_t PrefResY = 600;
+
+			// Set video mode
+			PrintFormatted("\nInitialising Linear Framebuffer at %x...", LFBAddr);
+			VideoDevice->SetMode(PrefResX, PrefResY, 32);
+			VideoOutput::LinearFramebuffer::Initialise();
+
+			Log("Requested resolution of %dx%d, LFB at %x", PrefResX, PrefResY, LFBAddr);
+
+
+			// scope this.
+			{
+				// Get the set resolution (may be different than our preferred)
+				uint16_t ResX = VideoOutput::LinearFramebuffer::GetResX();
+				uint16_t ResY = VideoOutput::LinearFramebuffer::GetResX();
+
+				// Calculate how many bytes we need. (remember, 4 bytes per pixel)
+				uint32_t bytes = (ResX * ResY) * 4;
+
+				// Get that rounded up to the nearest page
+				bytes = (bytes + (4096 - 1)) / 4096;
+				LFBInPages = bytes;
+
+				// map a bunch of pages for the buffer.
+				for(uint64_t k = 0; k < bytes; k++)
+					Virtual::MapAddress(LFBBufferAddress_INT + (k * 0x1000), Physical::AllocatePage(), 0x07);
+
+				Virtual::MapRegion(LFBAddr, LFBAddr, bytes, 0x07);
+				// LFBBufferAddr = LFBBufferAddress_INT;
+			}
+
+			Log("Video mode set");
+			Console::Initialise();
+		}
+
+
+
 		// manual jump start.
 		{
 			using namespace Filesystems;
@@ -326,6 +368,7 @@ namespace Kernel
 			Log("Root FS Mounted at /");
 
 
+
 			auto fd = OpenFile("/apps/core/console.x", 0);
 			if(fd < 0)
 				HALT("file not found");
@@ -339,6 +382,7 @@ namespace Kernel
 			Exec->AutomaticLoadExecutable();
 			Exec->Execute();
 		}
+
 
 
 

@@ -7,6 +7,7 @@
 #include <HardwareAbstraction/BinaryFormats/ELF.hpp>
 
 #include <Memory.hpp>
+#include <rdestl/rdestl.h>
 
 using namespace Library;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
@@ -31,10 +32,9 @@ namespace LoadBinary
 		void(*EntryPoint)() = (void(*)())(FileHeader->ElfEntry);
 		this->proc = Multitasking::CreateProcess(name, 0x1, EntryPoint);
 
+		rde::hash_map<uint64_t, bool>* allocatedpgs = new rde::hash_map<uint64_t, bool>();
 
 		// temporarily map the process's pml4.
-		Virtual::MapAddress(this->proc->CR3, this->proc->CR3, 0x03, true);
-
 		for(uint64_t k = 0; k < FileHeader->ElfProgramHeaderEntries; k++)
 		{
 			ELF64ProgramHeader_type* ProgramHeader = (ELF64ProgramHeader_type*)(this->buf + FileHeader->ElfProgramHeaderOffset + (k * FileHeader->ElfProgramHeaderEntrySize));
@@ -44,6 +44,11 @@ namespace LoadBinary
 
 			for(uint64_t m = 0; m < (ProgramHeader->ProgramMemorySize + 0x1000) / 0x1000; m++)
 			{
+				if(allocatedpgs->size() > 0 && allocatedpgs->find(ProgramHeader->ProgramVirtualAddress + (m * 0x1000)) != allocatedpgs->end())
+					continue;	// we've already mapped this address to a page, continue.
+
+				(*allocatedpgs)[ProgramHeader->ProgramVirtualAddress + (m * 0x1000)] = true;
+
 				uint64_t t = Physical::AllocatePage();
 				Virtual::MapAddress(ProgramHeader->ProgramVirtualAddress + (m * 0x1000), t, 0x07, (Virtual::PageMapStructure*) proc->CR3);
 
@@ -63,7 +68,7 @@ namespace LoadBinary
 			}
 		}
 
-		Virtual::UnMapAddress(this->proc->CR3, true);
+		delete allocatedpgs;
 	}
 
 	ELFExecutable::~ELFExecutable()

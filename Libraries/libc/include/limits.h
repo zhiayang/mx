@@ -32,10 +32,11 @@
 #define SHRT_MAX		__SHRT_MAX
 #define USHRT_MAX		__USHRT_MAX
 
-#define INT_MIN			__INT_MIN
-#define INT_MAX			__INT_MAX
+#define INT_MIN		__INT_MIN
+#define INT_MAX		__INT_MAX
 #define UINT_MAX		__UINT_MAX
 
+#define LONG_MIN		__LONG_MIN
 #define LONG_MAX		__LONG_MAX
 #define ULONG_MAX		__ULONG_MAX
 
