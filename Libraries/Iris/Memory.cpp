@@ -26,7 +26,7 @@ namespace Library
 			uint8_t* dest = (uint8_t*) destptr;
 
 			for(uint64_t i = 0; i < length; i++)
-				dest[i] = value & 0xFF;
+				dest[i] = value;
 
 			return destptr;
 		}

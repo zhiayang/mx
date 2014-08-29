@@ -6,59 +6,78 @@
 #include <stdlib.h>
 #include <png.h>
 #include <string.h>
+#include <unistd.h>
+#include <assert.h>
 
+#define STB_TRUETYPE_IMPLEMENTATION
+#include <stb_truetype.h>
 
-static png_structp png_ptr;
-static png_infop info_ptr;
+void putpixel(int x, int y)
+{
+	uint64_t pos = y * 1024 + x;
+	pos *= 4;	// 4 bytes per pixel
 
+	*((uint32_t*) (0xFD000000 + pos)) = 0xFFFFFFFF;
+}
+
+void printchar(stbtt_fontinfo* font, int x, int y, int size, char c)
+{
+	unsigned char *bitmap;
+	int w = 0;
+	int h = 0;
+
+	bitmap = stbtt_GetCodepointBitmap(font, 0, stbtt_ScaleForPixelHeight(font, size), c, &w, &h, 0,0);
+
+	for(int i = 0; i < w; i++)
+	{
+		for(int j = 0; j < h; j++)
+		{
+			if(bitmap[w * j + i])
+				putpixel(x + i, y + j);
+		}
+	}
+
+	stbtt_FreeBitmap(bitmap, NULL);
+}
 
 int main()
 {
-	printf("hello, world\n");
-	printf("reading file\n");
+	stbtt_fontinfo font;
+	void* buffer = malloc(500000);
+	fread(buffer, 1, 475160, fopen("/menlo.ttf", "rb"));
+	stbtt_InitFont(&font, (const uint8_t*) buffer, stbtt_GetFontOffsetForIndex((const uint8_t*) buffer, 0));
 
-	uint8_t sig[8];
-	FILE* infile = fopen("/logo.png", "");
-	fread(&sig, 1, 8, infile);
-	printf("file read\n");
+	printchar(&font, 100, 300, 100, 'S');
+	printchar(&font, 150, 300, 100, 'C');
+	printchar(&font, 200, 300, 100, 'R');
+	printchar(&font, 250, 300, 100, 'E');
+	printchar(&font, 300, 300, 100, 'W');
+	printchar(&font, 400, 300, 100, 'F');
+	printchar(&font, 450, 300, 100, 'R');
+	printchar(&font, 500, 300, 100, 'E');
+	printchar(&font, 550, 300, 100, 'E');
+	printchar(&font, 600, 300, 100, 'T');
+	printchar(&font, 650, 300, 100, 'Y');
+	printchar(&font, 700, 300, 100, 'P');
+	printchar(&font, 750, 300, 100, 'E');
 
-	if(!png_check_sig(sig, 8))
-	{
-		printf("invalid png file\n");
-		return 1;
-	}
-
-	printf("png file verified\n");
-
-	png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-	if(!png_ptr)
-	{
-		printf("out of memory\n");
-		return 1;
-	}
-
-	info_ptr = png_create_info_struct(png_ptr);
-	if(!info_ptr)
-	{
-		png_destroy_read_struct(&png_ptr, NULL, NULL);
-		printf("out of memory");
-		return 1;
-	}
-
-	printf("structs created\n");
-
-	png_init_io(png_ptr, infile);
-	png_set_sig_bytes(png_ptr, 8);
-	png_read_info(png_ptr, info_ptr);
-	printf("info read\n");
-
-	uint32_t width = 0;
-	uint32_t height = 0;
-	auto depth = 0;
-	auto ctype = 0;
-	png_get_IHDR(png_ptr, info_ptr, &width, &height, &depth, &ctype, NULL, NULL, NULL);
-
-	printf("info header got. dimensions: %dx%d:%d", width, height, depth);
 
 	return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
