@@ -85,23 +85,26 @@ namespace SystemCalls
 
 	extern "C" void Syscall_SpawnProcess(const char* ExecutableFilename, const char* ProcessName)
 	{
-		auto fd = Filesystems::OpenFile(ExecutableFilename, 0);
-		if(fd == -1)
-			// todo: set errno
-			return;
+		auto proc = LoadBinary::Load(ExecutableFilename, ProcessName);
+		Multitasking::AddToQueue(proc);
 
-		struct stat s;
-		Filesystems::Stat(fd, &s);
-		uint8_t* prog = new uint8_t[s.st_size];
+		// auto fd = Filesystems::OpenFile(ExecutableFilename, 0);
+		// if(fd == -1)
+		// 	// todo: set errno
+		// 	return;
 
-		LoadBinary::GenericExecutable* Exec = new LoadBinary::GenericExecutable(ProcessName, prog);
-		Exec->AutomaticLoadExecutable();
+		// struct stat s;
+		// Filesystems::Stat(fd, &s);
+		// uint8_t* prog = new uint8_t[s.st_size];
 
-		Exec->SetApplicationType(Multitasking::ThreadType::NormalApplication);
-		IPC::CentralDispatch::AddApplicationToList(Exec->proc->Threads->Front(), Exec->proc);
+		// LoadBinary::GenericExecutable* Exec = new LoadBinary::GenericExecutable(ProcessName, prog);
+		// Exec->AutomaticLoadExecutable();
 
-		Exec->Execute();
-		delete[] prog;
+		// Exec->SetApplicationType(Multitasking::ThreadType::NormalApplication);
+		// IPC::CentralDispatch::AddApplicationToList(Exec->proc->Threads->Front(), Exec->proc);
+
+		// Exec->Execute();
+		// delete[] prog;
 	}
 
 

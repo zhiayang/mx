@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include "Defines.hpp"
 #include "SystemCall.hpp"
-#include <string>
 
 namespace Library
 {
@@ -24,7 +23,7 @@ namespace Library
 		void PrintFormatted(void (*pf)(uint8_t), const char* str, va_list);
 		void PrintFormatted(const char* string, va_list);
 
-		void PrintToString(std::string*, const char* str, ...);
+		// void PrintToString(std::string*, const char* str, ...);
 	}
 }
 

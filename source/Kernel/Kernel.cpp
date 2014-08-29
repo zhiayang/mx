@@ -367,20 +367,29 @@ namespace Kernel
 			VFS::Mount(f1->Partitions->Get(0), fs, "/");
 			Log("Root FS Mounted at /");
 
+		}
 
+		Console::ClearScreen();
+		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
+		{
+			// setup args:
+			// 0: prog name (duh)
+			// 1: FB address
+			// 2: width
+			// 3: height
+			// 4: bpp (32)
 
-			auto fd = OpenFile("/apps/core/console.x", 0);
-			if(fd < 0)
-				HALT("file not found");
+			const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
+			auto proc = LoadBinary::Load(path, "displayd",
+				(void*) 5, (void*) new uint64_t[5] { (uint64_t) path, GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
 
-			struct stat st;
-			Stat(fd, &st);
+			proc->Threads->Get(0)->Priority = 2;
+			Multitasking::AddToQueue(proc);
+		}
 
-			auto buf = new uint8_t[st.st_size];
-			Read(fd, (void*) buf, st.st_size);
-			LoadBinary::GenericExecutable* Exec = new LoadBinary::GenericExecutable("console", buf);
-			Exec->AutomaticLoadExecutable();
-			Exec->Execute();
+		Log("Starting console...");
+		{
+
 		}
 
 
@@ -388,7 +397,7 @@ namespace Kernel
 
 		// kernel stops here
 		// for now.
-		PrintFormatted("\n\nKernel Halted\n");
+		// PrintFormatted("\n\nKernel Halted\n");
 		BLOCK();
 
 
@@ -687,12 +696,12 @@ namespace rapidxml
 	}
 }
 
-void operator delete(void* p) noexcept
+void operator delete(void* p)
 {
 	KernelHeap::FreeChunk(p);
 }
 
-void operator delete[](void* p) noexcept
+void operator delete[](void* p)
 {
 	KernelHeap::FreeChunk(p);
 }

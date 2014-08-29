@@ -130,7 +130,7 @@ clean: cleandisk
 	@find source -name "*.o" | xargs rm
 	@find Libraries -name "*.o" | xargs rm
 	@find Libraries -name "*.a" | xargs rm
-	@find userspace -name "*.o" | xargs rm
+	@find applications -name "*.o" | xargs rm
 	-@rm build/*.mxa
 	-@rm $(CXXDEPS)
 

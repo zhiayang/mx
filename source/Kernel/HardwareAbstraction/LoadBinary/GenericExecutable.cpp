@@ -14,56 +14,39 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace LoadBinary
 {
-	void GenericExecutable::SetApplicationType(Multitasking::ThreadType type)
+	Multitasking::Process* Load(const char* path, const char* procname, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
 	{
-		for(uint64_t i = 0; i < this->proc->Threads->Size(); i++)
-		{
-			this->proc->Threads->Get(i)->Type = type;
-		}
-	}
+		assert(path);
+		assert(procname);
 
-	void GenericExecutable::SetPriority(uint8_t Priority)
-	{
-		for(uint64_t i = 0; i < this->proc->Threads->Size(); i++)
-		{
-			this->proc->Threads->Get(i)->Priority = Priority;
-		}
-	}
+		using namespace Filesystems;
+		auto fd = OpenFile(path, 0);
+		if(fd < 0)
+			HALT("file not found");
 
-	void GenericExecutable::Execute()
-	{
-		Multitasking::AddToQueue(this->proc);
-	}
+		struct stat st;
+		Stat(fd, &st);
 
-	GenericExecutable::GenericExecutable(ExecutableType type)
-	{
-		this->Type = type;
-	}
+		auto buf = new uint8_t[st.st_size];
+		Read(fd, (void*) buf, st.st_size);
 
-	GenericExecutable::GenericExecutable(const char* pn, uint8_t* data)
-	{
-		strcpy((char*) this->procname, pn);
-		this->buf = data;
-	}
+		assert(buf);
 
-	GenericExecutable::~GenericExecutable()
-	{
-	}
-
-	void GenericExecutable::AutomaticLoadExecutable()
-	{
-		assert(this->buf);
+		Multitasking::Process* proc = nullptr;
 
 		// check for ELF
-		if(this->buf[0] == ELF_MAGIC0 && this->buf[1] == ELF_MAGIC1 && this->buf[2] == ELF_MAGIC2 && this->buf[3] == ELF_MAGIC3)
+		if(buf[0] == ELF_MAGIC0 && buf[1] == ELF_MAGIC1 && buf[2] == ELF_MAGIC2 && buf[3] == ELF_MAGIC3)
 		{
-			ELFExecutable* elf = new ELFExecutable(this->procname, this->buf);
-
-			this->proc = elf->proc;
+			ELFExecutable* elf = new ELFExecutable(buf);
+			proc = Multitasking::CreateProcess(procname, 0x1, (void(*)()) elf->GetEntryPoint(), 1, a1, a2, a3, a4, a5, a6);
+			elf->Load(proc);
 			delete elf;
 		}
 		else
 			HALT("enosup");
+
+		delete[] buf;
+		return proc;
 	}
 }
 }

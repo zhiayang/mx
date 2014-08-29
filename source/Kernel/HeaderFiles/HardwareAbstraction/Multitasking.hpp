@@ -153,7 +153,10 @@ namespace HardwareAbstraction
 
 		Thread* CreateKernelThread(void (*Function)(), uint8_t Priority = 1, void* p1 = 0, void* p2 = 0, void* p3 = 0, void* p4 = 0, void* p5 = 0, void* p6 = 0) 	__attribute__ ((warn_unused_result));
 
-		Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)(), uint8_t Priority = 1)
+		Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)())
+			__attribute__ ((warn_unused_result));
+
+		Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)(), uint8_t prio = 1, void* a1 = 0, void* a2 = 0, void* a3 = 0, void* a4 = 0, void* a5 = 0, void* a6 = 0)
 			__attribute__ ((warn_unused_result));
 
 		void LockMutex(uint64_t* Lock);

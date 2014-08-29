@@ -9,6 +9,7 @@
 #include <orion.h>
 #include <string.h>
 #include <time.h>
+#include <ctype.h>
 
 #include <rdestl/vector.h>
 #include <sys/stat.h>
@@ -96,8 +97,6 @@ namespace Filesystems
 		uint8_t ret = 0;
 		for(int i = 0; i < 11; i++ )
 		{
-			// ret = (ret >>> 1) + ShortName[i]
-			// where >>> is rotate right
 			ret = ((ret & 1) ? 0x80 : 0x00) + (ret >> 1) + ShortName[i];
 		}
 		return ret;
@@ -280,6 +279,7 @@ namespace Filesystems
 				assert(vnd);
 				assert(vnd->name);
 
+				// Log(3, "vnd->name: %s -- name: %s", vnd->name->c_str(), file->c_str());
 				if(curlvl == levels && d->type == VNodeType::File && strcmp(vnd->name->c_str(), file->c_str()) == 0)
 				{
 					node->info->data = d->info->data;
@@ -402,7 +402,7 @@ namespace Filesystems
 
 
 		if(tovnd(node)->entrycluster == 0)
-			tovnd(node)->entrycluster = 2;
+			tovnd(node)->entrycluster = this->RootDirectoryCluster;
 
 
 		// grab its clusters.
@@ -612,12 +612,12 @@ namespace Filesystems
 			addr += sizeof(LFNEntry);
 		}
 
-		for(auto c = items->size() - 1; c > 0; c--)
+		for(auto c = items->size(); c > 0; c--)
 		{
-			if((*items)[c] == 0)
+			if((*items)[c - 1] == 0)
 				break;
 
-			ret->append((*items)[c]);
+			ret->append((*items)[c - 1]);
 		}
 		ret_nument = nument;
 		return ret;
