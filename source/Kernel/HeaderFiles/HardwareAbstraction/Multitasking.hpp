@@ -46,10 +46,10 @@ namespace HardwareAbstraction
 			uint64_t InstructionPointer;
 			ThreadType Type;
 
+			rde::list<uintptr_t>* messagequeue;
 			uint16_t ExecutionTime;
 
 			uint64_t CurrentSharedMemoryOffset;
-			Library::LinkedList<IPC::SimpleMessage>* SimpleMessageQueue;
 			Process* Parent;
 			ThreadRegisterState_type CrashState;
 
@@ -66,7 +66,6 @@ namespace HardwareAbstraction
 			char Name[64];				// Task's name
 
 			uint64_t CurrentSharedMemoryOffset;
-			Library::LinkedList<IPC::SimpleMessage>* SimpleMessageQueue;
 			Filesystems::IOContext* iocontext;
 
 
