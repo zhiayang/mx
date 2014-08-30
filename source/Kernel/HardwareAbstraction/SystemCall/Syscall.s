@@ -89,6 +89,22 @@ GetSimpleMessage:
 	call IPC_GetSimpleMessage
 	jmp CleanUp
 
+SendSignalToProcess:
+	call IPC_SignalProcess
+	jmp CleanUp
+
+SendSignalToThread:
+	call IPC_SignalThread
+	jmp CleanUp
+
+SendMessage:
+	call IPC_SendMessage
+	jmp CleanUp
+
+ReceiveMessage:
+	call IPC_ReceiveMessage
+	jmp CleanUp
+
 Sleep:
 	call Syscall_Sleep
 	jmp CleanUp
@@ -167,24 +183,25 @@ SyscallTable:
 
 	.quad	CreateThread			// 3
 	.quad	SpawnProcess			// 4
-	.quad	SimpleToProcesss		// 5
-	.quad	SimpleToThread		// 6
-	.quad	GetSimpleMessage		// 7
-	.quad	Sleep				// 8
-	.quad	Yield				// 9
-	.quad	Block				// 10
-	.quad	InstallSigHandler		// 11
-	.quad	GetPID				// 12
-	.quad	GetParentPID			// 13
+	.quad	SendSignalToProcess		// 5
+	.quad	SendSignalToThread		// 6
+	.quad	SendMessage			// 7
+	.quad	ReceiveMessage		// 8
+	.quad	Sleep				// 9
+	.quad	Yield				// 10
+	.quad	Block				// 11
+	.quad	InstallSigHandler		// 12
+	.quad	GetPID				// 13
+	.quad	GetParentPID			// 14
 
-	.quad	OpenFile			// 14
-	.quad	OpenIPCSocket		// 15
-	.quad	OpenAnyFD			// 16
-	.quad	CloseAnyFD			// 17
-	.quad	ReadAnyFD			// 18
-	.quad	WriteAnyFD			// 19
-	.quad	MemoryMapAnonymous	// 20
-	.quad	MemoryMapFile		// 21
+	.quad	OpenFile			// 15
+	.quad	OpenIPCSocket		// 16
+	.quad	OpenAnyFD			// 17
+	.quad	CloseAnyFD			// 18
+	.quad	ReadAnyFD			// 19
+	.quad	WriteAnyFD			// 20
+	.quad	MemoryMapAnonymous	// 21
+	.quad	MemoryMapFile		// 22
 
 EndSyscallTable:
 

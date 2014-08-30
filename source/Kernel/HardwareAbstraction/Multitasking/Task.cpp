@@ -156,7 +156,7 @@ namespace Multitasking
 		thread->ThreadID			= NumThreads;
 		thread->Parent				= Parent;
 		thread->CurrentSharedMemoryOffset	= 0;
-		thread->SimpleMessageQueue		= new Library::LinkedList<IPC::SimpleMessage>();
+		thread->messagequeue			= new rde::list<uintptr_t>();
 		thread->Priority				= Priority;
 		thread->ExecutionTime			= 0;
 		thread->InstructionPointer		= 0;
@@ -209,7 +209,6 @@ namespace Multitasking
 		process->Flags					= Flags;
 		process->ProcessID				= NumProcesses;
 		process->CR3					= (uint64_t) PML4;
-		process->SimpleMessageQueue		= new Library::LinkedList<IPC::SimpleMessage>();
 		process->CurrentSharedMemoryOffset		= 0;
 		process->CurrentFDIndex			= 4;
 		process->AllocatedPageList			= new Library::Vector<uint64_t>();
