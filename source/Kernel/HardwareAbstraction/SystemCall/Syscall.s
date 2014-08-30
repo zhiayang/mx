@@ -31,15 +31,61 @@ HandleSyscall:
 	pushq $0xFFFFFFFFFFFFFFFF
 
 
+	// since we have syscall numbers in the range of 4000+, 8000+, we can't use a simple jump table anymore.
+	// rather, we subtract each 'page' from the incoming syscall.
+	// for instance:
+	// if we get 8014, we first check if it's greater than 8000. it is, so we subtract 8000 and call '14'.
+	// if we get 4044, it's not greater than 8000, but greater than 4000, so we subtract 4000.
+	// simple stuff.
+
+	cmp $8000, %r10
+	jge Page2
+
+	cmp $4000, %r10
+	jge Page1
+
+
+
+	jmp Page0
+
+
+
+Page1:
+	sub $4000, %r10
+	salq $3, %r10
+	movq SyscallTable1(%r10), %r10
+	cmp $EndSyscallTable1, %r10
+
+	jge Fail
+	jmp DoCall
+
+Page2:
+	sub $8000, %r10
+	salq $3, %r10
+	movq SyscallTable2(%r10), %r10
+	cmp $EndSyscallTable2, %r10
+
+	jge Fail
+	jmp DoCall
+
+
+
+
+
+
+
+
+Page0:
 	// multiply %r10 by 8
 	// shift left by 3	(2^3 = 8)
 	salq $3, %r10
-	movq SyscallTable(%r10), %r10
-	cmp $EndSyscallTable, %r10
+	movq SyscallTable0(%r10), %r10
+	cmp $EndSyscallTable0, %r10
 
 	jge Fail
 
 
+DoCall:
 	jmp *%r10
 
 
@@ -164,35 +210,47 @@ FailString:
 
 
 .align 8
-SyscallTable:
-	.quad	ExitProc			// 0
-	.quad	InstallIRQ			// 1
-	.quad	InstallIRQNoRegs		// 2
+SyscallTable0:
+	// misc things, page 0+
+	.quad	ExitProc			// 0000
+	.quad	InstallIRQ			// 0001
+	.quad	InstallIRQNoRegs		// 0002
 
-	.quad	CreateThread			// 3
-	.quad	SpawnProcess			// 4
-	.quad	SendSignalToProcess		// 5
-	.quad	SendSignalToThread		// 6
-	.quad	SendMessage			// 7
-	.quad	ReceiveMessage		// 8
-	.quad	Sleep				// 9
-	.quad	Yield				// 10
-	.quad	Block				// 11
-	.quad	InstallSigHandler		// 12
-	.quad	GetPID				// 13
-	.quad	GetParentPID			// 14
+EndSyscallTable0:
 
-	.quad	OpenFile			// 15
-	.quad	OpenIPCSocket		// 16
-	.quad	OpenAnyFD			// 17
-	.quad	CloseAnyFD			// 18
-	.quad	ReadAnyFD			// 19
-	.quad	WriteAnyFD			// 20
-	.quad	MemoryMapAnonymous	// 21
-	.quad	MemoryMapFile		// 22
 
-EndSyscallTable:
+.align 8
+SyscallTable1:
 
+	// process related things, page 4000+
+	.quad	CreateThread			// 4000
+	.quad	SpawnProcess			// 4001
+	.quad	SendSignalToProcess		// 4002
+	.quad	SendSignalToThread		// 4003
+	.quad	SendMessage			// 4004
+	.quad	ReceiveMessage		// 4005
+	.quad	Sleep				// 4006
+	.quad	Yield				// 4007
+	.quad	Block				// 4008
+	.quad	InstallSigHandler		// 4009
+	.quad	GetPID				// 4010
+	.quad	GetParentPID			// 4011
+EndSyscallTable1:
+
+
+.align 8
+SyscallTable2:
+
+	// file io things, page 8000+
+	.quad	OpenFile			// 8000
+	.quad	OpenIPCSocket		// 8001
+	.quad	OpenAnyFD			// 8002
+	.quad	CloseAnyFD			// 8003
+	.quad	ReadAnyFD			// 8004
+	.quad	WriteAnyFD			// 8005
+	.quad	MemoryMapAnonymous	// 8006
+	.quad	MemoryMapFile		// 8007
+EndSyscallTable2:
 
 
 

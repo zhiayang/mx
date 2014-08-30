@@ -7,31 +7,37 @@
 namespace Library {
 namespace SystemCall
 {
-	// .quad	ExitProc			// 0
-	// .quad	InstallIRQ			// 1
-	// .quad	InstallIRQNoRegs		// 2
+	/*
+		// misc things, page 0+
+		.quad	ExitProc			// 0000
+		.quad	InstallIRQ			// 0001
+		.quad	InstallIRQNoRegs		// 0002
 
-	// .quad	CreateThread			// 3
-	// .quad	SpawnProcess			// 4
-	// .quad	SendSignalToProcess		// 5
-	// .quad	SendSignalToThread		// 6
-	// .quad	SendMessage			// 7
-	// .quad	ReceiveMessage		// 8
-	// .quad	Sleep				// 9
-	// .quad	Yield				// 10
-	// .quad	Block				// 11
-	// .quad	InstallSigHandler		// 12
-	// .quad	GetPID				// 13
-	// .quad	GetParentPID			// 14
+		// process related things, page 4000+
+		.quad	CreateThread			// 4000
+		.quad	SpawnProcess			// 4001
+		.quad	SendSignalToProcess		// 4002
+		.quad	SendSignalToThread		// 4003
+		.quad	SendMessage			// 4004
+		.quad	ReceiveMessage		// 4005
+		.quad	Sleep				// 4006
+		.quad	Yield				// 4007
+		.quad	Block				// 4008
+		.quad	InstallSigHandler		// 4009
+		.quad	GetPID				// 4010
+		.quad	GetParentPID			// 4011
 
-	// .quad	OpenFile			// 15
-	// .quad	OpenIPCSocket		// 16
-	// .quad	OpenAnyFD			// 17
-	// .quad	CloseAnyFD			// 18
-	// .quad	ReadAnyFD			// 19
-	// .quad	WriteAnyFD			// 20
-	// .quad	MemoryMapAnonymous	// 21
-	// .quad	MemoryMapFile		// 22
+		// file io things, page 8000+
+		.quad	OpenFile			// 8000
+		.quad	OpenIPCSocket		// 8001
+		.quad	OpenAnyFD			// 8002
+		.quad	CloseAnyFD			// 8003
+		.quad	ReadAnyFD			// 8004
+		.quad	WriteAnyFD			// 8005
+		.quad	MemoryMapAnonymous	// 8006
+		.quad	MemoryMapFile		// 8007
+	*/
+
 
 	void ExitProc()
 	{
@@ -48,91 +54,93 @@ namespace SystemCall
 		Syscall2Param(2, irq, handleraddr);
 	}
 
+
+
 	void CreateThread(void (*thr)())
 	{
-		Syscall1Param(3, (uint64_t) thr);
+		Syscall1Param(4000, (uint64_t) thr);
 	}
 
 	void SpawnProcess(const char* path, const char* name)
 	{
-		Syscall2Param(4, (uint64_t) path, (uint64_t) name);
+		Syscall2Param(4001, (uint64_t) path, (uint64_t) name);
 	}
 
 	void SignalProcess(pid_t pid, int signum)
 	{
-		Syscall2Param(5, pid, signum);
+		Syscall2Param(4002, pid, signum);
 	}
 
 	void SignalThread(pid_t tid, int signum)
 	{
-		Syscall2Param(6, tid, signum);
+		Syscall2Param(4003, tid, signum);
 	}
 
 	int SendMessage(key_t key, void* msg, size_t size, uint64_t flags)
 	{
-		return (int) Syscall4Param(7, key, (uint64_t) msg, size, flags);
+		return (int) Syscall4Param(4004, key, (uint64_t) msg, size, flags);
 	}
 
 	ssize_t ReceiveMessage(key_t key, void* msg, size_t size, uint64_t type, uint64_t flags)
 	{
-		return (int) Syscall5Param(8, key, (uint64_t) msg, size, type, flags);
+		return (int) Syscall5Param(4005, key, (uint64_t) msg, size, type, flags);
 	}
 
 	void Sleep(uint64_t ms)
 	{
-		Syscall1Param(9, ms);
+		Syscall1Param(4006, ms);
 	}
 
 	void Yield()
 	{
-		Syscall0Param(10);
+		Syscall0Param(4007);
 	}
 
 	void Block()
 	{
-		Syscall0Param(11);
+		Syscall0Param(4008);
 	}
 
 	sighandler_t InstallSignalHandler(uint64_t signum, sighandler_t handler)
 	{
-		return (sighandler_t) Syscall2Param(12, signum, (uint64_t) handler);
+		return (sighandler_t) Syscall2Param(4009, signum, (uint64_t) handler);
 	}
 
 	uint64_t GetPID()
 	{
-		return Syscall0Param(13);
+		return Syscall0Param(4010);
 	}
 
 	uint64_t GetParentPID()
 	{
-		return Syscall0Param(14);
+		return Syscall0Param(4011);
 	}
 
-	// 15, 16
+	// 8000, 8001
 
 	uint64_t Open(const char* path, uint64_t flags)
 	{
-		return Syscall2Param(17, (uint64_t) path, flags);
+		return Syscall2Param(8002, (uint64_t) path, flags);
 	}
 
 	void Close(uint64_t fd)
 	{
-		Syscall1Param(18, fd);
+		Syscall1Param(8003, fd);
 	}
 
 	uint64_t Read(uint64_t sd, void* buffer, uint64_t length)
 	{
-		return Syscall3Param(19, sd, (uint64_t) buffer, length);
+		return Syscall3Param(8004, sd, (uint64_t) buffer, length);
 	}
 
 	uint64_t Write(uint64_t sd, const void* buffer, uint64_t length)
 	{
-		return Syscall3Param(20, sd, (uint64_t) buffer, length);
+		return Syscall3Param(8005, sd, (uint64_t) buffer, length);
 	}
 
 	uint64_t MMap_Anonymous(uint64_t addr, uint64_t size, uint64_t prot, uint64_t flags)
 	{
-		return Syscall4Param(21, addr, size, prot, flags);
+		return Syscall4Param(8006, addr, size, prot, flags);
 	}
 }
 }
