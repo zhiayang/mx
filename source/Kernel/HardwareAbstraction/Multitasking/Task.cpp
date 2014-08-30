@@ -20,6 +20,8 @@ namespace HardwareAbstraction {
 namespace Multitasking
 {
 	#define __signal_ignore	0
+	uint64_t NumThreads = 0;
+	uint64_t NumProcesses = 0;
 
 	static void SetupStackThread_Kern(Thread* thread, uint64_t u, uint64_t f, void* p1, void* p2, void* p3, void* p4, void* p5, void* p6)
 	{
@@ -122,16 +124,10 @@ namespace Multitasking
 		uint64_t k = 0;
 		if(Parent->CR3 != GetKernelCR3())
 		{
-			// uint64_t pk = Virtual::AllocatePage(DefaultRing3StackSize / 0x1000);
-			// Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, k);
-			// Virtual::MapRegion(k, k, DefaultRing3StackSize / 0x1000, 0x3);
-
 			k = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS);
 			auto pk = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
 			Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x3, Parent->VAS->PML4);
 			Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x3);
-
-			// Virtual::MapRegion(k, k, DefaultRing3StackSize / 0x1000, 0x3, (Virtual::PageMapStructure*) Parent->CR3);
 		}
 		else
 		{
@@ -139,14 +135,10 @@ namespace Multitasking
 		}
 
 		// allocate user stack.
-		// uint64_t u = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
-		// Virtual::MapRegion(u, u, DefaultRing3StackSize / 0x1000, 0x7, (Virtual::PageMapStructure*) Parent->CR3);
-
 		uint64_t pu = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
 		uint64_t u = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS);
 
 		Virtual::MapRegion(u, pu, DefaultRing3StackSize / 0x1000, 0x7, (Virtual::PageMapStructure*) Parent->CR3);
-
 
 
 		thread->TopOfStack			= k + DefaultRing3StackSize;
@@ -162,12 +154,11 @@ namespace Multitasking
 		thread->InstructionPointer		= 0;
 
 
-		NumThreads++;
 		Parent->Threads->InsertFront(thread);
 
 
 		SetupStackThread(thread, u, (uint64_t) Function, p1, p2, p3, p4, p5, p6);
-
+		NumThreads++;
 
 
 		// unmap
@@ -179,7 +170,7 @@ namespace Multitasking
 		if(FirstProc)
 		{
 			// set tss
-			asm volatile("movq %[stacktop], 0x504" :: [stacktop]"r"(thread->TopOfStack));
+			asm volatile("movq %[stacktop], 0x2504" :: [stacktop]"r"(thread->TopOfStack));
 		}
 
 		Log("Created Thread: Parent: %s, TID: %d", Parent->Name, thread->ThreadID);
@@ -234,6 +225,7 @@ namespace Multitasking
 
 
 		NumProcesses++;
+
 		(void) CreateThread(process, Function, Priority, a1, a2, a3, a4, a5, a6);
 
 		if(FirstProc)
