@@ -30,8 +30,6 @@ namespace Multitasking
 	static Thread* CurrentThread = 0;
 	static uint64_t CurrentCR3;
 
-	uint64_t NumThreads = 0;
-	uint64_t NumProcesses = 0;
 	static uint64_t ScheduleCount = 0;
 	bool SchedulerEnabled = true;
 
@@ -47,7 +45,6 @@ namespace Multitasking
 		SleepList = new LinkedList<Thread>();
 		ProcessList = new LinkedList<Process>();
 		PendingSleepList = new LinkedList<Thread>();
-		// ThreadQueue = new AVLTree<uint16_t, Thread*>();
 
 		ThreadList_LowPrio = new LinkedList<Thread>();
 		ThreadList_NormPrio = new LinkedList<Thread>();
@@ -69,11 +66,6 @@ namespace Multitasking
 	{
 		ScheduleCount++;
 		Thread* r = nullptr;
-
-		if(ProcessList->Size() > 1)
-		{
-			// Log(3, "%d, %d", ThreadList_NormPrio->Size(), ScheduleCount);
-		}
 
 		// Log(3, "%d : %d : %d : %d (%d)", NormStarvationLevel, NormStarvedRemaining, LowStarvationLevel, LowStarvedRemaining, ThreadList_NormPrio->Size());
 		if(ThreadList_LowPrio->Size() > 0 && (ScheduleCount % LowStarveThreshold == 0))
@@ -159,30 +151,33 @@ namespace Multitasking
 
 
 
-
 		if(CurrentThread->Parent->Flags & 0x1)
 		{
 			// this tells switch.s (on return) that we need to return to user-mode.
-			asm volatile("movq $0x000000000000FADE, 0x608" ::: "memory");
+			asm volatile("movq $0x000000000000FADE, 0x2608" ::: "memory");
 		}
 
 		if(CurrentThread->Parent->CR3 != CurrentCR3)
 		{
 			// Only change the value in cr3 if we need to, to avoid trashing the TLB.
-			asm volatile("movq %[page], 0x600" :: [page]"r"(CurrentThread->Parent->CR3): "memory");
+			asm volatile("movq %[page], 0x2600" :: [page]"r"(CurrentThread->Parent->CR3): "memory");
+
 			CurrentCR3 = CurrentThread->Parent->CR3;
-			MemoryManager::Virtual::SwitchPML4T((MemoryManager::Virtual::PageMapStructure*) CurrentThread->Parent->CR3);
+			MemoryManager::Virtual::SwitchPML4T((MemoryManager::Virtual::PageMapStructure*) CurrentCR3);
 		}
 		else
 		{
-			asm volatile("movq $0x0, 0x600" ::: "memory");
+			asm volatile("movq $0x0, 0x2600" ::: "memory");
 		}
 
 
 		// set tss
-		asm volatile("movq %[stacktop], 0x504" :: [stacktop]"r"(CurrentThread->TopOfStack));
-
-
+		asm volatile("movq %[stacktop], 0x2504" :: [stacktop]"r"(CurrentThread->TopOfStack) : "memory");
+		if(NumProcesses > 1)
+		{
+			// Log(3, "%x, %x", *(uint64_t*) 0x504, CurrentThread->StackPointer);
+			// HALT("");
+		}
 		return CurrentThread->StackPointer;
 	}
 

@@ -89,18 +89,18 @@ StageOne:
 
 
 StageTwo:
-	cmpq $0xFADE, 0x608
+	cmpq $0xFADE, 0x2608
 	je DoRing3
 
 
 
 ChangeCR3:
-	cmpq $0x0, 0x600
+	cmpq $0x0, 0x2600
 	je PopReg
 
 
 	// if not zero, do a CR3 switch.
-	movq 0x600, %rax
+	movq 0x2600, %rax
 	mov %rax, %cr3
 	jmp PopReg
 

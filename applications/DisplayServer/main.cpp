@@ -26,6 +26,7 @@ int main(int argc, char** argv)
 	bpp		= (uint64_t) argv[4] / 4;		// kernel gives us BITS per pixel, but we really only care about BYTES per pixel.
 
 
+	printf("Display server online");
 	// that's really all we need to do, except watch for messages and flush the screen on occasion.
 	return 0;
 }

@@ -77,18 +77,6 @@ SpawnProcess:
 	call Syscall_SpawnProcess
 	jmp CleanUp
 
-SimpleToProcesss:
-	call IPC_SimpleToProcess
-	jmp CleanUp
-
-SimpleToThread:
-	call IPC_SimpleToThread
-	jmp CleanUp
-
-GetSimpleMessage:
-	call IPC_GetSimpleMessage
-	jmp CleanUp
-
 SendSignalToProcess:
 	call IPC_SignalProcess
 	jmp CleanUp

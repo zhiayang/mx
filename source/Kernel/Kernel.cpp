@@ -175,21 +175,16 @@ namespace Kernel
 		PrintFormatted("Loading [mx]...\n");
 		Log("Initialising Kernel subsystem");
 
-
-
+		// tss on page 337 of manual.
 		// Setup the TSS. this will mostly be void once the scheduler initialises.
 		{
-			Memory::Set32((void*) 0x0504, 0x00060000, 1);
-			Memory::Set32((void*) 0x0508, 0x00000000, 1);
-			Memory::Set32((void*) 0x0524, 0x00040000, 1);
-			Memory::Set32((void*) 0x0528, 0x00000000, 1);
-			asm volatile("mov $0x28, %ax; ltr %ax");
+			*((uint64_t*) (0x2504)) = 0x0000000000060000;
+			*((uint64_t*) (0x2524)) = 0x0000000000040000;
 
 			Log("TSS installed");
 		}
 
-
-		// Setup the kernel core as a kernel-space thread.
+		// Setup the kernel core as a thread.
 		{
 			HardwareAbstraction::Interrupts::SetGate(0x20, (uint64_t) ProcessTimerInterrupt, 0x08, 0xEE);
 			HardwareAbstraction::Interrupts::SetGate(0xF7, (uint64_t) TaskSwitcherCoOp, 0x08, 0xEE);
@@ -397,7 +392,6 @@ namespace Kernel
 
 		// kernel stops here
 		// for now.
-		// PrintFormatted("\n\nKernel Halted\n");
 		BLOCK();
 
 
