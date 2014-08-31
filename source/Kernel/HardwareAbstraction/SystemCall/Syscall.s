@@ -70,11 +70,6 @@ Page2:
 
 
 
-
-
-
-
-
 Page0:
 	// multiply %r10 by 8
 	// shift left by 3	(2^3 = 8)
@@ -114,7 +109,7 @@ InstallIRQNoRegs:
 
 
 
-
+// page 1
 CreateThread:
 	call Syscall_CreateThread
 	jmp CleanUp
@@ -163,12 +158,20 @@ GetParentPID:
 	call Syscall_GetParentPID
 	jmp CleanUp
 
+CreateMessageQueue:
+	call IPC_CreateQueue
+	jmp CleanUp
 
 
 
 
 
 
+
+
+
+
+// page 2
 OpenFile:
 	// call Syscall_OpenFile
 	jmp CleanUp
@@ -235,6 +238,7 @@ SyscallTable1:
 	.quad	InstallSigHandler		// 4009
 	.quad	GetPID				// 4010
 	.quad	GetParentPID			// 4011
+	.quad	CreateMessageQueue		// 4012
 EndSyscallTable1:
 
 

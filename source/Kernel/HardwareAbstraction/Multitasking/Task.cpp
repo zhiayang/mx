@@ -152,6 +152,7 @@ namespace Multitasking
 		thread->Priority				= Priority;
 		thread->ExecutionTime			= 0;
 		thread->InstructionPointer		= 0;
+		thread->tlsptr				= new TLSData;
 
 
 		Parent->Threads->InsertFront(thread);

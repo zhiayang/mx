@@ -76,14 +76,14 @@ namespace SystemCall
 		Syscall2Param(4003, tid, signum);
 	}
 
-	int SendMessage(key_t key, void* msg, size_t size, uint64_t flags)
+	int SendMessage(const char* path, void* msg, size_t size, uint64_t flags)
 	{
-		return (int) Syscall4Param(4004, key, (uint64_t) msg, size, flags);
+		return (int) Syscall4Param(4004, (uintptr_t) path, (uint64_t) msg, size, flags);
 	}
 
-	ssize_t ReceiveMessage(key_t key, void* msg, size_t size, uint64_t type, uint64_t flags)
+	ssize_t ReceiveMessage(const char* path, void* msg, size_t size, uint64_t type, uint64_t flags)
 	{
-		return (int) Syscall5Param(4005, key, (uint64_t) msg, size, type, flags);
+		return (int) Syscall5Param(4005, (uintptr_t) path, (uint64_t) msg, size, type, flags);
 	}
 
 	void Sleep(uint64_t ms)

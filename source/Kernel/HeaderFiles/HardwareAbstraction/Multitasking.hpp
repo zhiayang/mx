@@ -12,6 +12,7 @@
 #include <Mutexes.hpp>
 #include <Vector.hpp>
 
+#include <defs/_tls.h>
 #include <signal.h>
 
 extern "C" void YieldCPU();
@@ -52,6 +53,7 @@ namespace HardwareAbstraction
 			uint64_t CurrentSharedMemoryOffset;
 			Process* Parent;
 			ThreadRegisterState_type CrashState;
+			TLSData* tlsptr;
 
 			void (*Thread)();
 		};

@@ -23,7 +23,7 @@ namespace IPC
 	};
 
 	// message queue array
-	rde::hash_map<key_t, rde::list<uintptr_t>*>* messagequeue = nullptr;
+	static rde::hash_map<key_t, rde::list<uintptr_t>*>* messagequeue = nullptr;
 
 
 	sighandler_t GetHandler(int sig);
@@ -34,6 +34,7 @@ namespace IPC
 		if(signum >= __SIGCOUNT)
 		{
 			Log(1, "Invalid signal number, ignoring");
+			errno = EINVAL;
 			return;
 		}
 
@@ -42,6 +43,7 @@ namespace IPC
 		if(!thread || !thread->Parent)
 		{
 			Log(1, "Invalid target thread - %d", tid);
+			errno = ESRCH;
 			return;
 		}
 
@@ -228,16 +230,10 @@ namespace IPC
 		IPC_SignalThread(proc->Threads->Get(0)->ThreadID, signum);
 	}
 
-	extern "C" int IPC_SendMessage(key_t key, void* msg, size_t size, uint64_t flags)
+	extern "C" int IPC_SendMessage(id_t key, void* msg, size_t size, uint64_t flags)
 	{
 		if(messagequeue == nullptr)
-		{
-			if(flags & IPC_CREAT)
-				messagequeue = new rde::hash_map<key_t, rde::list<uintptr_t>*>();
-
-			else
-				return -1;	// todo: errno
-		}
+			messagequeue = new rde::hash_map<key_t, rde::list<uintptr_t>*>();
 
 		// copy the message into the kernel heap.
 		uint8_t* kernmsg = new uint8_t[size];
@@ -246,12 +242,12 @@ namespace IPC
 		// todo: something about flags
 		rde::list<uintptr_t>* queue = (*messagequeue)[key];
 		if(queue == nullptr)
-			queue = new rde::list<uintptr_t>();
+			return -1;	// errno = EIDRM
 
-		// todo: block properly.
 		if(queue->size() >= MaxMessages && flags & IPC_NOWAIT)
 			return -1;	// todo: set errno to EAGAIN
 
+		// todo: block properly.
 		while(queue->size() >= MaxMessages);
 
 		// add to the queue.
@@ -261,10 +257,14 @@ namespace IPC
 		return 0;
 	}
 
-	extern "C" ssize_t IPC_ReceiveMessage(key_t key, void* msg, size_t size, uint64_t type, uint64_t flags)
+	extern "C" ssize_t IPC_ReceiveMessage(id_t key, void* msg, size_t size, uint64_t type, uint64_t flags)
 	{
 		if(messagequeue == nullptr)
 			messagequeue = new rde::hash_map<key_t, rde::list<uintptr_t>*>();
+	}
+
+	extern "C" void IPC_CreateQueue()
+	{
 	}
 
 
@@ -277,114 +277,19 @@ namespace IPC
 
 
 
-
-
-
-	// void SendSimpleMessageToProcess(uint64_t TargetPID, MessageTypes Type, uint64_t Data1, uint64_t Data2, uint64_t Data3, void (*Callback)())
-	// {
-	// 	Multitasking::Process* process = Multitasking::GetProcess(TargetPID);
-	// 	if(!process)
-	// 		return;
-
-	// 	SendSimpleMessage(process->Threads->Get(0)->ThreadID, Type, Data1, Data2, Data3, Callback);
-	// }
-
-	// void SendSimpleMessage(uint64_t TargetThreadID, MessageTypes Type, uint64_t Data1, uint64_t Data2, uint64_t Data3, void (*Callback)())
-	// {
-	// 	Multitasking::Process* process = Multitasking::GetCurrentProcess();
-	// 	Multitasking::Thread* thread = Multitasking::GetThread(TargetThreadID);
-	// 	if(!thread || !thread->Parent)
-	// 	{
-	// 		Log(1, "Invalid target thread - %d", TargetThreadID);
-	// 		return;
-	// 	}
-
-	// 	thread->SimpleMessageQueue->InsertFront(new SimpleMessage(process->ProcessID, Multitasking::GetCurrentThread()->ThreadID, Type, Data1, Data2, Data3, Callback));
-
-	// 	// wake the thread for message.
-	// 	Multitasking::WakeForMessage(thread);
-	// }
-
-
-
-
-
-
-	// SimpleMessage* HandleSimpleMessage(SimpleMessage* m)
-	// {
-	// 	// we can't be sending ACKs for ACK messages.
-	// 	if(m->MessageType != MessageTypes::Acknowledge && m->MessageType != MessageTypes::AcknowledgeWithData)
-	// 	{
-	// 		// send an async message to the sender.
-	// 		// SendMessage(m.sender, msgtype_ACK, 0, 0, 0)
-	// 		return m;
-	// 	}
-	// 	else
-	// 	{
-	// 		// if it is an ACK message, we just have to run the callback function
-	// 		// it will work, since ReceiveMessage will be called in the target process.
-	// 		if(m->Callback)
-	// 			m->Callback();
-
-
-	// 		// certain message receivers, like the central dispatch thread, will
-	// 		// respond to a request (ie. dispatch plug) with an ACK_DATA
-	// 		// this essentially ACKs the sender, but also sends data.
-	// 		// note we don't send an ACK to ACK that.
-
-	// 		// therefore if it contains data, the receiver will want to handle it.
-	// 		if(m->MessageType == MessageTypes::AcknowledgeWithData)
-	// 			return m;
-
-	// 		else
-	// 			return 0;
-	// 	}
-	// }
-
-
-	// SimpleMessage* GetSimpleMessage()
-	// {
-	// 	if(Multitasking::GetCurrentProcess()->SimpleMessageQueue->Size() > 0)
-	// 	{
-	// 		return HandleSimpleMessage(Multitasking::GetCurrentProcess()->SimpleMessageQueue->RemoveFront());
-	// 	}
-	// 	else if(Multitasking::GetCurrentThread()->SimpleMessageQueue->Size() > 0)
-	// 	{
-	// 		return HandleSimpleMessage(Multitasking::GetCurrentThread()->SimpleMessageQueue->RemoveFront());
-	// 	}
-	// 	else
-	// 		return 0;
-	// }
-
-
-	// extern "C" void IPC_SimpleToProcess(uint64_t TargetPID, MessageTypes Type, uint64_t D1, uint64_t D2, uint64_t D3, void (*Callback)())
-	// {
-	// 	SendSimpleMessageToProcess(TargetPID, Type, D1, D2, D3, Callback);
-	// }
-
-	// extern "C" void IPC_SimpleToThread(uint64_t ThreadID, MessageTypes Type, uint64_t D1, uint64_t D2, uint64_t D3, void (*Callback)())
-	// {
-	// 	SendSimpleMessage(ThreadID, Type, D1, D2, D3, Callback);
-	// }
-
-	// extern "C" SimpleMessage* IPC_GetSimpleMessage()
-	// {
-	// 	return GetSimpleMessage();
-	// }
-
-
-
 	extern "C" sighandler_t Syscall_InstallSigHandler(uint64_t signum, sighandler_t handler)
 	{
 		if(signum >= __SIGCOUNT)
 		{
 			Log(1, "Error: invalid signal number %d", signum);
+			errno = EINVAL;
 			return SIG_ERR;
 		}
 
 		else if(signum == SIGKILL || signum == SIGSTOP)
 		{
 			Log(1, "Error: cannot override handler for signal %d, which is either SIGKILL or SIGSTOP", signum);
+			errno = EINVAL;
 			return SIG_ERR;
 		}
 

@@ -1,28 +1,19 @@
-/*
-
-   Copyright 2009 Pierre KRIEGER
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
-*/
+// errno.h
+// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Licensed under the Apache License Version 2.0.
 
 #ifndef _STDC_ERRNO_H_
 #define _STDC_ERRNO_H_
 
-// #define	errno			*_get_errno()
-// int*					_get_errno();
+#include "sys/types.h"
+#include "sys/cdefs.h"
 
-extern int errno;
+
+// __BEGIN_DECLS
+#define __TLS_ADDR      0x2610
+
+extern "C" int* __get_errno();
+#define errno			*__get_errno()
 
 #define ENOTBLK 12
 #define ENODEV 13
@@ -104,3 +95,5 @@ extern int errno;
 
 #define EOPNOTSUPP ENOTSUP
 #endif
+
+// __END_DECLS
