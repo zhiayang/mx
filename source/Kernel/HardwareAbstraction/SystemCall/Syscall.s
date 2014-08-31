@@ -147,7 +147,7 @@ Block:
 	jmp CleanUp
 
 InstallSigHandler:
-	// call Syscall_InstallSigHandler
+	call Syscall_InstallSigHandler
 	jmp CleanUp
 
 GetPID:
