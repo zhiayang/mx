@@ -9,10 +9,10 @@
 #include "sys/cdefs.h"
 
 
-// __BEGIN_DECLS
+__BEGIN_DECLS
 #define __TLS_ADDR      0x2610
 
-extern "C" int* __get_errno();
+int* __get_errno();
 #define errno			*__get_errno()
 
 #define ENOTBLK 12
@@ -93,7 +93,7 @@ extern "C" int* __get_errno();
 #define ESIGPENDING 87
 #define ESTALE 88
 
+__END_DECLS
 #define EOPNOTSUPP ENOTSUP
 #endif
 
-// __END_DECLS
