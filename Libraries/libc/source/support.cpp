@@ -31,6 +31,8 @@ extern "C" void init_libc()
 
 	// init heap
 	Heap::Initialise();
+
+	errno = 0;
 }
 
 

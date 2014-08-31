@@ -1,13 +1,16 @@
-// msg.h
+// _tls.h
 // Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
-#include <sys/cdefs.h>
+#include "../sys/types.h"
+#include "../sys/cdefs.h"
+
 __BEGIN_DECLS
 
-#define IPC_NOWAIT		0x1000
-#define IPC_CREAT		0x2000
-#define IPC_EXCL		0x4000
-#define IPC_PRIVATE		(-0x8000)
+#define TLS_ADDR	0x2610
+struct TLSData
+{
+	int errnum;
+};
 
 __END_DECLS

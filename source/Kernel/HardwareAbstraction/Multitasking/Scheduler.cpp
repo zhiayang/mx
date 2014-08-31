@@ -29,15 +29,10 @@ namespace Multitasking
 
 	static Thread* CurrentThread = 0;
 	static uint64_t CurrentCR3;
-
 	static uint64_t ScheduleCount = 0;
+	static uint64_t SizeofTLS = sizeof(TLSData);
+
 	bool SchedulerEnabled = true;
-
-	// static uint64_t LowStarvationLevel = 0;
-	// static uint64_t NormStarvationLevel = 0;
-
-	// static uint64_t LowStarvedRemaining = 0;
-	// static uint64_t NormStarvedRemaining = 0;
 
 	void Initialise()
 	{
@@ -67,7 +62,6 @@ namespace Multitasking
 		ScheduleCount++;
 		Thread* r = nullptr;
 
-		// Log(3, "%d : %d : %d : %d (%d)", NormStarvationLevel, NormStarvedRemaining, LowStarvationLevel, LowStarvedRemaining, ThreadList_NormPrio->Size());
 		if(ThreadList_LowPrio->Size() > 0 && (ScheduleCount % LowStarveThreshold == 0))
 		{
 			r = ThreadList_LowPrio->RemoveFront();
@@ -154,30 +148,36 @@ namespace Multitasking
 		if(CurrentThread->Parent->Flags & 0x1)
 		{
 			// this tells switch.s (on return) that we need to return to user-mode.
-			asm volatile("movq $0x000000000000FADE, 0x2608" ::: "memory");
+			// asm volatile("movq $0x000000000000FADE, 0x2608" ::: "memory");
+			*((uint64_t*) 0x2608) = 0xFADE;
 		}
 
 		if(CurrentThread->Parent->CR3 != CurrentCR3)
 		{
 			// Only change the value in cr3 if we need to, to avoid trashing the TLB.
-			asm volatile("movq %[page], 0x2600" :: [page]"r"(CurrentThread->Parent->CR3): "memory");
+			// asm volatile("movq %[page], 0x2600" :: [page]"r"(CurrentThread->Parent->CR3): "memory");
+			*((uint64_t*) 0x2600) = CurrentThread->Parent->CR3;
 
 			CurrentCR3 = CurrentThread->Parent->CR3;
 			MemoryManager::Virtual::SwitchPML4T((MemoryManager::Virtual::PageMapStructure*) CurrentCR3);
 		}
 		else
 		{
-			asm volatile("movq $0x0, 0x2600" ::: "memory");
+			// asm volatile("movq $0x0, 0x2600" ::: "memory");
+			*((uint64_t*) 0x2600) = 0;
 		}
 
 
 		// set tss
-		asm volatile("movq %[stacktop], 0x2504" :: [stacktop]"r"(CurrentThread->TopOfStack) : "memory");
-		if(NumProcesses > 1)
-		{
-			// Log(3, "%x, %x", *(uint64_t*) 0x504, CurrentThread->StackPointer);
-			// HALT("");
-		}
+		// asm volatile("movq %[stacktop], 0x2504" :: [stacktop]"r"(CurrentThread->TopOfStack) : "memory");
+		*((uint64_t*) 0x2504) = CurrentThread->TopOfStack;
+
+		// this is a bit hacky.
+		// on thread switch, update the value at 0x2610 to point to the thread's TLS structure
+		// 0x2618 is the size of this structure.
+		*((uint64_t*) TLS_ADDR) = (uintptr_t) CurrentThread->tlsptr;
+		*((uint64_t*) TLS_ADDR + 8) = SizeofTLS;
+
 		return CurrentThread->StackPointer;
 	}
 
