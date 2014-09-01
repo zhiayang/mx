@@ -23,7 +23,6 @@ namespace IPC
 	};
 
 	// message queue array
-	static rde::hash_map<key_t, rde::list<uintptr_t>*>* messagequeue = nullptr;
 
 
 	sighandler_t GetHandler(int sig);
@@ -230,37 +229,42 @@ namespace IPC
 		IPC_SignalThread(proc->Threads->Get(0)->ThreadID, signum);
 	}
 
-	extern "C" int IPC_SendMessage(id_t key, void* msg, size_t size, uint64_t flags)
+
+
+
+	extern "C" int IPC_SendMessage(long key, void* msg, size_t size, uint64_t flags)
 	{
-		if(messagequeue == nullptr)
-			messagequeue = new rde::hash_map<key_t, rde::list<uintptr_t>*>();
+		// if(messagequeue == nullptr)
+		// 	messagequeue = new rde::hash_map<key_t, rde::list<uintptr_t>*>();
 
-		// copy the message into the kernel heap.
-		uint8_t* kernmsg = new uint8_t[size];
-		memcpy(kernmsg, msg, size);
+		// // copy the message into the kernel heap.
+		// uint8_t* kernmsg = new uint8_t[size];
+		// memcpy(kernmsg, msg, size);
 
-		// todo: something about flags
-		rde::list<uintptr_t>* queue = (*messagequeue)[key];
-		if(queue == nullptr)
-			return -1;	// errno = EIDRM
+		// // todo: something about flags
+		// rde::list<uintptr_t>* queue = (*messagequeue)[key];
+		// if(queue == nullptr)
+		// 	return -1;	// errno = EIDRM
 
-		if(queue->size() >= MaxMessages && flags & IPC_NOWAIT)
-			return -1;	// todo: set errno to EAGAIN
+		// if(queue->size() >= MaxMessages && flags & IPC_NOWAIT)
+		// 	return -1;	// todo: set errno to EAGAIN
 
-		// todo: block properly.
-		while(queue->size() >= MaxMessages);
+		// // todo: block properly.
+		// while(queue->size() >= MaxMessages);
 
-		// add to the queue.
-		queue->push_back((uintptr_t) kernmsg);
+		// // add to the queue.
+		// queue->push_back((uintptr_t) kernmsg);
 
-		// done.
+		// // done.
 		return 0;
 	}
 
-	extern "C" ssize_t IPC_ReceiveMessage(id_t key, void* msg, size_t size, uint64_t type, uint64_t flags)
+	extern "C" ssize_t IPC_ReceiveMessage(long key, void* msg, size_t size, uint64_t type, uint64_t flags)
 	{
-		if(messagequeue == nullptr)
-			messagequeue = new rde::hash_map<key_t, rde::list<uintptr_t>*>();
+		// if(messagequeue == nullptr)
+		// 	messagequeue = new rde::hash_map<key_t, rde::list<uintptr_t>*>();
+
+		return 0;
 	}
 
 	extern "C" void IPC_CreateQueue()
@@ -286,7 +290,7 @@ namespace IPC
 			return SIG_ERR;
 		}
 
-		else if(signum == SIGKILL || signum == SIGSTOP)
+		else if((signum == SIGKILL || signum == SIGSTOP) && handler != SIG_DFL)
 		{
 			Log(1, "Error: cannot override handler for signal %d, which is either SIGKILL or SIGSTOP", signum);
 			errno = EINVAL;

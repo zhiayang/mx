@@ -19,7 +19,7 @@ CXXOPT	= /Volumes/mx/System/Library/LaunchDaemons/displayd.mxa
 all: $(CXXOPT)
 	@:
 
-$(CXXOPT): $(CXXSRC)
+$(CXXOPT): $(CXXSRC) ../../build/sysroot/usr/lib/libc.a
 	@$(CXX) $(CXXFLAGS) -o $@ $(CXXSRC) -lfreetype
 	@$(STRIP) --strip-debug $(CXXOPT)
 	@echo "userspace: displayserver"

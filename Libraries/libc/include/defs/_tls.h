@@ -7,7 +7,7 @@
 
 __BEGIN_DECLS
 
-#define TLS_ADDR	0x2610
+#define __TLS_ADDR	0x3610
 struct TLSData
 {
 	int errnum;

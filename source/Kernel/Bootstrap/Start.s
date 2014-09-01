@@ -282,6 +282,13 @@ GDT64:
 		.byte 0x00
 		.long 0x00
 		.long 0x00
+	GDTTLS:
+		.word 0xFFFF		// Limit (low)
+		.word 0			// Base (low)
+		.byte 0			// Base (middle)
+		.byte 0xF2		// Access
+		.byte 0xAF		// Granularity / Limit (high)
+		.byte 0			// Base (high)
 
 
 

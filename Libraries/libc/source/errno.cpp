@@ -13,3 +13,10 @@ extern "C" int* __get_errno()
 }
 
 
+extern "C" uintptr_t __get_tls_addr()
+{
+	// fetch value from %fs
+	uintptr_t ret = 0;
+	// asm volatile("mov %%gs, %[tls]" : [tls]"=r"(ret));
+	return ret;
+}

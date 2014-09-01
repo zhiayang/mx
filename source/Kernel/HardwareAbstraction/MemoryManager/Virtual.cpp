@@ -662,7 +662,14 @@ namespace Virtual
 		Virtual::MapAddress((uint64_t) PML4, (uint64_t) PML4, 0x07, PML4);
 
 		// Map 16 MB, includes the kernel.
-		for(uint64_t i = 0x1000; i < (8 * 0x01000000); i += 0x1000)
+		// start at 0x3000, since we handle 0x2000 and 0x3000 specially.
+		Virtual::MapAddress(0x1000, 0x1000, 0x07, PML4);
+
+		// map 0x2000 as supervisor only, since we store sensitive stuff there
+		// namely TSS stuff.
+		Virtual::MapAddress(0x2000, 0x2000, 0x03, PML4);
+
+		for(uint64_t i = 0x3000; i < (8 * 0x01000000); i += 0x1000)
 			Virtual::MapAddress(i, i, 0x07, PML4);
 
 		// Map the LFB.

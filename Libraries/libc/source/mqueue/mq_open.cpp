@@ -6,6 +6,7 @@
 #include "../../include/fcntl.h"
 #include "../../include/stdarg.h"
 #include "../../include/stdlib.h"
+#include "../../include/stdio.h"
 #include "../../include/string.h"
 #include <sys/syscall.h>
 
@@ -22,10 +23,25 @@ extern "C" mqd_t mq_open(const char* path, int flags, ...)
 	}
 
 	// prepend the path with '/dev/_mq/' so the kernel knows how to handle this.
-	char* id = (char*) malloc(strlen(path) + __PREFIX_LENGTH);
-	memcpy(id, "/dev/_mq/", __PREFIX_LENGTH);
-	memcpy(id + __PREFIX_LENGTH, path, strlen(path));
+	auto prlen = __PREFIX_LENGTH;
+
+	if(path == 0)
+		return -1;
+
+	if(path[0] == '/')
+		prlen--;
+
+
+	char* id = (char*) malloc(strlen(path) + prlen + 1);
+
+	memcpy(id, "/dev/_mq/", prlen);
+	memcpy(id + prlen, path, strlen(path));
+	*(id + prlen + strlen(path) + 1) = 0;
+
 
 	// TODO: flags ignored for now
-	return (int) Library::SystemCall::Open(id, flags);
+	// this should actually fail if it doesn't exist, unless flags & O_CREAT.
+	int fd = (int) Library::SystemCall::Open(id, flags);
+	free(id);
+	return fd;
 }
