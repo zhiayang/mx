@@ -30,7 +30,6 @@ namespace Multitasking
 	static Thread* CurrentThread = 0;
 	static uint64_t CurrentCR3;
 	static uint64_t ScheduleCount = 0;
-	static uint64_t SizeofTLS = sizeof(TLSData);
 
 	bool SchedulerEnabled = true;
 
@@ -173,10 +172,9 @@ namespace Multitasking
 		*((uint64_t*) 0x2504) = CurrentThread->TopOfStack;
 
 		// this is a bit hacky.
-		// on thread switch, update the value at 0x2610 to point to the thread's TLS structure
+		// on thread switch, update the value at __TLS_ADDR to point to the thread's TLS structure
 		// 0x2618 is the size of this structure.
-		*((uint64_t*) TLS_ADDR) = (uintptr_t) CurrentThread->tlsptr;
-		*((uint64_t*) TLS_ADDR + 8) = SizeofTLS;
+		*((uint64_t*) __TLS_ADDR) = (uintptr_t) CurrentThread->tlsptr;
 
 		return CurrentThread->StackPointer;
 	}

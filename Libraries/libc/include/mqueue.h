@@ -4,6 +4,7 @@
 
 #include "sys/ipc.h"
 #include "sys/types.h"
+#include "fcntl.h"
 
 __BEGIN_DECLS
 

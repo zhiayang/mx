@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
+#include <mqueue.h>
 
 static uint64_t framebuffer = 0;
 static uint64_t width = 0;
@@ -27,10 +28,10 @@ int main(int argc, char** argv)
 	height		= (uint64_t) argv[3];
 	bpp		= (uint64_t) argv[4] / 4;		// kernel gives us BITS per pixel, but we really only care about BYTES per pixel.
 
-	printf("Display server online, errno = %d\n", errno);
-	printf("trying something stupid...\n");
-	signal(SIGKILL, SIG_IGN);
-	printf("errno = %d\n", errno);
+	printf("Display server online\n");
+
+	auto fd = mq_open("/random/path", O_CREATE);
+	printf("opened - %d\n", fd);
 
 	// that's really all we need to do, except watch for messages and flush the screen on occasion.
 	return 0;

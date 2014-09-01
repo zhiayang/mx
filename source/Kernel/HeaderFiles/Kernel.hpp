@@ -142,8 +142,8 @@ namespace Kernel
 ;
 
 
-void operator delete(void* p);
-void operator delete[](void* p);
+void operator delete(void* p) _GLIBCXX_USE_NOEXCEPT;
+void operator delete[](void* p) _GLIBCXX_USE_NOEXCEPT;
 void* operator new(unsigned long size);
 void* operator new[](unsigned long size);
 void* operator new(unsigned long, void* addr) noexcept;

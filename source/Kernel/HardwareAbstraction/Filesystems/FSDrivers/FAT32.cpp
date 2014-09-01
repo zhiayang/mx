@@ -518,6 +518,23 @@ namespace Filesystems
 
 
 
+	bool FSDriverFat32::Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms)
+	{
+		(void) node;
+		(void) path;
+		(void) flags;
+		(void) perms;
+
+		return false;
+	}
+
+	bool FSDriverFat32::Delete(VFS::vnode* node, const char* path)
+	{
+		(void) node;
+		(void) path;
+
+		return false;
+	}
 
 
 

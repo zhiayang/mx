@@ -690,12 +690,12 @@ namespace rapidxml
 	}
 }
 
-void operator delete(void* p)
+void operator delete(void* p) _GLIBCXX_USE_NOEXCEPT
 {
 	KernelHeap::FreeChunk(p);
 }
 
-void operator delete[](void* p)
+void operator delete[](void* p) _GLIBCXX_USE_NOEXCEPT
 {
 	KernelHeap::FreeChunk(p);
 }
