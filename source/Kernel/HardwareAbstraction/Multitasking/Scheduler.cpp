@@ -4,7 +4,7 @@
 
 
 #include <Kernel.hpp>
-#include <StandardIO.hpp>
+#include <HardwareAbstraction/Devices/IOPort.hpp>
 #include <List.hpp>
 #include <String.hpp>
 #include <stdlib.h>
@@ -142,39 +142,55 @@ namespace Multitasking
 		CurrentThread = GetNextThread();
 
 
-
-
 		if(CurrentThread->Parent->Flags & 0x1)
 		{
 			// this tells switch.s (on return) that we need to return to user-mode.
-			// asm volatile("movq $0x000000000000FADE, 0x2608" ::: "memory");
 			*((uint64_t*) 0x2608) = 0xFADE;
 		}
 
 		if(CurrentThread->Parent->CR3 != CurrentCR3)
 		{
 			// Only change the value in cr3 if we need to, to avoid trashing the TLB.
-			// asm volatile("movq %[page], 0x2600" :: [page]"r"(CurrentThread->Parent->CR3): "memory");
 			*((uint64_t*) 0x2600) = CurrentThread->Parent->CR3;
 
 			CurrentCR3 = CurrentThread->Parent->CR3;
 			MemoryManager::Virtual::SwitchPML4T((MemoryManager::Virtual::PageMapStructure*) CurrentCR3);
 		}
 		else
-		{
-			// asm volatile("movq $0x0, 0x2600" ::: "memory");
 			*((uint64_t*) 0x2600) = 0;
-		}
 
 
 		// set tss
-		// asm volatile("movq %[stacktop], 0x2504" :: [stacktop]"r"(CurrentThread->TopOfStack) : "memory");
 		*((uint64_t*) 0x2504) = CurrentThread->TopOfStack;
 
-		// this is a bit hacky.
-		// on thread switch, update the value at __TLS_ADDR to point to the thread's TLS structure
-		// 0x2618 is the size of this structure.
-		*((uint64_t*) __TLS_ADDR) = (uintptr_t) CurrentThread->tlsptr;
+		// update fs
+		// let asm do it, 0x2610 contains the address.
+		// *((uint64_t*) 0x2610) = ((uint64_t) CurrentThread->tlsptr) + CurrentThread->Parent->tlssize;
+		uint64_t tlsptr = CurrentThread->tlsptrptr;
+		if(CurrentThread->Parent->Flags & 0x1)
+			Log("%x - eax: %x, edx: %x", tlsptr, tlsptr & 0xFFFFFFFF, tlsptr >> 32);
+
+		uint64_t thing = 0;
+		uint32_t low = tlsptr & 0xFFFFFFFF;
+		uint32_t high = tlsptr >> 32;
+		uint64_t eax = 0;
+		uint64_t edx = 0;
+		asm volatile(
+				"mov $0x2B, %%bx		\n\t"
+				"mov %%bx, %%fs		\n\t"
+
+				"movl $0xC0000100, %%ecx	\n\t"
+				"movl %[lo], %%eax		\n\t"
+				"movl %[hi], %%edx		\n\t"
+				"wrmsr				\n\t"
+
+				: "=a"(eax), "=d"(edx) : [lo]"g"(low), [hi]"g"(high) : "memory", "rax", "rbx", "rcx", "rdx");
+
+		if(CurrentThread->Parent->Flags & 0x1)
+		{
+			asm volatile("lea %%fs:0x0, %%rax; mov %%rax, %[put]" : [put]"=g"(thing) :: "rax");
+			Log("%x - eax: %x, edx: %x", thing, eax, edx);
+		}
 
 		return CurrentThread->StackPointer;
 	}

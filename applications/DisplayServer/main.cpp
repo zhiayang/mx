@@ -8,11 +8,20 @@
 #include <errno.h>
 #include <signal.h>
 #include <mqueue.h>
+#include <sys/syscall.h>
 
 static uint64_t framebuffer = 0;
 static uint64_t width = 0;
 static uint64_t height = 0;
 static uint64_t bpp = 0;
+
+static __thread int m = 410;
+
+void thr()
+{
+	m = 200;
+	printf("m in thr: %d\n\n", m);
+}
 
 int main(int argc, char** argv)
 {
@@ -24,15 +33,20 @@ int main(int argc, char** argv)
 		4. framebuffer bpp
 	*/
 
+	m = 512;
+	printf("m in main: %d\n", m);
+
+	Library::SystemCall::CreateThread(thr);
+	printf("m in main: %d\n", m);
+	while(true);
+
 	framebuffer	= (uint64_t) argv[1];
 	width		= (uint64_t) argv[2];
 	height		= (uint64_t) argv[3];
 	bpp		= (uint64_t) argv[4] / 4;		// kernel gives us BITS per pixel, but we really only care about BYTES per pixel.
 
 	printf("Display server online\n");
-
 	// auto fd = mq_open("/random/path", O_CREATE);
-	printf("opened - %p\n", malloc(541));
 
 	// that's really all we need to do, except watch for messages and flush the screen on occasion.
 	return 0;
