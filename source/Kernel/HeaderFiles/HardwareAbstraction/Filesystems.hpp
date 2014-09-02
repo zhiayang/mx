@@ -5,9 +5,10 @@
 #pragma once
 #include <stdint.h>
 #include <List.hpp>
+#include <CircularBuffer.hpp>
 #include "Devices/StorageDevice.hpp"
 #include <Vector.hpp>
-#include <rdestl/rde_string.h>
+#include <rdestl/rdestl.h>
 #include <sys/stat.h>
 
 namespace Kernel
@@ -84,6 +85,7 @@ namespace Kernel
 
 				extern FSDriver* driver_stdin;
 				extern FSDriver* driver_stdout;
+				extern FSDriver* driver_ipcmsg;
 
 				void Initialise();
 				void InitIO();
@@ -140,6 +142,8 @@ namespace Kernel
 				public:
 					FSDriver(Devices::Storage::Partition* part, FSDriverType type) : partition(part), _type(type) { }
 					virtual ~FSDriver();
+					virtual bool Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms);
+					virtual bool Delete(VFS::vnode* node, const char* path);
 					virtual bool Traverse(VFS::vnode* node, const char* path, char** symlink);
 					virtual size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length);
 					virtual size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length);
@@ -162,6 +166,8 @@ namespace Kernel
 				public:
 					FSDriverConsole();
 					~FSDriverConsole() override;
+					bool Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms) override;
+					bool Delete(VFS::vnode* node, const char* path) override;
 					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
 					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
@@ -175,6 +181,8 @@ namespace Kernel
 				public:
 					FSDriverStdin();
 					~FSDriverStdin() override;
+					bool Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms) override;
+					bool Delete(VFS::vnode* node, const char* path) override;
 					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
 					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
@@ -188,6 +196,8 @@ namespace Kernel
 				public:
 					FSDriverStdout();
 					~FSDriverStdout() override;
+					bool Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms) override;
+					bool Delete(VFS::vnode* node, const char* path) override;
 					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
 					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
@@ -196,11 +206,40 @@ namespace Kernel
 					Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 			};
 
+			class FSDriverIPCMsg : public FSDriver
+			{
+				struct pathid
+				{
+					char* path;
+					id_t id;
+				};
+
+				public:
+					FSDriverIPCMsg();
+					~FSDriverIPCMsg() override;
+					bool Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms) override;
+					bool Delete(VFS::vnode* node, const char* path) override;
+					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
+					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
+					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
+					void Stat(VFS::vnode* node, struct stat* stat) override;
+
+					Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+
+					rde::hash_map<pathid*, Library::CircularMemoryBuffer*>* messagequeue = nullptr;
+			};
+
+
+
+
+
 			class FSDriverFat32 : public FSDriver
 			{
 				public:
 					FSDriverFat32(Devices::Storage::Partition* part);
 					~FSDriverFat32() override;
+					bool Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms) override;
+					bool Delete(VFS::vnode* node, const char* path) override;
 					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
 					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;

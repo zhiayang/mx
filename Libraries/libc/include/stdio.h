@@ -7,6 +7,7 @@
 #include "stdarg.h"
 #include "stdint.h"
 #include "unistd.h"
+#include "errno.h"
 #include "defs/_file.h"
 
 #define EOF			(-1)

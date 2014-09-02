@@ -77,14 +77,14 @@ struct __attribute__((packed)) ELF64FileHeader_type
 #define ElfType_LOPROC		0xFF0	// Processor Specific
 #define ElfType_HIPROC		0xFFF	// Processor Specific
 
-static constexpr const char* ElfFileType[] =
-{
-	"None",
-	"Relocatable",
-	"Executable",
-	"Shared Object",
-	"Core File"
-};
+// static constexpr const char* ElfFileType[] =
+// {
+// 	"None",
+// 	"Relocatable",
+// 	"Executable",
+// 	"Shared Object",
+// 	"Core File"
+// };
 
 
 // Bunch of ElfMachine defines
@@ -129,16 +129,16 @@ struct __attribute__((packed)) ELF64ProgramHeader_type
 #define ProgramType_HIPROC			0x7FFFFFFF
 
 
-static constexpr const char* ElfSegmentType[] =
-{
-	"Null",
-	"Load",
-	"Dynamic Link",
-	"Intepreter",
-	"Auxillary",
-	"Section Header",
-	"Program Header"
-};
+// static constexpr const char* ElfSegmentType[] =
+// {
+// 	"Null",
+// 	"Load",
+// 	"Dynamic Link",
+// 	"Intepreter",
+// 	"Auxillary",
+// 	"Section Header",
+// 	"Program Header"
+// };
 
 
 // Section Header struct
@@ -171,6 +171,16 @@ struct __attribute__ ((__packed__))	ELF64SectionHeader_type
 #define SectionHeaderTypeNotes		7
 #define SectionHeaderTypeNoBits		8
 
+#define SHF_WRITE			(1 << 0)		// Writable
+#define SHF_ALLOC			(1 << 1)		// Occupies memory during execution
+#define SHF_EXECINSTR		(1 << 2)		// Executable
+#define SHF_MERGE			(1 << 4)		// Might be merged
+#define SHF_STRINGS			(1 << 5)		// Contains nul-terminated strings
+#define SHF_INFO_LINK		(1 << 6)		// 'sh_info' contains SHT index
+#define SHF_LINK_ORDER		(1 << 7)		// Preserve order after combining
+#define SHF_OS_NONCONFORMING	(1 << 8)		// Non-standard OS specific handling required
+#define SHF_GROUP			(1 << 9)		// Section is member of a group.
+#define SHF_TLS			(1 << 10)	// Section hold thread-local data.
 
 
 

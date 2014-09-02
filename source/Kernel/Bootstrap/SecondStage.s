@@ -71,7 +71,8 @@ KernelBootStrap:
 	or $0x02, %ax			// set coprocessor monitoring  CR0.MP
 	mov %rax, %cr0
 	mov %cr4, %rax
-	or $(3 << 9), %ax		// set CR4.OSFXSR and CR4.OSXMMEXCPT at the same time
+	// orq $0x10600, %rax		// set CR4.OSFXSR, CR4.OSXMMEXCPT and CR4.FSGSBASE at the same time
+	orq $0x600, %rax
 	mov %rax, %cr4
 
 
@@ -109,8 +110,8 @@ KernelBootStrap:
 
 
 
-
-
+	mov $0x2B, %ax
+	mov %ax, %fs
 
 
 	// Call our kernel.
@@ -144,10 +145,69 @@ halt:
 
 
 
-
-/*
-.section .bss
+.section .data
 .align 16
-TheStack:
-	.lcomm Stack, 0x8000				// Reserve stack
-*/
+
+// 64-bit GDT
+.global GDT64Pointer
+
+GDT64:
+	GDTNull:
+		.word 0			// Limit (low)
+		.word 0			// Base (low)
+		.byte 0			// Base (middle)
+		.byte 0			// Access
+		.byte 0			// Granularity / Limit (high)
+		.byte 0			// Base (high)
+	GDTCode:
+		.word 0xFFFF		// Limit (low)
+		.word 0			// Base (low)
+		.byte 0			// Base (middle)
+		.byte 0x9A		// Access
+		.byte 0xAF		// Granularity / Limit (high)
+		.byte 0			// Base (high)
+	GDTData:
+		.word 0xFFFF		// Limit (low)
+		.word 0			// Base (low)
+		.byte 0			// Base (middle)
+		.byte 0x92		// Access
+		.byte 0xAF		// Granularity / Limit (high)
+		.byte 0			// Base (high)
+	GDTCodeR3:
+		.word 0xFFFF		// Limit (low)
+		.word 0			// Base (low)
+		.byte 0			// Base (middle)
+		.byte 0xFA		// Access
+		.byte 0xAF		// Granularity / Limit (high)
+		.byte 0			// Base (high)
+	GDTDataR3:
+		.word 0xFFFF		// Limit (low)
+		.word 0			// Base (low)
+		.byte 0			// Base (middle)
+		.byte 0xF2		// Access
+		.byte 0xAF		// Granularity / Limit (high)
+		.byte 0			// Base (high)
+	GDTFS:
+		.word 0xFFFF		// Limit (low)
+		.word 0			// Base (low)
+		.byte 0			// Base (middle)
+		.byte 0xF2		// Access
+		.byte 0xAF		// Granularity (4) / Limit (high) (4)
+		.byte 0			// Base (high)
+	GDTTSS:
+		.word 0x0068		// Limit (low)
+		.word 0x2500		// Base (Addr of TSS)
+		.byte 0x00		// middle
+		.byte 0xE9
+		.byte 0x80
+		.byte 0x00
+		.long 0x00
+		.long 0x00
+
+
+
+		// Pointer
+	GDT64Pointer:
+		.word GDT64Pointer - GDT64 - 1	// Limit
+		.quad GDT64				// Base
+

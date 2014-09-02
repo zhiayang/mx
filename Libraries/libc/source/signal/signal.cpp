@@ -18,6 +18,6 @@ extern "C" int raise(int signum)
 
 extern "C" int kill(pid_t pid, int signum)
 {
-	Library::SystemCall::SendSimpleMessageToProcess(pid, Library::SystemCall::MessageTypes::PosixSignal, signum, 0, 0, 0);
-	return 0;
+	Library::SystemCall::SignalProcess(pid, signum);
+	return errno == 0 ? 0 : -1;
 }

@@ -31,15 +31,56 @@ HandleSyscall:
 	pushq $0xFFFFFFFFFFFFFFFF
 
 
+	// since we have syscall numbers in the range of 4000+, 8000+, we can't use a simple jump table anymore.
+	// rather, we subtract each 'page' from the incoming syscall.
+	// for instance:
+	// if we get 8014, we first check if it's greater than 8000. it is, so we subtract 8000 and call '14'.
+	// if we get 4044, it's not greater than 8000, but greater than 4000, so we subtract 4000.
+	// simple stuff.
+
+	cmp $8000, %r10
+	jge Page2
+
+	cmp $4000, %r10
+	jge Page1
+
+
+
+	jmp Page0
+
+
+
+Page1:
+	sub $4000, %r10
+	salq $3, %r10
+	movq SyscallTable1(%r10), %r10
+	cmp $EndSyscallTable1, %r10
+
+	jge Fail
+	jmp DoCall
+
+Page2:
+	sub $8000, %r10
+	salq $3, %r10
+	movq SyscallTable2(%r10), %r10
+	cmp $EndSyscallTable2, %r10
+
+	jge Fail
+	jmp DoCall
+
+
+
+Page0:
 	// multiply %r10 by 8
 	// shift left by 3	(2^3 = 8)
 	salq $3, %r10
-	movq SyscallTable(%r10), %r10
-	cmp $EndSyscallTable, %r10
+	movq SyscallTable0(%r10), %r10
+	cmp $EndSyscallTable0, %r10
 
 	jge Fail
 
 
+DoCall:
 	jmp *%r10
 
 
@@ -68,7 +109,7 @@ InstallIRQNoRegs:
 
 
 
-
+// page 1
 CreateThread:
 	call Syscall_CreateThread
 	jmp CleanUp
@@ -77,16 +118,20 @@ SpawnProcess:
 	call Syscall_SpawnProcess
 	jmp CleanUp
 
-SimpleToProcesss:
-	call IPC_SimpleToProcess
+SendSignalToProcess:
+	call IPC_SignalProcess
 	jmp CleanUp
 
-SimpleToThread:
-	call IPC_SimpleToThread
+SendSignalToThread:
+	call IPC_SignalThread
 	jmp CleanUp
 
-GetSimpleMessage:
-	call IPC_GetSimpleMessage
+SendMessage:
+	call IPC_SendMessage
+	jmp CleanUp
+
+ReceiveMessage:
+	call IPC_ReceiveMessage
 	jmp CleanUp
 
 Sleep:
@@ -102,7 +147,7 @@ Block:
 	jmp CleanUp
 
 InstallSigHandler:
-	// call Syscall_InstallSigHandler
+	call Syscall_InstallSigHandler
 	jmp CleanUp
 
 GetPID:
@@ -113,12 +158,20 @@ GetParentPID:
 	call Syscall_GetParentPID
 	jmp CleanUp
 
+CreateMessageQueue:
+	call IPC_CreateQueue
+	jmp CleanUp
 
 
 
 
 
 
+
+
+
+
+// page 2
 OpenFile:
 	// call Syscall_OpenFile
 	jmp CleanUp
@@ -160,34 +213,48 @@ FailString:
 
 
 .align 8
-SyscallTable:
-	.quad	ExitProc			// 0
-	.quad	InstallIRQ			// 1
-	.quad	InstallIRQNoRegs		// 2
+SyscallTable0:
+	// misc things, page 0+
+	.quad	ExitProc			// 0000
+	.quad	InstallIRQ			// 0001
+	.quad	InstallIRQNoRegs		// 0002
 
-	.quad	CreateThread			// 3
-	.quad	SpawnProcess			// 4
-	.quad	SimpleToProcesss		// 5
-	.quad	SimpleToThread		// 6
-	.quad	GetSimpleMessage		// 7
-	.quad	Sleep				// 8
-	.quad	Yield				// 9
-	.quad	Block				// 10
-	.quad	InstallSigHandler		// 11
-	.quad	GetPID				// 12
-	.quad	GetParentPID			// 13
+EndSyscallTable0:
 
-	.quad	OpenFile			// 14
-	.quad	OpenIPCSocket		// 15
-	.quad	OpenAnyFD			// 16
-	.quad	CloseAnyFD			// 17
-	.quad	ReadAnyFD			// 18
-	.quad	WriteAnyFD			// 19
-	.quad	MemoryMapAnonymous	// 20
-	.quad	MemoryMapFile		// 21
 
-EndSyscallTable:
+.align 8
+SyscallTable1:
 
+	// process related things, page 4000+
+	.quad	CreateThread			// 4000
+	.quad	SpawnProcess			// 4001
+	.quad	SendSignalToProcess		// 4002
+	.quad	SendSignalToThread		// 4003
+	.quad	SendMessage			// 4004
+	.quad	ReceiveMessage		// 4005
+	.quad	Sleep				// 4006
+	.quad	Yield				// 4007
+	.quad	Block				// 4008
+	.quad	InstallSigHandler		// 4009
+	.quad	GetPID				// 4010
+	.quad	GetParentPID			// 4011
+	.quad	CreateMessageQueue		// 4012
+EndSyscallTable1:
+
+
+.align 8
+SyscallTable2:
+
+	// file io things, page 8000+
+	.quad	OpenFile			// 8000
+	.quad	OpenIPCSocket		// 8001
+	.quad	OpenAnyFD			// 8002
+	.quad	CloseAnyFD			// 8003
+	.quad	ReadAnyFD			// 8004
+	.quad	WriteAnyFD			// 8005
+	.quad	MemoryMapAnonymous	// 8006
+	.quad	MemoryMapFile		// 8007
+EndSyscallTable2:
 
 
 

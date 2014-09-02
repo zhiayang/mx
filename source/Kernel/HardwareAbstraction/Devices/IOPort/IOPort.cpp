@@ -44,6 +44,19 @@ namespace IOPort
 	{
 		asm volatile("outl %0, %1" :: "a"(Value), "Nd"(Port));
 	}
+
+	uint64_t ReadMSR(uint32_t msr)
+	{
+		uint64_t high = 0, low = 0;
+
+		asm volatile("rdmsr" : "=a"(low), "=d"(high) : "c"(msr));
+		return (high << 32) | low;
+	}
+
+	void WriteMSR(uint32_t msr, uint64_t val)
+	{
+		asm volatile("wrmsr" : : "a"(val & 0xFFFFFFFF), "d"((val & 0xFFFFFFFF00000000) >> 32), "c"(msr));
+	}
 }
 
 }

@@ -7,6 +7,7 @@
 #include <rdestl/hash_map.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <fcntl.h>
 
 using namespace Kernel::HardwareAbstraction::Devices::Storage;
 namespace Kernel {
@@ -32,6 +33,7 @@ namespace Filesystems
 
 		FSDriver* driver_stdin;
 		FSDriver* driver_stdout;
+		FSDriver* driver_ipcmsg;
 
 		static IOContext* getctx()
 		{
@@ -65,10 +67,12 @@ namespace Filesystems
 			auto ConsoleFSD = new FSDriverConsole();
 			driver_stdin = new FSDriverStdin();
 			driver_stdout = new FSDriverStdout();
+			driver_ipcmsg = new FSDriverIPCMsg();
 
 			Mount(nullptr, ConsoleFSD, "/dev/console");
 			Mount(nullptr, driver_stdin, "/dev/stdin");
 			Mount(nullptr, driver_stdout, "/dev/stdout");
+			Mount(nullptr, driver_ipcmsg, "/dev/_mq");
 
 			auto ctx = getctx();
 			OpenFile(ctx, "/dev/stdin", 0);
@@ -212,6 +216,7 @@ namespace Filesystems
 			rde::string pth = rde::string(path);
 			Filesystem* fs = getfs(pth);
 
+
 			if(fs == nullptr || fs->ismounted == false)
 			{
 				Log(3, "filesystem not mounted");
@@ -227,8 +232,12 @@ namespace Filesystems
 			assert(fs->driver);
 
 			bool res = fs->driver->Traverse(node, path, nullptr);
-			if(res)
+			if(res || flags & O_CREATE)
 			{
+				// if O_CREAT, force the issue.
+				if(!res && (flags & O_CREATE))
+					fs->driver->Create(node, path, flags, 0);
+
 				auto ret = VFS::Open(ioctx, node, flags);
 				return ret;
 			}
