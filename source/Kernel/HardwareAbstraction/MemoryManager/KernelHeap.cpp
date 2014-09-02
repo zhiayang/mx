@@ -748,13 +748,15 @@ namespace KernelHeap
 
 	void* AllocateChunk(uint64_t s)
 	{
-		// round to alignment.
 		uint64_t Size = (uint64_t) s;
 
 		// AutoMutex lock = AutoMutex(Mutexes::KernelHeap);
 
 		// round to alignment.
 		uint64_t as = RoundSize(Size);
+
+		if(as == 0)
+			return nullptr;
 
 		// find first matching chunk.
 		uint64_t in = FindFirstFreeSlot(as);

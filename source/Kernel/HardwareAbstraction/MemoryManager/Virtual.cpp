@@ -640,9 +640,6 @@ namespace Virtual
 
 		// we need to throw this address (aka pointer) into the created things.
 
-
-
-
 		PageMapStructure* PML4 = (PageMapStructure*) Physical::AllocateFromReserved();
 		memset(PML4, 0, 0x1000);
 
@@ -657,29 +654,28 @@ namespace Virtual
 				Log(3, "%x", PML4->Entry[0]);
 
 			((PageMapStructure*) (PML4->Entry[0]))->Entry[0] = (uint64_t) pt;
-
-
 			// that just gives us 1gb lower, now we need 512gb upper.
-
-			// if(!(PML4->Entry[511] & I_Present))
-			// 	PML4->Entry[511] = Physical::AllocateFromReserved() | I_Present | I_ReadWrite | I_UserAccess;
 
 			PML4->Entry[511] = (uint64_t) kernelpml4->Entry[511] | 0x6;
 		}
 
 		Virtual::MapAddress((uint64_t) PML4, (uint64_t) PML4, 0x07, PML4);
 
-		// Map 8 MB, includes the kernel.
-		for(uint64_t i = 0; i < (8 * 0x01000000); i += 0x1000)
+		// Map 16 MB, includes the kernel.
+		// start at 0x3000, since we handle 0x2000 and 0x3000 specially.
+		Virtual::MapAddress(0x1000, 0x1000, 0x07, PML4);
+
+		// map 0x2000 as supervisor only, since we store sensitive stuff there
+		// namely TSS stuff.
+		Virtual::MapAddress(0x2000, 0x2000, 0x03, PML4);
+
+		for(uint64_t i = 0x3000; i < (8 * 0x01000000); i += 0x1000)
 			Virtual::MapAddress(i, i, 0x07, PML4);
 
 		// Map the LFB.
 		for(uint64_t i = 0; i < Kernel::GetLFBLengthInPages(); i++)
 			Virtual::MapAddress(Kernel::GetFramebufferAddress() + (i * 0x1000), Kernel::GetFramebufferAddress() + (i * 0x1000), I_Present | I_ReadWrite | I_UserAccess, PML4);
 
-
-		// map the physical FPL.
-		// Virtual::MapAddress(FPLAddress, Physical::GetPhysicalFPLAddress(), I_Present | I_ReadWrite | I_UserAccess, PML4);
 		return (uint64_t) PML4;
 	}
 

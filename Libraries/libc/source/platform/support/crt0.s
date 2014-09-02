@@ -27,7 +27,6 @@ _start:
 	popq %rdi
 	popq %rsi
 
-
 	// Run main
 	call main
 

@@ -84,7 +84,7 @@ typedef size_t off_t;
 
 #ifndef __pid_t
 #define __pid_t
-typedef int pid_t;
+typedef int64_t pid_t;
 #endif
 
 #ifndef __ssize_t

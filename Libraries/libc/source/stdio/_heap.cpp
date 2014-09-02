@@ -734,7 +734,7 @@ namespace Heap
 			if(o <= ChunksInHeap)
 			{
 				// check if there are more chunks behind us.
-				// if(o < ChunksInHeap - 1)
+				if(o < ChunksInHeap - 1)
 					pushback(o);
 
 				// now that's solved, make the chunk.
