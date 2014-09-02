@@ -165,32 +165,20 @@ namespace Multitasking
 
 		// update fs
 		// let asm do it, 0x2610 contains the address.
-		// *((uint64_t*) 0x2610) = ((uint64_t) CurrentThread->tlsptr) + CurrentThread->Parent->tlssize;
 		uint64_t tlsptr = CurrentThread->tlsptrptr;
-		if(CurrentThread->Parent->Flags & 0x1)
-			Log("%x - eax: %x, edx: %x", tlsptr, tlsptr & 0xFFFFFFFF, tlsptr >> 32);
 
-		uint64_t thing = 0;
 		uint32_t low = tlsptr & 0xFFFFFFFF;
 		uint32_t high = tlsptr >> 32;
-		uint64_t eax = 0;
-		uint64_t edx = 0;
 		asm volatile(
-				"mov $0x2B, %%bx		\n\t"
-				"mov %%bx, %%fs		\n\t"
+			"mov $0x2B, %%bx		\n\t"
+			"mov %%bx, %%fs		\n\t"
 
-				"movl $0xC0000100, %%ecx	\n\t"
-				"movl %[lo], %%eax		\n\t"
-				"movl %[hi], %%edx		\n\t"
-				"wrmsr				\n\t"
+			"movl $0xC0000100, %%ecx	\n\t"
+			"movl %[lo], %%eax		\n\t"
+			"movl %[hi], %%edx		\n\t"
+			"wrmsr				\n\t"
 
-				: "=a"(eax), "=d"(edx) : [lo]"g"(low), [hi]"g"(high) : "memory", "rax", "rbx", "rcx", "rdx");
-
-		if(CurrentThread->Parent->Flags & 0x1)
-		{
-			asm volatile("lea %%fs:0x0, %%rax; mov %%rax, %[put]" : [put]"=g"(thing) :: "rax");
-			Log("%x - eax: %x, edx: %x", thing, eax, edx);
-		}
+			:: [lo]"g"(low), [hi]"g"(high) : "memory", "rax", "rbx", "rcx", "rdx");
 
 		return CurrentThread->StackPointer;
 	}
