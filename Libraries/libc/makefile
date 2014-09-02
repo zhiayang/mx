@@ -12,8 +12,8 @@ AR		= ../../build/toolchain/bin/x86_64-orionx-ar
 SYSROOT	= ../../build/sysroot
 
 
-CFLAGS	= -Wno-pragmas -fPIC -std=gnu11 -mno-red-zone -fno-exceptions -c
-CXXFLAGS	= -Wno-pragmas -fPIC -std=gnu++11 -mno-red-zone -fno-exceptions -fno-rtti -c
+CFLAGS	= -Wno-pragmas -O2 -fPIC -std=gnu11 -mno-red-zone -fno-exceptions -c
+CXXFLAGS	= -Wno-pragmas -O2 -fPIC -std=gnu++11 -mno-red-zone -fno-exceptions -fno-rtti -c
 
 
 

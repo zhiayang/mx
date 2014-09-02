@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <signal.h>
 #include <mqueue.h>
@@ -30,8 +31,8 @@ int main(int argc, char** argv)
 
 	printf("Display server online\n");
 
-	auto fd = mq_open("/random/path", O_CREATE);
-	printf("opened - %d\n", fd);
+	// auto fd = mq_open("/random/path", O_CREATE);
+	printf("opened - %p\n", malloc(541));
 
 	// that's really all we need to do, except watch for messages and flush the screen on occasion.
 	return 0;
