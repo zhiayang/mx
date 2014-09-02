@@ -16,9 +16,11 @@ static uint64_t height = 0;
 static uint64_t bpp = 0;
 
 static __thread int m = 410;
+volatile static bool flag = false;
 
 void thr()
 {
+	flag = true;
 	m = 200;
 	printf("m in thr: %d\n\n", m);
 }
@@ -37,8 +39,8 @@ int main(int argc, char** argv)
 	printf("m in main: %d\n", m);
 
 	Library::SystemCall::CreateThread(thr);
+	while(!flag);
 	printf("m in main: %d\n", m);
-	while(true);
 
 	framebuffer	= (uint64_t) argv[1];
 	width		= (uint64_t) argv[2];
