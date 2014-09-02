@@ -229,11 +229,11 @@ namespace Time
 		return HardwareAbstraction::Devices::RTC::DidInitialise() ? Kernel::SystemTime->MillisecondsSinceEpoch : 0;
 	}
 
-	void GetHumanReadableTime(std::string& output)
+	void GetHumanReadableTime(rde::string& output)
 	{
 		output.clear();
-		if(HardwareAbstraction::Devices::RTC::DidInitialise())
-			PrintToString(&output, "%d.%02d %s %02ds", Kernel::SystemTime->Hour12F, Kernel::SystemTime->Minute, Kernel::SystemTime->AM ? "am" : "pm", Kernel::SystemTime->Second);
+		// if(HardwareAbstraction::Devices::RTC::DidInitialise())
+		// 	PrintToString(&output, "%d.%02d %s %02ds", Kernel::SystemTime->Hour12F, Kernel::SystemTime->Minute, Kernel::SystemTime->AM ? "am" : "pm", Kernel::SystemTime->Second);
 	}
 
 	bool IsAM()
@@ -361,13 +361,13 @@ namespace Time
 	{
 		uint16_t xpos = Console::GetCharsPerLine() - 1 - (PrintSeconds ? 15 : 11);
 		uint16_t x = 0, y = 0;
-		std::string spaces;
+		rde::string spaces;
 
 		if(PrintSeconds)
-			spaces += "              ";
+			spaces.append("              ");
 
 		else
-			spaces += "           ";
+			spaces.append("           ");
 
 		while(true)
 		{

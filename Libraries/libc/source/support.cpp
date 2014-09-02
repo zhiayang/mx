@@ -31,19 +31,9 @@ extern "C" void init_libc()
 
 	// init heap
 	Heap::Initialise();
-}
 
-
-#ifdef __cplusplus
-int* _get_errno()
-{
-	return &errno;
+	errno = 0;
 }
-#else
-extern "C" int* _get_errno()
-{
-}
-#endif
 
 
 

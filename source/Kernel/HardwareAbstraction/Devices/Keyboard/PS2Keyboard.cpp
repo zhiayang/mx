@@ -28,7 +28,7 @@ namespace Devices
 		this->ByteBuffer = new CircularMemoryBuffer(BufferSize * 2);
 
 		Log("Initialising IPC based driver...");
-		IPC::SendSimpleMessage(0, IPC::MessageTypes::RequestServiceInitialise, 0, 2, 0, 0);
+		// IPC::SendSimpleMessage(0, IPC::MessageTypes::RequestServiceInitialise, 0, 2, 0, 0);
 	}
 
 	void PS2Keyboard::HandleKeypress()

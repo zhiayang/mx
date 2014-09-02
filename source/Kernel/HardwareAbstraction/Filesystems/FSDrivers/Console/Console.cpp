@@ -35,6 +35,15 @@ namespace Filesystems
 		// same here
 	}
 
+	bool FSDriverConsole::Create(VFS::vnode*, const char*, uint64_t, uint64_t)
+	{
+		return false;
+	}
+	bool FSDriverConsole::Delete(VFS::vnode*, const char*)
+	{
+		return false;
+	}
+
 	bool FSDriverConsole::Traverse(VFS::vnode* node, const char* path, char** symlink)
 	{
 		(void) node;

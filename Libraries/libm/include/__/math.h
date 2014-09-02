@@ -28,12 +28,10 @@
 
 #include <sys/cdefs.h>
 
-#if defined(__sortix__)
-#include <__/wordsize.h>
-#elif defined(__GNU_LIBRARY__)
-#include <bits/wordsize.h>
-#endif
 
+
+
+#define __WORDSIZE	64
 __BEGIN_DECLS
 
 #if __WORDSIZE == 64 || (defined __FLT_EVAL_METHOD__ && __FLT_EVAL_METHOD__ == 0)

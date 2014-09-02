@@ -46,12 +46,14 @@ namespace HardwareAbstraction
 			uint64_t InstructionPointer;
 			ThreadType Type;
 
+			rde::list<uintptr_t>* messagequeue;
 			uint16_t ExecutionTime;
 
 			uint64_t CurrentSharedMemoryOffset;
-			Library::LinkedList<IPC::SimpleMessage>* SimpleMessageQueue;
 			Process* Parent;
 			ThreadRegisterState_type CrashState;
+			void* tlsptr;
+			uintptr_t tlsptrptr;
 
 			void (*Thread)();
 		};
@@ -64,9 +66,9 @@ namespace HardwareAbstraction
 			uint64_t CR3;
 			uint64_t DataPagePhys;
 			char Name[64];				// Task's name
+			size_t tlssize;
 
 			uint64_t CurrentSharedMemoryOffset;
-			Library::LinkedList<IPC::SimpleMessage>* SimpleMessageQueue;
 			Filesystems::IOContext* iocontext;
 
 
@@ -153,7 +155,13 @@ namespace HardwareAbstraction
 
 		Thread* CreateKernelThread(void (*Function)(), uint8_t Priority = 1, void* p1 = 0, void* p2 = 0, void* p3 = 0, void* p4 = 0, void* p5 = 0, void* p6 = 0) 	__attribute__ ((warn_unused_result));
 
-		Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)(), uint8_t Priority = 1)
+		Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)())
+			__attribute__ ((warn_unused_result));
+
+		Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)(), uint8_t prio = 1, void* a1 = 0, void* a2 = 0, void* a3 = 0, void* a4 = 0, void* a5 = 0, void* a6 = 0)
+			__attribute__ ((warn_unused_result));
+
+		Process* CreateProcess(const char name[64], uint8_t Flags, size_t tlssize, void (*Function)(), uint8_t prio = 1, void* a1 = 0, void* a2 = 0, void* a3 = 0, void* a4 = 0, void* a5 = 0, void* a6 = 0)
 			__attribute__ ((warn_unused_result));
 
 		void LockMutex(uint64_t* Lock);
