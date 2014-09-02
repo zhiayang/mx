@@ -23,6 +23,7 @@ void thr()
 	printf("m in thr: %d\n\n", m);
 }
 
+
 int main(int argc, char** argv)
 {
 	assert(argc == 5);
