@@ -12,7 +12,6 @@
 #include <Mutexes.hpp>
 #include <Vector.hpp>
 
-#include <defs/_tls.h>
 #include <signal.h>
 
 extern "C" void YieldCPU();
@@ -53,7 +52,8 @@ namespace HardwareAbstraction
 			uint64_t CurrentSharedMemoryOffset;
 			Process* Parent;
 			ThreadRegisterState_type CrashState;
-			TLSData* tlsptr;
+			void* tlsptr;
+			uintptr_t tlsptrptr;
 
 			void (*Thread)();
 		};
@@ -66,6 +66,7 @@ namespace HardwareAbstraction
 			uint64_t CR3;
 			uint64_t DataPagePhys;
 			char Name[64];				// Task's name
+			size_t tlssize;
 
 			uint64_t CurrentSharedMemoryOffset;
 			Filesystems::IOContext* iocontext;
@@ -158,6 +159,9 @@ namespace HardwareAbstraction
 			__attribute__ ((warn_unused_result));
 
 		Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)(), uint8_t prio = 1, void* a1 = 0, void* a2 = 0, void* a3 = 0, void* a4 = 0, void* a5 = 0, void* a6 = 0)
+			__attribute__ ((warn_unused_result));
+
+		Process* CreateProcess(const char name[64], uint8_t Flags, size_t tlssize, void (*Function)(), uint8_t prio = 1, void* a1 = 0, void* a2 = 0, void* a3 = 0, void* a4 = 0, void* a5 = 0, void* a6 = 0)
 			__attribute__ ((warn_unused_result));
 
 		void LockMutex(uint64_t* Lock);

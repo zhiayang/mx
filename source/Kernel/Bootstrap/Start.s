@@ -175,11 +175,13 @@ Realm64:
 	mov $0x10, %ax
 	mov %ax, %ds
 	mov %ax, %es
-	mov %ax, %fs
 	mov %ax, %gs
 
+	mov $0x2B, %ax
+	mov %ax, %fs
 
-	mov $0x28, %ax
+
+	mov $0x30, %ax
 	ltr %ax
 
 	// Jump to kernel bootstrap!
@@ -233,69 +235,6 @@ Main:
 
 
 
-
-
-.align 16
-// 64-bit GDT
-GDT64:
-	GDTNull:
-		.word 0			// Limit (low)
-		.word 0			// Base (low)
-		.byte 0			// Base (middle)
-		.byte 0			// Access
-		.byte 0			// Granularity / Limit (high)
-		.byte 0			// Base (high)
-	GDTCode:
-		.word 0xFFFF		// Limit (low)
-		.word 0			// Base (low)
-		.byte 0			// Base (middle)
-		.byte 0x9A		// Access
-		.byte 0xAF		// Granularity / Limit (high)
-		.byte 0			// Base (high)
-	GDTData:
-		.word 0xFFFF		// Limit (low)
-		.word 0			// Base (low)
-		.byte 0			// Base (middle)
-		.byte 0x92		// Access
-		.byte 0xAF		// Granularity / Limit (high)
-		.byte 0			// Base (high)
-	GDTCodeR3:
-		.word 0xFFFF		// Limit (low)
-		.word 0			// Base (low)
-		.byte 0			// Base (middle)
-		.byte 0xFA		// Access
-		.byte 0xAF		// Granularity / Limit (high)
-		.byte 0			// Base (high)
-	GDTDataR3:
-		.word 0xFFFF		// Limit (low)
-		.word 0			// Base (low)
-		.byte 0			// Base (middle)
-		.byte 0xF2		// Access
-		.byte 0xAF		// Granularity / Limit (high)
-		.byte 0			// Base (high)
-	GDTTSS:
-		.word 0x0068		// Limit (low)
-		.word 0x2500		// Base (Addr of TSS)
-		.byte 0x00		// middle
-		.byte 0xE9
-		.byte 0x80
-		.byte 0x00
-		.long 0x00
-		.long 0x00
-	GDTTLS:
-		.word 0xFFFF		// Limit (low)
-		.word 0			// Base (low)
-		.byte 0			// Base (middle)
-		.byte 0xF2		// Access
-		.byte 0xAF		// Granularity / Limit (high)
-		.byte 0			// Base (high)
-
-
-
-		// Pointer
-	GDT64Pointer:
-		.word GDT64Pointer - GDT64 - 1	// Limit
-		.quad GDT64				// Base
 
 
 

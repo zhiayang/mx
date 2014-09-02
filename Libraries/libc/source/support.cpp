@@ -36,17 +36,5 @@ extern "C" void init_libc()
 }
 
 
-#ifdef __cplusplus
-int* _get_errno()
-{
-	return &errno;
-}
-#else
-extern "C" int* _get_errno()
-{
-}
-#endif
-
-
 
 

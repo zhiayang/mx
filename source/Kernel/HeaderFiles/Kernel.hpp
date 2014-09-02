@@ -37,7 +37,7 @@
 #define TemporaryVirtualMapping		0x00000FF00000000
 #define DefaultUserStackAddr			0xFFFFFFF0
 
-
+#define __ORIONX_KERNEL
 
 // Configurable sizes
 // As above, try not to mess with these

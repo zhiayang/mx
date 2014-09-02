@@ -10,12 +10,9 @@
 
 
 __BEGIN_DECLS
-int* __get_errno();
-uintptr_t __get_tls_addr();
 
-// todo: fix to conform to elf tls abi
-#define errno			*__get_errno()
-
+extern __thread int _errno;
+#define errno			_errno
 
 #define ENOTBLK		12
 #define ENODEV		13

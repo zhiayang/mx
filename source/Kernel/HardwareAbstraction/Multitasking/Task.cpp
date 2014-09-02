@@ -152,15 +152,18 @@ namespace Multitasking
 		thread->Priority				= Priority;
 		thread->ExecutionTime			= 0;
 		thread->InstructionPointer		= 0;
-		thread->tlsptr				= new TLSData;
+		thread->tlsptr				= new uint8_t[Parent->tlssize];
 
+		auto tlsptrptr = new uintptr_t;
+		*tlsptrptr = (uint64_t) thread->tlsptr + Parent->tlssize;
+
+		thread->tlsptrptr = (uint64_t) tlsptrptr;
 
 		Parent->Threads->InsertFront(thread);
 
 
 		SetupStackThread(thread, u, (uint64_t) Function, p1, p2, p3, p4, p5, p6);
 		NumThreads++;
-
 
 		// unmap
 		if(Parent->CR3 != (uint64_t) Virtual::GetCurrentPML4T())
@@ -185,10 +188,15 @@ namespace Multitasking
 
 	Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)())
 	{
-		return CreateProcess(name, Flags, Function, 1, 0, 0, 0, 0, 0, 0);
+		return CreateProcess(name, Flags, 0, Function, 1, 0, 0, 0, 0, 0, 0);
 	}
 
 	Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)(), uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
+	{
+		return CreateProcess(name, Flags, 0, Function, Priority, a1, a2, a3, a4, a5, a6);
+	}
+
+	Process* CreateProcess(const char name[64], uint8_t Flags, uint64_t tlssize, void (*Function)(), uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
 	{
 		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
 		using Library::LinkedList;
@@ -207,6 +215,7 @@ namespace Multitasking
 		process->VAS					= new Virtual::VirtualAddressSpace(PML4);
 		process->SignalHandlers			= (sighandler_t*) KernelHeap::AllocateChunk(sizeof(sighandler_t) * __SIGCOUNT);
 		process->iocontext				= new Filesystems::IOContext();
+		process->tlssize				= tlssize;
 		for(int i = 0; i < __SIGCOUNT; i++)
 			process->SignalHandlers[i] = __signal_ignore;
 
@@ -222,7 +231,7 @@ namespace Multitasking
 			Kernel::KernelProcess = process;
 		}
 
-		strcpy(process->Name, name);
+		strncpy(process->Name, name, 64);
 
 
 		NumProcesses++;

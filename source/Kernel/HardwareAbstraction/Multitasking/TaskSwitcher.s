@@ -128,8 +128,8 @@ PopReg:
 DoRing3:
 	// Load the user data segment
 	mov $0x23, %rbp
-	mov %ebp, %ds
-	mov %ebp, %es
+	mov %rbp, %ds
+	mov %rbp, %es
 
 	jmp ChangeCR3
 

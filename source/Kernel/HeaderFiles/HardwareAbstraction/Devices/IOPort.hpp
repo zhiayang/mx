@@ -18,6 +18,9 @@ namespace Devices
 		void WriteByte(uint16_t Port, uint8_t Value);
 		void Write16(uint16_t Port, uint16_t Value);
 		void Write32(uint16_t Port, uint32_t Value);
+
+		uint64_t ReadMSR(uint32_t msr);
+		void WriteMSR(uint32_t msr, uint64_t val);
 	}
 }
 }

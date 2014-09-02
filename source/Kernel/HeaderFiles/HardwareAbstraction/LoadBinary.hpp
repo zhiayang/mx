@@ -24,6 +24,7 @@ namespace LoadBinary
 		public:
 			virtual ~ExecutableFormat() { }
 			virtual uint64_t GetEntryPoint();
+			virtual uint64_t GetTLSSize();
 			virtual void Load(Multitasking::Process* proc);
 
 		protected:
@@ -36,6 +37,7 @@ namespace LoadBinary
 			ELFExecutable(uint8_t* buf);
 			~ELFExecutable();
 			virtual uint64_t GetEntryPoint() override;
+			virtual uint64_t GetTLSSize() override;
 			virtual void Load(Multitasking::Process* proc) override;
 	};
 }
