@@ -11,7 +11,7 @@ STRIP		= ../../build/toolchain/bin/x86_64-orionx-strip
 CXXFLAGS	= -Wall -g -Os -std=gnu++11 -I../../build/sysroot/usr/local/include/freetype2
 
 CXXSRC	= $(shell find . -name "*.cpp")
-CXXOPT	= /Volumes/mx/System/Library/CoreServices/console.mxa
+CXXOPT	= /Volumes/mx/System/Library/LaunchDaemons/displayd.mxa
 
 
 .PHONY: all createdir
@@ -19,10 +19,10 @@ CXXOPT	= /Volumes/mx/System/Library/CoreServices/console.mxa
 all: $(CXXOPT)
 	@:
 
-$(CXXOPT): $(CXXSRC)
-	@$(CXX) $(CXXFLAGS) -o $@ $(CXXSRC)
+$(CXXOPT): $(CXXSRC) ../../build/sysroot/usr/lib/libc.a
+	@$(CXX) $(CXXFLAGS) -o $@ $(CXXSRC) -lfreetype
 	@$(STRIP) --strip-debug $(CXXOPT)
-	@echo "userspace: console"
+	@echo "userspace: displayserver"
 
 createdir:
 	@:

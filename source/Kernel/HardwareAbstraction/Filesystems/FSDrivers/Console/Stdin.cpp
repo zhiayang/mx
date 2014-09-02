@@ -2,7 +2,6 @@
 // Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
-
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Filesystems.hpp>
 
@@ -10,21 +9,6 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace Filesystems
 {
-	/*
-		class FSDriverConsole : public FSDriver
-		{
-			public:
-				FSDriverConsole();
-				~FSDriverConsole() override;
-				bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
-				size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
-				size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
-				void Stat(VFS::vnode* node, struct stat* stat) override;
-
-				Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
-		};
-	*/
-
 	// initialise with null partition, because we don't have one.
 	FSDriverStdin::FSDriverStdin() : FSDriver(nullptr, FSDriverType::Virtual)
 	{
@@ -36,6 +20,14 @@ namespace Filesystems
 		// same here
 	}
 
+	bool FSDriverStdin::Create(VFS::vnode*, const char*, uint64_t, uint64_t)
+	{
+		return false;
+	}
+	bool FSDriverStdin::Delete(VFS::vnode*, const char*)
+	{
+		return false;
+	}
 	bool FSDriverStdin::Traverse(VFS::vnode* node, const char* path, char** symlink)
 	{
 		(void) node;

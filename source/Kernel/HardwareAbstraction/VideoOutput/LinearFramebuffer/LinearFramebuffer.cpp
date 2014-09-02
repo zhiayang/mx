@@ -28,7 +28,7 @@ namespace LinearFramebuffer
 
 	// #define BytesPerPixel		4
 	#define CharHeight			16
-	#define CharWidth			8
+	// #define CharWidth			8
 
 	#define CurrentFont			Font8x16_Thick
 

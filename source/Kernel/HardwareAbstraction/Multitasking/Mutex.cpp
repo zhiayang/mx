@@ -68,12 +68,7 @@ namespace Multitasking
 		}
 
 		while(Lock->lock)
-		{
 			BLOCK();
-			if(IPC::SimpleMessage* m = IPC::GetSimpleMessage())
-				delete m;
-		}
-
 
 		Lock->lock = true;
 		Lock->owner = GetCurrentThread()->ThreadID;
@@ -106,9 +101,7 @@ namespace Multitasking
 		for(uint64_t i = 0; i < nc; i++)
 		{
 			if(Lock->contestants[i] != o)
-			{
-				IPC::SendSimpleMessage(Lock->contestants[i], IPC::MessageTypes::MutexWakeup, 0, 0, 0, 0);
-			}
+				Multitasking::WakeForMessage(Multitasking::GetThread(Lock->contestants[i]));
 		}
 	}
 }

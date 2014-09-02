@@ -37,6 +37,7 @@ namespace Multitasking
 		if(id < 0)
 		{
 			HALT("Thread corrupted");
+			// return nullptr;
 		}
 
 		return GetThreadList(thread)->RemoveAt((uint64_t) id);

@@ -20,6 +20,8 @@ namespace HardwareAbstraction {
 namespace Multitasking
 {
 	#define __signal_ignore	0
+	uint64_t NumThreads = 0;
+	uint64_t NumProcesses = 0;
 
 	static void SetupStackThread_Kern(Thread* thread, uint64_t u, uint64_t f, void* p1, void* p2, void* p3, void* p4, void* p5, void* p6)
 	{
@@ -86,17 +88,17 @@ namespace Multitasking
 		*--stack = 0;					// R12 (-72)
 		*--stack = 0;					// R11 (-80)
 		*--stack = 0;					// R10 (-88)
-		*--stack = 0;					// R9 (-96)
-		*--stack = 0;					// R8 (-104)
+		*--stack = (uint64_t) p5;			// R9 (-96)
+		*--stack = (uint64_t) p6;			// R8 (-104)
 
-		*--stack = 0;					// RDX (-112)	(envc)
-		*--stack = 0;					// RCX (-120)	(envp)
+		*--stack = (uint64_t) p3;			// RDX (-112)	(envc)
+		*--stack = (uint64_t) p4;			// RCX (-120)	(envp)
 		*--stack = 0;					// RBX (-128)
 		*--stack = 0;					// RAX (-136)
 
 		*--stack = 0;					// RBP (-144)
-		*--stack = 0;					// RSI (-152)	(argv)
-		*--stack = 0;					// RDI (-160)	(argc)
+		*--stack = (uint64_t) p2;			// RSI (-152)	(argv)
+		*--stack = (uint64_t) p1;			// RDI (-160)	(argc)
 
 		thread->StackPointer = (uint64_t) stack;
 	}
@@ -122,16 +124,10 @@ namespace Multitasking
 		uint64_t k = 0;
 		if(Parent->CR3 != GetKernelCR3())
 		{
-			// uint64_t pk = Virtual::AllocatePage(DefaultRing3StackSize / 0x1000);
-			// Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, k);
-			// Virtual::MapRegion(k, k, DefaultRing3StackSize / 0x1000, 0x3);
-
 			k = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS);
 			auto pk = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
 			Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x3, Parent->VAS->PML4);
 			Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x3);
-
-			// Virtual::MapRegion(k, k, DefaultRing3StackSize / 0x1000, 0x3, (Virtual::PageMapStructure*) Parent->CR3);
 		}
 		else
 		{
@@ -139,14 +135,10 @@ namespace Multitasking
 		}
 
 		// allocate user stack.
-		// uint64_t u = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
-		// Virtual::MapRegion(u, u, DefaultRing3StackSize / 0x1000, 0x7, (Virtual::PageMapStructure*) Parent->CR3);
-
 		uint64_t pu = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
 		uint64_t u = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS);
 
 		Virtual::MapRegion(u, pu, DefaultRing3StackSize / 0x1000, 0x7, (Virtual::PageMapStructure*) Parent->CR3);
-
 
 
 		thread->TopOfStack			= k + DefaultRing3StackSize;
@@ -156,19 +148,22 @@ namespace Multitasking
 		thread->ThreadID			= NumThreads;
 		thread->Parent				= Parent;
 		thread->CurrentSharedMemoryOffset	= 0;
-		thread->SimpleMessageQueue		= new Library::LinkedList<IPC::SimpleMessage>();
+		thread->messagequeue			= new rde::list<uintptr_t>();
 		thread->Priority				= Priority;
 		thread->ExecutionTime			= 0;
 		thread->InstructionPointer		= 0;
+		thread->tlsptr				= new uint8_t[Parent->tlssize];
 
+		auto tlsptrptr = new uintptr_t;
+		*tlsptrptr = (uint64_t) thread->tlsptr + Parent->tlssize;
 
-		NumThreads++;
+		thread->tlsptrptr = (uint64_t) tlsptrptr;
+
 		Parent->Threads->InsertFront(thread);
 
 
 		SetupStackThread(thread, u, (uint64_t) Function, p1, p2, p3, p4, p5, p6);
-
-
+		NumThreads++;
 
 		// unmap
 		if(Parent->CR3 != (uint64_t) Virtual::GetCurrentPML4T())
@@ -179,7 +174,7 @@ namespace Multitasking
 		if(FirstProc)
 		{
 			// set tss
-			asm volatile("movq %[stacktop], 0x504" :: [stacktop]"r"(thread->TopOfStack));
+			asm volatile("movq %[stacktop], 0x2504" :: [stacktop]"r"(thread->TopOfStack));
 		}
 
 		Log("Created Thread: Parent: %s, TID: %d", Parent->Name, thread->ThreadID);
@@ -191,7 +186,17 @@ namespace Multitasking
 		return CreateThread(Kernel::KernelProcess, Function, Priority, p1, p2, p3, p4, p5, p6);
 	}
 
-	Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)(), uint8_t Priority)
+	Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)())
+	{
+		return CreateProcess(name, Flags, 0, Function, 1, 0, 0, 0, 0, 0, 0);
+	}
+
+	Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)(), uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
+	{
+		return CreateProcess(name, Flags, 0, Function, Priority, a1, a2, a3, a4, a5, a6);
+	}
+
+	Process* CreateProcess(const char name[64], uint8_t Flags, uint64_t tlssize, void (*Function)(), uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
 	{
 		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
 		using Library::LinkedList;
@@ -204,13 +209,13 @@ namespace Multitasking
 		process->Flags					= Flags;
 		process->ProcessID				= NumProcesses;
 		process->CR3					= (uint64_t) PML4;
-		process->SimpleMessageQueue		= new Library::LinkedList<IPC::SimpleMessage>();
 		process->CurrentSharedMemoryOffset		= 0;
 		process->CurrentFDIndex			= 4;
 		process->AllocatedPageList			= new Library::Vector<uint64_t>();
 		process->VAS					= new Virtual::VirtualAddressSpace(PML4);
 		process->SignalHandlers			= (sighandler_t*) KernelHeap::AllocateChunk(sizeof(sighandler_t) * __SIGCOUNT);
 		process->iocontext				= new Filesystems::IOContext();
+		process->tlssize				= tlssize;
 		for(int i = 0; i < __SIGCOUNT; i++)
 			process->SignalHandlers[i] = __signal_ignore;
 
@@ -226,11 +231,12 @@ namespace Multitasking
 			Kernel::KernelProcess = process;
 		}
 
-		strcpy(process->Name, name);
+		strncpy(process->Name, name, 64);
 
 
 		NumProcesses++;
-		(void) CreateThread(process, Function, Priority);
+
+		(void) CreateThread(process, Function, Priority, a1, a2, a3, a4, a5, a6);
 
 		if(FirstProc)
 			FirstProc = false;
@@ -247,7 +253,6 @@ namespace Multitasking
 		Log("Creating new process in VAS (%s): CR3(phys): %x, PID %d", name, (uint64_t) PML4, process->ProcessID);
 		return process;
 	}
-
 }
 }
 }
