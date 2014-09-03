@@ -19,11 +19,13 @@ static uint64_t bpp = 0;
 static __thread int m = 410;
 volatile static bool flag = false;
 
-void thr()
+void* thr(void*)
 {
 	flag = true;
 	m = 200;
 	printf("m in thr: %d\n\n", m);
+
+	return 0;
 }
 
 int main(int argc, char** argv)
@@ -39,7 +41,11 @@ int main(int argc, char** argv)
 	m = 512;
 	printf("m in main: %d\n", m);
 
-	Library::SystemCall::CreateThread(NULL, thr);
+	pthread_t thrid = 0;
+	pthread_create(&thrid, NULL, thr, NULL);
+
+	printf("created thread with id %ld\n", thrid);
+
 	while(!flag);
 	printf("m in main: %d\n", m);
 
