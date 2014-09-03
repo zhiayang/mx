@@ -56,10 +56,10 @@ void exit(int ret);
 char* getenv(const char* env);
 int system(const char* cmd);
 
-#ifdef wchar_t
+// #ifdef wchar_t
 size_t mbstowcs(wchar_t* dest, const char* src, size_t max);
 int mbtowc(wchar_t* pwc, const char* pmb, size_t max);
-#endif
+// #endif
 
 
 

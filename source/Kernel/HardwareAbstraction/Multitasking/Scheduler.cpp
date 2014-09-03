@@ -164,8 +164,7 @@ namespace Multitasking
 		*((uint64_t*) 0x2504) = CurrentThread->TopOfStack;
 
 		// update fs
-		// let asm do it, 0x2610 contains the address.
-		uint64_t tlsptr = CurrentThread->tlsptrptr;
+		uint64_t tlsptr = (uintptr_t) &CurrentThread->tlsptr;
 
 		uint32_t low = tlsptr & 0xFFFFFFFF;
 		uint32_t high = tlsptr >> 32;

@@ -59,25 +59,22 @@ namespace Multitasking
 		thread->StackPointer = (uint64_t) stack;
 	}
 
-	static void SetupStackThread_Proc(Thread* thread, uint64_t u, uint64_t f, void* p1, void* p2, void* p3, void* p4, void* p5, void* p6)
+	static void SetupStackThread_Proc(Thread* thread, uint64_t u, uint64_t stacksize, uint64_t f, void* p1, void* p2, void* p3, void* p4, void* p5, void* p6)
 	{
-		UNUSED(p1);
-		UNUSED(p2);
-		UNUSED(p3);
-		UNUSED(p4);
-		UNUSED(p5);
-		UNUSED(p6);
-
 		uint64_t* stack = (uint64_t*) thread->StackPointer;
 		// put argv* and envp* on stack.
 
-		uint64_t* usp = (uint64_t*) (u + DefaultRing3StackSize - 8);
-		*--usp = 0;								//		(envp)
-		*--usp = 0;
+		if(stacksize == 0)
+			stacksize = DefaultRing3StackSize;
+
+		// need to insert a return statement here that will call the killthread function.
+		// it's kinda dangerous, because we're jumping directly to kernel code
+		uint64_t* usp = (uint64_t*) (u + stacksize - 8);
+		*usp = (uint64_t) Multitasking::ExitThread_Userspace;
 
 		// user thread (always)
 		*--stack = 0x23;					// SS
-		*--stack = u + DefaultRing3StackSize - 8;	// User stack pointer
+		*--stack = u + (stacksize) - 8;			// User stack pointer
 		*--stack = 0x202;				// RFLAGS
 		*--stack = 0x1B;					// CS
 		*--stack = (uint64_t) f;				// RIP (-40)
@@ -91,8 +88,8 @@ namespace Multitasking
 		*--stack = (uint64_t) p5;			// R9 (-96)
 		*--stack = (uint64_t) p6;			// R8 (-104)
 
-		*--stack = (uint64_t) p3;			// RDX (-112)	(envc)
-		*--stack = (uint64_t) p4;			// RCX (-120)	(envp)
+		*--stack = (uint64_t) p3;			// RDX (-112)
+		*--stack = (uint64_t) p4;			// RCX (-120)
 		*--stack = 0;					// RBX (-128)
 		*--stack = 0;					// RAX (-136)
 
@@ -103,23 +100,37 @@ namespace Multitasking
 		thread->StackPointer = (uint64_t) stack;
 	}
 
-	static void SetupStackThread(Thread* thread, uint64_t u, uint64_t f, void* p1, void* p2, void* p3, void* p4, void* p5, void* p6)
+	static void SetupStackThread(Thread* thread, uint64_t u, uint64_t us, uint64_t f, void* p1, void* p2, void* p3, void* p4, void* p5, void* p6)
 	{
 		if(thread->Parent == Kernel::KernelProcess)
 			SetupStackThread_Kern(thread, u, f, p1, p2, p3, p4, p5, p6);
 
 		else
-			SetupStackThread_Proc(thread, u, f, p1, p2, p3, p4, p5, p6);
+			SetupStackThread_Proc(thread, u, us, f, p1, p2, p3, p4, p5, p6);
 	}
 
 	Thread* CreateThread(Process* Parent, void (*Function)(), uint8_t Priority, void* p1, void* p2, void* p3, void* p4, void* p5, void* p6)
 	{
+		Thread_attr a;
+		a.a1 = p1;
+		a.a2 = p2;
+		a.a3 = p3;
+		a.a4 = p4;
+		a.a5 = p5;
+		a.a6 = p6;
+
+		a.priority = Priority;
+		Memory::Set(&a.regs, 0, sizeof(a.regs));
+		a.stackptr = 0;
+		a.stacksize = 0;
+
+		return CreateThread(Parent, Function, &a);
+	}
+
+	Thread* CreateThread(Process* Parent, void (*Function)(), Thread_attr* oattr)
+	{
 		Thread* thread = new Thread();
-
-		// Allocate kernel stack
-		// uint64_t k = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
-
-		// Virtual::MapRegion(k, k, DefaultRing3StackSize / 0x1000, 0x3);
+		Thread_attr* attr = 0;
 
 		uint64_t k = 0;
 		if(Parent->CR3 != GetKernelCR3())
@@ -134,42 +145,53 @@ namespace Multitasking
 			k = Virtual::AllocatePage(DefaultRing3StackSize / 0x1000);
 		}
 
+		// check.
+		if(oattr == nullptr)
+		{
+			attr = new Thread_attr;
+			Memory::Set(attr, 0, sizeof(Thread_attr));
+		}
+		else
+			attr = oattr;
+
 		// allocate user stack.
-		uint64_t pu = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
-		uint64_t u = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS);
+		uint64_t u = 0;
+		uint64_t us = 0;
+		if(attr->stackptr == 0 || attr->stacksize == 0)
+		{
+			uint64_t pu = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
+			u = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS);
+			us = DefaultRing3StackSize;
 
-		Virtual::MapRegion(u, pu, DefaultRing3StackSize / 0x1000, 0x7, (Virtual::PageMapStructure*) Parent->CR3);
+			Virtual::MapRegion(u, pu, DefaultRing3StackSize / 0x1000, 0x7, (Virtual::PageMapStructure*) Parent->CR3);
+		}
+		else
+		{
+			u = attr->stackptr;
+			us = attr->stacksize;
+		}
 
-
-		thread->TopOfStack			= k + DefaultRing3StackSize;
+		thread->TopOfStack			= k + us;
 		thread->StackPointer			= thread->TopOfStack;
 		thread->Thread				= Function;
-		thread->State				= 1;
+		thread->State				= STATE_NORMAL;
 		thread->ThreadID			= NumThreads;
 		thread->Parent				= Parent;
-		thread->CurrentSharedMemoryOffset	= 0;
 		thread->messagequeue			= new rde::list<uintptr_t>();
-		thread->Priority				= Priority;
+		thread->Priority				= attr->priority;
 		thread->ExecutionTime			= 0;
 		thread->InstructionPointer		= 0;
 		thread->tlsptr				= new uint8_t[Parent->tlssize];
-
-		auto tlsptrptr = new uintptr_t;
-		*tlsptrptr = (uint64_t) thread->tlsptr + Parent->tlssize;
-
-		thread->tlsptrptr = (uint64_t) tlsptrptr;
+		thread->CrashState			= new ThreadRegisterState_type;
 
 		Parent->Threads->InsertFront(thread);
 
-
-		SetupStackThread(thread, u, (uint64_t) Function, p1, p2, p3, p4, p5, p6);
+		SetupStackThread(thread, u, us, (uint64_t) Function, attr->a1, attr->a2, attr->a3, attr->a4, attr->a5, attr->a6);
 		NumThreads++;
 
 		// unmap
 		if(Parent->CR3 != (uint64_t) Virtual::GetCurrentPML4T())
-		{
 			Virtual::UnMapRegion(k, DefaultRing3StackSize / 0x1000);
-		}
 
 		if(FirstProc)
 		{
@@ -178,8 +200,13 @@ namespace Multitasking
 		}
 
 		Log("Created Thread: Parent: %s, TID: %d", Parent->Name, thread->ThreadID);
+		if(oattr == nullptr)
+			delete attr;
+
 		return thread;
 	}
+
+
 
 	Thread* CreateKernelThread(void (*Function)(), uint8_t Priority, void* p1, void* p2, void* p3, void* p4, void* p5, void* p6)
 	{
@@ -209,8 +236,6 @@ namespace Multitasking
 		process->Flags					= Flags;
 		process->ProcessID				= NumProcesses;
 		process->CR3					= (uint64_t) PML4;
-		process->CurrentSharedMemoryOffset		= 0;
-		process->CurrentFDIndex			= 4;
 		process->AllocatedPageList			= new Library::Vector<uint64_t>();
 		process->VAS					= new Virtual::VirtualAddressSpace(PML4);
 		process->SignalHandlers			= (sighandler_t*) KernelHeap::AllocateChunk(sizeof(sighandler_t) * __SIGCOUNT);

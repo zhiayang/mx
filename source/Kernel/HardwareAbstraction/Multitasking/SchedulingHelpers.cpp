@@ -20,9 +20,13 @@ namespace Multitasking
 	{
 		Log("Thread %d exited.", GetCurrentThread()->ThreadID);
 		Kill(GetCurrentThread());
-		while(true);
 	}
 
+	extern "C" void ExitThread_Userspace()
+	{
+		asm volatile("mov $4012, %%r10; int $0xF8" ::: "r10");
+		while(true);
+	}
 
 
 	Library::LinkedList<Thread>* GetThreadList(Thread* t)
