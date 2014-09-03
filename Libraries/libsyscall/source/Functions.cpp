@@ -27,6 +27,7 @@ namespace SystemCall
 		.quad	GetPID				// 4010
 		.quad	GetParentPID			// 4011
 		.quad	ExitThread			// 4012
+		.quad	GetRetVal			// 4013
 
 		// file io things, page 8000+
 		.quad	OpenFile			// 8000
@@ -120,6 +121,11 @@ namespace SystemCall
 	void ExitThread()
 	{
 		Syscall0Param(4012);
+	}
+
+	void* GetRetVal(uint64_t tid)
+	{
+		return (void*) Syscall1Param(4013, tid);
 	}
 
 	// 8000, 8001

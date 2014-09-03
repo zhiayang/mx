@@ -14,7 +14,7 @@ __BEGIN_DECLS
 #include "defs/_pthreadstructs.h"
 
 int pthread_create(pthread_t* restrict thread, const pthread_attr_t* restrict attr, void *(*start_routine)(void*), void *restrict arg);
-
+int pthread_join(pthread_t thread, void** retval);
 
 
 
