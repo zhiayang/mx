@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <signal.h>
+#include <pthread.h>
 #pragma once
 
 #ifdef __cplusplus
@@ -28,7 +29,7 @@ namespace Library
 		void ExitProc();
 		void InstallIRQHandler(uint64_t irq, uint64_t handleraddr);
 		void InstallIRQHandlerWithRegs(uint64_t irq, uint64_t handleraddr);
-		void CreateThread(void (*thr)());
+		pthread_t CreateThread(pthread_attr_t* attribs, void (*thr)());
 		void SpawnProcess(const char* path, const char* name);
 		void SignalProcess(pid_t pid, int signum);
 		void SignalThread(pid_t tid, int signum);

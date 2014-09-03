@@ -76,37 +76,20 @@ namespace SystemCalls
 		Multitasking::Block(1);
 	}
 
-	extern "C" void Syscall_CreateThread(uint64_t ptr)
+	extern "C" uint64_t Syscall_CreateThread(uint64_t ptr, pthread_attr_t* attr)
 	{
 		void (*t)() = (void(*)())(ptr);
 		Multitasking::Process* p = Multitasking::GetCurrentProcess();
-		Multitasking::AddToQueue(Multitasking::CreateThread(p, t));
+		Multitasking::Thread* thr = 0;
+		Multitasking::AddToQueue(thr = Multitasking::CreateThread(p, t, attr));
+		return thr->ThreadID;
 	}
 
 	extern "C" void Syscall_SpawnProcess(const char* ExecutableFilename, const char* ProcessName)
 	{
 		auto proc = LoadBinary::Load(ExecutableFilename, ProcessName);
 		Multitasking::AddToQueue(proc);
-
-		// auto fd = Filesystems::OpenFile(ExecutableFilename, 0);
-		// if(fd == -1)
-		// 	// todo: set errno
-		// 	return;
-
-		// struct stat s;
-		// Filesystems::Stat(fd, &s);
-		// uint8_t* prog = new uint8_t[s.st_size];
-
-		// LoadBinary::GenericExecutable* Exec = new LoadBinary::GenericExecutable(ProcessName, prog);
-		// Exec->AutomaticLoadExecutable();
-
-		// Exec->SetApplicationType(Multitasking::ThreadType::NormalApplication);
-		// IPC::CentralDispatch::AddApplicationToList(Exec->proc->Threads->Front(), Exec->proc);
-
-		// Exec->Execute();
-		// delete[] prog;
 	}
-
 
 	extern "C" uint64_t Syscall_GetPID()
 	{

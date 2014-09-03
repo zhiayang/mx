@@ -11,6 +11,7 @@
 #include <List.hpp>
 #include <Mutexes.hpp>
 #include <Vector.hpp>
+#include <defs/_pthreadstructs.h>
 
 #include <signal.h>
 
@@ -20,20 +21,7 @@ namespace HardwareAbstraction
 {
 	namespace Multitasking
 	{
-		enum class ThreadType
-		{
-			NormalApplication,
-			BackgroundService
-		};
-
 		struct Process;
-
-		struct ThreadRegisterState_type
-		{
-			uint64_t rdi, rsi, rbp;
-			uint64_t rax, rbx, rcx, rdx;
-			uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
-		};
 
 		struct Thread
 		{
@@ -44,16 +32,13 @@ namespace HardwareAbstraction
 			uint32_t Sleep;
 			uint8_t Priority;
 			uint64_t InstructionPointer;
-			ThreadType Type;
 
 			rde::list<uintptr_t>* messagequeue;
 			uint16_t ExecutionTime;
 
-			uint64_t CurrentSharedMemoryOffset;
 			Process* Parent;
-			ThreadRegisterState_type CrashState;
+			ThreadRegisterState_type* CrashState;
 			void* tlsptr;
-			uintptr_t tlsptrptr;
 
 			void (*Thread)();
 		};
@@ -64,17 +49,13 @@ namespace HardwareAbstraction
 			uint64_t ProcessID;			// Process ID
 			uint8_t Flags;
 			uint64_t CR3;
-			uint64_t DataPagePhys;
 			char Name[64];				// Task's name
 			size_t tlssize;
 
-			uint64_t CurrentSharedMemoryOffset;
 			Filesystems::IOContext* iocontext;
-
 
 			Library::Vector<uint64_t>* AllocatedPageList;
 			MemoryManager::Virtual::VirtualAddressSpace* VAS;
-			uint64_t CurrentFDIndex;
 			sighandler_t* SignalHandlers;
 
 			Process* Parent;
@@ -128,6 +109,7 @@ namespace HardwareAbstraction
 		void Kill(Thread* p);
 		void TerminateCurrentThread(ThreadRegisterState_type* r);
 		extern "C" void ExitThread();
+		extern "C" void ExitThread_Userspace();
 
 		void Suspend(Process* p);
 		void Resume(Process* p);
@@ -153,7 +135,12 @@ namespace HardwareAbstraction
 
 		Thread* CreateThread(Process* Parent, void (*Function)(), uint8_t Priority = 1, void* p1 = 0, void* p2 = 0, void* p3 = 0, void* p4 = 0, void* p5 = 0, void* p6 = 0) __attribute__ ((warn_unused_result));
 
+		Thread* CreateThread(Process* Parent, void (*Function)(), Thread_attr* attribs)
+			__attribute__ ((warn_unused_result));
+
 		Thread* CreateKernelThread(void (*Function)(), uint8_t Priority = 1, void* p1 = 0, void* p2 = 0, void* p3 = 0, void* p4 = 0, void* p5 = 0, void* p6 = 0) 	__attribute__ ((warn_unused_result));
+
+
 
 		Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)())
 			__attribute__ ((warn_unused_result));
@@ -163,6 +150,9 @@ namespace HardwareAbstraction
 
 		Process* CreateProcess(const char name[64], uint8_t Flags, size_t tlssize, void (*Function)(), uint8_t prio = 1, void* a1 = 0, void* a2 = 0, void* a3 = 0, void* a4 = 0, void* a5 = 0, void* a6 = 0)
 			__attribute__ ((warn_unused_result));
+
+
+
 
 		void LockMutex(uint64_t* Lock);
 		void UnlockMutex(uint64_t* Lock);

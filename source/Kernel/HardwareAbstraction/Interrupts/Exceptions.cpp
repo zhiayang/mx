@@ -362,26 +362,27 @@ namespace Interrupts
 
 
 			Multitasking::Thread* thr = Multitasking::GetCurrentThread();
+			if(thr)
+			{
+				// copy over the crash state.
+				thr->CrashState->rax = r->rax;
+				thr->CrashState->rbx = r->rbx;
+				thr->CrashState->rcx = r->rcx;
+				thr->CrashState->rdx = r->rdx;
 
-			// copy over the crash state.
-			thr->CrashState.rax = r->rax;
-			thr->CrashState.rbx = r->rbx;
-			thr->CrashState.rcx = r->rcx;
-			thr->CrashState.rdx = r->rdx;
+				thr->CrashState->r8 = r->r8;
+				thr->CrashState->r9 = r->r9;
+				thr->CrashState->r10 = r->r10;
+				thr->CrashState->r11 = r->r11;
+				thr->CrashState->r12 = r->r12;
+				thr->CrashState->r13 = r->r13;
+				thr->CrashState->r14 = r->r14;
+				thr->CrashState->r15 = r->r15;
 
-			thr->CrashState.r8 = r->r8;
-			thr->CrashState.r9 = r->r9;
-			thr->CrashState.r10 = r->r10;
-			thr->CrashState.r11 = r->r11;
-			thr->CrashState.r12 = r->r12;
-			thr->CrashState.r13 = r->r13;
-			thr->CrashState.r14 = r->r14;
-			thr->CrashState.r15 = r->r15;
-
-			thr->CrashState.rbp = r->rbp;
-			thr->CrashState.rsi = r->rsi;
-			thr->CrashState.rdi = r->rdi;
-
+				thr->CrashState->rbp = r->rbp;
+				thr->CrashState->rsi = r->rsi;
+				thr->CrashState->rdi = r->rdi;
+			}
 
 			r->rip = (uint64_t) Multitasking::TerminateCurrentThread;
 			return;

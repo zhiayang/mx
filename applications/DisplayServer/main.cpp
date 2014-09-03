@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <mqueue.h>
 #include <sys/syscall.h>
+#include <pthread.h>
 
 static uint64_t framebuffer = 0;
 static uint64_t width = 0;
@@ -38,7 +39,7 @@ int main(int argc, char** argv)
 	m = 512;
 	printf("m in main: %d\n", m);
 
-	Library::SystemCall::CreateThread(thr);
+	Library::SystemCall::CreateThread(NULL, thr);
 	while(!flag);
 	printf("m in main: %d\n", m);
 
