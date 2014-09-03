@@ -40,6 +40,7 @@ namespace HardwareAbstraction
 			ThreadRegisterState_type* CrashState;
 			void* tlsptr;
 
+			void* returnval;
 			void (*Thread)();
 		};
 
@@ -89,6 +90,8 @@ namespace HardwareAbstraction
 		uint64_t GetCurrentCR3();
 		Thread* GetThread(uint64_t id);
 		Process* GetProcess(uint64_t id);
+
+		void SetTLS(uint64_t tlsptr);
 
 		uint64_t GetCurrentThreadID();
 		uint64_t GetCurrentProcessID();

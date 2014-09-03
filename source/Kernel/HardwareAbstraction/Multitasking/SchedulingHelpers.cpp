@@ -24,10 +24,45 @@ namespace Multitasking
 
 	extern "C" void ExitThread_Userspace()
 	{
+		void* retval;
+		asm volatile("mov %%rax, %[ret]" : [ret]"=g"(retval));
+		GetCurrentThread()->returnval = retval;
+
 		asm volatile("mov $4012, %%r10; int $0xF8" ::: "r10");
 		while(true);
 	}
 
+	extern "C" void* Syscall_GetRetVal(uint64_t tid)
+	{
+		// todo: verify.
+		// todo: better blocking
+		Thread* t = GetThread(tid);
+		Log(3, "%d", t->ThreadID);
+		void* retval = 0;
+		while(t && t->State != STATE_AWAITDEATH)
+		{
+			Log(3, "%x", t->returnval);
+			retval = t->returnval;
+		}
+
+		return retval;
+	}
+
+	void SetTLS(uint64_t tlsptr)
+	{
+		uint32_t low = tlsptr & 0xFFFFFFFF;
+		uint32_t high = tlsptr >> 32;
+		asm volatile(
+			"mov $0x2B, %%bx		\n\t"
+			"mov %%bx, %%fs		\n\t"
+
+			"movl $0xC0000100, %%ecx	\n\t"
+			"movl %[lo], %%eax		\n\t"
+			"movl %[hi], %%edx		\n\t"
+			"wrmsr				\n\t"
+
+			:: [lo]"g"(low), [hi]"g"(high) : "memory", "rax", "rbx", "rcx", "rdx");
+	}
 
 	Library::LinkedList<Thread>* GetThreadList(Thread* t)
 	{
@@ -41,7 +76,7 @@ namespace Multitasking
 		if(id < 0)
 		{
 			HALT("Thread corrupted");
-			// return nullptr;
+			return nullptr;
 		}
 
 		return GetThreadList(thread)->RemoveAt((uint64_t) id);

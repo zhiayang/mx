@@ -41,6 +41,9 @@ namespace Library
 		sighandler_t InstallSignalHandler(uint64_t signum, sighandler_t handler);
 		uint64_t GetPID();
 		uint64_t GetParentPID();
+		void ExitThread();
+		void* GetRetVal(uint64_t tid);
+
 		uint64_t Open(const char* path, uint64_t flags);
 		void Close(uint64_t fd);
 		uint64_t Read(uint64_t sd, void* buffer, uint64_t length);

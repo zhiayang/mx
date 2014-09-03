@@ -25,7 +25,7 @@ void* thr(void*)
 	m = 200;
 	printf("m in thr: %d\n\n", m);
 
-	return 0;
+	return (void*) 59912;
 }
 
 int main(int argc, char** argv)
@@ -46,8 +46,11 @@ int main(int argc, char** argv)
 
 	printf("created thread with id %ld\n", thrid);
 
-	while(!flag);
+	void* retval = 0;
+	// while(!flag);
+	pthread_join(thrid, &retval);
 	printf("m in main: %d\n", m);
+	printf("thread retval: %p\n", retval);
 
 	framebuffer	= (uint64_t) argv[1];
 	width		= (uint64_t) argv[2];

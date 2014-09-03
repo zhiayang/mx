@@ -165,19 +165,7 @@ namespace Multitasking
 
 		// update fs
 		uint64_t tlsptr = (uintptr_t) &CurrentThread->tlsptr;
-
-		uint32_t low = tlsptr & 0xFFFFFFFF;
-		uint32_t high = tlsptr >> 32;
-		asm volatile(
-			"mov $0x2B, %%bx		\n\t"
-			"mov %%bx, %%fs		\n\t"
-
-			"movl $0xC0000100, %%ecx	\n\t"
-			"movl %[lo], %%eax		\n\t"
-			"movl %[hi], %%edx		\n\t"
-			"wrmsr				\n\t"
-
-			:: [lo]"g"(low), [hi]"g"(high) : "memory", "rax", "rbx", "rcx", "rdx");
+		SetTLS(tlsptr);
 
 		return CurrentThread->StackPointer;
 	}
