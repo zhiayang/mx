@@ -54,7 +54,7 @@ namespace Virtual
 		VirtualAddressSpace* vas = v ? v : proc->VAS;
 		assert(vas);
 
-		if(vas->pairs->Size() == 0)
+		if(vas->pairs->size() == 0)
 		{
 			Log(3, "Virtual address space exhausted, WTF are you doing?!");
 			Multitasking::Kill(proc);
@@ -66,11 +66,9 @@ namespace Virtual
 		if(addr > 0)
 		{
 			uint64_t end = addr + (size * 0x1000);
-			// Log("Trying to allocate %d page%s at %x -- end = %x", size, size > 1 ? "s" : "", addr, end);
 			AddressLengthPair* found = 0;
 			for(auto pair : *vas->pairs)
 			{
-				// Log("Found pair: %x - %x, overflow check: %.016x", pair->start, pair->length, pair->start + (pair->length * 0x1000));
 				if(pair->start <= addr && pair->start + (pair->length * 0x1000) >= end)
 				{
 					found = pair;
@@ -82,20 +80,21 @@ namespace Virtual
 			{
 				if(found->start == addr && found->length == size)
 				{
-					vas->pairs->Remove(found);
+					// vas->pairs->Remove(found);
+					vas->pairs->erase(rde::find(vas->pairs->begin(), vas->pairs->end(), found));
 					delete found;
 				}
 				else if(found->start == addr)
 				{
 					AddressLengthPair* np = new AddressLengthPair(end, found->length - size);
-					vas->pairs->InsertBack(np);
+					vas->pairs->push_back(np);
 					delete found;
 				}
 				else
 				{
 					// make a new pair.
 					AddressLengthPair* np = new AddressLengthPair(found->start, (addr - found->start) / 0x1000);
-					vas->pairs->InsertBack(np);
+					vas->pairs->push_back(np);
 
 					found->start = end;
 					found->length = found->length - size;
@@ -122,7 +121,7 @@ namespace Virtual
 
 
 
-		AddressLengthPair* pair = vas->pairs->Front();
+		AddressLengthPair* pair = vas->pairs->front();
 		if(pair->length > size)
 		{
 			uint64_t ret = pair->start;
@@ -133,7 +132,10 @@ namespace Virtual
 		else if(pair->length == size)
 		{
 			uint64_t ret = pair->start;
-			delete vas->pairs->RemoveFront();
+			auto r = vas->pairs->front();
+			vas->pairs->erase(vas->pairs->begin());
+
+			delete r;
 			return ret;
 		}
 		else
@@ -208,14 +210,14 @@ namespace Virtual
 		}
 
 		// if we reach here, we haven't found a match.
-		vas->pairs->InsertBack(new AddressLengthPair(page, size));
+		vas->pairs->push_back(new AddressLengthPair(page, size));
 	}
 
 	VirtualAddressSpace* SetupVAS(VirtualAddressSpace* vas)
 	{
 		// Max 48-bit virtual address space (current implementations)
-		vas->pairs->InsertBack(new AddressLengthPair(0x01000000, 0xFF000));
-		vas->pairs->InsertBack(new AddressLengthPair(0xFFFFF00000000000, 0x100000));
+		vas->pairs->push_back(new AddressLengthPair(0x01000000, 0xFF000));
+		vas->pairs->push_back(new AddressLengthPair(0xFFFFF00000000000, 0x100000));
 
 		return vas;
 	}

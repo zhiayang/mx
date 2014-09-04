@@ -234,7 +234,7 @@ namespace Multitasking
 		process->Flags					= Flags;
 		process->ProcessID				= NumProcesses;
 		process->CR3					= (uint64_t) PML4;
-		process->AllocatedPageList			= new Library::Vector<uint64_t>();
+		process->AllocatedPageList			= new rde::vector<uint64_t>();
 		process->VAS					= new Virtual::VirtualAddressSpace(PML4);
 		process->SignalHandlers			= (sighandler_t*) KernelHeap::AllocateChunk(sizeof(sighandler_t) * __SIGCOUNT);
 		process->iocontext				= new Filesystems::IOContext();

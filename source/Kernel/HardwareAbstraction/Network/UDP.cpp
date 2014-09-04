@@ -6,7 +6,6 @@
 
 // #include <Kernel.hpp>
 // #include <HardwareAbstraction/Network.hpp>
-// #include <Vector.hpp>
 // using namespace Library;
 
 // namespace Kernel {

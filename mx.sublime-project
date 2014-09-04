@@ -11,7 +11,7 @@
 			"folder_exclude_patterns":
 			[
 				"build",
-				"Libraries/freetype*",
+				"Libraries/ports",
 			],
 		}
 	],
