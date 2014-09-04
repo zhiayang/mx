@@ -28,7 +28,7 @@ struct Thread_attr
 	void* a5;
 	void* a6;
 
-	ThreadRegisterState_type regs;
+	struct ThreadRegisterState_type regs;
 };
 
 __END_DECLS
