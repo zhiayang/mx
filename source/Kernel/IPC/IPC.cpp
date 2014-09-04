@@ -234,6 +234,11 @@ namespace IPC
 
 	extern "C" int IPC_SendMessage(long key, void* msg, size_t size, uint64_t flags)
 	{
+		(void) key;
+		(void) msg;
+		(void) size;
+		(void) flags;
+
 		// if(messagequeue == nullptr)
 		// 	messagequeue = new rde::hash_map<key_t, rde::list<uintptr_t>*>();
 
@@ -261,6 +266,13 @@ namespace IPC
 
 	extern "C" ssize_t IPC_ReceiveMessage(long key, void* msg, size_t size, uint64_t type, uint64_t flags)
 	{
+		(void) key;
+		(void) msg;
+		(void) size;
+		(void) type;
+		(void) flags;
+
+
 		// if(messagequeue == nullptr)
 		// 	messagequeue = new rde::hash_map<key_t, rde::list<uintptr_t>*>();
 

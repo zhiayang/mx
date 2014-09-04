@@ -32,6 +32,7 @@ namespace HardwareAbstraction
 			uint32_t Sleep;
 			uint8_t Priority;
 			uint64_t InstructionPointer;
+			uint8_t flags;
 
 			rde::list<uintptr_t>* messagequeue;
 			uint16_t ExecutionTime;
@@ -43,7 +44,6 @@ namespace HardwareAbstraction
 			void* returnval;
 			void (*Thread)();
 		};
-
 
 		struct Process
 		{
@@ -71,6 +71,9 @@ namespace HardwareAbstraction
 		#define STATE_DEAD			255
 
 		#define BLOCK_MESSAGE		0
+
+		#define FLAG_USERSPACE		0x1
+		#define FLAG_DETACHED		0x2
 
 
 		extern Library::LinkedList<Process>* ProcessList;

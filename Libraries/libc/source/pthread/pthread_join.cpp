@@ -8,7 +8,8 @@
 
 extern "C" int pthread_join(pthread_t thread, void** retval)
 {
-	void* ret = Library::SystemCall::GetRetVal(thread);
+	// implicit join with return value.
+	void* ret = Library::SystemCall::JoinThread(thread);
 	if(retval)
 		*retval = ret;
 

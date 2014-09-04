@@ -183,6 +183,7 @@ namespace Multitasking
 		thread->InstructionPointer		= 0;
 		thread->tlsptr				= new uint8_t[Parent->tlssize];
 		thread->CrashState			= new ThreadRegisterState_type;
+		thread->flags				= Parent->Flags;
 
 		Parent->Threads->InsertFront(thread);
 

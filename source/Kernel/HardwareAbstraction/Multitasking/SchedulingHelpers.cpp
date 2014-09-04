@@ -7,6 +7,7 @@
 #include <StandardIO.hpp>
 #include <List.hpp>
 #include <string.h>
+#include <errno.h>
 
 using namespace Kernel;
 using namespace Library;
@@ -32,19 +33,49 @@ namespace Multitasking
 		asm volatile("mov $4012, %%r10; int $0xF8" ::: "r10");
 	}
 
-	extern "C" void* Syscall_GetRetVal(uint64_t tid)
+	extern "C" void* Syscall_JoinThread(pthread_t tid)
 	{
-		// todo: verify.
 		// todo: better blocking
-		volatile Thread* volatile t = GetThread(tid);
-		volatile void* retval = 0;
-		while(t->State != STATE_DEAD);
+		volatile Thread* t = GetThread(tid);
+		if(t == 0)
+			errno = EINVAL;
+
+		void* retval = 0;
+		while(t->State != STATE_DEAD)
+			asm volatile("pause");
 
 		retval = t->returnval;
 
 		delete t;
 		return (void*) retval;
 	}
+
+	extern "C" void Syscall_DetachThread(pthread_t tid)
+	{
+		volatile Thread* volatile t = GetThread(tid);
+		if(t == 0)
+			errno = EINVAL;
+
+		t->flags |= FLAG_DETACHED;
+	}
+
+	extern "C" pthread_t Syscall_GetTID()
+	{
+		return (pthread_t) GetCurrentThreadID();
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	void SetTLS(uint64_t tlsptr)
 	{
