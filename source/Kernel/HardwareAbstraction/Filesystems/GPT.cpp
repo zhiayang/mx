@@ -19,7 +19,7 @@ namespace GPT
 	void ReadPartitions(StorageDevice* atadev)
 	{
 		// normally MBR::ReadPartitions will call this... so we can assume the list is uninitialised.
-		atadev->Partitions = new Library::LinkedList<Partition>();
+		atadev->Partitions = new rde::list<Partition*>();
 		// warning: will trash whatever the ATADevice's data buffer contains.
 
 		// read the gpt
@@ -52,7 +52,7 @@ namespace GPT
 		{
 			if(*((uint64_t*)(table + (p * 128) + 8)) != 0 && *((uint64_t*)(table + (p * 128) + 0)) != 0)
 			{
-				atadev->Partitions->InsertBack(new Partition(atadev, (uint8_t) p, *((uint64_t*)(table + (p * 128) + 32)), *((uint64_t*)(table + (p * 128) + 40)) - *((uint64_t*)(table + (p * 128) + 32)) + 1, FSTypes::hfsplus, *((uint64_t*)(table + (p * 128) + 24)), *((uint64_t*)(table + (p * 128) + 16)), *((uint64_t*)(table + (p * 128) + 0)), *((uint64_t*)(table + (p * 128) + 8)), (char*) "", false));
+				atadev->Partitions->push_back(new Partition(atadev, (uint8_t) p, *((uint64_t*)(table + (p * 128) + 32)), *((uint64_t*)(table + (p * 128) + 40)) - *((uint64_t*)(table + (p * 128) + 32)) + 1, FSTypes::hfsplus, *((uint64_t*)(table + (p * 128) + 24)), *((uint64_t*)(table + (p * 128) + 16)), *((uint64_t*)(table + (p * 128) + 0)), *((uint64_t*)(table + (p * 128) + 8)), (char*) "", false));
 			}
 		}
 

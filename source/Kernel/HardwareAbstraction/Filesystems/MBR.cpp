@@ -50,7 +50,7 @@ namespace MBR
 		}
 
 		// if we got here, there should be no GPT partitions -- init the list.
-		atadev->Partitions = new Library::LinkedList<Partition>();
+		atadev->Partitions = new rde::list<Partition*>();
 		// read the partition table
 		for(uint16_t o = 0x1BE; o < 0x1BE + 0x40; o += 0x10)
 		{
@@ -69,7 +69,7 @@ namespace MBR
 						break;
 				}
 
-				atadev->Partitions->InsertBack(new Partition(atadev, (uint8_t)(o - 0x1BE) / 0x10, *((uint32_t*)(mbr + o + 8)), *((uint32_t*)(mbr + o + 12)), fstype, 0, 0, 0, 0, (char*)"", *(mbr + o) & 0x80));
+				atadev->Partitions->push_back(new Partition(atadev, (uint8_t)(o - 0x1BE) / 0x10, *((uint32_t*)(mbr + o + 8)), *((uint32_t*)(mbr + o + 12)), fstype, 0, 0, 0, 0, (char*)"", *(mbr + o) & 0x80));
 			}
 		}
 

@@ -3,7 +3,7 @@
 // Licensed under Creative Commons Attribution ShareAlike 3.0 Unported.
 
 #include <stdint.h>
-#include <List.hpp>
+#include <rdestl/rdestl.h>
 #pragma once
 
 namespace Kernel {
@@ -17,13 +17,13 @@ namespace HardwareAbstraction
 			public:
 				SystemDescriptionTable(uintptr_t address);
 
-				const char*	Signature()			{ return this->signature;		}
-				uint32_t	Length()			{ return this->length;			}
-				uint8_t		Revision()			{ return this->revision;		}
-				const char*	OemID()				{ return this->oemid;			}
-				const char*	OemTableID()		{ return this->oemtableid;		}
-				uint32_t	OemRevision()		{ return this->oemrevision;		}
-				uint32_t	CreatorID()			{ return this->creatorid;		}
+				const char*	Signature()		{ return this->signature;	}
+				uint32_t	Length()		{ return this->length;		}
+				uint8_t		Revision()		{ return this->revision;		}
+				const char*	OemID()		{ return this->oemid;		}
+				const char*	OemTableID()		{ return this->oemtableid;	}
+				uint32_t	OemRevision()		{ return this->oemrevision;	}
+				uint32_t	CreatorID()		{ return this->creatorid;		}
 				uint32_t	CreatorRevision()	{ return this->creatorrevision;	}
 
 			private:
@@ -44,7 +44,7 @@ namespace HardwareAbstraction
 				RootTable(uintptr_t address);
 
 				uint64_t GetNumberOfHeaders();
-				Library::LinkedList<SystemDescriptionTable>* GetDescriptionTables();
+				rde::list<SystemDescriptionTable*>* GetDescriptionTables();
 
 				char* Signature()				{ return this->signature;				}
 				char* OemID()					{ return this->oemid;					}
@@ -66,7 +66,7 @@ namespace HardwareAbstraction
 				uint8_t extendedchecksum;
 				uint8_t reserved[3];
 
-				Library::LinkedList<SystemDescriptionTable>* tables;
+				rde::list<SystemDescriptionTable*>* tables;
 		};
 	}
 }

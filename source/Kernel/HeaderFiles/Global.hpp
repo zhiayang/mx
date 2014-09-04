@@ -14,8 +14,6 @@
 #include <Mutexes.hpp>
 #include <Kernel.hpp>
 
-#include <List.hpp>
-#include <SimpleStringMap.hpp>
 #include <CircularBuffer.hpp>
 
 

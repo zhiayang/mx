@@ -5,7 +5,6 @@
 
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Devices/RTC.hpp>
-#include <List.hpp>
 #include <String.hpp>
 #include <math.h>
 
