@@ -56,7 +56,7 @@ namespace Multitasking
 
 			if(m->Sleep == 0)
 			{
-				GetThreadList(m)->InsertFront(m);
+				GetThreadList(m)->push_front(m);
 			}
 			else
 			{

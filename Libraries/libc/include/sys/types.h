@@ -126,7 +126,7 @@ typedef uint64_t pthread_t;
 
 #ifndef __pthread_attr_t
 #define __pthread_attr_t
-typedef Thread_attr pthread_attr_t;
+typedef struct Thread_attr pthread_attr_t;
 #endif
 
 

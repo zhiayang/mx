@@ -185,7 +185,7 @@ namespace Multitasking
 		thread->CrashState			= new ThreadRegisterState_type;
 		thread->flags				= Parent->Flags;
 
-		Parent->Threads->InsertFront(thread);
+		Parent->Threads->push_back(thread);
 
 		SetupStackThread(thread, u, us, (uint64_t) Function, attr->a1, attr->a2, attr->a3, attr->a4, attr->a5, attr->a6);
 		NumThreads++;
@@ -230,7 +230,7 @@ namespace Multitasking
 		using Library::LinkedList;
 
 		Process* process = new Process();
-		process->Threads = new LinkedList<Thread>();
+		process->Threads = new rde::list<Thread*>();
 
 		PageMapStructure* PML4 = FirstProc ? (PageMapStructure*)(GetKernelCR3()) : (PageMapStructure*) Virtual::CreateVAS();
 
