@@ -24,8 +24,5 @@ pthread_t pthread_self();
 
 
 
-
-
-
 __END_DECLS
 #endif
