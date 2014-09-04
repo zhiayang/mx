@@ -42,7 +42,8 @@ namespace Library
 		uint64_t GetPID();
 		uint64_t GetParentPID();
 		void ExitThread();
-		void* GetRetVal(uint64_t tid);
+		void* JoinThread(uint64_t tid);
+		pthread_t GetTID();
 
 		uint64_t Open(const char* path, uint64_t flags);
 		void Close(uint64_t fd);

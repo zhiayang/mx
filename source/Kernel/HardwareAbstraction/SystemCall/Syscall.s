@@ -162,8 +162,12 @@ __ExitThread:
 	call ExitThread
 	jmp CleanUp
 
-GetRetVal:
-	call Syscall_GetRetVal
+JoinThread:
+	call Syscall_JoinThread
+	jmp CleanUp
+
+GetThisTID:
+	call Syscall_GetTID
 	jmp CleanUp
 
 CreateMessageQueue:
@@ -247,8 +251,9 @@ SyscallTable1:
 	.quad	GetPID				// 4010
 	.quad	GetParentPID			// 4011
 	.quad	__ExitThread			// 4012
-	.quad	GetRetVal			// 4013
-	.quad	CreateMessageQueue		// 4014
+	.quad	JoinThread			// 4013
+	.quad	GetThisTID			// 4014
+	.quad	CreateMessageQueue		// 4015
 EndSyscallTable1:
 
 
