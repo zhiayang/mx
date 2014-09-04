@@ -38,9 +38,8 @@ namespace Multitasking
 			}
 			else if(m->State == STATE_AWAITDEATH)
 			{
-				// delete m;
 				// don't delete.
-
+				m->State = STATE_DEAD;
 				NumThreads--;
 				continue;
 			}

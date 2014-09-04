@@ -167,6 +167,7 @@ namespace Multitasking
 		uint64_t tlsptr = (uintptr_t) &CurrentThread->tlsptr;
 		SetTLS(tlsptr);
 
+		// StandardIO::PrintString("S");
 		return CurrentThread->StackPointer;
 	}
 

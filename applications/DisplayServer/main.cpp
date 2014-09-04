@@ -25,7 +25,7 @@ void* thr(void*)
 	m = 200;
 	printf("m in thr: %d\n\n", m);
 
-	return (void*) 59912;
+	return (void*) 0xFAD;
 }
 
 int main(int argc, char** argv)
