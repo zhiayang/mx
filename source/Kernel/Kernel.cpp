@@ -378,7 +378,7 @@ namespace Kernel
 			auto proc = LoadBinary::Load(path, "displayd",
 				(void*) 5, (void*) new uint64_t[5] { (uint64_t) path, GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
 
-			proc->Threads->Get(0)->Priority = 2;
+			proc->Threads->front()->Priority = 2;
 			Multitasking::AddToQueue(proc);
 		}
 

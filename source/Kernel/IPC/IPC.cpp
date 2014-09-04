@@ -226,7 +226,7 @@ namespace IPC
 	{
 		Multitasking::Process* proc = Multitasking::GetProcess(pid);
 		assert(proc);
-		IPC_SignalThread(proc->Threads->Get(0)->ThreadID, signum);
+		IPC_SignalThread(proc->Threads->front()->ThreadID, signum);
 	}
 
 
