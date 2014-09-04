@@ -20,6 +20,7 @@ namespace Multitasking
 	{
 		Log("Thread %d exited.", GetCurrentThread()->ThreadID);
 		Kill(GetCurrentThread());
+		while(true);
 	}
 
 	extern "C" void ExitThread_Userspace()
@@ -29,23 +30,20 @@ namespace Multitasking
 		GetCurrentThread()->returnval = retval;
 
 		asm volatile("mov $4012, %%r10; int $0xF8" ::: "r10");
-		while(true);
 	}
 
 	extern "C" void* Syscall_GetRetVal(uint64_t tid)
 	{
 		// todo: verify.
 		// todo: better blocking
-		Thread* t = GetThread(tid);
-		Log(3, "%d", t->ThreadID);
-		void* retval = 0;
-		while(t && t->State != STATE_AWAITDEATH)
-		{
-			Log(3, "%x", t->returnval);
-			retval = t->returnval;
-		}
+		volatile Thread* volatile t = GetThread(tid);
+		volatile void* retval = 0;
+		while(t->State != STATE_DEAD);
 
-		return retval;
+		retval = t->returnval;
+
+		delete t;
+		return (void*) retval;
 	}
 
 	void SetTLS(uint64_t tlsptr)
@@ -234,6 +232,11 @@ namespace Multitasking
 			par->Threads->RemoveAt((uint64_t) id);
 			GetThreadList(p)->RemoveAt((uint64_t) GetThreadList(p)->IndexOf(p));
 			SleepList->InsertFront(p);
+		}
+		else
+		{
+			Log(3, "state: %d", p->State);
+			HALT("");
 		}
 	}
 
