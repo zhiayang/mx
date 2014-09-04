@@ -4,7 +4,6 @@
 
 #include "HeaderFiles/Utility.hpp"
 #include "HeaderFiles/Memory.hpp"
-#include "HeaderFiles/Hashable.hpp"
 #include "HeaderFiles/Comparable.hpp"
 
 
@@ -474,13 +473,6 @@ namespace Library
 
 			return digest;
 		}
-	}
-
-
-	// fuck this shit, silence a warning
-	// FUCK IT
-	Hashable::~Hashable()
-	{
 	}
 }
 

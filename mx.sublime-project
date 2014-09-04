@@ -10,10 +10,7 @@
 			],
 			"folder_exclude_patterns":
 			[
-				"build/gcc",
-				"build/binutils",
-				"build/build*",
-				"build/grub",
+				"build",
 				"Libraries/freetype*",
 			],
 		}

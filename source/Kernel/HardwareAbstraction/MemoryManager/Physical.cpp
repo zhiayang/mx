@@ -35,7 +35,6 @@ namespace Physical
 	extern Kernel::HardwareAbstraction::MemoryManager::MemoryMap::MemoryMap_type* K_MemoryMap;
 
 	static bool DidInit = false;
-	// static LinkedList<Pair>* PageList;
 	static rde::list<Pair*>* PageList;
 
 	// Define a region of memory in which the VMM gets it's memory from, to create page strucures.
@@ -73,7 +72,6 @@ namespace Physical
 		// See InitialiseFPLs() for an in-depth explanation on this
 		// FPL system.
 		mtx = new Mutex();
-		// PageList = new LinkedList<Pair>();
 		PageList = new rde::list<Pair*>();
 
 		InitialiseFPLs(Kernel::K_MemoryMap);

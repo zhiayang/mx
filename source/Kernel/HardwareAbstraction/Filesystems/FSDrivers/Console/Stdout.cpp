@@ -4,6 +4,7 @@
 
 
 #include <Kernel.hpp>
+#include <StandardIO.hpp>
 #include <HardwareAbstraction/Filesystems.hpp>
 
 namespace Kernel {

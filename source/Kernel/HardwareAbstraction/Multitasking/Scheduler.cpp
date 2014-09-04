@@ -5,7 +5,6 @@
 
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Devices/IOPort.hpp>
-#include <List.hpp>
 #include <String.hpp>
 #include <stdlib.h>
 
@@ -18,7 +17,7 @@ namespace Multitasking
 {
 	static bool IsFirst = true;
 	rde::list<Thread*>* SleepList;
-	static LinkedList<Thread>* PendingSleepList;
+	static rde::list<Thread*>* PendingSleepList;
 
 	Mutex* listlock;
 	rde::list<Thread*>* ThreadList_LowPrio;
@@ -38,7 +37,7 @@ namespace Multitasking
 		CurrentCR3 = GetKernelCR3();
 		SleepList = new rde::list<Thread*>();
 		ProcessList = new rde::list<Process*>();
-		PendingSleepList = new LinkedList<Thread>();
+		PendingSleepList = new rde::list<Thread*>();
 
 		ThreadList_LowPrio = new rde::list<Thread*>();
 		ThreadList_NormPrio = new rde::list<Thread*>();
@@ -97,11 +96,13 @@ namespace Multitasking
 	{
 		if(BOpt_Likely(!IsFirst))
 		{
-			if(PendingSleepList->Size() > 0)
+			if(PendingSleepList->size() > 0)
 			{
-				for(uint64_t i = 0, s = PendingSleepList->Size(); i < s; i++)
+				for(uint64_t i = 0, s = PendingSleepList->size(); i < s; i++)
 				{
-					SleepList->push_back(PendingSleepList->RemoveFront());
+					SleepList->push_back(PendingSleepList->front());
+					PendingSleepList->pop_front();
+
 					SleepList->back()->StackPointer = context;
 				}
 			}
@@ -196,7 +197,7 @@ namespace Multitasking
 		Thread* p = FetchAndRemoveThread(CurrentThread);
 
 		p->Sleep = (uint32_t) __abs(time);
-		PendingSleepList->InsertBack(p);
+		PendingSleepList->push_back(p);
 
 		// if time is negative, we called from userspace, so don't nest interrupts.
 		if(time > 0)

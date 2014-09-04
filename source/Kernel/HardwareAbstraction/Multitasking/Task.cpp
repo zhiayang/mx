@@ -5,9 +5,7 @@
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Multitasking.hpp>
 #include <HardwareAbstraction/MemoryManager.hpp>
-#include <List.hpp>
 #include <string.h>
-#include "../IPC/Dispatchers/CentralDispatch.hpp"
 
 using namespace Kernel;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
@@ -227,7 +225,6 @@ namespace Multitasking
 	Process* CreateProcess(const char name[64], uint8_t Flags, uint64_t tlssize, void (*Function)(), uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
 	{
 		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
-		using Library::LinkedList;
 
 		Process* process = new Process();
 		process->Threads = new rde::list<Thread*>();

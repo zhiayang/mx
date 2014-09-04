@@ -8,7 +8,6 @@
 
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Devices/IOPort.hpp>
-#include <List.hpp>
 #include <Utility.hpp>
 #include <StandardIO.hpp>
 #include <Colours.hpp>
@@ -24,31 +23,26 @@ namespace PCI
 {
 	PCIDevice* GetDeviceByVendorDevice(uint16_t VendorID, uint16_t DeviceID)
 	{
-		Library::LinkedList<PCIDevice>* r = SearchByVendorDevice(VendorID, DeviceID);
-		return r->Size() == 0 ? 0 : r->Get(0);
+		rde::list<PCIDevice*>* r = SearchByVendorDevice(VendorID, DeviceID);
+		return r->size() == 0 ? 0 : r->front();
 	}
 
 	PCIDevice* GetDeviceByClassSubclass(uint8_t Class, uint8_t Subclass)
 	{
-		Library::LinkedList<PCIDevice>* r = SearchByClassSubclass(Class, Subclass);
-		return r->Size() == 0 ? 0 : r->Get(0);
+		rde::list<PCIDevice*>* r = SearchByClassSubclass(Class, Subclass);
+		return r->size() == 0 ? 0 : r->front();
 	}
 
 
-	Library::LinkedList<PCIDevice>* SearchByVendorDevice(uint16_t VendorID, uint16_t DeviceID)
+	rde::list<PCIDevice*>* SearchByVendorDevice(uint16_t VendorID, uint16_t DeviceID)
 	{
 		uint16_t bus = 0, slot = 0;
 		uint8_t func = 0;
 		uint16_t vendor = 0, device = 0;
-		Library::LinkedList<PCIDevice>* ret = new Library::LinkedList<PCIDevice>();
+		rde::list<PCIDevice*>* ret = new rde::list<PCIDevice*>();
 
-		// for(uint16_t i = 0; i < PCIDevice::PCIDevices->Size(); i++)
 		for(auto dev : *PCIDevice::PCIDevices)
 		{
-			// bus = PCIDevice::PCIDevices->Get(i)->GetBus();
-			// slot = PCIDevice::PCIDevices->Get(i)->GetSlot();
-			// func = PCIDevice::PCIDevices->Get(i)->GetFunction();
-
 			bus = dev->GetBus();
 			slot = dev->GetSlot();
 			func = dev->GetFunction();
@@ -57,20 +51,18 @@ namespace PCI
 			device = (uint16_t)(PCI::ReadConfig32(PCI::MakeAddr(bus, slot, func), 0) >> 16);
 
 			if(vendor == (VendorID == 0xFFFF ? vendor : VendorID) && device == (DeviceID == 0xFFFF ? device : DeviceID))
-				ret->InsertBack(dev);
-
-				// ret->InsertBack(PCIDevice::PCIDevices->Get(i));
+				ret->push_back(dev);
 		}
 
 		return ret;
 	}
 
-	Library::LinkedList<PCIDevice>* SearchByClassSubclass(uint8_t c, uint8_t sc)
+	rde::list<PCIDevice*>* SearchByClassSubclass(uint8_t c, uint8_t sc)
 	{
 		uint16_t bus = 0, slot = 0;
 		uint8_t func = 0;
 		uint16_t tClass = 0, tSubclass = 0;
-		Library::LinkedList<PCIDevice>* ret = new Library::LinkedList<PCIDevice>();
+		rde::list<PCIDevice*>* ret = new rde::list<PCIDevice*>();
 
 
 		for(auto dev : *PCIDevice::PCIDevices)
@@ -84,8 +76,7 @@ namespace PCI
 			tSubclass = (uint8_t)(ReadConfig32(MakeAddr(bus, slot, func), 0x08) >> 16);
 
 			if(tClass == (c == 0xFF ? tClass : c) && tSubclass == (sc == 0xFF ? tSubclass : sc))
-				ret->InsertBack(dev);
-				// ret->InsertBack(PCIDevice::PCIDevices->Get(i));
+				ret->push_back(dev);
 		}
 
 		return ret;
@@ -175,7 +166,6 @@ namespace PCI
 	{
 		uint16_t vendor = 0;
 		uint8_t headertype = 0;
-		// PCIDevice::PCIDevices = new Library::LinkedList<PCIDevice>();
 		PCIDevice::PCIDevices = new rde::list<PCIDevice*>();
 
 		Log("Scanning PCI bus:");

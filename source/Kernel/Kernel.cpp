@@ -19,7 +19,6 @@
 #include <Symbolicate.hpp>
 #include "../../.build.h"
 
-#include "IPC/Dispatchers/CentralDispatch.hpp"
 
 
 using namespace Kernel;
@@ -355,11 +354,11 @@ namespace Kernel
 			// open fds for stdin, stdout and stderr.
 			VFS::InitIO();
 
-			Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->Get(0);
-			FSDriverFat32* fs = new FSDriverFat32(f1->Partitions->Get(0));
+			Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->front();
+			FSDriverFat32* fs = new FSDriverFat32(f1->Partitions->front());
 
 			// mount root fs from partition 0 at /
-			VFS::Mount(f1->Partitions->Get(0), fs, "/");
+			VFS::Mount(f1->Partitions->front(), fs, "/");
 			Log("Root FS Mounted at /");
 
 		}

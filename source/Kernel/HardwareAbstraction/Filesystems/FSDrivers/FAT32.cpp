@@ -15,7 +15,6 @@
 #include <sys/stat.h>
 
 using namespace Library;
-using namespace Library::StandardIO;
 using namespace Kernel::HardwareAbstraction::Devices::Storage;
 using namespace Kernel::HardwareAbstraction::Filesystems::VFS;
 

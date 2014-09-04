@@ -4,7 +4,6 @@
 
 #pragma once
 #include <stdint.h>
-#include <List.hpp>
 #include <Vector.hpp>
 
 namespace Kernel {
