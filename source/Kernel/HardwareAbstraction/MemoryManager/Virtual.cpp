@@ -682,10 +682,13 @@ namespace Virtual
 
 	void MapToAllProcesses(uint64_t v, uint64_t p, uint64_t f)
 	{
-		for(uint64_t d = 0; d < Multitasking::ProcessList->Size(); d++)
-		{
-			MapAddress(v, p, f, (PageMapStructure*) Multitasking::ProcessList->Get(d)->CR3);
-		}
+		(void) v;
+		(void) p;
+		(void) f;
+		// for(uint64_t d = 0; d < Multitasking::ProcessList->Size(); d++)
+		// {
+		// 	MapAddress(v, p, f, (PageMapStructure*) Multitasking::ProcessList->Get(d)->CR3);
+		// }
 	}
 }
 }

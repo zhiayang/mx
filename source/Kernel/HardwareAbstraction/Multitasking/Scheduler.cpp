@@ -61,22 +61,6 @@ namespace Multitasking
 		ScheduleCount++;
 		Thread* r = nullptr;
 
-
-		// if(ThreadList_LowPrio->Size() > 0 && (ScheduleCount % LowStarveThreshold == 0))
-		// {
-		// 	r = ThreadList_LowPrio->RemoveFront();
-		// 	ThreadList_LowPrio->InsertBack(r);
-		// }
-		// else if(ThreadList_NormPrio->Size() > 0 && (ScheduleCount % NormStarveThreshold == 0))
-		// {
-		// 	r = ThreadList_NormPrio->RemoveFront();
-		// 	ThreadList_NormPrio->InsertBack(r);
-		// }
-		// else if(ThreadList_HighPrio->Size() > 0)
-		// {
-		// 	r = ThreadList_HighPrio->RemoveFront();
-		// 	ThreadList_HighPrio->InsertBack(r);
-		// }
 		if(ThreadList_LowPrio->size() > 0 && (ScheduleCount % LowStarveThreshold == 0))
 		{
 			r = ThreadList_LowPrio->front();
@@ -117,8 +101,8 @@ namespace Multitasking
 			{
 				for(uint64_t i = 0, s = PendingSleepList->Size(); i < s; i++)
 				{
-					SleepList->InsertBack(PendingSleepList->RemoveFront());
-					SleepList->Back()->StackPointer = context;
+					SleepList->push_back(PendingSleepList->RemoveFront());
+					SleepList->back()->StackPointer = context;
 				}
 			}
 			else
