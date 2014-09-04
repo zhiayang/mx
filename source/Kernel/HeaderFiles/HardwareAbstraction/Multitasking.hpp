@@ -9,7 +9,6 @@
 #include "IPC.hpp"
 #include "MemoryManager/Virtual.hpp"
 #include <Mutexes.hpp>
-#include <Vector.hpp>
 #include <defs/_pthreadstructs.h>
 
 #include <signal.h>
@@ -54,7 +53,7 @@ namespace HardwareAbstraction
 
 			Filesystems::IOContext* iocontext;
 
-			Library::Vector<uint64_t>* AllocatedPageList;
+			rde::vector<uint64_t>* AllocatedPageList;
 			MemoryManager::Virtual::VirtualAddressSpace* VAS;
 			sighandler_t* SignalHandlers;
 

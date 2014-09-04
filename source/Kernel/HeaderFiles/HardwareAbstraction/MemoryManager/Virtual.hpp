@@ -4,7 +4,7 @@
 
 #pragma once
 #include <stdint.h>
-#include <Vector.hpp>
+#include <rdestl/vector.h>
 
 namespace Kernel {
 namespace HardwareAbstraction {
@@ -28,11 +28,11 @@ namespace Virtual
 		VirtualAddressSpace(PageMapStructure* pml4)
 		{
 			this->PML4 = pml4;
-			this->pairs = new Library::Vector<AddressLengthPair*>();
+			this->pairs = new rde::vector<AddressLengthPair*>();
 		}
 
 		// book-keeping for allocations.
-		Library::Vector<AddressLengthPair*>* pairs;
+		rde::vector<AddressLengthPair*>* pairs;
 
 		// store the actual address of the pml4.
 		PageMapStructure* PML4;
