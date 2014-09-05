@@ -10,7 +10,6 @@
 #include <Utility.hpp>
 #include <List.hpp>
 #include <Memory.hpp>
-#include <Colours.hpp>
 
 using namespace Kernel;
 using namespace Kernel::HardwareAbstraction;
@@ -78,7 +77,7 @@ namespace Storage
 			uint64_t index = Library::Utility::ReduceBinaryUnits(ata->GetSectors() * ata->GetSectorSize());
 			uint64_t mem = Library::Utility::GetReducedMemory(ata->GetSectors() * ata->GetSectorSize());
 
-			Library::StandardIO::PrintFormatted("\t-> %w%s%r %wBus%r, %w%s%r %wDrive%r: %k[%w%d%r %wsectors%r, %wsize%r: %w%d %s%r, %w%s%r%k]\n", Library::Colours::Green, !ata->GetBus() ? "Primary" : "Secondary", Library::Colours::Orange, Library::Colours::Magenta, !ata->GetDrive() ? "Master" : "Slave", Library::Colours::Orange, Library::Colours::Rose, Library::Colours::Cyan, ata->GetSectors(), Library::Colours::Silver, Library::Colours::Silver, Library::Colours::Yellow, mem, Kernel::K_BinaryUnits[index], Library::Colours::DarkCyan, ata->GetIsGPT() ? "GPT Drive" : "MBR Drive", Library::Colours::Rose);
+			Library::StandardIO::PrintFormatted("\t-> %s Bus, %s Drive: [%d sectors, size: %d %s, %s]\n", !ata->GetBus() ? "Primary" : "Secondary", !ata->GetDrive() ? "Master" : "Slave", ata->GetSectors(), mem, Kernel::K_BinaryUnits[index], ata->GetIsGPT() ? "GPT Drive" : "MBR Drive");
 		}
 
 		void Initialise()

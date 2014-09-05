@@ -11,7 +11,6 @@
 #include <Memory.hpp>
 #include <StandardIO.hpp>
 #include <List.hpp>
-#include <Colours.hpp>
 #include <Symbolicate.hpp>
 
 using namespace Kernel;
@@ -314,20 +313,20 @@ namespace Interrupts
 
 	void PrintRegisterDump(RegisterStruct_type* r)
 	{
-		PrintFormatted("%wRegisters:\n", Colours::Blue);
+		PrintFormatted("%wRegisters:\n");
 
 
-		PrintFormatted("rax:\t%w%#16.8x%r\trbx:\t%w%#16.8x\n", Colours::Green, r->rax, Colours::Green, r->rbx);
-		PrintFormatted("rcx:\t%w%#16.8x%r\trdx:\t%w%#16.8x\n", Colours::Green, r->rcx, Colours::Green, r->rdx);
-		PrintFormatted("r08:\t%w%#16.8x%r\tr09:\t%w%#16.8x\n", Colours::Green, r->r8, Colours::Green, r->r9);
-		PrintFormatted("r10:\t%w%#16.8x%r\tr11:\t%w%#16.8x\n", Colours::Green, r->r10, Colours::Green, r->r11);
-		PrintFormatted("r12:\t%w%#16.8x%r\tr13:\t%w%#16.8x\n", Colours::Green, r->r12, Colours::Green, r->r13);
-		PrintFormatted("r14:\t%w%#16.8x%r\tr15:\t%w%#16.8x\n", Colours::Green, r->r14, Colours::Green, r->r15);
-		PrintFormatted("rdi:\t%w%#16.8x%r\trsi:\t%w%#16.8x\n", Colours::Cyan, r->rdi, Colours::Cyan, r->rsi);
-		PrintFormatted("rbp:\t%w%#16.8x%r\trsp:\t%w%#16.8x\n", Colours::Yellow, r->rbp, Colours::Yellow, r->rsp);
-		PrintFormatted("rip:\t%w%#16.8x%r\tcs: \t%w%#16.8x\n", Colours::Cyan, r->rip, Colours::Silver, r->cs);
-		PrintFormatted("ss: \t%w%#16.8x%r\tu-rsp:\t%w%#16.8x\n", Colours::Silver, r->ss, Colours::Blue, r->useresp);
-		PrintFormatted("rflags:\t%w%#16.8x%r\tcr2:\t%w%#16.8x\n", Colours::Magenta, r->rflags, Colours::Red, r->cr2);
+		PrintFormatted("rax:\t%#16.8x\trbx:\t%#16.8x\n", r->rax, r->rbx);
+		PrintFormatted("rcx:\t%#16.8x\trdx:\t%#16.8x\n", r->rcx, r->rdx);
+		PrintFormatted("r08:\t%#16.8x\tr09:\t%#16.8x\n", r->r8, r->r9);
+		PrintFormatted("r10:\t%#16.8x\tr11:\t%#16.8x\n", r->r10, r->r11);
+		PrintFormatted("r12:\t%#16.8x\tr13:\t%#16.8x\n", r->r12, r->r13);
+		PrintFormatted("r14:\t%#16.8x\tr15:\t%#16.8x\n", r->r14, r->r15);
+		PrintFormatted("rdi:\t%#16.8x\trsi:\t%#16.8x\n", r->rdi, r->rsi);
+		PrintFormatted("rbp:\t%#16.8x\trsp:\t%#16.8x\n", r->rbp, r->rsp);
+		PrintFormatted("rip:\t%#16.8x\tcs: \t%#16.8x\n", r->rip, r->cs);
+		PrintFormatted("ss: \t%#16.8x\tu-rsp:\t%#16.8x\n", r->ss, r->useresp);
+		PrintFormatted("rflags:\t%#16.8x\tcr2:\t%#16.8x\n", r->rflags, r->cr2);
 	}
 
 
@@ -389,7 +388,7 @@ namespace Interrupts
 		}
 
 
-		PrintFormatted("\n\n\n%wCPU Exception: %w%s%w; Error Code: %w%x", Colours::Yellow, Colours::Red, ExceptionMessages[r->InterruptID], Colours::Yellow, Colours::Red, r->ErrorCode);
+		PrintFormatted("\n\n\nCPU Exception: %s; Error Code: %x", ExceptionMessages[r->InterruptID], r->ErrorCode);
 
 
 
@@ -408,7 +407,7 @@ namespace Interrupts
 			uint8_t PageInstructionFetch	= r->ErrorCode & 0x10;		// Caused by an instruction fetch?
 
 
-			PrintFormatted("%wPage Fault Error Codes:\n", Colours::Green);
+			PrintFormatted("Page Fault Error Codes:\n");
 			PrintFormatted("\tCR2: %x, CR3: %x\n", cr2, cr3);
 
 

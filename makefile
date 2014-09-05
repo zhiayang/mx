@@ -132,6 +132,6 @@ clean: cleandisk
 	@find Libraries -name "*.o" | xargs rm
 	@find Libraries -name "*.a" | xargs rm
 	@find applications -name "*.o" | xargs rm
-	-@rm build/*.mxa
+	@find source -name "*.cpp.d" | xargs rm
 	-@rm $(CXXDEPS)
 

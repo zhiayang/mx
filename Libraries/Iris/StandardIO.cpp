@@ -7,9 +7,6 @@
 #include <math.h>
 #include "HeaderFiles/Memory.hpp"
 #include "HeaderFiles/Utility.hpp"
-#include "HeaderFiles/SystemCall.hpp"
-#include "HeaderFiles/Defines.hpp"
-#include "HeaderFiles/Heap.hpp"
 #include <stdlib.h>
 
 namespace Library {

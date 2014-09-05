@@ -4,7 +4,6 @@
 
 #include "HeaderFiles/String.hpp"
 #include "HeaderFiles/StandardIO.hpp"
-#include "HeaderFiles/Heap.hpp"
 #include <string.h>
 
 using namespace Library::String;

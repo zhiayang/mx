@@ -11,7 +11,6 @@
 #include <List.hpp>
 #include <Utility.hpp>
 #include <StandardIO.hpp>
-#include <Colours.hpp>
 
 using namespace Kernel;
 using namespace Kernel::HardwareAbstraction::Devices;
@@ -386,7 +385,7 @@ namespace PCI
 
 	void PCIDevice::PrintPCIDeviceInfo()
 	{
-		Library::StandardIO::PrintFormatted("\t%s=> %w/dev/pci%d%w%s%s %r> %w%d%r:%w%d%r, %kv:%w%#04x%r, %kd:%w%#04x%r, %kc:%w%#02x%r:%w%#02x %kh:%w%#02x%r %wint%r:%w%02d%r", (this->GetFunction() > 0) ? "\t" : "",	Library::Colours::Green, (this->GetBus() * 32 + this->GetSlot()), Library::Colours::Violet, (this->GetFunction() > 0 ? "f" : ""), (this->GetFunction() > 0 ? (Library::Utility::ConvertToString(this->GetFunction())) : ((char*)"")), Library::Colours::Blue, this->GetBus(), Library::Colours::Red, this->GetSlot(), Library::Colours::Yellow, Library::Colours::Silver, this->GetVendorID(), Library::Colours::Cyan, Library::Colours::Blue, this->GetDeviceID(), Library::Colours::Red, Library::Colours::Green, this->GetClass(), Library::Colours::Silver, this->GetSubclass(), Library::Colours::Orange, Library::Colours::Violet, this->GetHeaderType(), Library::Colours::DarkCyan, Library::Colours::DarkRed, this->GetRegisterData(0x3C, 0, 1));
+		Library::StandardIO::PrintFormatted("\t%s=> /dev/pci%d%s%s > %d:%d, v:%#04x, d:%#04x, c:%#02x:%#02x h:%#02x int:%02d", (this->GetFunction() > 0) ? "\t" : "",	(this->GetBus() * 32 + this->GetSlot()), (this->GetFunction() > 0 ? "f" : ""), (this->GetFunction() > 0 ? (Library::Utility::ConvertToString(this->GetFunction())) : ((char*)"")), this->GetBus(), this->GetSlot(), this->GetVendorID(), this->GetDeviceID(), this->GetClass(), this->GetSubclass(), this->GetHeaderType(), this->GetRegisterData(0x3C, 0, 1));
 	}
 
 
