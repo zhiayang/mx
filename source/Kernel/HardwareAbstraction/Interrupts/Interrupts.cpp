@@ -10,10 +10,11 @@
 #include <HardwareAbstraction/Devices/IOPort.hpp>
 #include <Memory.hpp>
 #include <StandardIO.hpp>
-#include <Colours.hpp>
+#include <List.hpp>
 
 using namespace Kernel;
 using namespace Library;
+using Library::LinkedList;
 using namespace StandardIO;
 using namespace Kernel::HardwareAbstraction::Devices;
 
@@ -24,7 +25,7 @@ namespace Interrupts
 {
 	extern "C" void ThreadExceptionTerminate();
 
-	rde::list<IRQHandlerPlugList*>* IRQHandlerList;
+	LinkedList<IRQHandlerPlugList>* IRQHandlerList;
 
 
 
@@ -35,12 +36,11 @@ namespace Interrupts
 	{
 		// see if we need to create a new plug list.
 		IRQHandlerPlugList* pluglist = 0;
-		// for(uint64_t i = 0; i < IRQHandlerList->Size(); i++)
-		for(auto i : *IRQHandlerList)
+		for(uint64_t i = 0; i < IRQHandlerList->size(); i++)
 		{
-			if(irq == i->IRQNum)
+			if(irq == IRQHandlerList->get(i)->IRQNum)
 			{
-				pluglist = i;
+				pluglist = IRQHandlerList->get(i);
 				break;
 			}
 		}
@@ -88,24 +88,22 @@ namespace Interrupts
 	extern "C" void InterruptHandler_C(uint64_t iid)
 	{
 		// get the proper IRQHandlerPlugList.
-		// for(uint64_t i = 0; i < IRQHandlerList->Size(); i++)
-		for(auto i : *IRQHandlerList)
+		for(uint64_t i = 0; i < IRQHandlerList->size(); i++)
 		{
 			// operate with zero-based index, not absolute IDT offset.
-			if(i->IRQNum == iid - 32)
+			if(IRQHandlerList->get(i)->IRQNum == iid - 32)
 			{
-				IRQHandlerPlugList* pl = i;
+				IRQHandlerPlugList* pl = IRQHandlerList->get(i);
 
-				// for(uint64_t k = 0; k < pl->HandlerList->Size(); k++)
-				for(auto k : *pl->HandlerList)
+				for(uint64_t k = 0; k < pl->HandlerList->size(); k++)
 				{
-					if(k->handleregs)
+					if(pl->HandlerList->get(k)->handleregs)
 					{
 						HALT("not supported");
 					}
 
 					else
-						k->handle();
+						pl->HandlerList->get(k)->handle();
 				}
 
 				// send a message to central dispatch, informing of this IRQ.

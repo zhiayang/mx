@@ -6,7 +6,6 @@
 #include <String.hpp>
 #include <Memory.hpp>
 #include <StandardIO.hpp>
-#include <Colours.hpp>
 #include <math.h>
 #include <Console.hpp>
 #include <HardwareAbstraction/Interrupts.hpp>
@@ -19,6 +18,7 @@
 #include <Symbolicate.hpp>
 #include "../../.build.h"
 
+#include "IPC/Dispatchers/CentralDispatch.hpp"
 
 
 using namespace Kernel;
@@ -239,16 +239,16 @@ namespace Kernel
 				PrintFormatted("Check your system and try again.\n\n");
 				PrintFormatted("Currently, supported systems include: BGA (Bochs, QEMU, VirtualBox) and SVGA (VMWare)\n");
 				{
-					// for(uint16_t num = 0; num < PCI::PCIDevice::PCIDevices->Size(); num++)
+					// for(uint16_t num = 0; num < PCI::PCIDevice::PCIDevices->size(); num++)
 					for(auto dev : *PCI::PCIDevice::PCIDevices)
 					{
 						dev->PrintPCIDeviceInfo();
 
 						if(dev->GetIsMultifunction())
-							PrintFormatted(" ==>%w Multifunction Device", Colours::Yellow);
+							PrintFormatted(" ==>Multifunction Device");
 
 						if(PCI::MatchVendorDevice(dev, 0x1234, 0x1111) || PCI::MatchVendorDevice(dev, 0x80EE, 0xBEEF))
-							PrintFormatted(" ==>%w BGA Compatible Video Card:%w %x", Colours::Cyan, Colours::Orange, GetTrueLFBAddress());
+							PrintFormatted(" ==>BGA Compatible Video Card: %x", GetTrueLFBAddress());
 
 						PrintFormatted("\n");
 					}
@@ -354,11 +354,11 @@ namespace Kernel
 			// open fds for stdin, stdout and stderr.
 			VFS::InitIO();
 
-			Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->front();
-			FSDriverFat32* fs = new FSDriverFat32(f1->Partitions->front());
+			Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->get(0);
+			FSDriverFat32* fs = new FSDriverFat32(f1->Partitions->get(0));
 
 			// mount root fs from partition 0 at /
-			VFS::Mount(f1->Partitions->front(), fs, "/");
+			VFS::Mount(f1->Partitions->get(0), fs, "/");
 			Log("Root FS Mounted at /");
 
 		}
@@ -377,7 +377,7 @@ namespace Kernel
 			auto proc = LoadBinary::Load(path, "displayd",
 				(void*) 5, (void*) new uint64_t[5] { (uint64_t) path, GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
 
-			proc->Threads->front()->Priority = 2;
+			proc->Threads->get(0)->Priority = 2;
 			Multitasking::AddToQueue(proc);
 		}
 
@@ -558,7 +558,7 @@ namespace Kernel
 		// 	Exec->AutomaticLoadExecutable();
 		// 	Exec->SetApplicationType(Multitasking::ThreadType::NormalApplication);
 
-		// 	IPC::CentralDispatch::AddApplicationToList(Exec->proc->Threads->Front(), Exec->proc);
+		// 	IPC::CentralDispatch::AddApplicationToList(Exec->proc->Threads->front(), Exec->proc);
 		// 	Exec->Execute();
 
 		// 	delete[] CProg;
@@ -596,7 +596,7 @@ namespace Kernel
 	void HaltSystem(const char* message, const char* filename, const char* line, const char* reason)
 	{
 		Log("System Halted: %s, %s:%s", message, filename, line);
-		PrintFormatted("\n\n%wERROR: %w%s%r\n%wReason%r: %w%s%r\n%w%s%r -- %wLine %w%s%r%w\n\n%wOrion-X4 has met an unresolvable error, and will now halt.", Colours::Yellow, Colours::Red, message, Colours::DarkCyan, Colours::Orange, !reason ? "None" : reason, Colours::Cyan, filename, Colours::Silver, Colours::Blue, line, Colours::Silver, Colours::Silver);
+		PrintFormatted("\n\nERROR: %s\nReason: %s\n%s -- Line %s\n\nOrion-X4 has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line);
 
 		UHALT();
 	}
@@ -646,7 +646,7 @@ namespace Kernel
 
 	void PrintVersion()
 	{
-		PrintFormatted("%wOrion-X4%r Version %w%d.%d.%d %wr%02d%r -- Build %w%d\n", Colours::Chartreuse, Colours::DarkCyan, VER_MAJOR, VER_MINOR, VER_REVSN, Colours::Orange, VER_MINRV, Colours::Cyan, X_BUILD_NUMBER);
+		PrintFormatted("Orion-X4 Version %d.%d.%d r%02d -- Build %d\n", VER_MAJOR, VER_MINOR, VER_REVSN, VER_MINRV, X_BUILD_NUMBER);
 	}
 
 	uint64_t GetKernelCR3()

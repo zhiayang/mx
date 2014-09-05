@@ -5,6 +5,7 @@
 
 #include <Kernel.hpp>
 #include <StandardIO.hpp>
+#include <List.hpp>
 #include <string.h>
 #include <errno.h>
 
@@ -35,13 +36,14 @@ namespace Multitasking
 	extern "C" void* Syscall_JoinThread(pthread_t tid)
 	{
 		// todo: better blocking
-		volatile Thread* t = GetThread(tid);
+		Thread* t = GetThread(tid);
 		if(t == 0)
 			errno = EINVAL;
 
 		void* retval = 0;
-		while(t->State != STATE_DEAD)
-			asm volatile("pause");
+
+		WatchThread(tid);
+		BLOCK();
 
 		retval = t->returnval;
 
@@ -63,9 +65,34 @@ namespace Multitasking
 		return (pthread_t) GetCurrentThreadID();
 	}
 
+	void WatchThread(pthread_t tid)
+	{
+		Thread* target = GetThread(tid);
+		if(!target->watchers)
+			target->watchers = new Library::LinkedList<Thread>();
 
+		Thread* cur = GetCurrentThread();
+		if(!cur->watching)
+			cur->watching = new Library::LinkedList<Thread>();
 
+		target->watchers->push_back(cur);
+		cur->watching->push_back(target);
+	}
 
+	void UnwatchThread(pthread_t tid)
+	{
+		// make sure we're watching it first
+		Thread* cur = GetCurrentThread();
+		if(!cur->watching)
+			return;
+
+		Thread* target = GetThread(tid);
+		if(!target->watchers)
+			return;
+
+		target->watchers->RemoveAt(target->watchers->IndexOf(cur));
+		cur->watching->RemoveAt(cur->watching->IndexOf(target));
+	}
 
 
 
@@ -92,29 +119,22 @@ namespace Multitasking
 			:: [lo]"g"(low), [hi]"g"(high) : "memory", "rax", "rbx", "rcx", "rdx");
 	}
 
-	rde::list<Thread*>* GetThreadList(Thread* t)
+	Library::LinkedList<Thread>* GetThreadList(Thread* t)
 	{
 		return t->Priority == 0 ? ThreadList_LowPrio : (t->Priority == 1 ? ThreadList_NormPrio : ThreadList_HighPrio);
 	}
 
 	Thread* FetchAndRemoveThread(Thread* thread)
 	{
-		// int64_t id = GetThreadList(thread)->(thread);
-		// GetThreadList(thread)->
-		rde::list<Thread*>* thrlist = GetThreadList(thread);
-		auto id = rde::find(thrlist->begin(), thrlist->end(), thread);
+		int64_t id = GetThreadList(thread)->IndexOf(thread);
 
-		if(id == thrlist->end())
+		if(id < 0)
 		{
-			Log(3, "%x", *id);
 			HALT("Thread corrupted");
 			return nullptr;
 		}
 
-		Thread* ret = *id;
-		thrlist->erase(id);
-
-		return ret;
+		return GetThreadList(thread)->RemoveAt((uint64_t) id);
 	}
 
 	uint64_t GetNumberOfThreads()
@@ -133,23 +153,19 @@ namespace Multitasking
 	{
 		if(thread->State != STATE_BLOCKING)
 		{
-			// GetThreadList(thread)->InsertFront(FetchAndRemoveThread(thread));
-			rde::list<Thread*>* thrlist = GetThreadList(thread);
-			thrlist->push_front(FetchAndRemoveThread(thread));
+			GetThreadList(thread)->push_front(FetchAndRemoveThread(thread));
 		}
 		else
 		{
 			// thread is blocking, shoo it out of the blocking queue.
-			auto id = rde::find(SleepList->begin(), SleepList->end(), thread);
+			int64_t id = SleepList->IndexOf(thread);
 
-			if(id == SleepList->end())
+			if(id < 0)
 				HALT("Thread corrupted");
 
-			Thread* t = *id;
-			SleepList->erase(id);
-
-			t->State = STATE_NORMAL;
+			Thread* t = SleepList->RemoveAt((uint64_t) id);
 			GetThreadList(t)->push_front(t);
+			t->State = STATE_NORMAL;
 		}
 
 		YieldCPU();
@@ -159,6 +175,7 @@ namespace Multitasking
 
 	void Block(uint8_t purpose)
 	{
+		// assert(GetCurrentThread()->State != STATE_BLOCKING);
 		if(GetCurrentThread()->State == STATE_BLOCKING)
 		{
 			Log("BLOCK (%d, %d, %x)", GetCurrentThread()->ThreadID, GetCurrentThread()->State, __builtin_return_address(0));
@@ -181,12 +198,14 @@ namespace Multitasking
 
 
 
-	void AddToQueue(Process* proc)
+	void AddToQueue(Process* Proc)
 	{
-		ProcessList->push_back(proc);
+		ProcessList->push_front(Proc);
 
-		for(auto t : *proc->Threads)
-			AddToQueue(t);
+		for(uint8_t d = 0; d < Proc->Threads->size(); d++)
+		{
+			AddToQueue(Proc->Threads->get(d));
+		}
 	}
 
 	void AddToQueue(Thread* t)
@@ -235,8 +254,7 @@ namespace Multitasking
 		{
 			Log("Suspended thread %d, name: %s", p->ThreadID, p->Parent->Name);
 
-			auto thrlist = GetThreadList(p);
-			thrlist->erase(rde::find(thrlist->begin(), thrlist->end(), p));
+			GetThreadList(p)->RemoveAt((uint64_t) GetThreadList(p)->IndexOf(p));
 			SleepList->push_front(p);
 
 			p->State = STATE_SUSPEND;
@@ -262,11 +280,28 @@ namespace Multitasking
 
 			// remove the thread from its parent process's list.
 			Process* par = p->Parent;
-			par->Threads->erase(rde::find(par->Threads->begin(), par->Threads->end(), p));
 
-			auto thrlist = GetThreadList(p);
-			thrlist->erase(rde::find(thrlist->begin(), thrlist->end(), p));
-			SleepList->push_back(p);
+			int64_t id = par->Threads->IndexOf(p);
+
+			if(id < 0)
+				HALT("Thread corrupted");
+
+			par->Threads->RemoveAt((uint64_t) id);
+			GetThreadList(p)->RemoveAt((uint64_t) GetThreadList(p)->IndexOf(p));
+			SleepList->push_front(p);
+
+			// wake up the watching threads.
+			if(p->watchers)
+			{
+				for(size_t i = 0, s = p->watchers->size(); i < s; i++)
+				{
+					Thread* w = p->watchers->pop_front();
+					assert(w->watching);
+
+					w->watching->RemoveAt(w->watching->IndexOf(p));
+					WakeForMessage(w);
+				}
+			}
 		}
 		else
 		{
@@ -296,21 +331,27 @@ namespace Multitasking
 	// by process
 	void Suspend(Process* p)
 	{
-		for(auto t : *p->Threads)
-			Suspend(t);
+		for(uint64_t k = 0; k < p->Threads->size(); k++)
+		{
+			Suspend(p->Threads->get(k));
+		}
 	}
 
 	void Resume(Process* p)
 	{
-		for(auto t : *p->Threads)
-			Resume(t);
+		for(uint64_t k = 0; k < p->Threads->size(); k++)
+		{
+			Resume(p->Threads->get(k));
+		}
 	}
 
 	void Kill(Process* p)
 	{
 		Log("Killing %d thread%s of process %s", p->Threads->size(), p->Threads->size() == 1 ? "" : "s", p->Name);
-		for(size_t i = 0, s = p->Threads->size(); i < s; i++)
-			Kill(p->Threads->front());
+		for(uint64_t k = 0; k < p->Threads->size(); k++)
+		{
+			Kill(p->Threads->get(k));
+		}
 	}
 
 
@@ -322,34 +363,33 @@ namespace Multitasking
 		return false;
 	}
 
-	rde::list<Thread*>* SearchByName(const char* n)
+	Library::LinkedList<Thread>* SearchByName(const char* n)
 	{
-		(void) n;
-		rde::list<Thread*>* list = new rde::list<Thread*>();
-		// for(uint64_t s = 0; s < ThreadList_HighPrio->Size(); s++)
-		// {
-		// 	if(strcmp(n, ThreadList_HighPrio->Get(s)->Parent->Name) == 0)
-		// 		list->push_front(ThreadList_HighPrio->Get(s));
-		// }
-		// for(uint64_t s = 0; s < ThreadList_HighPrio->Size(); s++)
-		// {
-		// 	if(strcmp(n, ThreadList_NormPrio->Get(s)->Parent->Name) == 0)
-		// 		list->push_front(ThreadList_NormPrio->Get(s));
-		// }
-		// for(uint64_t s = 0; s < ThreadList_LowPrio->Size(); s++)
-		// {
-		// 	if(strcmp(n, ThreadList_LowPrio->Get(s)->Parent->Name) == 0)
-		// 		list->push_front(ThreadList_LowPrio->Get(s));
-		// }
+		LinkedList<Thread>* list = new LinkedList<Thread>();
+		for(uint64_t s = 0; s < ThreadList_HighPrio->size(); s++)
+		{
+			if(strcmp(n, ThreadList_HighPrio->get(s)->Parent->Name) == 0)
+				list->push_front(ThreadList_HighPrio->get(s));
+		}
+		for(uint64_t s = 0; s < ThreadList_HighPrio->size(); s++)
+		{
+			if(strcmp(n, ThreadList_NormPrio->get(s)->Parent->Name) == 0)
+				list->push_front(ThreadList_NormPrio->get(s));
+		}
+		for(uint64_t s = 0; s < ThreadList_LowPrio->size(); s++)
+		{
+			if(strcmp(n, ThreadList_LowPrio->get(s)->Parent->Name) == 0)
+				list->push_front(ThreadList_LowPrio->get(s));
+		}
 
 
 
 
-		// for(uint64_t s = 0; s < SleepList->Size(); s++)
-		// {
-		// 	if(strcmp(n, SleepList->Get(s)->Parent->Name) == 0)
-		// 		list->InsertFront(SleepList->Get(s));
-		// }
+		for(uint64_t s = 0; s < SleepList->size(); s++)
+		{
+			if(strcmp(n, SleepList->get(s)->Parent->Name) == 0)
+				list->push_front(SleepList->get(s));
+		}
 
 		return list;
 	}
@@ -361,10 +401,10 @@ namespace Multitasking
 
 	Process* GetProcess(uint64_t pid)
 	{
-		for(auto p : *ProcessList)
+		for(uint64_t i = 0; i < ProcessList->size(); i++)
 		{
-			if(p->ProcessID == pid)
-				return p;
+			if(ProcessList->get(i)->ProcessID == pid)
+				return ProcessList->get(i);
 		}
 
 		return 0;
@@ -372,28 +412,28 @@ namespace Multitasking
 
 	Thread* GetThread(uint64_t tid)
 	{
-		for(Thread* t : *ThreadList_LowPrio)
+		for(uint64_t i = 0; i < ThreadList_HighPrio->size(); i++)
 		{
-			if(t->ThreadID == tid)
-				return t;
+			if(ThreadList_HighPrio->get(i)->ThreadID == tid)
+				return ThreadList_HighPrio->get(i);
 		}
 
-		for(Thread* t : *ThreadList_NormPrio)
+		for(uint64_t i = 0; i < ThreadList_NormPrio->size(); i++)
 		{
-			if(t->ThreadID == tid)
-				return t;
+			if(ThreadList_NormPrio->get(i)->ThreadID == tid)
+				return ThreadList_NormPrio->get(i);
 		}
 
-		for(Thread* t : *ThreadList_HighPrio)
+		for(uint64_t i = 0; i < ThreadList_LowPrio->size(); i++)
 		{
-			if(t->ThreadID == tid)
-				return t;
+			if(ThreadList_LowPrio->get(i)->ThreadID == tid)
+				return ThreadList_LowPrio->get(i);
 		}
 
-		for(Thread* t : *SleepList)
+		for(uint64_t i = 0; i < SleepList->size(); i++)
 		{
-			if(t->ThreadID == tid)
-				return t;
+			if(SleepList->get(i)->ThreadID == tid)
+				return SleepList->get(i);
 		}
 
 		return 0;

@@ -53,12 +53,9 @@ namespace DMA
 		Log("Initialised Busmastering DMA with BaseIO %x", mmio);
 
 
-		// for(uint64_t i = 0; i < ATADrive::ATADrives->Size(); i++)
-		int ind = 0;
-		for(auto i : *ATADrive::ATADrives)
+		for(uint64_t i = 0; i < ATADrive::ATADrives->size(); i++)
 		{
-			i->PRDTable = (uint64_t)(PRDT[ind]);
-			ind++;
+			ATADrive::ATADrives->get(i)->PRDTable = (uint64_t)(PRDT[i]);
 		}
 
 		IOPort::WriteByte((uint16_t) mmio + 2, 0x4);

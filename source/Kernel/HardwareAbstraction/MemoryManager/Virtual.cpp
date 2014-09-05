@@ -6,6 +6,7 @@
 // Sets up the paging structures left by our bootstrap in (boot.s).
 
 #include <Kernel.hpp>
+#include <List.hpp>
 #include <StandardIO.hpp>
 #include <stddef.h>
 
@@ -66,9 +67,11 @@ namespace Virtual
 		if(addr > 0)
 		{
 			uint64_t end = addr + (size * 0x1000);
+			// Log("Trying to allocate %d page%s at %x -- end = %x", size, size > 1 ? "s" : "", addr, end);
 			AddressLengthPair* found = 0;
 			for(auto pair : *vas->pairs)
 			{
+				// Log("Found pair: %x - %x, overflow check: %.016x", pair->start, pair->length, pair->start + (pair->length * 0x1000));
 				if(pair->start <= addr && pair->start + (pair->length * 0x1000) >= end)
 				{
 					found = pair;
@@ -80,8 +83,7 @@ namespace Virtual
 			{
 				if(found->start == addr && found->length == size)
 				{
-					// vas->pairs->Remove(found);
-					vas->pairs->erase(rde::find(vas->pairs->begin(), vas->pairs->end(), found));
+					vas->pairs->Remove(found);
 					delete found;
 				}
 				else if(found->start == addr)
@@ -132,10 +134,7 @@ namespace Virtual
 		else if(pair->length == size)
 		{
 			uint64_t ret = pair->start;
-			auto r = vas->pairs->front();
-			vas->pairs->erase(vas->pairs->begin());
-
-			delete r;
+			delete vas->pairs->pop_front();
 			return ret;
 		}
 		else
@@ -236,7 +235,7 @@ namespace Virtual
 	{
 		uint64_t phys = GetMapping(addr, 0);
 		Physical::FreePage(phys, size);
-		UnMapRegion(addr, size);
+		UnmapRegion(addr, size);
 	}
 
 
@@ -311,19 +310,19 @@ namespace Virtual
 
 
 
-	void UnMapAddress(uint64_t VirtAddr)
+	void UnmapAddress(uint64_t VirtAddr)
 	{
-		UnMapAddress(VirtAddr, GetCurrentPML4T(), false);
+		UnmapAddress(VirtAddr, GetCurrentPML4T(), false);
 	}
 
-	void UnMapAddress(uint64_t VirtAddr, PageMapStructure* PML4)
+	void UnmapAddress(uint64_t VirtAddr, PageMapStructure* PML4)
 	{
-		UnMapAddress(VirtAddr, PML4, false);
+		UnmapAddress(VirtAddr, PML4, false);
 	}
 
-	void UnMapAddress(uint64_t VirtAddr, bool DoNotUnmap)
+	void UnmapAddress(uint64_t VirtAddr, bool DoNotUnmap)
 	{
-		UnMapAddress(VirtAddr, GetCurrentPML4T(), DoNotUnmap);
+		UnmapAddress(VirtAddr, GetCurrentPML4T(), DoNotUnmap);
 	}
 
 
@@ -409,10 +408,10 @@ namespace Virtual
 
 		if(other)
 		{
-			Virtual::UnMapAddress((uint64_t) PageTable);
-			Virtual::UnMapAddress((uint64_t) PageDirectory);
-			Virtual::UnMapAddress((uint64_t) PDPT);
-			Virtual::UnMapAddress((uint64_t) PML);
+			Virtual::UnmapAddress((uint64_t) PageTable);
+			Virtual::UnmapAddress((uint64_t) PageDirectory);
+			Virtual::UnmapAddress((uint64_t) PDPT);
+			Virtual::UnmapAddress((uint64_t) PML);
 		}
 	}
 
@@ -420,7 +419,7 @@ namespace Virtual
 
 
 
-	void UnMapAddress(uint64_t VirtAddr, PageMapStructure* PML4, bool DoNotUnmap)
+	void UnmapAddress(uint64_t VirtAddr, PageMapStructure* PML4, bool DoNotUnmap)
 	{
 		bool DidMapPML4 = false;
 
@@ -481,7 +480,7 @@ namespace Virtual
 		if(DidMapPML4 && !DoNotUnmap)
 		{
 			DidMapPML4 = false;
-			if((uint64_t) PML4 != GetKernelCR3()){ UnMapAddress((uint64_t) PML4); }
+			if((uint64_t) PML4 != GetKernelCR3()){ UnmapAddress((uint64_t) PML4); }
 		}
 	}
 
@@ -493,11 +492,11 @@ namespace Virtual
 			MapAddress(VirtAddr + (i * 0x1000), PhysAddr + (i * 0x1000), Flags, PML4);
 	}
 
-	void UnMapRegion(uint64_t VirtAddr, uint64_t LengthInPages, PageMapStructure* PML4)
+	void UnmapRegion(uint64_t VirtAddr, uint64_t LengthInPages, PageMapStructure* PML4)
 	{
 		for(uint64_t i = 0; i < LengthInPages; i++)
 		{
-			UnMapAddress(VirtAddr + (i * 0x1000), PML4);
+			UnmapAddress(VirtAddr + (i * 0x1000), PML4);
 		}
 	}
 
@@ -562,10 +561,10 @@ namespace Virtual
 
 						if(other)
 						{
-							Virtual::UnMapAddress((uint64_t) PageTable);
-							Virtual::UnMapAddress((uint64_t) PageDirectory);
-							Virtual::UnMapAddress((uint64_t) PDPT);
-							Virtual::UnMapAddress((uint64_t) PML);
+							Virtual::UnmapAddress((uint64_t) PageTable);
+							Virtual::UnmapAddress((uint64_t) PageDirectory);
+							Virtual::UnmapAddress((uint64_t) PDPT);
+							Virtual::UnmapAddress((uint64_t) PML);
 						}
 						return ret;
 					}
@@ -573,9 +572,9 @@ namespace Virtual
 					{
 						if(other)
 						{
-							Virtual::UnMapAddress((uint64_t) PageDirectory);
-							Virtual::UnMapAddress((uint64_t) PDPT);
-							Virtual::UnMapAddress((uint64_t) PML);
+							Virtual::UnmapAddress((uint64_t) PageDirectory);
+							Virtual::UnmapAddress((uint64_t) PDPT);
+							Virtual::UnmapAddress((uint64_t) PML);
 						}
 						return 0;
 					}
@@ -584,8 +583,8 @@ namespace Virtual
 				{
 					if(other)
 					{
-						Virtual::UnMapAddress((uint64_t) PDPT);
-						Virtual::UnMapAddress((uint64_t) PML);
+						Virtual::UnmapAddress((uint64_t) PDPT);
+						Virtual::UnmapAddress((uint64_t) PML);
 					}
 					return 0;
 				}
@@ -594,7 +593,7 @@ namespace Virtual
 			{
 				if(other)
 				{
-					Virtual::UnMapAddress((uint64_t) PML);
+					Virtual::UnmapAddress((uint64_t) PML);
 				}
 				return 0;
 			}
@@ -683,13 +682,10 @@ namespace Virtual
 
 	void MapToAllProcesses(uint64_t v, uint64_t p, uint64_t f)
 	{
-		(void) v;
-		(void) p;
-		(void) f;
-		// for(uint64_t d = 0; d < Multitasking::ProcessList->Size(); d++)
-		// {
-		// 	MapAddress(v, p, f, (PageMapStructure*) Multitasking::ProcessList->Get(d)->CR3);
-		// }
+		for(uint64_t d = 0; d < Multitasking::ProcessList->size(); d++)
+		{
+			MapAddress(v, p, f, (PageMapStructure*) Multitasking::ProcessList->get(d)->CR3);
+		}
 	}
 }
 }

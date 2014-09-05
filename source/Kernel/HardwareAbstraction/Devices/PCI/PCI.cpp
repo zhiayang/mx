@@ -8,9 +8,9 @@
 
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Devices/IOPort.hpp>
+#include <List.hpp>
 #include <Utility.hpp>
 #include <StandardIO.hpp>
-#include <Colours.hpp>
 
 using namespace Kernel;
 using namespace Kernel::HardwareAbstraction::Devices;
@@ -23,26 +23,31 @@ namespace PCI
 {
 	PCIDevice* GetDeviceByVendorDevice(uint16_t VendorID, uint16_t DeviceID)
 	{
-		rde::list<PCIDevice*>* r = SearchByVendorDevice(VendorID, DeviceID);
-		return r->size() == 0 ? 0 : r->front();
+		Library::LinkedList<PCIDevice>* r = SearchByVendorDevice(VendorID, DeviceID);
+		return r->size() == 0 ? 0 : r->get(0);
 	}
 
 	PCIDevice* GetDeviceByClassSubclass(uint8_t Class, uint8_t Subclass)
 	{
-		rde::list<PCIDevice*>* r = SearchByClassSubclass(Class, Subclass);
-		return r->size() == 0 ? 0 : r->front();
+		Library::LinkedList<PCIDevice>* r = SearchByClassSubclass(Class, Subclass);
+		return r->size() == 0 ? 0 : r->get(0);
 	}
 
 
-	rde::list<PCIDevice*>* SearchByVendorDevice(uint16_t VendorID, uint16_t DeviceID)
+	Library::LinkedList<PCIDevice>* SearchByVendorDevice(uint16_t VendorID, uint16_t DeviceID)
 	{
 		uint16_t bus = 0, slot = 0;
 		uint8_t func = 0;
 		uint16_t vendor = 0, device = 0;
-		rde::list<PCIDevice*>* ret = new rde::list<PCIDevice*>();
+		Library::LinkedList<PCIDevice>* ret = new Library::LinkedList<PCIDevice>();
 
+		// for(uint16_t i = 0; i < PCIDevice::PCIDevices->size(); i++)
 		for(auto dev : *PCIDevice::PCIDevices)
 		{
+			// bus = PCIDevice::PCIDevices->get(i)->GetBus();
+			// slot = PCIDevice::PCIDevices->get(i)->GetSlot();
+			// func = PCIDevice::PCIDevices->get(i)->GetFunction();
+
 			bus = dev->GetBus();
 			slot = dev->GetSlot();
 			func = dev->GetFunction();
@@ -52,17 +57,19 @@ namespace PCI
 
 			if(vendor == (VendorID == 0xFFFF ? vendor : VendorID) && device == (DeviceID == 0xFFFF ? device : DeviceID))
 				ret->push_back(dev);
+
+				// ret->push_back(PCIDevice::PCIDevices->get(i));
 		}
 
 		return ret;
 	}
 
-	rde::list<PCIDevice*>* SearchByClassSubclass(uint8_t c, uint8_t sc)
+	Library::LinkedList<PCIDevice>* SearchByClassSubclass(uint8_t c, uint8_t sc)
 	{
 		uint16_t bus = 0, slot = 0;
 		uint8_t func = 0;
 		uint16_t tClass = 0, tSubclass = 0;
-		rde::list<PCIDevice*>* ret = new rde::list<PCIDevice*>();
+		Library::LinkedList<PCIDevice>* ret = new Library::LinkedList<PCIDevice>();
 
 
 		for(auto dev : *PCIDevice::PCIDevices)
@@ -77,6 +84,7 @@ namespace PCI
 
 			if(tClass == (c == 0xFF ? tClass : c) && tSubclass == (sc == 0xFF ? tSubclass : sc))
 				ret->push_back(dev);
+				// ret->push_back(PCIDevice::PCIDevices->get(i));
 		}
 
 		return ret;
@@ -166,6 +174,7 @@ namespace PCI
 	{
 		uint16_t vendor = 0;
 		uint8_t headertype = 0;
+		// PCIDevice::PCIDevices = new Library::LinkedList<PCIDevice>();
 		PCIDevice::PCIDevices = new rde::list<PCIDevice*>();
 
 		Log("Scanning PCI bus:");
@@ -180,7 +189,7 @@ namespace PCI
 
 					using PCI::PCIDevice;
 					PCIDevice* curdev = new PCI::PCIDevice(bus, slot, 0);
-					// PCIDevice::PCIDevices->InsertBack(curdev);
+					// PCIDevice::PCIDevices->push_back(curdev);
 					PCIDevice::PCIDevices->push_back(curdev);
 
 
@@ -188,7 +197,7 @@ namespace PCI
 					uint8_t sb = curdev->GetSubclass();
 					uint16_t devid = curdev->GetDeviceID();
 
-					Log("=> /dev/pci%d > %d:%d, v:%#04x%r, d:%#04x, c:%#02x:%#02x h:%#02x",
+					Log("=> /dev/pci%d > %d:%d, v:%#04x, d:%#04x, c:%#02x:%#02x h:%#02x",
 						bus * 32 + slot, bus, slot, vendor, devid, cl, sb, headertype);
 
 		// MemoryManager::KernelHeap::Print();
@@ -201,14 +210,14 @@ namespace PCI
 							if(vendor != 0xFFFF)
 							{
 								PCIDevice* devfunc = new PCI::PCIDevice(bus, slot, func);
-								// PCIDevice::PCIDevices->InsertBack(devfunc);
+								// PCIDevice::PCIDevices->push_back(devfunc);
 								PCIDevice::PCIDevices->push_back(devfunc);
 
 								cl = devfunc->GetClass();
 								sb = devfunc->GetSubclass();
 								devid = devfunc->GetDeviceID();
 
-								Log("\t=> /dev/pci%df%d > %d:%d, v:%#04x%r, d:%#04x, c:%#02x:%#02x h:%#02x",
+								Log("\t=> /dev/pci%df%d > %d:%d, v:%#04x, d:%#04x, c:%#02x:%#02x h:%#02x",
 									bus * 32 + slot, func, bus, slot, vendor, devid, cl, sb, headertype);
 							}
 						}
@@ -376,7 +385,7 @@ namespace PCI
 
 	void PCIDevice::PrintPCIDeviceInfo()
 	{
-		Library::StandardIO::PrintFormatted("\t%s=> %w/dev/pci%d%w%s%s %r> %w%d%r:%w%d%r, %kv:%w%#04x%r, %kd:%w%#04x%r, %kc:%w%#02x%r:%w%#02x %kh:%w%#02x%r %wint%r:%w%02d%r", (this->GetFunction() > 0) ? "\t" : "",	Library::Colours::Green, (this->GetBus() * 32 + this->GetSlot()), Library::Colours::Violet, (this->GetFunction() > 0 ? "f" : ""), (this->GetFunction() > 0 ? (Library::Utility::ConvertToString(this->GetFunction())) : ((char*)"")), Library::Colours::Blue, this->GetBus(), Library::Colours::Red, this->GetSlot(), Library::Colours::Yellow, Library::Colours::Silver, this->GetVendorID(), Library::Colours::Cyan, Library::Colours::Blue, this->GetDeviceID(), Library::Colours::Red, Library::Colours::Green, this->GetClass(), Library::Colours::Silver, this->GetSubclass(), Library::Colours::Orange, Library::Colours::Violet, this->GetHeaderType(), Library::Colours::DarkCyan, Library::Colours::DarkRed, this->GetRegisterData(0x3C, 0, 1));
+		Library::StandardIO::PrintFormatted("\t%s=> /dev/pci%d%s%s > %d:%d, v:%#04x, d:%#04x, c:%#02x:%#02x h:%#02x int:%02d", (this->GetFunction() > 0) ? "\t" : "",	(this->GetBus() * 32 + this->GetSlot()), (this->GetFunction() > 0 ? "f" : ""), (this->GetFunction() > 0 ? (Library::Utility::ConvertToString(this->GetFunction())) : ((char*)"")), this->GetBus(), this->GetSlot(), this->GetVendorID(), this->GetDeviceID(), this->GetClass(), this->GetSubclass(), this->GetHeaderType(), this->GetRegisterData(0x3C, 0, 1));
 	}
 
 

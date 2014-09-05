@@ -8,8 +8,8 @@
 #include <HardwareAbstraction/Devices/IOPort.hpp>
 #include <StandardIO.hpp>
 #include <Utility.hpp>
+#include <List.hpp>
 #include <Memory.hpp>
-#include <Colours.hpp>
 
 using namespace Kernel;
 using namespace Kernel::HardwareAbstraction;
@@ -43,7 +43,7 @@ namespace Storage
 	}
 
 
-	rde::list<ATADrive*>* ATADrive::ATADrives;
+	Library::LinkedList<ATADrive>* ATADrive::ATADrives;
 
 
 	bool ATADrive::GetIsGPT()			{ return this->IsGPT; }
@@ -77,16 +77,17 @@ namespace Storage
 			uint64_t index = Library::Utility::ReduceBinaryUnits(ata->GetSectors() * ata->GetSectorSize());
 			uint64_t mem = Library::Utility::GetReducedMemory(ata->GetSectors() * ata->GetSectorSize());
 
-			Library::StandardIO::PrintFormatted("\t-> %w%s%r %wBus%r, %w%s%r %wDrive%r: %k[%w%d%r %wsectors%r, %wsize%r: %w%d %s%r, %w%s%r%k]\n", Library::Colours::Green, !ata->GetBus() ? "Primary" : "Secondary", Library::Colours::Orange, Library::Colours::Magenta, !ata->GetDrive() ? "Master" : "Slave", Library::Colours::Orange, Library::Colours::Rose, Library::Colours::Cyan, ata->GetSectors(), Library::Colours::Silver, Library::Colours::Silver, Library::Colours::Yellow, mem, Kernel::K_BinaryUnits[index], Library::Colours::DarkCyan, ata->GetIsGPT() ? "GPT Drive" : "MBR Drive", Library::Colours::Rose);
+			Library::StandardIO::PrintFormatted("\t-> %s Bus, %s Drive: [%d sectors, size: %d %s, %s]\n", !ata->GetBus() ? "Primary" : "Secondary", !ata->GetDrive() ? "Master" : "Slave", ata->GetSectors(), mem, Kernel::K_BinaryUnits[index], ata->GetIsGPT() ? "GPT Drive" : "MBR Drive");
 		}
 
 		void Initialise()
 		{
 			// At this point, PCI devices should be initialised.
 			// So let's do some proper probing.
+			using Library::LinkedList;
 			using Kernel::HardwareAbstraction::Devices::PCI::PCIDevice;
 
-			rde::list<PCIDevice*>* devlist = PCI::SearchByClassSubclass(0x1, 0x1);
+			LinkedList<PCIDevice>* devlist = PCI::SearchByClassSubclass(0x1, 0x1);
 
 			if(devlist->size() == 0)
 			{
@@ -94,7 +95,7 @@ namespace Storage
 				UHALT();
 			}
 
-			ATADrive::ATADrives = new rde::list<ATADrive*>();
+			ATADrive::ATADrives = new LinkedList<ATADrive>();
 			IdentifyAll(devlist->front());
 		}
 
@@ -147,9 +148,10 @@ namespace Storage
 
 			DMA::Initialise();
 
-			// for(uint64_t i = 0; i < ATADrive::ATADrives->size(); i++)
-			for(auto d : *ATADrive::ATADrives)
-				HardwareAbstraction::Filesystems::MBR::ReadPartitions(d);
+			for(uint64_t i = 0; i < ATADrive::ATADrives->size(); i++)
+			{
+				HardwareAbstraction::Filesystems::MBR::ReadPartitions(ATADrive::ATADrives->get(i));
+			}
 		}
 
 		ATADrive* IdentifyDevice(uint16_t BaseIO, bool IsMaster)

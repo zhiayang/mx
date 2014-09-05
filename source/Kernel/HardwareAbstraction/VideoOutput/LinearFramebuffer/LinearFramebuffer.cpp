@@ -23,8 +23,8 @@ namespace LinearFramebuffer
 	static uint16_t ResX;
 	static uint16_t ResY;
 
-	uint32_t BackColour = 0;
-	uint32_t FrontColour = 0xFFFFFFFF;
+	uint32_t backColour = 0;
+	uint32_t frontColour = 0xFFFFFFFF;
 
 	// #define BytesPerPixel		4
 	#define CharHeight			16
@@ -86,7 +86,7 @@ namespace LinearFramebuffer
 		{
 			for(uint64_t i = y; i < y + CharHeight; i++)
 			{
-				Memory::Set32((void*)(Kernel::GetFramebufferAddress() + (i * GetResX() + x) * 4), BackColour, 4);
+				Memory::Set32((void*)(Kernel::GetFramebufferAddress() + (i * GetResX() + x) * 4), backColour, 4);
 			}
 		}
 
@@ -115,10 +115,10 @@ namespace LinearFramebuffer
 		// while(true)
 		// {
 		// 	// // loop through all regions marked dirty.
-		// 	// uint64_t s = DirtyList->Size();
+		// 	// uint64_t s = DirtyList->size();
 		// 	// for(uint64_t m = 0; m < s; m++)
 		// 	// {
-		// 	// 	DirtyRegion* r = DirtyList->RemoveFront();
+		// 	// 	DirtyRegion* r = DirtyList->pop_front();
 
 		// 	// 	// memcopy each region, row by row
 		// 	// 	for(uint64_t h = 0; h < r->GetHeight(); h++)

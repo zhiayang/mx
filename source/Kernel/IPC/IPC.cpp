@@ -137,14 +137,15 @@ namespace IPC
 				Virtual::FreeVirtual(ustack & ~0xFFF);
 				Virtual::FreeVirtual(ptr & ~0xFFF);
 
-				Virtual::UnMapAddress(ptr & ~0xFFF);
-				Virtual::UnMapAddress(ustack & ~0xFFF);
+				Virtual::UnmapAddress(ptr & ~0xFFF);
+				Virtual::UnmapAddress(ustack & ~0xFFF);
 			}
 
 			Multitasking::WakeForMessage(thread);
 		}
 		else
 		{
+			using namespace Library::StandardIO;
 			// fix iret to throw us into the sighandler, then return etc.
 			// fetch our current stackpointer.
 			uint64_t stackptr = 0;
@@ -225,7 +226,7 @@ namespace IPC
 	{
 		Multitasking::Process* proc = Multitasking::GetProcess(pid);
 		assert(proc);
-		IPC_SignalThread(proc->Threads->front()->ThreadID, signum);
+		IPC_SignalThread(proc->Threads->get(0)->ThreadID, signum);
 	}
 
 

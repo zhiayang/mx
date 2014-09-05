@@ -3,7 +3,13 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "HeaderFiles/String.hpp"
+#include "HeaderFiles/StandardIO.hpp"
 #include <string.h>
+
+using namespace Library::String;
+using namespace Library::StandardIO;
+
+
 
 namespace Library
 {

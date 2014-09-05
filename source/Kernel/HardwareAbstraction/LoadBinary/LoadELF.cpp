@@ -118,7 +118,7 @@ namespace LoadBinary
 				uint64_t actualvirt = (ProgramHeader->ProgramVirtualAddress + (m * 0x1000)) & ~0xFFF;
 
 				// unmap what we did just now.
-				Virtual::UnMapAddress(TemporaryVirtualMapping + actualvirt, true);
+				Virtual::UnmapAddress(TemporaryVirtualMapping + actualvirt, true);
 			}
 		}
 

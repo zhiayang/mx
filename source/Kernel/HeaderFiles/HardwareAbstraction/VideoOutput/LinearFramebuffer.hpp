@@ -16,8 +16,8 @@ namespace VideoOutput
 		extern const uint8_t Font8x16_Thin[256][16];
 		extern const uint8_t Font8x16_Thick[256][16];
 		extern const uint8_t Font8x16_Liberation[256][16];
-		extern uint32_t BackColour;
-		extern uint32_t FrontColour;
+		extern uint32_t backColour;
+		extern uint32_t frontColour;
 
 		class DirtyRegion
 		{
