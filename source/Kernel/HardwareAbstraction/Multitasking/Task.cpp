@@ -185,14 +185,14 @@ namespace Multitasking
 		thread->CrashState			= new ThreadRegisterState_type;
 		thread->flags				= Parent->Flags;
 
-		Parent->Threads->InsertFront(thread);
+		Parent->Threads->push_front(thread);
 
 		SetupStackThread(thread, u, us, (uint64_t) Function, attr->a1, attr->a2, attr->a3, attr->a4, attr->a5, attr->a6);
 		NumThreads++;
 
 		// unmap
 		if(Parent->CR3 != (uint64_t) Virtual::GetCurrentPML4T())
-			Virtual::UnMapRegion(k, DefaultRing3StackSize / 0x1000);
+			Virtual::UnmapRegion(k, DefaultRing3StackSize / 0x1000);
 
 		if(FirstProc)
 		{
@@ -233,6 +233,10 @@ namespace Multitasking
 		process->Threads = new LinkedList<Thread>();
 
 		PageMapStructure* PML4 = FirstProc ? (PageMapStructure*)(GetKernelCR3()) : (PageMapStructure*) Virtual::CreateVAS();
+
+		// everybody needs some tls
+		if(tlssize == 0)
+			tlssize = 8;
 
 		process->Flags					= Flags;
 		process->ProcessID				= NumProcesses;

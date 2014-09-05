@@ -27,13 +27,13 @@ namespace Multitasking
 		TimerCounter += (GlobalMilliseconds / GlobalTickRate);
 		ThreadTime += (GlobalMilliseconds / GlobalTickRate);
 
-		for(uint64_t l = SleepList->Size(), g = 0; g < l; g++)
+		for(uint64_t l = SleepList->size(), g = 0; g < l; g++)
 		{
-			Thread* m = SleepList->RemoveFront();
+			Thread* m = SleepList->pop_front();
 
 			if(m->State == STATE_SUSPEND || m->State == STATE_BLOCKING)
 			{
-				SleepList->InsertBack(m);
+				SleepList->push_back(m);
 				continue;
 			}
 			else if(m->State == STATE_AWAITDEATH)
@@ -56,11 +56,11 @@ namespace Multitasking
 
 			if(m->Sleep == 0)
 			{
-				GetThreadList(m)->InsertFront(m);
+				GetThreadList(m)->push_front(m);
 			}
 			else
 			{
-				SleepList->InsertBack(m);
+				SleepList->push_back(m);
 			}
 		}
 

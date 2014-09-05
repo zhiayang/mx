@@ -195,7 +195,7 @@ namespace ACPI
 				continue;
 			}
 
-			this->tables->InsertBack(sdt);
+			this->tables->push_back(sdt);
 		}
 	}
 

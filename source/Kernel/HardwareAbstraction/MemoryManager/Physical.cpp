@@ -120,7 +120,7 @@ namespace Physical
 		{
 			if(trycount < len)
 			{
-				// PageList->InsertBack(PageList->RemoveFront());
+				// PageList->push_back(PageList->pop_front());
 				auto fr = PageList->front();
 				PageList->pop_front();
 				PageList->push_back(fr);
@@ -146,7 +146,7 @@ namespace Physical
 		bool ret = false;
 		for(size_t i = 0; i < PageList->size(); i++)
 		{
-			// Pair* pair = PageList->RemoveFront();
+			// Pair* pair = PageList->pop_front();
 			Pair* pair = PageList->front();
 			PageList->pop_front();
 
@@ -167,7 +167,7 @@ namespace Physical
 				ret = true;
 			}
 
-			// PageList->InsertBack(pair);
+			// PageList->push_back(pair);
 			PageList->push_back(pair);
 
 			if(ret)
@@ -180,7 +180,7 @@ namespace Physical
 		np->LengthInPages = size;
 
 		PageList->push_back(np);
-		// PageList->InsertBack(np);
+		// PageList->push_back(np);
 	}
 
 
@@ -211,7 +211,7 @@ namespace Physical
 		OpsSinceLastCoalesce++;
 		for(size_t i = 0; i < PageList->size(); i++)
 		{
-			// Pair* pair = &PageList->RemoveFront();
+			// Pair* pair = &PageList->pop_front();
 			Pair* pair = PageList->front();
 			PageList->pop_front();
 
@@ -227,11 +227,11 @@ namespace Physical
 
 				else
 					PageList->push_back(pair);
-					// PageList->InsertBack(pair);
+					// PageList->push_back(pair);
 
 				return ret;
 			}
-			// PageList->InsertBack(pair);
+			// PageList->push_back(pair);
 			PageList->push_back(pair);
 		}
 
@@ -310,7 +310,7 @@ namespace Physical
 				p->BaseAddr = PageAlignUp(MemoryMap->Entries[i].BaseAddress);
 				p->LengthInPages = (PageAlignDown(MemoryMap->Entries[i].Length) / 0x1000) - 1;
 
-				// PageList->InsertBack(p);
+				// PageList->push_back(p);
 				PageList->push_back(p);
 			}
 		}
@@ -318,8 +318,8 @@ namespace Physical
 		// The bottom-most FPL would be from 1MB up.
 		// However, we must set it to the top of our kernel.
 
-		// uint64_t OldBaseAddr = PageList->Front()->BaseAddr;
-		// Pair* p = PageList->Front();
+		// uint64_t OldBaseAddr = PageList->front()->BaseAddr;
+		// Pair* p = PageList->front();
 
 		auto OldBaseAddr = PageList->front()->BaseAddr;
 		auto p = PageList->front();
@@ -351,7 +351,7 @@ namespace Physical
 		for(size_t i = 0; i < PageList->size(); i++)
 		{
 			bool delp = false;
-			// Pair* p = PageList->RemoveFront();
+			// Pair* p = PageList->pop_front();
 			auto p = PageList->front();
 			PageList->pop_front();
 
@@ -360,7 +360,7 @@ namespace Physical
 
 			for(size_t k = 0; k < PageList->size(); k++)
 			{
-				// Pair* other = PageList->RemoveFront();
+				// Pair* other = PageList->pop_front();
 				auto other = PageList->front();
 				PageList->pop_front();
 

@@ -82,7 +82,7 @@ namespace CentralDispatch
 				}
 
 				Log("Thread %d requested service dispatch of Service <%d>", msg->SenderTID, ServiceNumber);
-				ServiceList[ServiceNumber]->Handlers->InsertBack(new ServiceHandler_type(msg->SenderTID, Multitasking::GetThread(msg->SenderTID)));
+				ServiceList[ServiceNumber]->Handlers->push_back(new ServiceHandler_type(msg->SenderTID, Multitasking::GetThread(msg->SenderTID)));
 			}
 			else if(msg->MessageType == MessageTypes::RequestServiceInitialise)
 			{
@@ -105,11 +105,11 @@ namespace CentralDispatch
 				if(ServiceList[ServiceNumber])
 				{
 					// forward the message to registered listeners
-					for(uint64_t i = 0; i < ServiceList[ServiceNumber]->Handlers->Size(); i++)
+					for(uint64_t i = 0; i < ServiceList[ServiceNumber]->Handlers->size(); i++)
 					{
 						// if(!thread)
 						// {
-							SendSimpleMessage(ServiceList[ServiceNumber]->Handlers->Get(i)->target, MessageTypes::ServiceData, msg->Data1, msg->Data2, msg->Data3, 0);
+							SendSimpleMessage(ServiceList[ServiceNumber]->Handlers->get(i)->target, MessageTypes::ServiceData, msg->Data1, msg->Data2, msg->Data3, 0);
 						// }
 						// else
 						// {

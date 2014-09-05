@@ -61,10 +61,10 @@ namespace CentralDispatch
 	void AddApplicationToList(Multitasking::Thread* thread, Multitasking::Process* proc)
 	{
 		AutoMutex mtx(Mutexes::WindowDispatcher);
-		ApplicationList->InsertBack(new GenericFocusableApplication(proc, thread));
+		ApplicationList->push_back(new GenericFocusableApplication(proc, thread));
 
 		// logically, when an application is added to the focusable list, it spawns a window, hence make it focused.
-		ApplicationInFocus = ApplicationList->Back();
+		ApplicationInFocus = ApplicationList->back();
 	}
 }
 }

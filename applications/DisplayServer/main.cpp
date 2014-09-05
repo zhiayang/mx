@@ -24,6 +24,9 @@ void* thr(void*)
 	flag = true;
 	m = 200;
 	printf("m in thr: %d\n\n", m);
+	printf("sleeping for 1500ms\n");
+	Library::SystemCall::Sleep(1500);
+	printf("awake, hello!\n");
 
 	return (void*) 0xFAD;
 }
