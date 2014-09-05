@@ -178,7 +178,7 @@ namespace Filesystems
 			_fs->mountpoint = new rde::string(path);
 			_fs->partition = part;
 
-			mountedfses->InsertBack(_fs);
+			mountedfses->push_back(_fs);
 		}
 
 		void Unmount(const char* path)
@@ -197,10 +197,10 @@ namespace Filesystems
 			fe->node	= node;
 			fe->offset	= 0;
 			fe->flags	= flags;
-			fe->fd		= FirstFreeFD + ioctx->fdarray->fds->Size();
+			fe->fd		= FirstFreeFD + ioctx->fdarray->fds->size();
 			fe->id		= curfeid++;
 
-			ioctx->fdarray->fds->InsertBack(fe);
+			ioctx->fdarray->fds->push_back(fe);
 
 			return fe;
 		}
@@ -305,10 +305,10 @@ namespace Filesystems
 			fe->node	= old->node;
 			fe->offset	= 0;
 			fe->flags	= old->flags;
-			fe->fd		= FirstFreeFD + ctx->fdarray->fds->Size();
+			fe->fd		= FirstFreeFD + ctx->fdarray->fds->size();
 			fe->id		= curfeid++;
 
-			ctx->fdarray->fds->InsertBack(fe);
+			ctx->fdarray->fds->push_back(fe);
 			return fe;
 		}
 	}

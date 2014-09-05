@@ -61,20 +61,20 @@ namespace Virtual
 
 
 	void MapAddress(uint64_t VirtAddr, uint64_t PhysAddr, uint64_t Flags, PageMapStructure* PML4, bool DoNotUnmap);
-	void UnMapAddress(uint64_t VirtAddr, PageMapStructure* PML4, bool DoNotUnmap);
+	void UnmapAddress(uint64_t VirtAddr, PageMapStructure* PML4, bool DoNotUnmap);
 
 	void MapAddress(uint64_t VirtAddr, uint64_t PhysAddr, uint64_t Flags);
 	void MapAddress(uint64_t VirtAddr, uint64_t PhysAddr, uint64_t Flags, PageMapStructure* PML4);
 	void MapAddress(uint64_t VirtAddr, uint64_t PhysAddr, uint64_t Flags, bool DoNotUnmap);
-	void UnMapAddress(uint64_t VirtAddr);
-	void UnMapAddress(uint64_t VirtAddr, PageMapStructure* PML4);
-	void UnMapAddress(uint64_t VirtAddr, bool DoNotUnmap);
+	void UnmapAddress(uint64_t VirtAddr);
+	void UnmapAddress(uint64_t VirtAddr, PageMapStructure* PML4);
+	void UnmapAddress(uint64_t VirtAddr, bool DoNotUnmap);
 
 
 
 
 	void MapRegion(uint64_t VirtAddr, uint64_t PhysAddr, uint64_t LengthInPages, uint64_t Flags, PageMapStructure* PML4 = 0);
-	void UnMapRegion(uint64_t VirtAddr, uint64_t LengthInPages, PageMapStructure* PML4 = 0);
+	void UnmapRegion(uint64_t VirtAddr, uint64_t LengthInPages, PageMapStructure* PML4 = 0);
 
 	void SetupTempMappings(PageMapStructure* PML4);
 	uint64_t CreateVAS();

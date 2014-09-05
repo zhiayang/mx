@@ -69,7 +69,7 @@ namespace MBR
 						break;
 				}
 
-				atadev->Partitions->InsertBack(new Partition(atadev, (uint8_t)(o - 0x1BE) / 0x10, *((uint32_t*)(mbr + o + 8)), *((uint32_t*)(mbr + o + 12)), fstype, 0, 0, 0, 0, (char*)"", *(mbr + o) & 0x80));
+				atadev->Partitions->push_back(new Partition(atadev, (uint8_t)(o - 0x1BE) / 0x10, *((uint32_t*)(mbr + o + 8)), *((uint32_t*)(mbr + o + 12)), fstype, 0, 0, 0, 0, (char*)"", *(mbr + o) & 0x80));
 			}
 		}
 

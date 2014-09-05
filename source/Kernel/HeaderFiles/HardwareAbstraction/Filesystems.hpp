@@ -264,7 +264,7 @@ namespace Kernel
 					uint32_t FATSectorSize;
 					uint32_t RootDirectoryCluster;
 					uint16_t FSInfoCluster;
-					uint16_t BackupBootCluster;
+					uint16_t backupBootCluster;
 
 					uint64_t FirstUsableCluster;
 			};
@@ -322,7 +322,7 @@ namespace Kernel
 			// 		uint32_t		GetRootDirectoryCluster();
 
 			// 		uint16_t		GetFSInfoCluster();
-			// 		uint16_t		GetBackupBootCluster();
+			// 		uint16_t		GetbackupBootCluster();
 			// 		uint32_t		GetFirstUsableCluster();
 
 
@@ -343,7 +343,7 @@ namespace Kernel
 			// 		uint32_t FATSectorSize;
 			// 		uint32_t RootDirectoryCluster;
 			// 		uint16_t FSInfoCluster;
-			// 		uint16_t BackupBootCluster;
+			// 		uint16_t backupBootCluster;
 
 			// 		uint64_t FirstUsableCluster;
 

@@ -61,20 +61,20 @@ namespace Multitasking
 		ScheduleCount++;
 		Thread* r = nullptr;
 
-		if(ThreadList_LowPrio->Size() > 0 && (ScheduleCount % LowStarveThreshold == 0))
+		if(ThreadList_LowPrio->size() > 0 && (ScheduleCount % LowStarveThreshold == 0))
 		{
-			r = ThreadList_LowPrio->RemoveFront();
-			ThreadList_LowPrio->InsertBack(r);
+			r = ThreadList_LowPrio->pop_front();
+			ThreadList_LowPrio->push_back(r);
 		}
-		else if(ThreadList_NormPrio->Size() > 0 && (ScheduleCount % NormStarveThreshold == 0))
+		else if(ThreadList_NormPrio->size() > 0 && (ScheduleCount % NormStarveThreshold == 0))
 		{
-			r = ThreadList_NormPrio->RemoveFront();
-			ThreadList_NormPrio->InsertBack(r);
+			r = ThreadList_NormPrio->pop_front();
+			ThreadList_NormPrio->push_back(r);
 		}
-		else if(ThreadList_HighPrio->Size() > 0)
+		else if(ThreadList_HighPrio->size() > 0)
 		{
-			r = ThreadList_HighPrio->RemoveFront();
-			ThreadList_HighPrio->InsertBack(r);
+			r = ThreadList_HighPrio->pop_front();
+			ThreadList_HighPrio->push_back(r);
 		}
 		else
 		{
@@ -91,12 +91,12 @@ namespace Multitasking
 	{
 		if(BOpt_Likely(!IsFirst))
 		{
-			if(PendingSleepList->Size() > 0)
+			if(PendingSleepList->size() > 0)
 			{
-				for(uint64_t i = 0, s = PendingSleepList->Size(); i < s; i++)
+				for(uint64_t i = 0, s = PendingSleepList->size(); i < s; i++)
 				{
-					SleepList->InsertBack(PendingSleepList->RemoveFront());
-					SleepList->Back()->StackPointer = context;
+					SleepList->push_back(PendingSleepList->pop_front());
+					SleepList->back()->StackPointer = context;
 				}
 			}
 			else
@@ -189,7 +189,7 @@ namespace Multitasking
 		Thread* p = FetchAndRemoveThread(CurrentThread);
 
 		p->Sleep = (uint32_t) __abs(time);
-		PendingSleepList->InsertBack(p);
+		PendingSleepList->push_back(p);
 
 		// if time is negative, we called from userspace, so don't nest interrupts.
 		if(time > 0)

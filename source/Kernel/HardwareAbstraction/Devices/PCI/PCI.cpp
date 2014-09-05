@@ -25,13 +25,13 @@ namespace PCI
 	PCIDevice* GetDeviceByVendorDevice(uint16_t VendorID, uint16_t DeviceID)
 	{
 		Library::LinkedList<PCIDevice>* r = SearchByVendorDevice(VendorID, DeviceID);
-		return r->Size() == 0 ? 0 : r->Get(0);
+		return r->size() == 0 ? 0 : r->get(0);
 	}
 
 	PCIDevice* GetDeviceByClassSubclass(uint8_t Class, uint8_t Subclass)
 	{
 		Library::LinkedList<PCIDevice>* r = SearchByClassSubclass(Class, Subclass);
-		return r->Size() == 0 ? 0 : r->Get(0);
+		return r->size() == 0 ? 0 : r->get(0);
 	}
 
 
@@ -42,12 +42,12 @@ namespace PCI
 		uint16_t vendor = 0, device = 0;
 		Library::LinkedList<PCIDevice>* ret = new Library::LinkedList<PCIDevice>();
 
-		// for(uint16_t i = 0; i < PCIDevice::PCIDevices->Size(); i++)
+		// for(uint16_t i = 0; i < PCIDevice::PCIDevices->size(); i++)
 		for(auto dev : *PCIDevice::PCIDevices)
 		{
-			// bus = PCIDevice::PCIDevices->Get(i)->GetBus();
-			// slot = PCIDevice::PCIDevices->Get(i)->GetSlot();
-			// func = PCIDevice::PCIDevices->Get(i)->GetFunction();
+			// bus = PCIDevice::PCIDevices->get(i)->GetBus();
+			// slot = PCIDevice::PCIDevices->get(i)->GetSlot();
+			// func = PCIDevice::PCIDevices->get(i)->GetFunction();
 
 			bus = dev->GetBus();
 			slot = dev->GetSlot();
@@ -57,9 +57,9 @@ namespace PCI
 			device = (uint16_t)(PCI::ReadConfig32(PCI::MakeAddr(bus, slot, func), 0) >> 16);
 
 			if(vendor == (VendorID == 0xFFFF ? vendor : VendorID) && device == (DeviceID == 0xFFFF ? device : DeviceID))
-				ret->InsertBack(dev);
+				ret->push_back(dev);
 
-				// ret->InsertBack(PCIDevice::PCIDevices->Get(i));
+				// ret->push_back(PCIDevice::PCIDevices->get(i));
 		}
 
 		return ret;
@@ -84,8 +84,8 @@ namespace PCI
 			tSubclass = (uint8_t)(ReadConfig32(MakeAddr(bus, slot, func), 0x08) >> 16);
 
 			if(tClass == (c == 0xFF ? tClass : c) && tSubclass == (sc == 0xFF ? tSubclass : sc))
-				ret->InsertBack(dev);
-				// ret->InsertBack(PCIDevice::PCIDevices->Get(i));
+				ret->push_back(dev);
+				// ret->push_back(PCIDevice::PCIDevices->get(i));
 		}
 
 		return ret;
@@ -190,7 +190,7 @@ namespace PCI
 
 					using PCI::PCIDevice;
 					PCIDevice* curdev = new PCI::PCIDevice(bus, slot, 0);
-					// PCIDevice::PCIDevices->InsertBack(curdev);
+					// PCIDevice::PCIDevices->push_back(curdev);
 					PCIDevice::PCIDevices->push_back(curdev);
 
 
@@ -211,7 +211,7 @@ namespace PCI
 							if(vendor != 0xFFFF)
 							{
 								PCIDevice* devfunc = new PCI::PCIDevice(bus, slot, func);
-								// PCIDevice::PCIDevices->InsertBack(devfunc);
+								// PCIDevice::PCIDevices->push_back(devfunc);
 								PCIDevice::PCIDevices->push_back(devfunc);
 
 								cl = devfunc->GetClass();

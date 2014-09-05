@@ -31,11 +31,11 @@
 
 // 	string* SimpleStringMap::Get(string* key)
 // 	{
-// 		for(uint64_t i = 0; i < this->NodeList->Size(); i++)
+// 		for(uint64_t i = 0; i < this->NodeList->size(); i++)
 // 		{
-// 			if(Library::String::Compare(key->CString(), this->NodeList->Get(i)->key->CString()))
+// 			if(Library::String::Compare(key->CString(), this->NodeList->get(i)->key->CString()))
 // 			{
-// 				return this->NodeList->Get(i)->value;
+// 				return this->NodeList->get(i)->value;
 // 			}
 // 		}
 
@@ -45,7 +45,7 @@
 // 	string* SimpleStringMap::Get(const char* key)
 // 	{
 // 		string* d = new string(key);
-// 		string* r = this->Get(d);
+// 		string* r = this->get(d);
 
 // 		delete d;
 // 		return r;
@@ -54,9 +54,9 @@
 // 	LinkedList<string>* SimpleStringMap::Values()
 // 	{
 // 		LinkedList<string>* ret = new LinkedList<string>();
-// 		for(uint64_t k = 0; k < this->NodeList->Size(); k++)
+// 		for(uint64_t k = 0; k < this->NodeList->size(); k++)
 // 		{
-// 			ret->InsertBack(this->NodeList->Get(k)->value);
+// 			ret->InsertBack(this->NodeList->get(k)->value);
 // 		}
 
 // 		return ret;
@@ -64,7 +64,7 @@
 
 // 	uint64_t SimpleStringMap::Size()
 // 	{
-// 		return this->NodeList->Size();
+// 		return this->NodeList->size();
 // 	}
 // }
 

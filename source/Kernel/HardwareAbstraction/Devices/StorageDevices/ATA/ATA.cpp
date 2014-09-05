@@ -90,14 +90,14 @@ namespace Storage
 
 			LinkedList<PCIDevice>* devlist = PCI::SearchByClassSubclass(0x1, 0x1);
 
-			if(devlist->Size() == 0)
+			if(devlist->size() == 0)
 			{
 				Library::StandardIO::PrintFormatted("ERROR: No IDE Controller found on the PCI bus, which is impossible.");
 				UHALT();
 			}
 
 			ATADrive::ATADrives = new LinkedList<ATADrive>();
-			IdentifyAll(devlist->Front());
+			IdentifyAll(devlist->front());
 		}
 
 
@@ -112,8 +112,8 @@ namespace Storage
 				ATADrive* d = ATA::IdentifyDevice(PrimaryBaseIO, true);
 				if(d)
 				{
-					ATADrive::ATADrives->InsertBack(d);
-					ATADrive::ATADrives->Back()->ParentPCI = controller;
+					ATADrive::ATADrives->push_back(d);
+					ATADrive::ATADrives->back()->ParentPCI = controller;
 				}
 			}
 
@@ -122,8 +122,8 @@ namespace Storage
 				ATADrive* d = ATA::IdentifyDevice(PrimaryBaseIO, false);
 				if(d)
 				{
-					ATADrive::ATADrives->InsertBack(d);
-					ATADrive::ATADrives->Back()->ParentPCI = controller;
+					ATADrive::ATADrives->push_back(d);
+					ATADrive::ATADrives->back()->ParentPCI = controller;
 				}
 			}
 
@@ -132,8 +132,8 @@ namespace Storage
 				ATADrive* d = ATA::IdentifyDevice(SecondaryBaseIO, true);
 				if(d)
 				{
-					ATADrive::ATADrives->InsertBack(d);
-					ATADrive::ATADrives->Back()->ParentPCI = controller;
+					ATADrive::ATADrives->push_back(d);
+					ATADrive::ATADrives->back()->ParentPCI = controller;
 				}
 			}
 
@@ -142,16 +142,16 @@ namespace Storage
 				ATADrive* d = ATA::IdentifyDevice(SecondaryBaseIO, false);
 				if(d)
 				{
-					ATADrive::ATADrives->InsertBack(d);
-					ATADrive::ATADrives->Back()->ParentPCI = controller;
+					ATADrive::ATADrives->push_back(d);
+					ATADrive::ATADrives->back()->ParentPCI = controller;
 				}
 			}
 
 			DMA::Initialise();
 
-			for(uint64_t i = 0; i < ATADrive::ATADrives->Size(); i++)
+			for(uint64_t i = 0; i < ATADrive::ATADrives->size(); i++)
 			{
-				HardwareAbstraction::Filesystems::MBR::ReadPartitions(ATADrive::ATADrives->Get(i));
+				HardwareAbstraction::Filesystems::MBR::ReadPartitions(ATADrive::ATADrives->get(i));
 			}
 		}
 

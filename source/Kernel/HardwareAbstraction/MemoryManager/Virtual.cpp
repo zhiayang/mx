@@ -55,7 +55,7 @@ namespace Virtual
 		VirtualAddressSpace* vas = v ? v : proc->VAS;
 		assert(vas);
 
-		if(vas->pairs->Size() == 0)
+		if(vas->pairs->size() == 0)
 		{
 			Log(3, "Virtual address space exhausted, WTF are you doing?!");
 			Multitasking::Kill(proc);
@@ -89,14 +89,14 @@ namespace Virtual
 				else if(found->start == addr)
 				{
 					AddressLengthPair* np = new AddressLengthPair(end, found->length - size);
-					vas->pairs->InsertBack(np);
+					vas->pairs->push_back(np);
 					delete found;
 				}
 				else
 				{
 					// make a new pair.
 					AddressLengthPair* np = new AddressLengthPair(found->start, (addr - found->start) / 0x1000);
-					vas->pairs->InsertBack(np);
+					vas->pairs->push_back(np);
 
 					found->start = end;
 					found->length = found->length - size;
@@ -123,7 +123,7 @@ namespace Virtual
 
 
 
-		AddressLengthPair* pair = vas->pairs->Front();
+		AddressLengthPair* pair = vas->pairs->front();
 		if(pair->length > size)
 		{
 			uint64_t ret = pair->start;
@@ -134,7 +134,7 @@ namespace Virtual
 		else if(pair->length == size)
 		{
 			uint64_t ret = pair->start;
-			delete vas->pairs->RemoveFront();
+			delete vas->pairs->pop_front();
 			return ret;
 		}
 		else
@@ -209,14 +209,14 @@ namespace Virtual
 		}
 
 		// if we reach here, we haven't found a match.
-		vas->pairs->InsertBack(new AddressLengthPair(page, size));
+		vas->pairs->push_back(new AddressLengthPair(page, size));
 	}
 
 	VirtualAddressSpace* SetupVAS(VirtualAddressSpace* vas)
 	{
 		// Max 48-bit virtual address space (current implementations)
-		vas->pairs->InsertBack(new AddressLengthPair(0x01000000, 0xFF000));
-		vas->pairs->InsertBack(new AddressLengthPair(0xFFFFF00000000000, 0x100000));
+		vas->pairs->push_back(new AddressLengthPair(0x01000000, 0xFF000));
+		vas->pairs->push_back(new AddressLengthPair(0xFFFFF00000000000, 0x100000));
 
 		return vas;
 	}
@@ -235,7 +235,7 @@ namespace Virtual
 	{
 		uint64_t phys = GetMapping(addr, 0);
 		Physical::FreePage(phys, size);
-		UnMapRegion(addr, size);
+		UnmapRegion(addr, size);
 	}
 
 
@@ -310,19 +310,19 @@ namespace Virtual
 
 
 
-	void UnMapAddress(uint64_t VirtAddr)
+	void UnmapAddress(uint64_t VirtAddr)
 	{
-		UnMapAddress(VirtAddr, GetCurrentPML4T(), false);
+		UnmapAddress(VirtAddr, GetCurrentPML4T(), false);
 	}
 
-	void UnMapAddress(uint64_t VirtAddr, PageMapStructure* PML4)
+	void UnmapAddress(uint64_t VirtAddr, PageMapStructure* PML4)
 	{
-		UnMapAddress(VirtAddr, PML4, false);
+		UnmapAddress(VirtAddr, PML4, false);
 	}
 
-	void UnMapAddress(uint64_t VirtAddr, bool DoNotUnmap)
+	void UnmapAddress(uint64_t VirtAddr, bool DoNotUnmap)
 	{
-		UnMapAddress(VirtAddr, GetCurrentPML4T(), DoNotUnmap);
+		UnmapAddress(VirtAddr, GetCurrentPML4T(), DoNotUnmap);
 	}
 
 
@@ -408,10 +408,10 @@ namespace Virtual
 
 		if(other)
 		{
-			Virtual::UnMapAddress((uint64_t) PageTable);
-			Virtual::UnMapAddress((uint64_t) PageDirectory);
-			Virtual::UnMapAddress((uint64_t) PDPT);
-			Virtual::UnMapAddress((uint64_t) PML);
+			Virtual::UnmapAddress((uint64_t) PageTable);
+			Virtual::UnmapAddress((uint64_t) PageDirectory);
+			Virtual::UnmapAddress((uint64_t) PDPT);
+			Virtual::UnmapAddress((uint64_t) PML);
 		}
 	}
 
@@ -419,7 +419,7 @@ namespace Virtual
 
 
 
-	void UnMapAddress(uint64_t VirtAddr, PageMapStructure* PML4, bool DoNotUnmap)
+	void UnmapAddress(uint64_t VirtAddr, PageMapStructure* PML4, bool DoNotUnmap)
 	{
 		bool DidMapPML4 = false;
 
@@ -480,7 +480,7 @@ namespace Virtual
 		if(DidMapPML4 && !DoNotUnmap)
 		{
 			DidMapPML4 = false;
-			if((uint64_t) PML4 != GetKernelCR3()){ UnMapAddress((uint64_t) PML4); }
+			if((uint64_t) PML4 != GetKernelCR3()){ UnmapAddress((uint64_t) PML4); }
 		}
 	}
 
@@ -492,11 +492,11 @@ namespace Virtual
 			MapAddress(VirtAddr + (i * 0x1000), PhysAddr + (i * 0x1000), Flags, PML4);
 	}
 
-	void UnMapRegion(uint64_t VirtAddr, uint64_t LengthInPages, PageMapStructure* PML4)
+	void UnmapRegion(uint64_t VirtAddr, uint64_t LengthInPages, PageMapStructure* PML4)
 	{
 		for(uint64_t i = 0; i < LengthInPages; i++)
 		{
-			UnMapAddress(VirtAddr + (i * 0x1000), PML4);
+			UnmapAddress(VirtAddr + (i * 0x1000), PML4);
 		}
 	}
 
@@ -561,10 +561,10 @@ namespace Virtual
 
 						if(other)
 						{
-							Virtual::UnMapAddress((uint64_t) PageTable);
-							Virtual::UnMapAddress((uint64_t) PageDirectory);
-							Virtual::UnMapAddress((uint64_t) PDPT);
-							Virtual::UnMapAddress((uint64_t) PML);
+							Virtual::UnmapAddress((uint64_t) PageTable);
+							Virtual::UnmapAddress((uint64_t) PageDirectory);
+							Virtual::UnmapAddress((uint64_t) PDPT);
+							Virtual::UnmapAddress((uint64_t) PML);
 						}
 						return ret;
 					}
@@ -572,9 +572,9 @@ namespace Virtual
 					{
 						if(other)
 						{
-							Virtual::UnMapAddress((uint64_t) PageDirectory);
-							Virtual::UnMapAddress((uint64_t) PDPT);
-							Virtual::UnMapAddress((uint64_t) PML);
+							Virtual::UnmapAddress((uint64_t) PageDirectory);
+							Virtual::UnmapAddress((uint64_t) PDPT);
+							Virtual::UnmapAddress((uint64_t) PML);
 						}
 						return 0;
 					}
@@ -583,8 +583,8 @@ namespace Virtual
 				{
 					if(other)
 					{
-						Virtual::UnMapAddress((uint64_t) PDPT);
-						Virtual::UnMapAddress((uint64_t) PML);
+						Virtual::UnmapAddress((uint64_t) PDPT);
+						Virtual::UnmapAddress((uint64_t) PML);
 					}
 					return 0;
 				}
@@ -593,7 +593,7 @@ namespace Virtual
 			{
 				if(other)
 				{
-					Virtual::UnMapAddress((uint64_t) PML);
+					Virtual::UnmapAddress((uint64_t) PML);
 				}
 				return 0;
 			}
@@ -682,9 +682,9 @@ namespace Virtual
 
 	void MapToAllProcesses(uint64_t v, uint64_t p, uint64_t f)
 	{
-		for(uint64_t d = 0; d < Multitasking::ProcessList->Size(); d++)
+		for(uint64_t d = 0; d < Multitasking::ProcessList->size(); d++)
 		{
-			MapAddress(v, p, f, (PageMapStructure*) Multitasking::ProcessList->Get(d)->CR3);
+			MapAddress(v, p, f, (PageMapStructure*) Multitasking::ProcessList->get(d)->CR3);
 		}
 	}
 }

@@ -240,7 +240,7 @@ namespace Kernel
 				PrintFormatted("Check your system and try again.\n\n");
 				PrintFormatted("Currently, supported systems include: BGA (Bochs, QEMU, VirtualBox) and SVGA (VMWare)\n");
 				{
-					// for(uint16_t num = 0; num < PCI::PCIDevice::PCIDevices->Size(); num++)
+					// for(uint16_t num = 0; num < PCI::PCIDevice::PCIDevices->size(); num++)
 					for(auto dev : *PCI::PCIDevice::PCIDevices)
 					{
 						dev->PrintPCIDeviceInfo();
@@ -355,11 +355,11 @@ namespace Kernel
 			// open fds for stdin, stdout and stderr.
 			VFS::InitIO();
 
-			Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->Get(0);
-			FSDriverFat32* fs = new FSDriverFat32(f1->Partitions->Get(0));
+			Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->get(0);
+			FSDriverFat32* fs = new FSDriverFat32(f1->Partitions->get(0));
 
 			// mount root fs from partition 0 at /
-			VFS::Mount(f1->Partitions->Get(0), fs, "/");
+			VFS::Mount(f1->Partitions->get(0), fs, "/");
 			Log("Root FS Mounted at /");
 
 		}
@@ -378,7 +378,7 @@ namespace Kernel
 			auto proc = LoadBinary::Load(path, "displayd",
 				(void*) 5, (void*) new uint64_t[5] { (uint64_t) path, GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
 
-			proc->Threads->Get(0)->Priority = 2;
+			proc->Threads->get(0)->Priority = 2;
 			Multitasking::AddToQueue(proc);
 		}
 
@@ -559,7 +559,7 @@ namespace Kernel
 		// 	Exec->AutomaticLoadExecutable();
 		// 	Exec->SetApplicationType(Multitasking::ThreadType::NormalApplication);
 
-		// 	IPC::CentralDispatch::AddApplicationToList(Exec->proc->Threads->Front(), Exec->proc);
+		// 	IPC::CentralDispatch::AddApplicationToList(Exec->proc->Threads->front(), Exec->proc);
 		// 	Exec->Execute();
 
 		// 	delete[] CProg;
