@@ -18,7 +18,7 @@ namespace Library
 			Vector(uint64_t StartingSize = 4)
 			{
 				this->DataArray = new V[StartingSize];
-				this->size = 0;
+				this->length = 0;
 				this->allocatedsize = StartingSize;
 			}
 
@@ -27,9 +27,9 @@ namespace Library
 				return this->DataArray[i];
 			}
 
-			uint64_t Size()
+			uint64_t size()
 			{
-				return this->size;
+				return this->length;
 			}
 
 			uint64_t AllocatedSize()
@@ -37,12 +37,12 @@ namespace Library
 				return this->allocatedsize;
 			}
 
-			void InsertBack(V v)
+			void push_back(V v)
 			{
-				if(this->size < this->allocatedsize)
+				if(this->length < this->allocatedsize)
 				{
-					this->DataArray[this->size] = v;
-					this->size++;
+					this->DataArray[this->length] = v;
+					this->length++;
 				}
 				else
 				{
@@ -50,15 +50,15 @@ namespace Library
 					this->allocatedsize *= 2;
 
 					// V needs copy constructor or assignmnet operator.
-					for(uint64_t i = 0; i < this->size; i++)
+					for(uint64_t i = 0; i < this->length; i++)
 						newarray[i] = this->DataArray[i];
 
 					// Memory::Copy(newarray, this->DataArray, this->allocatedsize * sizeof(V));
-					newarray[this->size] = v;
+					newarray[this->length] = v;
 
 					delete[] this->DataArray;
 					this->DataArray = newarray;
-					this->size++;
+					this->length++;
 				}
 			}
 
@@ -72,12 +72,12 @@ namespace Library
 			// 	this->DataArray = newarray;
 			// }
 
-			V& RemoveBack()
+			V& pop_back()
 			{
 				if(this->size > 0)
 				{
-					V& v = this->DataArray[this->size - 1];
-					this->size--;
+					V& v = this->DataArray[this->length - 1];
+					this->length--;
 					return v;
 				}
 
@@ -85,12 +85,13 @@ namespace Library
 				return a;
 			}
 
-			V& RemoveFront()
+			V& pop_front()
 			{
-				if(this->size > 0)
+				// todo: fix old code here.
+				if(this->length > 0)
 				{
 					V& v = this->DataArray[0];
-					this->size--;
+					this->length--;
 					return v;
 				}
 
@@ -107,7 +108,7 @@ namespace Library
 						continue;
 
 					else
-						copy->InsertBack(val);
+						copy->push_back(val);
 				}
 
 				// TODO: MEMORY LEAK
@@ -116,14 +117,14 @@ namespace Library
 				this->DataArray = copy->DataArray;
 			}
 
-			V& Front()
+			V& front()
 			{
 				return this->DataArray[0];
 			}
 
-			V& Back()
+			V& back()
 			{
-				return this->DataArray[this->size - 1];
+				return this->DataArray[this->length - 1];
 			}
 
 			Iterator<V> begin()
@@ -133,7 +134,7 @@ namespace Library
 
 			Iterator<V> end()
 			{
-				return Iterator<V>(this->DataArray + this->size);
+				return Iterator<V>(this->DataArray + this->length);
 			}
 
 			V& operator[](const uint64_t index)
@@ -144,7 +145,7 @@ namespace Library
 
 		private:
 			V* DataArray;
-			uint64_t size;
+			uint64_t length;
 			uint64_t allocatedsize;
 	};
 }

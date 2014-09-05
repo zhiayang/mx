@@ -413,7 +413,7 @@ namespace KeyboardTranslations
 		0x00,	// NULL
 		0x00,	// NULL
 
-		0x2A,	// Backspace
+		0x2A,	// backspace
 
 		0xA5,	// NULL
 		0xA6,	// NULL
@@ -533,7 +533,7 @@ namespace KeyboardTranslations
 		0x00,	// NULL
 
 		0x00,	// ACPIPower
-		0x00,	// MultimediaWebBack
+		0x00,	// MultimediaWebback
 
 		0x00,	// NULL
 
@@ -816,7 +816,7 @@ namespace KeyboardTranslations
 		0x27,	'0',	')',	0,		// 0
 		0x28,	'\n',	'\n',	0,		// Enter
 		0x29,	0,	0,	0,		// Escape
-		0x2A,	'\b',	'\b',	0,		// Backspace
+		0x2A,	'\b',	'\b',	0,		// backspace
 		0x2B,	'\t',	'\t',	0,		// Tab
 		0x2C,	' ',	' ',	0,		// Space
 		0x2D,	'-',	'_',	0,		// -

@@ -11,7 +11,6 @@
 #include <Memory.hpp>
 #include <StandardIO.hpp>
 #include <List.hpp>
-#include <Colours.hpp>
 
 using namespace Kernel;
 using namespace Library;
@@ -37,11 +36,11 @@ namespace Interrupts
 	{
 		// see if we need to create a new plug list.
 		IRQHandlerPlugList* pluglist = 0;
-		for(uint64_t i = 0; i < IRQHandlerList->Size(); i++)
+		for(uint64_t i = 0; i < IRQHandlerList->size(); i++)
 		{
-			if(irq == IRQHandlerList->Get(i)->IRQNum)
+			if(irq == IRQHandlerList->get(i)->IRQNum)
 			{
-				pluglist = IRQHandlerList->Get(i);
+				pluglist = IRQHandlerList->get(i);
 				break;
 			}
 		}
@@ -49,7 +48,7 @@ namespace Interrupts
 		if(!pluglist)
 		{
 			pluglist = new IRQHandlerPlugList(irq);
-			IRQHandlerList->InsertBack(pluglist);
+			IRQHandlerList->push_back(pluglist);
 			Log("Creating new PlugList for IRQ %d", irq);
 		}
 
@@ -60,13 +59,13 @@ namespace Interrupts
 	void InstallIRQHandler(uint64_t irq, void (*Handler)(RegisterStruct_type* r))
 	{
 		// add it to the list.
-		GetPlugList(irq)->HandlerList->InsertBack(new IRQHandlerPlug(Handler, Multitasking::GetCurrentProcess()));
+		GetPlugList(irq)->HandlerList->push_back(new IRQHandlerPlug(Handler, Multitasking::GetCurrentProcess()));
 	}
 
 	void InstallIRQHandler(uint64_t irq, void(*Handler)())
 	{
 		// add it to the list.
-		GetPlugList(irq)->HandlerList->InsertBack(new IRQHandlerPlug(Handler, Multitasking::GetCurrentProcess()));
+		GetPlugList(irq)->HandlerList->push_back(new IRQHandlerPlug(Handler, Multitasking::GetCurrentProcess()));
 	}
 
 	void UninstallIRQHandler(uint64_t irq)
@@ -89,22 +88,22 @@ namespace Interrupts
 	extern "C" void InterruptHandler_C(uint64_t iid)
 	{
 		// get the proper IRQHandlerPlugList.
-		for(uint64_t i = 0; i < IRQHandlerList->Size(); i++)
+		for(uint64_t i = 0; i < IRQHandlerList->size(); i++)
 		{
 			// operate with zero-based index, not absolute IDT offset.
-			if(IRQHandlerList->Get(i)->IRQNum == iid - 32)
+			if(IRQHandlerList->get(i)->IRQNum == iid - 32)
 			{
-				IRQHandlerPlugList* pl = IRQHandlerList->Get(i);
+				IRQHandlerPlugList* pl = IRQHandlerList->get(i);
 
-				for(uint64_t k = 0; k < pl->HandlerList->Size(); k++)
+				for(uint64_t k = 0; k < pl->HandlerList->size(); k++)
 				{
-					if(pl->HandlerList->Get(k)->handleregs)
+					if(pl->HandlerList->get(k)->handleregs)
 					{
 						HALT("not supported");
 					}
 
 					else
-						pl->HandlerList->Get(k)->handle();
+						pl->HandlerList->get(k)->handle();
 				}
 
 				// send a message to central dispatch, informing of this IRQ.

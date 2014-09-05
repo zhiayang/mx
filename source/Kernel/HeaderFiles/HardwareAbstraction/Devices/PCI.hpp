@@ -4,7 +4,6 @@
 
 
 #include <stdint.h>
-#include <List.hpp>
 #include <rdestl/list.h>
 #pragma once
 
@@ -46,7 +45,6 @@ namespace Devices
 			void PrintPCIDeviceInfo();
 
 
-			// static Library::LinkedList<PCIDevice>* PCIDevices;
 			static rde::list<PCIDevice*>* PCIDevices;
 
 
@@ -87,8 +85,8 @@ namespace Devices
 
 		PCIDevice* GetDeviceByVendorDevice(uint16_t VendorID, uint16_t DeviceID);
 		PCIDevice* GetDeviceByClassSubclass(uint8_t c, uint8_t sc);
-		Library::LinkedList<PCIDevice>* SearchByVendorDevice(uint16_t VendorID, uint16_t DeviceID);
-		Library::LinkedList<PCIDevice>* SearchByClassSubclass(uint8_t c, uint8_t sc);
+		rde::list<PCIDevice*>* SearchByVendorDevice(uint16_t VendorID, uint16_t DeviceID);
+		rde::list<PCIDevice*>* SearchByClassSubclass(uint8_t c, uint8_t sc);
 		bool MatchVendorDevice(PCIDevice* dev, uint16_t VendorID, uint16_t DeviceID);
 		bool MatchClassSubclass(PCIDevice* dev, uint8_t Class, uint8_t Subclass);
 	}

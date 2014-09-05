@@ -7,7 +7,6 @@
 #include <Console.hpp>
 #include <Memory.hpp>
 #include <StandardIO.hpp>
-#include <Colours.hpp>
 
 using namespace Kernel;
 using namespace Library::StandardIO;
@@ -21,19 +20,6 @@ namespace HardwareAbstraction {
 namespace MemoryManager {
 namespace MemoryMap
 {
-
-	// An array containing a list of memory types.
-	static const char* K_MemoryTypes[6] =
-	{
-		"[Invalid Type]",
-		"[Available]",
-		"[Reserved]",
-		"[ACPI Reclaimable]",
-		"[ACPI NVM]",
-		"[Bad Memory]"
-	};
-
-
 	bool IsMemoryValid(uint64_t Address)
 	{
 		for(int i = 0; i < K_MemoryMap->NumberOfEntries; i++)
@@ -81,44 +67,6 @@ namespace MemoryMap
 		return 0;
 	}
 
-	void PrintKernelMemoryMap()
-	{
-		// We do this so we can verify that our kernel memory map is good after copying it.
-		uint16_t i = 0;
-		while(i < K_MemoryMap->NumberOfEntries)
-		{
-			PrintFormatted("%w\t=>%w %#16.4x%r - %w%#-16x %r:%w Type %d ", Library::Colours::White, Library::Colours::Yellow, K_MemoryMap->Entries[i].BaseAddress,
-				Library::Colours::Green, K_MemoryMap->Entries[i].BaseAddress + K_MemoryMap->Entries[i].Length, Library::Colours::Violet, K_MemoryMap->Entries[i].MemoryType);
-
-
-			switch(K_MemoryMap->Entries[i].MemoryType)
-			{
-				case 1:
-					Console::SetColour(Library::Colours::Green);
-					break;
-
-				case 2:
-					Console::SetColour(Library::Colours::Red);
-					break;
-
-				case 3:
-					Console::SetColour(Library::Colours::Yellow);
-					break;
-
-				case 4:
-					Console::SetColour(Library::Colours::Orange);
-					break;
-
-				case 5:
-					Console::SetColour(Library::Colours::Red);
-					break;
-			}
-			PrintFormatted(" %s\n", K_MemoryTypes[K_MemoryMap->Entries[i].MemoryType]);
-			Console::SetColour(Library::Colours::White);
-
-			i++;
-		}
-	}
 
 	void Initialise(Multiboot::Info_type* MBTStruct)
 	{

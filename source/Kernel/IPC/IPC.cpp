@@ -137,8 +137,8 @@ namespace IPC
 				Virtual::FreeVirtual(ustack & ~0xFFF);
 				Virtual::FreeVirtual(ptr & ~0xFFF);
 
-				Virtual::UnMapAddress(ptr & ~0xFFF);
-				Virtual::UnMapAddress(ustack & ~0xFFF);
+				Virtual::UnmapAddress(ptr & ~0xFFF);
+				Virtual::UnmapAddress(ustack & ~0xFFF);
 			}
 
 			Multitasking::WakeForMessage(thread);
@@ -226,7 +226,7 @@ namespace IPC
 	{
 		Multitasking::Process* proc = Multitasking::GetProcess(pid);
 		assert(proc);
-		IPC_SignalThread(proc->Threads->Get(0)->ThreadID, signum);
+		IPC_SignalThread(proc->Threads->get(0)->ThreadID, signum);
 	}
 
 
@@ -234,6 +234,11 @@ namespace IPC
 
 	extern "C" int IPC_SendMessage(long key, void* msg, size_t size, uint64_t flags)
 	{
+		(void) key;
+		(void) msg;
+		(void) size;
+		(void) flags;
+
 		// if(messagequeue == nullptr)
 		// 	messagequeue = new rde::hash_map<key_t, rde::list<uintptr_t>*>();
 
@@ -261,6 +266,13 @@ namespace IPC
 
 	extern "C" ssize_t IPC_ReceiveMessage(long key, void* msg, size_t size, uint64_t type, uint64_t flags)
 	{
+		(void) key;
+		(void) msg;
+		(void) size;
+		(void) type;
+		(void) flags;
+
+
 		// if(messagequeue == nullptr)
 		// 	messagequeue = new rde::hash_map<key_t, rde::list<uintptr_t>*>();
 

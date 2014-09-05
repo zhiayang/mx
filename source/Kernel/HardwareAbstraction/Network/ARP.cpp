@@ -100,7 +100,7 @@
 // 		if(!IsLocal(addr))
 // 			return nullptr;
 
-// 		if(!ARPTable->Get(addr))
+// 		if(!ARPTable->get(addr))
 // 		{
 // 			// Log("IP Address %d.%d.%d.%d not in cache, sending ARP request...", addr.bytes[0], addr.bytes[1], addr.bytes[2], addr.bytes[3]);
 // 			ARP::SendPacket(Kernel::KernelNIC, addr);
@@ -112,7 +112,7 @@
 // 				// PrintFormatted("%d - %d\n", timeout, Time::Now());
 // 				if(received)
 // 				{
-// 					EUI48Address* ret = ARPTable->Get(addr);
+// 					EUI48Address* ret = ARPTable->get(addr);
 // 					// Log("Received ARP reply, IP address %d.%d.%d.%d is at MAC %#02x:%#02x:%#02x:%#02x:%#02x:%#02x", addr.bytes[0], addr.bytes[1], addr.bytes[2], addr.bytes[3], ret->mac[0], ret->mac[1], ret->mac[2], ret->mac[3], ret->mac[4], ret->mac[5]);
 
 // 					received = false;
@@ -124,7 +124,7 @@
 // 			return nullptr;
 // 		}
 // 		else
-// 			return ARPTable->Get(addr);
+// 			return ARPTable->get(addr);
 // 	}
 // }
 // }

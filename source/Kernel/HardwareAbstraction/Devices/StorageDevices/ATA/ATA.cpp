@@ -10,7 +10,6 @@
 #include <Utility.hpp>
 #include <List.hpp>
 #include <Memory.hpp>
-#include <Colours.hpp>
 
 using namespace Kernel;
 using namespace Kernel::HardwareAbstraction;
@@ -78,7 +77,7 @@ namespace Storage
 			uint64_t index = Library::Utility::ReduceBinaryUnits(ata->GetSectors() * ata->GetSectorSize());
 			uint64_t mem = Library::Utility::GetReducedMemory(ata->GetSectors() * ata->GetSectorSize());
 
-			Library::StandardIO::PrintFormatted("\t-> %w%s%r %wBus%r, %w%s%r %wDrive%r: %k[%w%d%r %wsectors%r, %wsize%r: %w%d %s%r, %w%s%r%k]\n", Library::Colours::Green, !ata->GetBus() ? "Primary" : "Secondary", Library::Colours::Orange, Library::Colours::Magenta, !ata->GetDrive() ? "Master" : "Slave", Library::Colours::Orange, Library::Colours::Rose, Library::Colours::Cyan, ata->GetSectors(), Library::Colours::Silver, Library::Colours::Silver, Library::Colours::Yellow, mem, Kernel::K_BinaryUnits[index], Library::Colours::DarkCyan, ata->GetIsGPT() ? "GPT Drive" : "MBR Drive", Library::Colours::Rose);
+			Library::StandardIO::PrintFormatted("\t-> %s Bus, %s Drive: [%d sectors, size: %d %s, %s]\n", !ata->GetBus() ? "Primary" : "Secondary", !ata->GetDrive() ? "Master" : "Slave", ata->GetSectors(), mem, Kernel::K_BinaryUnits[index], ata->GetIsGPT() ? "GPT Drive" : "MBR Drive");
 		}
 
 		void Initialise()
@@ -90,14 +89,14 @@ namespace Storage
 
 			LinkedList<PCIDevice>* devlist = PCI::SearchByClassSubclass(0x1, 0x1);
 
-			if(devlist->Size() == 0)
+			if(devlist->size() == 0)
 			{
 				Library::StandardIO::PrintFormatted("ERROR: No IDE Controller found on the PCI bus, which is impossible.");
 				UHALT();
 			}
 
 			ATADrive::ATADrives = new LinkedList<ATADrive>();
-			IdentifyAll(devlist->Front());
+			IdentifyAll(devlist->front());
 		}
 
 
@@ -112,8 +111,8 @@ namespace Storage
 				ATADrive* d = ATA::IdentifyDevice(PrimaryBaseIO, true);
 				if(d)
 				{
-					ATADrive::ATADrives->InsertBack(d);
-					ATADrive::ATADrives->Back()->ParentPCI = controller;
+					ATADrive::ATADrives->push_back(d);
+					ATADrive::ATADrives->back()->ParentPCI = controller;
 				}
 			}
 
@@ -122,8 +121,8 @@ namespace Storage
 				ATADrive* d = ATA::IdentifyDevice(PrimaryBaseIO, false);
 				if(d)
 				{
-					ATADrive::ATADrives->InsertBack(d);
-					ATADrive::ATADrives->Back()->ParentPCI = controller;
+					ATADrive::ATADrives->push_back(d);
+					ATADrive::ATADrives->back()->ParentPCI = controller;
 				}
 			}
 
@@ -132,8 +131,8 @@ namespace Storage
 				ATADrive* d = ATA::IdentifyDevice(SecondaryBaseIO, true);
 				if(d)
 				{
-					ATADrive::ATADrives->InsertBack(d);
-					ATADrive::ATADrives->Back()->ParentPCI = controller;
+					ATADrive::ATADrives->push_back(d);
+					ATADrive::ATADrives->back()->ParentPCI = controller;
 				}
 			}
 
@@ -142,16 +141,16 @@ namespace Storage
 				ATADrive* d = ATA::IdentifyDevice(SecondaryBaseIO, false);
 				if(d)
 				{
-					ATADrive::ATADrives->InsertBack(d);
-					ATADrive::ATADrives->Back()->ParentPCI = controller;
+					ATADrive::ATADrives->push_back(d);
+					ATADrive::ATADrives->back()->ParentPCI = controller;
 				}
 			}
 
 			DMA::Initialise();
 
-			for(uint64_t i = 0; i < ATADrive::ATADrives->Size(); i++)
+			for(uint64_t i = 0; i < ATADrive::ATADrives->size(); i++)
 			{
-				HardwareAbstraction::Filesystems::MBR::ReadPartitions(ATADrive::ATADrives->Get(i));
+				HardwareAbstraction::Filesystems::MBR::ReadPartitions(ATADrive::ATADrives->get(i));
 			}
 		}
 

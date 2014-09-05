@@ -6,7 +6,6 @@
 
 // #include <Kernel.hpp>
 // #include <HardwareAbstraction/Network.hpp>
-// #include <Vector.hpp>
 // using namespace Library;
 
 // namespace Kernel {
@@ -25,15 +24,15 @@
 // 		if(!usedports)
 // 			usedports = new LinkedObjList<uint16_t>();
 
-// 		usedports->InsertBack(nextfree);
+// 		usedports->push_back(nextfree);
 // 		return nextfree++;
 // 	}
 
 // 	void ReleaseEphemeralPort(uint16_t port)
 // 	{
-// 		for(uint64_t i = 0, s = usedports->Size(); i < s; i++)
+// 		for(uint64_t i = 0, s = usedports->size(); i < s; i++)
 // 		{
-// 			if(usedports->Get(i) == port)
+// 			if(usedports->get(i) == port)
 // 				usedports->RemoveAt(i);
 // 		}
 // 	}
@@ -74,14 +73,14 @@
 
 // 		// check for full mapping.
 // 		bool found = false;
-// 		Socket::SocketObj* skt = udpsocketmapv4->Get(SocketFullMappingv4 { IPv4PortAddress { destip, destport }, IPv4PortAddress { source, sourceport } });
+// 		Socket::SocketObj* skt = udpsocketmapv4->get(SocketFullMappingv4 { IPv4PortAddress { destip, destport }, IPv4PortAddress { source, sourceport } });
 // 		if(skt)
 // 			found = true;
 
 // 		// multiphase search: check for sourceip + sourceport + destport
 // 		if(!skt && !found)
 // 		{
-// 			skt = udpsocketmapv4->Get(SocketFullMappingv4 { IPv4PortAddress { source, sourceport }, IPv4PortAddress { IPv4Address { 0xFFFFFFFF }, destport } });
+// 			skt = udpsocketmapv4->get(SocketFullMappingv4 { IPv4PortAddress { source, sourceport }, IPv4PortAddress { IPv4Address { 0xFFFFFFFF }, destport } });
 // 			if(skt)
 // 				found = true;
 // 		}
@@ -89,7 +88,7 @@
 // 		// check for sourceip + destport
 // 		if(!skt && !found)
 // 		{
-// 			skt = udpsocketmapv4->Get(SocketFullMappingv4 { IPv4PortAddress { source, 0 }, IPv4PortAddress { IPv4Address { 0xFFFFFFFF}, destport } });
+// 			skt = udpsocketmapv4->get(SocketFullMappingv4 { IPv4PortAddress { source, 0 }, IPv4PortAddress { IPv4Address { 0xFFFFFFFF}, destport } });
 // 			if(skt)
 // 				found = true;
 // 		}
@@ -97,7 +96,7 @@
 // 		// check for sourceport + destport
 // 		if(!skt && !found)
 // 		{
-// 			skt = udpsocketmapv4->Get(SocketFullMappingv4 { IPv4PortAddress { IPv4Address { 0 }, sourceport }, IPv4PortAddress { IPv4Address { 0xFFFFFFFF }, destport } });
+// 			skt = udpsocketmapv4->get(SocketFullMappingv4 { IPv4PortAddress { IPv4Address { 0 }, sourceport }, IPv4PortAddress { IPv4Address { 0xFFFFFFFF }, destport } });
 // 			if(skt)
 // 				found = true;
 // 		}
@@ -105,7 +104,7 @@
 // 		// finally, only destport.
 // 		if(!skt && !found)
 // 		{
-// 			skt = udpsocketmapv4->Get(SocketFullMappingv4 { IPv4PortAddress { IPv4Address { 0 }, 0 }, IPv4PortAddress { IPv4Address { 0xFFFFFFFF }, destport } });
+// 			skt = udpsocketmapv4->get(SocketFullMappingv4 { IPv4PortAddress { IPv4Address { 0 }, 0 }, IPv4PortAddress { IPv4Address { 0xFFFFFFFF }, destport } });
 // 			if(skt)
 // 				found = true;
 // 		}

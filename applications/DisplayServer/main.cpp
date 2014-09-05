@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <mqueue.h>
 #include <sys/syscall.h>
+#include <pthread.h>
 
 static uint64_t framebuffer = 0;
 static uint64_t width = 0;
@@ -16,11 +17,18 @@ static uint64_t height = 0;
 static uint64_t bpp = 0;
 
 static __thread int m = 410;
+volatile static bool flag = false;
 
-void thr()
+void* thr(void*)
 {
+	flag = true;
 	m = 200;
 	printf("m in thr: %d\n\n", m);
+	printf("sleeping for 1500ms\n");
+	Library::SystemCall::Sleep(1500);
+	printf("awake, hello!\n");
+
+	return (void*) 0xFAD;
 }
 
 int main(int argc, char** argv)
@@ -36,9 +44,16 @@ int main(int argc, char** argv)
 	m = 512;
 	printf("m in main: %d\n", m);
 
-	Library::SystemCall::CreateThread(thr);
+	pthread_t thrid = 0;
+	pthread_create(&thrid, NULL, thr, NULL);
+
+	printf("created thread with id %ld\n", thrid);
+
+	void* retval = 0;
+	// while(!flag);
+	pthread_join(thrid, &retval);
 	printf("m in main: %d\n", m);
-	while(true);
+	printf("thread retval: %p\n", retval);
 
 	framebuffer	= (uint64_t) argv[1];
 	width		= (uint64_t) argv[2];

@@ -5,6 +5,8 @@
 #include "../stddef.h"
 #include "../stdint.h"
 
+#include "../defs/_pthreadstructs.h"
+
 #pragma once
 
 #ifndef __blkcnt_t
@@ -116,3 +118,20 @@ typedef uint64_t uid_t;
 #define __useconds_t
 typedef uint64_t useconds_t;
 #endif
+
+#ifndef __pthread_t
+#define __pthread_t
+typedef uint64_t pthread_t;
+#endif
+
+#ifndef __pthread_attr_t
+#define __pthread_attr_t
+typedef struct Thread_attr pthread_attr_t;
+#endif
+
+
+
+
+
+
+

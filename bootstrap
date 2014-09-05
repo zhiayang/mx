@@ -12,18 +12,20 @@ PREFIX=`pwd`/build/toolchain
 SYSROOT=`pwd`/build/sysroot
 THREADS=4
 
-# first check for args.
-if [ -z "$1" ]; then
-	echo "Please pass the size of the OS disk image in MEGABYTES (1024 KB) to ./bootstrap."
-	exit
-fi
+# setup colour codes
+_BOLD=`tput bold`
+_NORMAL=`tput sgr0`
+_BLUE=`tput setaf 4`
+_GREEN=`tput setaf 2`
+
+
 
 
 
 
 mkdir build
 
-echo "=> Setting up sysroot"
+echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Setting up sysroot${_NORMAL}"
 mkdir -p $SYSROOT/usr/include/
 mkdir -p $SYSROOT/usr/lib
 
@@ -34,45 +36,52 @@ cp -r Libraries/libm/include/* $SYSROOT/usr/include/
 cd build
 
 # first, download our patched gcc and binutils.
-echo "=> Downloading binutils and gcc for x86_64-orionx"
+echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Downloading binutils and gcc for target x86_64-orionx${_NORMAL}"
 if [ ! -d binutils ]; then
-	git clone -q https://requimrar@bitbucket.org/requimrar/binutils.git
+	git clone -q https://requimrar@bitbucket.org/requimrar/binutils.git > /dev/null
 fi
 
 if [ ! -d gcc ]; then
-	git clone -q https://requimrar@bitbucket.org/requimrar/gcc.git
+	git clone -q https://requimrar@bitbucket.org/requimrar/gcc.git > /dev/null
 fi
 
-echo "=> Proceeding with Sysroot: $SYSROOT, Prefix: $PREFIX"
-
+echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}Sysroot: $SYSROOT${_NORMAL}"
+echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}Prefix:  $PREFIX${_NORMAL}"
+echo ""
 
 # start building.
 mkdir build-bin build-gcc
 cd build-bin
-echo "=> Configuring binutils"
-# ../binutils/configure --target=x86_64-orionx --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-werror --disable-nls > /dev/null
+echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Configuring binutils${_NORMAL}"
+../binutils/configure --target=x86_64-orionx --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-werror --disable-nls &> /dev/null
 
-echo "=> Compiling binutils"
-# make -j$THREADS all > /dev/null
-# make -j$THREADS install > /dev/null
+echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Building binutils${_NORMAL}"
+make -j$THREADS all &> /dev/null
 
-echo "=> Configuring gcc"
+echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}Installing binutils${_NORMAL}"
+make -j$THREADS install &> /dev/null
+
+
+echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Configuring gcc${_NORMAL}"
 cd ../build-gcc
 export PATH="$PREFIX/bin:$PATH"
-# ../gcc/configure --target=x86_64-orionx --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-werror --disable-nls --enable-languages=c,c++ > /dev/null
+../gcc/configure --target=x86_64-orionx --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-werror --disable-nls --enable-languages=c,c++ &> /dev/null
 
-echo "=> Compiling gcc"
-# make -j$THREADS all-gcc > /dev/null
-echo "=> Compiling libgcc"
-# make -j$THREADS all-target-libgcc > /dev/null
+echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Building gcc${_NORMAL}"
+make -j$THREADS all-gcc &> /dev/null
 
-echo "=> Installing toolchain"
-# make -j$THREADS -s install-gcc > /dev/null
-# make -j$THREADS -s install-target-libgcc > /dev/null
+echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Building libgcc${_NORMAL}"
+make -j$THREADS all-target-libgcc &> /dev/null
 
-echo "=> Compiling libstdc++"
-# make > /dev/null
-# make install > /dev/null
+echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Building libstdc++${_NORMAL}"
+make -j$THREADS all-target-libstdc++-v3 &> /dev/null
+
+
+echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}Installing gcc${_NORMAL}"
+make -j$THREADS install-gcc &> /dev/null
+make -j$THREADS install-target-libgcc &> /dev/null
+make -j$THREADS install-target-libstdc++-v3 &> /dev/null
+
 cd ..
 cd ..
 
@@ -81,11 +90,18 @@ rm -rf build/build-bin
 rm -rf build/build-gcc
 
 
-# if [ -f build/disk.img ]; then
-	# exit
-# fi
+if [ -f build/disk.img ]; then
+	exit
+fi
 
 
+
+
+# first check for args.
+if [ -z "$1" ]; then
+	echo "Please pass the size of the OS disk image in MEGABYTES (1024 KB) to ./bootstrap."
+	exit
+fi
 
 
 

@@ -158,6 +158,18 @@ GetParentPID:
 	call Syscall_GetParentPID
 	jmp CleanUp
 
+__ExitThread:
+	call ExitThread
+	jmp CleanUp
+
+JoinThread:
+	call Syscall_JoinThread
+	jmp CleanUp
+
+GetThisTID:
+	call Syscall_GetTID
+	jmp CleanUp
+
 CreateMessageQueue:
 	call IPC_CreateQueue
 	jmp CleanUp
@@ -238,7 +250,10 @@ SyscallTable1:
 	.quad	InstallSigHandler		// 4009
 	.quad	GetPID				// 4010
 	.quad	GetParentPID			// 4011
-	.quad	CreateMessageQueue		// 4012
+	.quad	__ExitThread			// 4012
+	.quad	JoinThread			// 4013
+	.quad	GetThisTID			// 4014
+	.quad	CreateMessageQueue		// 4015
 EndSyscallTable1:
 
 

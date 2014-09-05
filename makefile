@@ -48,7 +48,7 @@ CXXDEPS	= $(CXXOBJ:.o=.d)
 
 
 
-LIBRARIES         = -lstdc++ -liris_k -lm -lbitmap -lc -lsyscall -lsupc++ -lgcc -lrdestl
+LIBRARIES         = -lstdc++ -liris -lm -lbitmap -lc -lsyscall -lsupc++ -lgcc -lrdestl
 OUTPUT            = build/kernel.mxa
 
 
@@ -102,14 +102,23 @@ builduserspace:
 copyheader:
 	@mkdir -p $(SYSROOT)/usr/lib
 	@mkdir -p $(SYSROOT)/usr/include/c++
-	@rsync -cmar Libraries/libc/include/* $(SYSROOT)/usr/include/
-	@rsync -cmar Libraries/libm/include/* $(SYSROOT)/usr/include/
-	@rsync -cmar Libraries/Iris/HeaderFiles/* $(SYSROOT)/usr/include/iris/
-	@rsync -cmar Libraries/libsyscall/*.h $(SYSROOT)/usr/include/sys/
-	@rsync -cmar $(TOOLCHAIN)/x86_64-orionx/include/c++/$(GCCVERSION)/* $(SYSROOT)/usr/include/c++/
-	@rsync -cmar $(SYSROOT)/usr/include/c++/x86_64-orionx/bits/* $(SYSROOT)/usr/include/c++/bits/
-	@cp $(TOOLCHAIN)/x86_64-orionx/lib/*.a $(SYSROOT)/usr/lib/
-	@cp $(TOOLCHAIN)/lib/gcc/x86_64-orionx/4.9.1/libgcc.a $(SYSROOT)/usr/lib/
+
+	@mkdir -p include/iris
+	@mkdir -p include/sys
+	@mkdir -p include/c++/bits
+
+	@cp -rp Libraries/libc/include/* include/
+	@cp -rp Libraries/libm/include/* include/
+	@cp -rp Libraries/Iris/HeaderFiles/* include/iris/
+	@cp -rp Libraries/libsyscall/*.h include/sys/
+	@cp -rp $(TOOLCHAIN)/x86_64-orionx/include/c++/$(GCCVERSION)/* include/c++/
+	@cp -rp $(SYSROOT)/usr/include/c++/x86_64-orionx/bits/* include/c++/bits/
+
+	@rsync -cmar --delete include $(SYSROOT)/usr/
+	@rm -rf ./include
+
+	@# cp $(TOOLCHAIN)/x86_64-orionx/lib/*.a $(SYSROOT)/usr/lib/
+	@# cp $(TOOLCHAIN)/lib/gcc/x86_64-orionx/4.9.1/libgcc.a $(SYSROOT)/usr/lib/
 
 
 buildlib: $(SYSROOT)/usr/lib/%.a
@@ -132,6 +141,5 @@ clean: cleandisk
 	@find Libraries -name "*.o" | xargs rm
 	@find Libraries -name "*.a" | xargs rm
 	@find applications -name "*.o" | xargs rm
-	-@rm build/*.mxa
-	-@rm $(CXXDEPS)
+	@find source -name "*.cpp.d" | xargs rm
 
