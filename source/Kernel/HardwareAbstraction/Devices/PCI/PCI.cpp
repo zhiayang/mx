@@ -197,7 +197,7 @@ namespace PCI
 					uint8_t sb = curdev->GetSubclass();
 					uint16_t devid = curdev->GetDeviceID();
 
-					Log("=> /dev/pci%d > %d:%d, v:%#04x%r, d:%#04x, c:%#02x:%#02x h:%#02x",
+					Log("=> /dev/pci%d > %d:%d, v:%#04x, d:%#04x, c:%#02x:%#02x h:%#02x",
 						bus * 32 + slot, bus, slot, vendor, devid, cl, sb, headertype);
 
 		// MemoryManager::KernelHeap::Print();
@@ -217,7 +217,7 @@ namespace PCI
 								sb = devfunc->GetSubclass();
 								devid = devfunc->GetDeviceID();
 
-								Log("\t=> /dev/pci%df%d > %d:%d, v:%#04x%r, d:%#04x, c:%#02x:%#02x h:%#02x",
+								Log("\t=> /dev/pci%df%d > %d:%d, v:%#04x, d:%#04x, c:%#02x:%#02x h:%#02x",
 									bus * 32 + slot, func, bus, slot, vendor, devid, cl, sb, headertype);
 							}
 						}

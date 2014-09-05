@@ -48,7 +48,7 @@ CXXDEPS	= $(CXXOBJ:.o=.d)
 
 
 
-LIBRARIES         = -lstdc++ -liris_k -lm -lbitmap -lc -lsyscall -lsupc++ -lgcc -lrdestl
+LIBRARIES         = -lstdc++ -liris -lm -lbitmap -lc -lsyscall -lsupc++ -lgcc -lrdestl
 OUTPUT            = build/kernel.mxa
 
 
@@ -133,5 +133,4 @@ clean: cleandisk
 	@find Libraries -name "*.a" | xargs rm
 	@find applications -name "*.o" | xargs rm
 	@find source -name "*.cpp.d" | xargs rm
-	-@rm $(CXXDEPS)
 

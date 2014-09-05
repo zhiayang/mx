@@ -17,29 +17,21 @@ CXXFLAGS	= -g -Wall -O2 -fPIC -std=gnu++11 -mno-red-zone -fno-exceptions -fno-rt
 
 
 
-CXXSRC	= $(shell find . -name "*.cpp" -maxdepth 1)
-CXXSRCK	= $(shell find LibKernel -name "*.cpp")
+CXXSRC	= $(shell find . -name "*.cpp")
 SYSROOT	= ../../build/sysroot
 
 CXXHDR	= $(shell find . -name "*.hpp")
-
 CXXOBJ	:= $(CXXSRC:.cpp=.o)
-CXXOBJK	:= $(CXXSRCK:.cpp=.o)
-CXXOBJU	:= $(CXXSRCU:.cpp=.o)
 
 
 .PHONY: all
 
-all: $(SYSROOT)/usr/lib/libiris.a $(SYSROOT)/usr/lib/libiris_k.a
+all: $(SYSROOT)/usr/lib/libiris.a
 	@:
 
-$(SYSROOT)/usr/lib/libiris.a: $(CXXOBJ) $(CXXOBJU) $(CXXHDR)
-	@$(AR) rcs $(SYSROOT)/usr/lib/libiris.a $(CXXOBJ) $(CXXOBJU)
+$(SYSROOT)/usr/lib/libiris.a: $(CXXOBJ)
+	@$(AR) rcs $(SYSROOT)/usr/lib/libiris.a $(CXXOBJ)
 	@echo libiris.a
-
-$(SYSROOT)/usr/lib/libiris_k.a: $(CXXOBJ) $(CXXOBJK) $(CXXHDR)
-	@$(AR) rcs $(SYSROOT)/usr/lib/libiris_k.a $(CXXOBJ) $(CXXOBJK)
-	@echo libiris_k.a
 
 %.o: %.cpp
 	@$(CXX) $(CXXFLAGS) -o $@ $<
