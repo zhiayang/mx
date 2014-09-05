@@ -3,6 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
+#include <StandardIO.hpp>
 #include <HardwareAbstraction/Devices/StorageDevice.hpp>
 
 using namespace Library::StandardIO;

@@ -81,10 +81,10 @@ namespace Library
 				if(!this->backingstore[hash])
 					return nullptr;
 
-				for(uint64_t i = 0; i < this->backingstore[hash]->Size(); i++)
+				for(uint64_t i = 0; i < this->backingstore[hash]->size(); i++)
 				{
-					if(this->CompareKeys(this->backingstore[hash]->Get(i)->key, key))
-						return &this->backingstore[hash]->Get(i)->value;
+					if(this->CompareKeys(this->backingstore[hash]->get(i)->key, key))
+						return &this->backingstore[hash]->get(i)->value;
 				}
 
 				return nullptr;
@@ -98,11 +98,11 @@ namespace Library
 				uint64_t hash = this->GetHashCode(key);
 				hash %= this->size;
 
-				for(uint64_t i = 0; i < this->backingstore[hash]->Size(); i++)
+				for(uint64_t i = 0; i < this->backingstore[hash]->size(); i++)
 				{
-					if(this->CompareKeys(this->backingstore[hash]->Get(i)->key, key))
+					if(this->CompareKeys(this->backingstore[hash]->get(i)->key, key))
 					{
-						HashBucket* b = this->backingstore[hash]->Get(i);
+						HashBucket* b = this->backingstore[hash]->get(i);
 						this->backingstore[hash]->RemoveAt(i);
 
 						delete b;
@@ -116,7 +116,7 @@ namespace Library
 				uint64_t hash = this->GetHashCode(key);
 				hash %= this->size;
 
-				return backingstore[hash]->Size() > 0;
+				return backingstore[hash]->size() > 0;
 			}
 
 			LinkedList<K>* KeyList()
@@ -126,10 +126,10 @@ namespace Library
 				{
 					if(this->backingstore[i])
 					{
-						for(uint64_t k = 0; k < this->backingstore[i]->Size(); k++)
+						for(uint64_t k = 0; k < this->backingstore[i]->size(); k++)
 						{
-							if(this->backingstore[i]->Get(k))
-								list->InsertBack(&(this->backingstore[i]->Get(k)->key));
+							if(this->backingstore[i]->get(k))
+								list->InsertBack(&(this->backingstore[i]->get(k)->key));
 						}
 					}
 				}

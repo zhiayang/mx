@@ -43,7 +43,7 @@
 
 // 		Console::SetColour(0xFFFFFFFF);
 // 		Memory::Set32((void*) GetFramebufferAddress(), 0x00, (LinearFramebuffer::GetResX() * LinearFramebuffer::GetResY()) / 2);
-// 		LinearFramebuffer::BackColour = 0x00;
+// 		LinearFramebuffer::backColour = 0x00;
 
 
 // 		BitmapLibrary::BitmapImage* bmp = new BitmapLibrary::BitmapImage((void*) addr);

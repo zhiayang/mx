@@ -29,7 +29,6 @@ namespace Library
 			};
 
 			uint64_t length;
-			uint64_t size;
 			SingleNode* head;
 			SingleNode* tail;
 
@@ -64,7 +63,6 @@ namespace Library
 				this->head = 0;
 				this->tail = 0;
 				this->length = 0;
-				this->size = sizeof(data);
 			}
 			~LinkedList()
 			{
@@ -79,9 +77,9 @@ namespace Library
 			}
 
 
-			uint64_t Size(){ return this->length; }
+			uint64_t size(){ return this->length; }
 			bool IsEmpty(){ return this->length == 0; }
-			data* Get(uint64_t i) const
+			data* get(uint64_t i) const
 			{
 				if(this->length == 1 || i == 0)
 				{
@@ -100,7 +98,7 @@ namespace Library
 
 
 
-			void InsertFront(data* obj)
+			void push_front(data* obj)
 			{
 				SingleNode* f = new SingleNode(obj, this->head);
 
@@ -118,7 +116,7 @@ namespace Library
 				this->length++;
 			}
 
-			void InsertBack(data* obj)
+			void push_back(data* obj)
 			{
 				SingleNode* f = new SingleNode(obj, 0);
 
@@ -137,13 +135,13 @@ namespace Library
 
 			void AddAll(LinkedList<data>* l)
 			{
-				for(uint64_t i = 0; i < l->Size(); i++)
+				for(uint64_t i = 0; i < l->size(); i++)
 				{
-					this->InsertBack(l->Get(i));
+					this->InsertBack(l->get(i));
 				}
 			}
 
-			data* RemoveFront()
+			data* pop_front()
 			{
 				// if(this->head == 0)
 				// 	HALT("Removing from empty list");
@@ -166,7 +164,7 @@ namespace Library
 				return obj;
 			}
 
-			data* RemoveBack()
+			data* pop_back()
 			{
 				// if(this->tail == 0)
 				// 	HALT("Removing from empty list!");
@@ -195,12 +193,12 @@ namespace Library
 				return obj;
 			}
 
-			data* Back()
+			data* back()
 			{
 				return this->tail->object;
 			}
 
-			data* Front()
+			data* front()
 			{
 				return this->head->object;
 			}
@@ -217,7 +215,7 @@ namespace Library
 			{
 				for(int64_t d = 0; static_cast<uint64_t>(d) < this->length; d++)
 				{
-					if(p == this->Get(static_cast<uint64_t>(d)))
+					if(p == this->get(static_cast<uint64_t>(d)))
 						return d;
 				}
 
@@ -227,13 +225,13 @@ namespace Library
 			data* RemoveAt(uint64_t i)
 			{
 				if(i == 0)
-					return this->RemoveFront();
+					return this->pop_front();
 
 				if(i == this->length - 1)
-					return this->RemoveBack();
+					return this->pop_back();
 
 
-				data* ret = this->Get(i);
+				data* ret = this->get(i);
 				SingleNode* k = this->Traverse(i);
 				SingleNode* p = this->Traverse(i - 1);
 
@@ -245,288 +243,6 @@ namespace Library
 			}
 
 			void InsertAt(uint64_t i, data* d)
-			{
-				if(i >= this->length)
-					this->InsertBack(d);
-
-				else if(i == 0)
-					this->InsertFront(d);
-
-				else
-				{
-					SingleNode* p = this->Traverse(i - 1);
-					SingleNode* t = this->Traverse(i);
-					SingleNode* n = this->Traverse(i + 1);
-					p->next = new SingleNode(d, t);
-					t->next = n;
-					this->length++;
-				}
-			}
-	};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	template <class data>
-	class LinkedObjList
-	{
-		private:
-			class SingleNode
-			{
-				public:
-					SingleNode(data* o = 0, SingleNode* n = 0)
-					{
-						this->object = reinterpret_cast<data*>(o);
-						this->next = n;
-					}
-
-					SingleNode* next;
-					data* object;
-			};
-
-			uint64_t length;
-			uint64_t size;
-			SingleNode* head;
-			SingleNode* tail;
-
-
-
-
-			SingleNode* Traverse(uint64_t i) const
-			{
-				SingleNode* h = this->head;
-
-				if(this->length == 1 || i == 0)
-				{
-					return this->head;
-				}
-				else if(this->length == 2 && i == 1)
-				{
-					return this->tail;
-				}
-				for(uint64_t l = 0; l < i; l++)
-				{
-					h = h->next;
-				}
-				return h;
-			}
-
-
-
-		public:
-			// this needs to be already allocated; give a head pointer.
-			LinkedObjList()
-			{
-				this->head = 0;
-				this->tail = 0;
-				this->length = 0;
-				this->size = sizeof(data);
-			}
-			~LinkedObjList()
-			{
-				// delete all nodes
-				for(uint64_t i = 0, m = this->length; i < m; i++)
-				{
-					SingleNode* s = this->head;
-					this->head = this->head->next;
-
-					delete s;
-				}
-			}
-
-
-			uint64_t Size(){ return this->length; }
-			bool IsEmpty(){ return this->length == 0; }
-			data& Get(uint64_t i) const
-			{
-				if(this->length == 1 || i == 0)
-				{
-					return *this->head->object;
-				}
-				else if(i == this->length - 1)
-				{
-					return *this->tail->object;
-				}
-
-				return *this->Traverse(i)->object;
-			}
-
-
-
-
-
-
-			void InsertFront(data& obj)
-			{
-				SingleNode* f = new SingleNode(&obj, this->head);
-
-
-				if(this->IsEmpty())
-				{
-					this->head = f;
-					this->tail = f;
-				}
-				else
-				{
-					this->head = f;
-				}
-
-				this->length++;
-			}
-
-			void InsertBack(data& obj)
-			{
-				SingleNode* f = new SingleNode(&obj, 0);
-
-				if(this->IsEmpty())
-				{
-					this->head = f;
-				}
-				else
-				{
-					this->tail->next = f;
-				}
-
-				this->tail = f;
-				this->length++;
-			}
-
-			void AddAll(LinkedList<data>* l)
-			{
-				for(uint64_t i = 0; i < l->Size(); i++)
-				{
-					this->InsertBack(l->Get(i));
-				}
-			}
-
-			data& RemoveFront()
-			{
-				// if(this->head == 0)
-				// 	HALT("Removing from empty list");
-
-				data* obj = this->head->object;
-				SingleNode* old_head = this->head;
-
-				if(this->length == 1)
-				{
-					this->head = 0;
-					this->tail = 0;
-				}
-				else
-				{
-					this->head = this->head->next;
-				}
-
-				delete old_head;
-				this->length--;
-				return *obj;
-			}
-
-			data& RemoveBack()
-			{
-				SingleNode* old_tail = this->tail;
-				data* obj = this->tail->object;
-
-
-				if(this->length == 1)
-				{
-					this->head = 0;
-					this->tail = 0;
-				}
-				else
-				{
-					SingleNode* kr = this->head;
-					while(kr->next != this->tail)
-						kr = kr->next;
-
-					kr->next = 0;
-					this->tail = kr;
-				}
-
-				delete old_tail;
-				this->length--;
-				return *obj;
-			}
-
-			data Back()
-			{
-				return *this->tail->object;
-			}
-
-			data Front()
-			{
-				return *this->head->object;
-			}
-
-			void Clear()
-			{
-				for(uint64_t m = 0, g = this->length; m < g; m++)
-				{
-					this->RemoveFront();
-				}
-			}
-
-			int64_t IndexOf(data p)
-			{
-				for(int64_t d = 0; static_cast<uint64_t>(d) < this->length; d++)
-				{
-					if(&p == &this->Get(static_cast<uint64_t>(d)))
-						return d;
-				}
-
-				return -1;
-			}
-
-			data RemoveAt(uint64_t i)
-			{
-				// if(i >= this->length)
-				// 	HALT("List index out of bounds");
-
-				if(i == 0)
-					return this->RemoveFront();
-
-				if(i == this->length - 1)
-					return this->RemoveBack();
-
-
-				data ret = this->Get(i);
-				SingleNode* k = this->Traverse(i);
-				SingleNode* p = this->Traverse(i - 1);
-
-				p->next = k->next;
-				delete k;
-				this->length--;
-
-				return ret;
-			}
-
-			void InsertAt(uint64_t i, data d)
 			{
 				if(i >= this->length)
 					this->InsertBack(d);

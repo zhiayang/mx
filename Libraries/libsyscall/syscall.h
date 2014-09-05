@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <signal.h>
+#include <pthread.h>
 #pragma once
 
 #ifdef __cplusplus
@@ -28,7 +29,7 @@ namespace Library
 		void ExitProc();
 		void InstallIRQHandler(uint64_t irq, uint64_t handleraddr);
 		void InstallIRQHandlerWithRegs(uint64_t irq, uint64_t handleraddr);
-		void CreateThread(void (*thr)());
+		pthread_t CreateThread(pthread_attr_t* attribs, void (*thr)());
 		void SpawnProcess(const char* path, const char* name);
 		void SignalProcess(pid_t pid, int signum);
 		void SignalThread(pid_t tid, int signum);
@@ -40,6 +41,10 @@ namespace Library
 		sighandler_t InstallSignalHandler(uint64_t signum, sighandler_t handler);
 		uint64_t GetPID();
 		uint64_t GetParentPID();
+		void ExitThread();
+		void* JoinThread(uint64_t tid);
+		pthread_t GetTID();
+
 		uint64_t Open(const char* path, uint64_t flags);
 		void Close(uint64_t fd);
 		uint64_t Read(uint64_t sd, void* buffer, uint64_t length);

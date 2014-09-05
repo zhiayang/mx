@@ -59,7 +59,6 @@ namespace LoadBinary
 			tlssize += sec->SectionHeaderSize;
 		}
 
-		Log(3, "TLS Size is %x bytes", tlssize);
 		return tlssize;
 	}
 
@@ -109,24 +108,18 @@ namespace LoadBinary
 			{
 				Memory::Set((void*) (TemporaryVirtualMapping + ProgramHeader->ProgramVirtualAddress + ProgramHeader->ProgramFileSize), 0,
 					ProgramHeader->ProgramMemorySize - ProgramHeader->ProgramFileSize);
-
-				// Log(3, "memset %x to 0 for %x bytes", ProgramHeader->ProgramVirtualAddress + ProgramHeader->ProgramFileSize,
-					// ProgramHeader->ProgramMemorySize - ProgramHeader->ProgramFileSize);
 			}
 
 			Memory::Copy((void*) (TemporaryVirtualMapping + ProgramHeader->ProgramVirtualAddress), (void*) (this->buffer + ProgramHeader->ProgramOffset), ProgramHeader->ProgramFileSize);
 
-			// Log(3, "memcpy %x to %x for %x bytes", ProgramHeader->ProgramOffset, ProgramHeader->ProgramVirtualAddress, ProgramHeader->ProgramFileSize);
 
 			for(uint64_t m = 0; m < (ProgramHeader->ProgramMemorySize + 0x1000) / 0x1000; m++)
 			{
 				uint64_t actualvirt = (ProgramHeader->ProgramVirtualAddress + (m * 0x1000)) & ~0xFFF;
 
 				// unmap what we did just now.
-				Virtual::UnMapAddress(TemporaryVirtualMapping + actualvirt, true);
+				Virtual::UnmapAddress(TemporaryVirtualMapping + actualvirt, true);
 			}
-
-			Log(3, "loaded segment %d", k);
 		}
 
 		delete allocatedpgs;

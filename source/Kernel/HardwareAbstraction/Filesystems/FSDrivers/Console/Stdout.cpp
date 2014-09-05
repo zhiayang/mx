@@ -4,6 +4,7 @@
 
 
 #include <Kernel.hpp>
+#include <StandardIO.hpp>
 #include <HardwareAbstraction/Filesystems.hpp>
 
 namespace Kernel {
@@ -21,7 +22,7 @@ namespace Filesystems
 				size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
 				void Stat(VFS::vnode* node, struct stat* stat) override;
 
-				Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+				rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 		};
 	*/
 
@@ -85,7 +86,7 @@ namespace Filesystems
 		(void) st;
 	}
 
-	Library::Vector<VFS::vnode*>* FSDriverStdout::ReadDir(VFS::vnode* node)
+	rde::vector<VFS::vnode*>* FSDriverStdout::ReadDir(VFS::vnode* node)
 	{
 		(void) node;
 		return nullptr;

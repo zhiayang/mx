@@ -7,27 +7,32 @@
 #include <math.h>
 #include "HeaderFiles/Memory.hpp"
 #include "HeaderFiles/Utility.hpp"
-#include "HeaderFiles/SystemCall.hpp"
-#include "HeaderFiles/Defines.hpp"
-#include "HeaderFiles/Heap.hpp"
 #include <stdlib.h>
+
+namespace Kernel
+{
+	namespace Console
+	{
+		void PrintChar(uint8_t c);
+		void SetColour(uint32_t Colour);
+	}
+}
 
 namespace Library {
 namespace StandardIO
 {
-	void PrintChar(uint8_t, void(*)(uint8_t));
-
-	void SwallowChar(uint8_t)
+	static void PrintChar(uint8_t c, void (*pf)(uint8_t))
 	{
+		if(pf)
+			pf(c);
+
+		else
+			Kernel::Console::PrintChar(c);
 	}
 
-	// static std::string* stringtoappend = 0;
-
-	// static inline void AppendToString(uint8_t c)
-	// {
-	// 	stringtoappend += ((char) c);
-	// }
-
+	static void SwallowChar(uint8_t)
+	{
+	}
 
 	uint64_t PrintString(const char* string, int64_t length, void (*pf)(uint8_t))
 	{
@@ -317,27 +322,11 @@ namespace StandardIO
 		va_end(args);
 	}
 
-
-	// void PrintToString(std::string* f, const char* str, ...)
-	// {
-	// 	stringtoappend = f;
-	// 	va_list args;
-	// 	va_start(args, str);
-	// 	PrintFormatted(AppendToString, str, args);
-	// 	va_end(args);
-
-	// 	stringtoappend = 0;
-	// }
-
-
 	void PrintFormatted(const char* str, va_list args)
 	{
 		PrintFormatted(0, str, args);
 	}
 
-	static uint32_t WordColour = 0xFFFFFFFF;
-	static uint32_t ForeverColour = 0xFFFFFFFF;
-	static uint32_t CharColour = 0xFFFFFFFF;
 
 	void PrintFormatted(void (*pf)(uint8_t), const char* string, va_list args)
 	{
@@ -345,10 +334,6 @@ namespace StandardIO
 		/*
 			This is totally non-standard printf.
 			A number of custom formatters are available:
-
-			%q changes the colour up till the next non-alphabetical word.
-			%w changes the colour until reset, or for the duration of this function's scope.
-			%k changes for the next characted.
 			%r resets to white. (no arguments)
 
 			The behaviour of hex printing is quite different:
@@ -611,35 +596,6 @@ namespace StandardIO
 
 
 
-					// Custom stuff
-
-					case 'q':
-						// Change colour for the next word (up to a non-alphabetical character)
-						WordColour = va_arg(args, uint32_t);
-						// SystemCall::SetTextColour(WordColour);
-						break;
-
-					case 'w':
-						// Change colour for the statement until changed back
-						ForeverColour = va_arg(args, uint32_t);
-						// SystemCall::SetTextColour(ForeverColour);
-						break;
-
-					case 'k':
-						// Change colour for the next character only
-						CharColour = va_arg(args, uint32_t);
-						// SystemCall::SetTextColour(CharColour);
-						break;
-
-					case 'r':
-						// Reset all colours to white
-						CharColour = 0xFFFFFFFF;
-						WordColour = 0xFFFFFFFF;
-						ForeverColour = 0xFFFFFFFF;
-						// SystemCall::SetTextColour(CharColour);
-						break;
-
-
 
 					// Width/precision
 					case '.':
@@ -684,9 +640,8 @@ namespace StandardIO
 
 							continue;
 						}
-						else
+						else if(IsParsingWidth)
 						{
-							(void) IsParsingWidth;
 							int z1 = 0;
 							uint64_t f1 = i;
 							for(z1 = 0, f1 = i; ((string[f1] >= '0') && (string[f1] <= '9')) || string[f1] == '*'; z1++, f1++)
@@ -726,21 +681,8 @@ namespace StandardIO
 			else
 			{
 				PrintChar((uint8_t) c, pf);
-				if(WordColour != 0xFFFFFFFF && !(c >= 65 && c <= 122))
-				{
-					WordColour = 0xFFFFFFFF;
-					// SystemCall::SetTextColour(WordColour);
-				}
-				if(CharColour != 0xFFFFFFFF)
-				{
-					CharColour = 0xFFFFFFFF;
-					// SystemCall::SetTextColour(CharColour);
-				}
 			}
 		}
-
-		ForeverColour = 0xFFFFFFFF;
-		// SystemCall::SetTextColour(ForeverColour);
 	}
 }
 }

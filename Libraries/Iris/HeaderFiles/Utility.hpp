@@ -7,7 +7,6 @@
 
 #pragma once
 #include <stdint.h>
-#include "Iterator.hpp"
 
 namespace Library
 {

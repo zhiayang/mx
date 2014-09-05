@@ -26,6 +26,9 @@ namespace SystemCall
 		.quad	InstallSigHandler		// 4009
 		.quad	GetPID				// 4010
 		.quad	GetParentPID			// 4011
+		.quad	ExitThread			// 4012
+		.quad	JoinThread			// 4013
+		.quad	GetTID				// 4014
 
 		// file io things, page 8000+
 		.quad	OpenFile			// 8000
@@ -56,9 +59,9 @@ namespace SystemCall
 
 
 
-	void CreateThread(void (*thr)())
+	pthread_t CreateThread(pthread_attr_t* attr, void (*thr)())
 	{
-		Syscall1Param(4000, (uint64_t) thr);
+		return Syscall2Param(4000, (uintptr_t) thr, (uintptr_t) attr);
 	}
 
 	void SpawnProcess(const char* path, const char* name)
@@ -114,6 +117,21 @@ namespace SystemCall
 	uint64_t GetParentPID()
 	{
 		return Syscall0Param(4011);
+	}
+
+	void ExitThread()
+	{
+		Syscall0Param(4012);
+	}
+
+	void* JoinThread(uint64_t tid)
+	{
+		return (void*) Syscall1Param(4013, tid);
+	}
+
+	pthread_t GetTID()
+	{
+		return (pthread_t) Syscall0Param(4014);
 	}
 
 	// 8000, 8001

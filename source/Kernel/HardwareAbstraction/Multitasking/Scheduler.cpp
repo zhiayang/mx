@@ -61,20 +61,20 @@ namespace Multitasking
 		ScheduleCount++;
 		Thread* r = nullptr;
 
-		if(ThreadList_LowPrio->Size() > 0 && (ScheduleCount % LowStarveThreshold == 0))
+		if(ThreadList_LowPrio->size() > 0 && (ScheduleCount % LowStarveThreshold == 0))
 		{
-			r = ThreadList_LowPrio->RemoveFront();
-			ThreadList_LowPrio->InsertBack(r);
+			r = ThreadList_LowPrio->pop_front();
+			ThreadList_LowPrio->push_back(r);
 		}
-		else if(ThreadList_NormPrio->Size() > 0 && (ScheduleCount % NormStarveThreshold == 0))
+		else if(ThreadList_NormPrio->size() > 0 && (ScheduleCount % NormStarveThreshold == 0))
 		{
-			r = ThreadList_NormPrio->RemoveFront();
-			ThreadList_NormPrio->InsertBack(r);
+			r = ThreadList_NormPrio->pop_front();
+			ThreadList_NormPrio->push_back(r);
 		}
-		else if(ThreadList_HighPrio->Size() > 0)
+		else if(ThreadList_HighPrio->size() > 0)
 		{
-			r = ThreadList_HighPrio->RemoveFront();
-			ThreadList_HighPrio->InsertBack(r);
+			r = ThreadList_HighPrio->pop_front();
+			ThreadList_HighPrio->push_back(r);
 		}
 		else
 		{
@@ -91,12 +91,12 @@ namespace Multitasking
 	{
 		if(BOpt_Likely(!IsFirst))
 		{
-			if(PendingSleepList->Size() > 0)
+			if(PendingSleepList->size() > 0)
 			{
-				for(uint64_t i = 0, s = PendingSleepList->Size(); i < s; i++)
+				for(uint64_t i = 0, s = PendingSleepList->size(); i < s; i++)
 				{
-					SleepList->InsertBack(PendingSleepList->RemoveFront());
-					SleepList->Back()->StackPointer = context;
+					SleepList->push_back(PendingSleepList->pop_front());
+					SleepList->back()->StackPointer = context;
 				}
 			}
 			else
@@ -164,33 +164,8 @@ namespace Multitasking
 		*((uint64_t*) 0x2504) = CurrentThread->TopOfStack;
 
 		// update fs
-		// let asm do it, 0x2610 contains the address.
-		// *((uint64_t*) 0x2610) = ((uint64_t) CurrentThread->tlsptr) + CurrentThread->Parent->tlssize;
-		uint64_t tlsptr = CurrentThread->tlsptrptr;
-		if(CurrentThread->Parent->Flags & 0x1)
-			Log("%x - eax: %x, edx: %x", tlsptr, tlsptr & 0xFFFFFFFF, tlsptr >> 32);
-
-		uint64_t thing = 0;
-		uint32_t low = tlsptr & 0xFFFFFFFF;
-		uint32_t high = tlsptr >> 32;
-		uint64_t eax = 0;
-		uint64_t edx = 0;
-		asm volatile(
-				"mov $0x2B, %%bx		\n\t"
-				"mov %%bx, %%fs		\n\t"
-
-				"movl $0xC0000100, %%ecx	\n\t"
-				"movl %[lo], %%eax		\n\t"
-				"movl %[hi], %%edx		\n\t"
-				"wrmsr				\n\t"
-
-				: "=a"(eax), "=d"(edx) : [lo]"g"(low), [hi]"g"(high) : "memory", "rax", "rbx", "rcx", "rdx");
-
-		if(CurrentThread->Parent->Flags & 0x1)
-		{
-			asm volatile("lea %%fs:0x0, %%rax; mov %%rax, %[put]" : [put]"=g"(thing) :: "rax");
-			Log("%x - eax: %x, edx: %x", thing, eax, edx);
-		}
+		uint64_t tlsptr = (uintptr_t) &CurrentThread->tlsptr;
+		SetTLS(tlsptr);
 
 		return CurrentThread->StackPointer;
 	}
@@ -214,7 +189,7 @@ namespace Multitasking
 		Thread* p = FetchAndRemoveThread(CurrentThread);
 
 		p->Sleep = (uint32_t) __abs(time);
-		PendingSleepList->InsertBack(p);
+		PendingSleepList->push_back(p);
 
 		// if time is negative, we called from userspace, so don't nest interrupts.
 		if(time > 0)

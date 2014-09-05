@@ -53,7 +53,7 @@
 // 		{
 // 			// Log(3, "entry");
 // 			cur = new string(custr);
-// 			cus->InsertBack(cur);
+// 			cus->push_back(cur);
 
 // 			custr += cur->Length() + 1;
 // 			bread += cur->Length() + 1;
@@ -104,7 +104,7 @@
 
 // 	LineNamePair* ResolveAddress(uint64_t addr)
 // 	{
-// 		LineNamePair** ret = map->Get(addr);
+// 		LineNamePair** ret = map->get(addr);
 // 		if(ret)
 // 			return *ret;
 

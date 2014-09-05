@@ -15,7 +15,6 @@
 #include <sys/stat.h>
 
 using namespace Library;
-using namespace Library::StandardIO;
 using namespace Kernel::HardwareAbstraction::Devices::Storage;
 using namespace Kernel::HardwareAbstraction::Filesystems::VFS;
 
@@ -76,7 +75,7 @@ namespace Filesystems
 	{
 		rde::string* name;
 		uint32_t entrycluster;
-		Vector<uint32_t>* clusters;
+		rde::vector<uint32_t>* clusters;
 		uint32_t filesize;
 
 		DirectoryEntry dirent;
@@ -124,9 +123,9 @@ namespace Filesystems
 		return mktime(&ts);
 	}
 
-	static Vector<rde::string*>* split(rde::string& s, char delim)
+	static rde::vector<rde::string*>* split(rde::string& s, char delim)
 	{
-		auto ret = new Vector<rde::string*>();
+		auto ret = new rde::vector<rde::string*>();
 		rde::string* item = new rde::string();
 
 		for(auto c : s)
@@ -135,7 +134,7 @@ namespace Filesystems
 			{
 				if(!item->empty())
 				{
-					ret->InsertBack(item);
+					ret->push_back(item);
 					item = new rde::string();
 				}
 			}
@@ -144,7 +143,7 @@ namespace Filesystems
 		}
 
 		if(item->length() > 0)
-			ret->InsertBack(item);
+			ret->push_back(item);
 
 		return ret;
 	}
@@ -201,7 +200,7 @@ namespace Filesystems
 		this->RootDirectoryCluster	= *((uint32_t*)((uintptr_t) fat + 44));
 		this->FSInfoCluster		= *((uint16_t*)((uintptr_t) fat + 48));
 
-		this->BackupBootCluster	= *((uint16_t*)((uintptr_t) fat + 50));
+		this->backupBootCluster	= *((uint16_t*)((uintptr_t) fat + 50));
 		this->FirstUsableCluster	= this->partition->GetStartLBA() + this->ReservedSectors + (this->NumberOfFATs * this->FATSectorSize);
 
 
@@ -251,13 +250,13 @@ namespace Filesystems
 
 		auto dirs = split(pth, PATH_DELIMTER);
 		assert(dirs);
-		assert(dirs->Size() > 0);
+		assert(dirs->size() > 0);
 
-		size_t levels = dirs->Size();
+		size_t levels = dirs->size();
 		size_t curlvl = 1;
 
 		// remove the last.
-		auto file = dirs->Back();
+		auto file = dirs->back();
 		vnode* cn = node;
 
 		for(auto v : *dirs)
@@ -325,7 +324,7 @@ namespace Filesystems
 		if(!vnd->clusters)
 			vnd->clusters = this->GetClusterChain(node, &numclus);
 
-		// assert(vnd->clusters->Size() == numclus);
+		// assert(vnd->clusters->size() == numclus);
 
 		// check that offset is not more than size
 		if(offset > vnd->filesize)
@@ -393,7 +392,7 @@ namespace Filesystems
 		stat->st_ctime		= datetounix(dirent->createdate, dirent->createtime);
 	}
 
-	Vector<VFS::vnode*>* FSDriverFat32::ReadDir(VFS::vnode* node)
+	rde::vector<VFS::vnode*>* FSDriverFat32::ReadDir(VFS::vnode* node)
 	{
 		assert(node);
 		assert(node->info);
@@ -413,7 +412,7 @@ namespace Filesystems
 
 
 		assert(clusters);
-		assert(numclus == clusters->Size());
+		assert(numclus == clusters->size());
 
 		// try and read each cluster into a contiguous buffer.
 		uint64_t dirsize = numclus * this->SectorsPerCluster * 512;
@@ -428,7 +427,7 @@ namespace Filesystems
 		}
 		buf = obuf;
 
-		auto ret = new Vector<VFS::vnode*>();
+		auto ret = new rde::vector<VFS::vnode*>();
 		auto count = 0;
 
 		for(uint64_t addr = buf; addr < buf + dirsize; )
@@ -507,7 +506,7 @@ namespace Filesystems
 
 				vn->info->data = (void*) fsd;
 
-				ret->InsertBack(vn);
+				ret->push_back(vn);
 			}
 
 			addr += sizeof(LFNEntry);
@@ -540,7 +539,7 @@ namespace Filesystems
 
 
 
-	Vector<uint32_t>* FSDriverFat32::GetClusterChain(VFS::vnode* node, uint64_t* numclus)
+	rde::vector<uint32_t>* FSDriverFat32::GetClusterChain(VFS::vnode* node, uint64_t* numclus)
 	{
 		// read the cluster chain
 
@@ -551,7 +550,7 @@ namespace Filesystems
 
 		uint32_t Cluster = tovnd(node)->entrycluster;
 		uint32_t cchain = 0;
-		auto ret = new Vector<uint32_t>();
+		auto ret = new rde::vector<uint32_t>();
 
 		uint64_t lastsec = 0;
 		auto buf = MemoryManager::Physical::AllocateDMA(2);
@@ -583,7 +582,7 @@ namespace Filesystems
 			cchain = *((uint32_t*)&clusterchain[FatOffset]) & 0x0FFFFFFF;
 
 			// cchain is the next cluster in the list.
-			ret->InsertBack(Cluster);
+			ret->push_back(Cluster);
 
 			Cluster = cchain;
 			(*numclus)++;

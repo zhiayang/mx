@@ -51,7 +51,7 @@ namespace IO
 				IOTransfer req = Transfers->front();
 				Transfers->pop_front();
 
-				assert(req.completed == false);
+				// assert(req.completed == false);
 				assert(req.device);
 				assert(req.owningthread);
 
