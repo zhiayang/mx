@@ -9,7 +9,6 @@
 #include <Kernel.hpp>
 #include <Memory.hpp>
 #include <StandardIO.hpp>
-#include <Colours.hpp>
 #include <rdestl/list.h>
 
 #define CoalesceThreshold	256

@@ -4,7 +4,6 @@
 
 #include <Kernel.hpp>
 #include <Utility.hpp>
-#include <Colours.hpp>
 #include <HardwareAbstraction/Devices/StorageDevice.hpp>
 #include <string.h>
 

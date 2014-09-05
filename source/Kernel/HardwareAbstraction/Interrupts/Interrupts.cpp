@@ -11,7 +11,6 @@
 #include <Memory.hpp>
 #include <StandardIO.hpp>
 #include <List.hpp>
-#include <Colours.hpp>
 
 using namespace Kernel;
 using namespace Library;

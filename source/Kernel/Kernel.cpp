@@ -6,7 +6,6 @@
 #include <String.hpp>
 #include <Memory.hpp>
 #include <StandardIO.hpp>
-#include <Colours.hpp>
 #include <math.h>
 #include <Console.hpp>
 #include <HardwareAbstraction/Interrupts.hpp>
@@ -246,10 +245,10 @@ namespace Kernel
 						dev->PrintPCIDeviceInfo();
 
 						if(dev->GetIsMultifunction())
-							PrintFormatted(" ==>%w Multifunction Device", Colours::Yellow);
+							PrintFormatted(" ==>Multifunction Device");
 
 						if(PCI::MatchVendorDevice(dev, 0x1234, 0x1111) || PCI::MatchVendorDevice(dev, 0x80EE, 0xBEEF))
-							PrintFormatted(" ==>%w BGA Compatible Video Card:%w %x", Colours::Cyan, Colours::Orange, GetTrueLFBAddress());
+							PrintFormatted(" ==>BGA Compatible Video Card: %x", GetTrueLFBAddress());
 
 						PrintFormatted("\n");
 					}
@@ -597,7 +596,7 @@ namespace Kernel
 	void HaltSystem(const char* message, const char* filename, const char* line, const char* reason)
 	{
 		Log("System Halted: %s, %s:%s", message, filename, line);
-		PrintFormatted("\n\n%wERROR: %w%s%r\n%wReason%r: %w%s%r\n%w%s%r -- %wLine %w%s%r%w\n\n%wOrion-X4 has met an unresolvable error, and will now halt.", Colours::Yellow, Colours::Red, message, Colours::DarkCyan, Colours::Orange, !reason ? "None" : reason, Colours::Cyan, filename, Colours::Silver, Colours::Blue, line, Colours::Silver, Colours::Silver);
+		PrintFormatted("\n\nERROR: %s\nReason: %s\n%s -- Line %s\n\nOrion-X4 has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line);
 
 		UHALT();
 	}
@@ -647,7 +646,7 @@ namespace Kernel
 
 	void PrintVersion()
 	{
-		PrintFormatted("%wOrion-X4%r Version %w%d.%d.%d %wr%02d%r -- Build %w%d\n", Colours::Chartreuse, Colours::DarkCyan, VER_MAJOR, VER_MINOR, VER_REVSN, Colours::Orange, VER_MINRV, Colours::Cyan, X_BUILD_NUMBER);
+		PrintFormatted("Orion-X4 Version %d.%d.%d r%02d -- Build %d\n", VER_MAJOR, VER_MINOR, VER_REVSN, VER_MINRV, X_BUILD_NUMBER);
 	}
 
 	uint64_t GetKernelCR3()
