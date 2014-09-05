@@ -189,13 +189,13 @@
 
 
 // 		bool found = false;
-// 		Socket::SocketObj* skt = ipv4socketmap->Get(SocketIPv4Mapping { ip->SourceIPAddress, destip });
+// 		Socket::SocketObj* skt = ipv4socketmap->get(SocketIPv4Mapping { ip->SourceIPAddress, destip });
 // 		if(skt)
 // 			found = true;
 
 // 		if(!skt && !found)
 // 		{
-// 			skt = ipv4socketmap->Get(SocketIPv4Mapping { IPv4Address { 0xFFFFFFFF }, destip });
+// 			skt = ipv4socketmap->get(SocketIPv4Mapping { IPv4Address { 0xFFFFFFFF }, destip });
 // 			if(skt)
 // 				found = true;
 // 		}

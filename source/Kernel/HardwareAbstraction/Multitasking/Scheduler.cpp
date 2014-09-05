@@ -5,6 +5,7 @@
 
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Devices/IOPort.hpp>
+#include <List.hpp>
 #include <String.hpp>
 #include <stdlib.h>
 
@@ -16,15 +17,15 @@ namespace HardwareAbstraction {
 namespace Multitasking
 {
 	static bool IsFirst = true;
-	rde::list<Thread*>* SleepList;
-	static rde::list<Thread*>* PendingSleepList;
+	LinkedList<Thread>* SleepList;
+	static LinkedList<Thread>* PendingSleepList;
 
 	Mutex* listlock;
-	rde::list<Thread*>* ThreadList_LowPrio;
-	rde::list<Thread*>* ThreadList_NormPrio;
-	rde::list<Thread*>* ThreadList_HighPrio;
+	LinkedList<Thread>* ThreadList_LowPrio;
+	LinkedList<Thread>* ThreadList_NormPrio;
+	LinkedList<Thread>* ThreadList_HighPrio;
 
-	rde::list<Process*>* ProcessList;
+	LinkedList<Process>* ProcessList;
 
 	static Thread* CurrentThread = 0;
 	static uint64_t CurrentCR3;
@@ -35,13 +36,13 @@ namespace Multitasking
 	void Initialise()
 	{
 		CurrentCR3 = GetKernelCR3();
-		SleepList = new rde::list<Thread*>();
-		ProcessList = new rde::list<Process*>();
-		PendingSleepList = new rde::list<Thread*>();
+		SleepList = new LinkedList<Thread>();
+		ProcessList = new LinkedList<Process>();
+		PendingSleepList = new LinkedList<Thread>();
 
-		ThreadList_LowPrio = new rde::list<Thread*>();
-		ThreadList_NormPrio = new rde::list<Thread*>();
-		ThreadList_HighPrio = new rde::list<Thread*>();
+		ThreadList_LowPrio = new LinkedList<Thread>();
+		ThreadList_NormPrio = new LinkedList<Thread>();
+		ThreadList_HighPrio = new LinkedList<Thread>();
 
 		listlock = new Mutex();
 	}
@@ -62,23 +63,17 @@ namespace Multitasking
 
 		if(ThreadList_LowPrio->size() > 0 && (ScheduleCount % LowStarveThreshold == 0))
 		{
-			r = ThreadList_LowPrio->front();
-
-			ThreadList_LowPrio->pop_front();
+			r = ThreadList_LowPrio->pop_front();
 			ThreadList_LowPrio->push_back(r);
 		}
 		else if(ThreadList_NormPrio->size() > 0 && (ScheduleCount % NormStarveThreshold == 0))
 		{
-			r = ThreadList_NormPrio->front();
-
-			ThreadList_NormPrio->pop_front();
+			r = ThreadList_NormPrio->pop_front();
 			ThreadList_NormPrio->push_back(r);
 		}
 		else if(ThreadList_HighPrio->size() > 0)
 		{
-			r = ThreadList_HighPrio->front();
-
-			ThreadList_HighPrio->pop_front();
+			r = ThreadList_HighPrio->pop_front();
 			ThreadList_HighPrio->push_back(r);
 		}
 		else
@@ -100,9 +95,7 @@ namespace Multitasking
 			{
 				for(uint64_t i = 0, s = PendingSleepList->size(); i < s; i++)
 				{
-					SleepList->push_back(PendingSleepList->front());
-					PendingSleepList->pop_front();
-
+					SleepList->push_back(PendingSleepList->pop_front());
 					SleepList->back()->StackPointer = context;
 				}
 			}
@@ -188,7 +181,6 @@ namespace Multitasking
 
 	void Sleep(int64_t time)
 	{
-		HALT("");
 		if(CurrentThread->Sleep != 0)
 		{
 			Log("SLEEP (%d, %d, %x)", GetCurrentThread()->ThreadID, GetCurrentThread()->State, __builtin_return_address(0));

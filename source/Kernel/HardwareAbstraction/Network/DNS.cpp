@@ -173,7 +173,7 @@
 
 // 	IPv4Address* QueryDNSv4(string host)
 // 	{
-// 		_DNSMappingv4* map = dnsmapv4->Get(host);
+// 		_DNSMappingv4* map = dnsmapv4->get(host);
 
 // 		// don't keep it, return and delete.
 // 		if(map && map->expiry == 0)
@@ -189,7 +189,7 @@
 // 		{
 // 			SendDNSPacket(Kernel::KernelNIC, host, Kernel::KernelRandom->Generate16());
 // 			volatile uint64_t future = Time::Now() + 2000;
-// 			while(!(map = dnsmapv4->Get(host)))
+// 			while(!(map = dnsmapv4->get(host)))
 // 			{
 // 				if(Time::Now() > future)
 // 				{

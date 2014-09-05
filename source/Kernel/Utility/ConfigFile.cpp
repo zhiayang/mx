@@ -79,7 +79,7 @@
 
 // 	int64_t ReadInteger(const char* key)
 // 	{
-// 		string* r = Kernel::KernelConfigFile->Get(string(key));
+// 		string* r = Kernel::KernelConfigFile->get(string(key));
 
 // 		if(!r)
 // 			return 0;
@@ -92,7 +92,7 @@
 
 // 	Library::string* ReadString(const char* key)
 // 	{
-// 		return Kernel::KernelConfigFile->Get(string(key));
+// 		return Kernel::KernelConfigFile->get(string(key));
 // 	}
 
 // 	bool ReadBoolean(const char* key)
@@ -100,7 +100,7 @@
 // 		using Library::string;
 // 		using Library::SimpleStringMap;
 
-// 		string* r = Kernel::KernelConfigFile->Get(string(key));
+// 		string* r = Kernel::KernelConfigFile->get(string(key));
 
 // 		if(!r)
 // 			return false;

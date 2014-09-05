@@ -5,6 +5,7 @@
 
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Devices/RTC.hpp>
+#include <List.hpp>
 #include <String.hpp>
 #include <math.h>
 
@@ -28,8 +29,7 @@ namespace Multitasking
 
 		for(uint64_t l = SleepList->size(), g = 0; g < l; g++)
 		{
-			Thread* m = SleepList->front();
-			SleepList->pop_front();
+			Thread* m = SleepList->pop_front();
 
 			if(m->State == STATE_SUSPEND || m->State == STATE_BLOCKING)
 			{

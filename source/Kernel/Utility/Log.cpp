@@ -5,7 +5,6 @@
 
 #include <Kernel.hpp>
 #include <StandardIO.hpp>
-#include <Colours.hpp>
 #include <Console.hpp>
 #include <HardwareAbstraction/Devices/SerialPort.hpp>
 

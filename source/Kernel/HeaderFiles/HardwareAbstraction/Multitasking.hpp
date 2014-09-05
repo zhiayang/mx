@@ -39,6 +39,9 @@ namespace HardwareAbstraction
 			ThreadRegisterState_type* CrashState;
 			void* tlsptr;
 
+			Library::LinkedList<Thread>* watchers;
+			Library::LinkedList<Thread>* watching;
+
 			void* returnval;
 			void (*Thread)();
 		};
@@ -126,6 +129,9 @@ namespace HardwareAbstraction
 
 		void DisableScheduler();
 		void EnableScheduler();
+
+		void WatchThread(pthread_t tid);
+		void UnwatchThread(pthread_t tid);
 
 
 		rde::list<Thread*>* SearchByName(const char* n);

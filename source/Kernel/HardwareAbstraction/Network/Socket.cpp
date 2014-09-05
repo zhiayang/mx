@@ -67,7 +67,7 @@
 // 		switch(prot)
 // 		{
 // 			case SocketProtocol::RawIPv4:
-// 				if(IP::ipv4socketmap->Get(SocketIPv4Mapping { source, dest }) != nullptr)
+// 				if(IP::ipv4socketmap->get(SocketIPv4Mapping { source, dest }) != nullptr)
 // 				{
 // 					Log(1, "Socket (%d.%d.%d.%d : %d) already opened by another process.", source.bytes[0], source.bytes[1], source.bytes[2], source.bytes[3], sourceport);
 // 					return 0;
@@ -75,7 +75,7 @@
 // 				break;
 
 // 			case SocketProtocol::TCP:
-// 				if(TCP::tcpsocketmapv4->Get(SocketFullMappingv4 { IPv4PortAddress { source, sourceport }, IPv4PortAddress { dest, destport } }) != nullptr)
+// 				if(TCP::tcpsocketmapv4->get(SocketFullMappingv4 { IPv4PortAddress { source, sourceport }, IPv4PortAddress { dest, destport } }) != nullptr)
 // 				{
 // 					Log(1, "Socket (%d.%d.%d.%d:%d) already opened by another process.", source.bytes[0], source.bytes[1], source.bytes[2], source.bytes[3], sourceport);
 // 					return 0;
@@ -83,7 +83,7 @@
 // 				break;
 
 // 			case SocketProtocol::UDP:
-// 				if(UDP::udpsocketmapv4->Get(SocketFullMappingv4 { IPv4PortAddress { source, sourceport }, IPv4PortAddress { dest, destport } }) != nullptr)
+// 				if(UDP::udpsocketmapv4->get(SocketFullMappingv4 { IPv4PortAddress { source, sourceport }, IPv4PortAddress { dest, destport } }) != nullptr)
 // 				{
 // 					Log(1, "Socket (%d.%d.%d.%d:%d) already opened by another process.", source.bytes[0], source.bytes[1], source.bytes[2], source.bytes[3], sourceport);
 // 					return 0;

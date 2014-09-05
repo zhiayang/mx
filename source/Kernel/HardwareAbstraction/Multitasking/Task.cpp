@@ -5,7 +5,9 @@
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Multitasking.hpp>
 #include <HardwareAbstraction/MemoryManager.hpp>
+#include <List.hpp>
 #include <string.h>
+#include "../IPC/Dispatchers/CentralDispatch.hpp"
 
 using namespace Kernel;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
@@ -183,14 +185,14 @@ namespace Multitasking
 		thread->CrashState			= new ThreadRegisterState_type;
 		thread->flags				= Parent->Flags;
 
-		Parent->Threads->push_back(thread);
+		Parent->Threads->push_front(thread);
 
 		SetupStackThread(thread, u, us, (uint64_t) Function, attr->a1, attr->a2, attr->a3, attr->a4, attr->a5, attr->a6);
 		NumThreads++;
 
 		// unmap
 		if(Parent->CR3 != (uint64_t) Virtual::GetCurrentPML4T())
-			Virtual::UnMapRegion(k, DefaultRing3StackSize / 0x1000);
+			Virtual::UnmapRegion(k, DefaultRing3StackSize / 0x1000);
 
 		if(FirstProc)
 		{
@@ -225,16 +227,21 @@ namespace Multitasking
 	Process* CreateProcess(const char name[64], uint8_t Flags, uint64_t tlssize, void (*Function)(), uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
 	{
 		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
+		using Library::LinkedList;
 
 		Process* process = new Process();
-		process->Threads = new rde::list<Thread*>();
+		process->Threads = new LinkedList<Thread>();
 
 		PageMapStructure* PML4 = FirstProc ? (PageMapStructure*)(GetKernelCR3()) : (PageMapStructure*) Virtual::CreateVAS();
+
+		// everybody needs some tls
+		if(tlssize == 0)
+			tlssize = 8;
 
 		process->Flags					= Flags;
 		process->ProcessID				= NumProcesses;
 		process->CR3					= (uint64_t) PML4;
-		process->AllocatedPageList			= new rde::vector<uint64_t>();
+		process->AllocatedPageList			= new Library::Vector<uint64_t>();
 		process->VAS					= new Virtual::VirtualAddressSpace(PML4);
 		process->SignalHandlers			= (sighandler_t*) KernelHeap::AllocateChunk(sizeof(sighandler_t) * __SIGCOUNT);
 		process->iocontext				= new Filesystems::IOContext();

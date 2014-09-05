@@ -200,7 +200,7 @@ namespace Filesystems
 		this->RootDirectoryCluster	= *((uint32_t*)((uintptr_t) fat + 44));
 		this->FSInfoCluster		= *((uint16_t*)((uintptr_t) fat + 48));
 
-		this->BackupBootCluster	= *((uint16_t*)((uintptr_t) fat + 50));
+		this->backupBootCluster	= *((uint16_t*)((uintptr_t) fat + 50));
 		this->FirstUsableCluster	= this->partition->GetStartLBA() + this->ReservedSectors + (this->NumberOfFATs * this->FATSectorSize);
 
 
@@ -324,7 +324,7 @@ namespace Filesystems
 		if(!vnd->clusters)
 			vnd->clusters = this->GetClusterChain(node, &numclus);
 
-		// assert(vnd->clusters->Size() == numclus);
+		// assert(vnd->clusters->size() == numclus);
 
 		// check that offset is not more than size
 		if(offset > vnd->filesize)
