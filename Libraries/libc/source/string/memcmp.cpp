@@ -2,7 +2,7 @@
 // Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
-#include "../../include/stddef.h"
+#include <stddef.h>
 
 extern "C" int memcmp(const void* a_ptr, const void* b_ptr, size_t size)
 {

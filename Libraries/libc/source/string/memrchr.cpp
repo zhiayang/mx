@@ -2,7 +2,7 @@
 // Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
-#include "../../include/stddef.h"
+#include <stddef.h>
 extern "C" void* memrchr(const void* ptr, int c, size_t n)
 {
 	const unsigned char* buf = (const unsigned char*) ptr;

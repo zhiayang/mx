@@ -3,7 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "../../include/fcntl.h"
-#include "../../include/stdarg.h"
+#include <stdarg.h>
 #include <sys/syscall.h>
 
 extern "C" int open(const char* path, int flags, ...)
