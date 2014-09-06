@@ -20,7 +20,7 @@ all: $(CXXOPT)
 	@:
 
 $(CXXOPT): $(CXXSRC) ../../build/sysroot/usr/lib/libc.a
-	@$(CXX) $(CXXFLAGS) -o $@ $(CXXSRC) -lfreetype
+	@$(CXX) $(CXXFLAGS) -o $@ $(CXXSRC)
 	@$(STRIP) --strip-debug $(CXXOPT)
 	@echo "userspace: displayserver"
 
