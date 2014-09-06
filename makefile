@@ -123,8 +123,8 @@ mountdisk:
 	@tools/mountdisk.sh
 
 cleandisk:
-	@find $(shell tools/getpath.sh) -name "*.mxa" | xargs rm
-	@find $(shell tools/getpath.sh) -name "*.x" | xargs rm
+	@find $(MOUNTPATH) -name "*.mxa" | xargs rm
+	@find $(MOUNTPATH) -name "*.x" | xargs rm
 
 clean: cleandisk
 	@echo "# Cleaning directory tree"
