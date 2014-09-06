@@ -145,14 +145,14 @@ namespace Kernel
 		if(!KernelCPUID->SSE3Instructions())
 		{
 			PrintFormatted("I don't know how you got this far.\n");
-			PrintFormatted("Orion-X4 requires your CPU to support SSE3 instructions.\n");
+			PrintFormatted("[mx] requires your CPU to support SSE3 instructions.\n");
 			UHALT();
 		}
 
 		// check if we have enough memory.
 		if(K_SystemMemoryInBytes < 0x02000000)
 		{
-			PrintFormatted("Orion-X4 requires at least 32 Megabytes (33554432 bytes) of memory to operate.\n");
+			PrintFormatted("[mx] requires at least 32 Megabytes (33554432 bytes) of memory to operate.\n");
 			PrintFormatted("Only %d bytes of memory detected.\n", K_SystemMemoryInBytes);
 			PrintFormatted("Install more RAM, or increase the amount of memory in your Virtual Machine.");
 			UHALT();
@@ -233,7 +233,7 @@ namespace Kernel
 			if(!VideoDev)
 			{
 				PrintFormatted("Error: No VGA compatible video card found.\n");
-				PrintFormatted("Orion-X4 requires such a device to work.\n");
+				PrintFormatted("[mx] requires such a device to work.\n");
 				PrintFormatted("Check your system and try again.\n\n");
 				PrintFormatted("Currently, supported systems include: BGA (Bochs, QEMU, VirtualBox) and SVGA (VMWare)\n");
 				{
@@ -269,7 +269,7 @@ namespace Kernel
 				else
 				{
 					PrintFormatted("Error: No supported video card found.\n");
-					PrintFormatted("Orion-X4 does not support VGA-only video cards.\n");
+					PrintFormatted("[mx] does not support VGA-only video cards.\n");
 					PrintFormatted("Currently, supported systems include: BGA (Bochs, QEMU, VirtualBox) and SVGA (VMWare)\n");
 					UHALT();
 				}
@@ -518,7 +518,7 @@ namespace Kernel
 
 		// KernelKeyboard = new Keyboard(new PS2Keyboard());
 		// Console::ClearScreen();
-		// Bootscreen::PrintMessage("Loading Orion-X4\n");
+		// Bootscreen::PrintMessage("Loading [mx]\n");
 
 		// #if 0
 		// {
@@ -585,7 +585,7 @@ namespace Kernel
 	void HaltSystem(const char* message, const char* filename, uint64_t line, const char* reason)
 	{
 		Log("System Halted: %s, %s:%d -- %x", message, filename, line, __builtin_return_address(1));
-		PrintFormatted("\n\nERROR: %s\nReason: %s\n%s -- Line %d, Return Addr %x\n\nOrion-X4 has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
+		PrintFormatted("\n\nERROR: %s\nReason: %s\n%s -- Line %d, Return Addr %x\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 
 
 		UHALT();
@@ -594,7 +594,7 @@ namespace Kernel
 	void HaltSystem(const char* message, const char* filename, const char* line, const char* reason)
 	{
 		Log("System Halted: %s, %s:%s", message, filename, line);
-		PrintFormatted("\n\nERROR: %s\nReason: %s\n%s -- Line %s\n\nOrion-X4 has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line);
+		PrintFormatted("\n\nERROR: %s\nReason: %s\n%s -- Line %s\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line);
 
 		UHALT();
 	}
@@ -644,7 +644,7 @@ namespace Kernel
 
 	void PrintVersion()
 	{
-		PrintFormatted("Orion-X4 Version %d.%d.%d r%02d -- Build %d\n", VER_MAJOR, VER_MINOR, VER_REVSN, VER_MINRV, X_BUILD_NUMBER);
+		PrintFormatted("[mx] Version %d.%d.%d r%02d -- Build %d\n", VER_MAJOR, VER_MINOR, VER_REVSN, VER_MINRV, X_BUILD_NUMBER);
 	}
 
 	uint64_t GetKernelCR3()
