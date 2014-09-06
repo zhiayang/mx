@@ -22,7 +22,7 @@
 
 *******************************************************************************/
 
-#include "../../include/stddef.h"
+#include <stddef.h>
 
 static int compare_wrapper(const void* a, const void* b, void* arg)
 {

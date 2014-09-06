@@ -2,7 +2,7 @@
 // Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
-#include "../../include/stddef.h"
+#include <stddef.h>
 #include "../../include/stdint.h"
 
 inline static void* memcpy_slow(void* __restrict__ dstptr, const void* __restrict__ srcptr, size_t length)
