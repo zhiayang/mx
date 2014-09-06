@@ -62,7 +62,7 @@ namespace ACPI
 
 		if(!found)
 		{
-			Log(2, "Error: RSDP not found, cannot continue with ACPI initialisation. Orion-X4 will operate with reduced capabilities");
+			Log(2, "Error: RSDP not found, cannot continue with ACPI initialisation. [mx] will operate with reduced capabilities");
 			fail = true;
 			return;
 		}
