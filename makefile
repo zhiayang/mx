@@ -2,23 +2,26 @@
 # Written in 2011
 # This makefile is licensed under the WTFPL
 
-
 X_BUILD_FILE	= .build.h
 
-QEMU		= /usr/local/bin/qemu-system-x86_64
-BOCHS		= /usr/local/bin/bochs
-MKISOFS	= /usr/local/bin/mkisofs
+export QEMU		:= /usr/local/bin/qemu-system-x86_64
+export SYSROOT	:= $(CURDIR)/build/sysroot
+export TOOLCHAIN	:= $(CURDIR)/build/toolchain
+export CXX		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-g++
+export AS		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-as
+export LD		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-ld
+export OBJCOPY	:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-objcopy
+export READELF	:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-readelf
+export STRIP		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-strip
+export AR		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-ar
+export RANLIB		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-ranlib
+export MOUNTPATH	:= $(shell $(CURDIR)/tools/getpath.sh)
 
-SYSROOT	= ./build/sysroot
-TOOLCHAIN	= ./build/toolchain
 
-CXX		= clang++
-# CXX		= build/toolchain/bin/x86_64-orionx-g++
-AS		= build/toolchain/bin/x86_64-orionx-as
-LD		= build/toolchain/bin/x86_64-orionx-ld
-OBJCOPY	= build/toolchain/bin/x86_64-orionx-objcopy
-READELF	= build/toolchain/bin/x86_64-orionx-readelf
 
+
+# we use clang only for the kernel, don't pollute makefiles
+CXX_		= clang++
 GCCVERSION	= 4.9.1
 
 WARNINGS	= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-align -Wno-unreachable-code -Wno-gnu -Wno-missing-prototypes -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-sign-conversion -Wno-old-style-cast
@@ -90,11 +93,11 @@ $(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) buildus
 	@touch build/.dmf
 
 	@echo $(notdir $<)
-	@$(CXX) $(CXXFLAGS) $(WARNINGS) -MMD -MP -o $@ $<
+	@$(CXX_) $(CXXFLAGS) $(WARNINGS) -MMD -MP -o $@ $<
 
 builduserspace:
 	@echo "# Building userspace applications"
-	@make -C applications/
+	@$(MAKE) -C applications/
 
 copyheader:
 	@mkdir -p $(SYSROOT)/usr/lib
@@ -114,14 +117,14 @@ buildlib: $(SYSROOT)/usr/lib/%.a
 
 $(SYSROOT)/usr/lib/%.a:
 	@echo "# Building Libraries"
-	@make -C Libraries/
+	@$(MAKE) -C Libraries/
 
 mountdisk:
 	@tools/mountdisk.sh
 
 cleandisk:
-	@find $(shell tools/getpath.sh) -name "*.mxa" | xargs rm
-	@find $(shell tools/getpath.sh) -name "*.x" | xargs rm
+	@find $(MOUNTPATH) -name "*.mxa" | xargs rm
+	@find $(MOUNTPATH) -name "*.x" | xargs rm
 
 clean: cleandisk
 	@echo "# Cleaning directory tree"
