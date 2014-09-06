@@ -20,7 +20,7 @@
 #define _STDC_STRING_H_
 
 #include "machine/_target.h"
-#include "stddef.h"
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
