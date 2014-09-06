@@ -31,7 +31,6 @@ cp -r Libraries/libc/include/* $SYSROOT/usr/include/
 cp -r Libraries/libsyscall/syscall.h $SYSROOT/usr/include/sys/
 cp -r Libraries/libm/include/* $SYSROOT/usr/include/
 
-
 cd build
 
 # first, download our patched gcc and binutils.
@@ -78,6 +77,7 @@ make -j$THREADS install-target-libgcc &> /dev/null
 
 echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Building [mx] libc${_NORMAL}"
 make -C ../../Libraries/libc
+make -C ../../Libraries/libsyscall
 
 
 echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Building libstdc++${_NORMAL}"
