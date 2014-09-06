@@ -5,5 +5,4 @@ if [ `uname` = "Darwin" ]; then
 
 elif [ `uname` = "Linux" ]; then
 	umount build/mnt/mx
-	kpartx -d -v build/disk.img
 fi
