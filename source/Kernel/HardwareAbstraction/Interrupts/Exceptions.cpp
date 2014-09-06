@@ -392,7 +392,7 @@ namespace Interrupts
 
 
 
-		PrintFormatted("\nOrion-X4 has met an unresolvable error, and will now halt.\n");
+		PrintFormatted("\n[mx] has met an unresolvable error, and will now halt.\n");
 
 
 		PrintFormatted("Debug Information:\n\n");
