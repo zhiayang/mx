@@ -41,7 +41,7 @@ namespace MemoryMap
 
 	void GetGlobalMemoryMap(MemoryMap_type *MemoryMap)
 	{
-		Library::Memory::Copy((void*) MemoryMap, (void*) K_MemoryMap, K_MemoryMap->SizeOfThisStructure);
+		Memory::Copy((void*) MemoryMap, (void*) K_MemoryMap, K_MemoryMap->SizeOfThisStructure);
 	}
 
 	uint64_t GetTotalSystemMemory()

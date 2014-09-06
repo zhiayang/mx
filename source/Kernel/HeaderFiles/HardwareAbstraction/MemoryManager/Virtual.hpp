@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <List.hpp>
 #include <Vector.hpp>
+#include <rdestl/rdestl.h>
 
 namespace Kernel {
 namespace HardwareAbstraction {
@@ -24,16 +25,26 @@ namespace Virtual
 		uint64_t length;
 	};
 
+	struct ALPPair
+	{
+		ALPPair(uint64_t s, uint64_t l, uint64_t p) : start(s), length(l), phys(p) { }
+		uint64_t start;
+		uint64_t length;
+		uint64_t phys;
+	};
+
 	struct VirtualAddressSpace
 	{
 		VirtualAddressSpace(PageMapStructure* pml4)
 		{
 			this->PML4 = pml4;
 			this->pairs = new Library::Vector<AddressLengthPair*>();
+			this->used = new Library::Vector<ALPPair*>();
 		}
 
 		// book-keeping for allocations.
 		Library::Vector<AddressLengthPair*>* pairs;
+		Library::Vector<ALPPair*>* used;
 
 		// store the actual address of the pml4.
 		PageMapStructure* PML4;
@@ -53,7 +64,8 @@ namespace Virtual
 	PageMapStructure* GetCurrentPML4T();
 
 	VirtualAddressSpace* SetupVAS(VirtualAddressSpace* vas);
-	uint64_t AllocateVirtual(uint64_t size = 1, uint64_t addr = 0, VirtualAddressSpace* vas = 0);
+	void DestroyVAS(VirtualAddressSpace* vas);
+	uint64_t AllocateVirtual(uint64_t size = 1, uint64_t addr = 0, VirtualAddressSpace* vas = 0, uint64_t phys = 0);
 	void FreeVirtual(uint64_t addr, uint64_t size = 1, VirtualAddressSpace* vas = 0);
 
 	uint64_t AllocatePage(uint64_t size = 1, uint64_t addr = 0, uint64_t flags = 0x3);

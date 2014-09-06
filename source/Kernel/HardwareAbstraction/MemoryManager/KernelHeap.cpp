@@ -121,7 +121,7 @@ namespace KernelHeap
 
 		// memcpy.
 		Memory::CopyOverlap((void*) index(at + 1), (void*) index(at), behind * sizeof(Chunk));
-		memset((void*) index(at), 0, sizeof(Chunk));
+		Memory::Set((void*) index(at), 0, sizeof(Chunk));
 	}
 
 	void pullfront(uint64_t at)
@@ -137,7 +137,7 @@ namespace KernelHeap
 		// calculate how many chunks to pull
 		auto ahead = (ChunksInHeap - 1) - at;
 
-		memset(c, 0, sizeof(Chunk));
+		Memory::Set(c, 0, sizeof(Chunk));
 		Memory::CopyOverlap(c, index(at + 1), ahead * sizeof(Chunk));
 		// memset((void*) ((uint64_t) c - 1 + ahead * sizeof(Chunk)), 0, sizeof(Chunk));
 	}
