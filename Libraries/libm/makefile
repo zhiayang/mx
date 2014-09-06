@@ -344,7 +344,7 @@ ctanhf.c \
 HOSTCC		:= ../../build/toolchain/bin/x86_64-orionx-gcc
 HOSTAR		:= ../../build/toolchain/bin/x86_64-orionx-ar
 
-DESTDIR		:= ../../build/sysroot/
+DESTDIR		:= $(SYSROOT)/
 INCLUDEDIR		:= /usr/include/
 LIBDIR			:= /usr/lib/
 

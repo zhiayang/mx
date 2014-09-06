@@ -7,7 +7,7 @@ all: buildprograms
 	@:
 
 buildprograms:
-	@find . -mindepth 1 -maxdepth 1 -type d -exec make -C {} \;
+	@find . -mindepth 1 -maxdepth 1 -type d -exec $(MAKE) -C {} \;
 
 
 
