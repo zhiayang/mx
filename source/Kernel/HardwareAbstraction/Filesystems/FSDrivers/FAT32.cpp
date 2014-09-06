@@ -121,7 +121,8 @@ namespace Filesystems
 		ts.tm_min	= minute;
 		ts.tm_sec	= sec2 * 2;
 
-		return mktime(&ts);
+		return 0;
+		// return mktime(&ts);
 	}
 
 	static Vector<rde::string*>* split(rde::string& s, char delim)
@@ -279,8 +280,7 @@ namespace Filesystems
 				assert(vnd);
 				assert(vnd->name);
 
-				// Log(3, "vnd->name: %s -- name: %s", vnd->name->c_str(), file->c_str());
-				if(curlvl == levels && d->type == VNodeType::File && strcmp(vnd->name->c_str(), file->c_str()) == 0)
+				if(curlvl == levels && d->type == VNodeType::File && String::Compare(vnd->name->c_str(), file->c_str()) == 0)
 				{
 					node->info->data = d->info->data;
 					node->info->driver = d->info->driver;
@@ -289,7 +289,7 @@ namespace Filesystems
 
 					return true;
 				}
-				else if(strcmp(vnd->name->c_str(), v->c_str()) == 0)
+				else if(String::Compare(vnd->name->c_str(), v->c_str()) == 0)
 				{
 					found = true;
 					cn = d;
@@ -355,7 +355,7 @@ namespace Filesystems
 		}
 
 		dma = obuf;
-		memcpy(buf, (void*) (dma + clusoffset), length);
+		Memory::Copy(buf, (void*) (dma + clusoffset), length);
 		return length;
 	}
 
@@ -496,14 +496,14 @@ namespace Filesystems
 				// (if we need it. don't call getclusterchain() every time, especially for sibling directories that we're not interested in)
 
 				auto fsd = new vnode_data;
-				memset(fsd, 0, sizeof(vnode_data));
+				Memory::Set(fsd, 0, sizeof(vnode_data));
 
 				fsd->name = name;
 				fsd->entrycluster = ((uint32_t) (dirent->clusterhigh << 16)) | dirent->clusterlow;
 				fsd->filesize = dirent->filesize;
 				fsd->clusters = nullptr;
 
-				memcpy(&fsd->dirent, dirent, sizeof(DirectoryEntry));
+				Memory::Copy(&fsd->dirent, dirent, sizeof(DirectoryEntry));
 
 				vn->info->data = (void*) fsd;
 

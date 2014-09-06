@@ -58,7 +58,7 @@
 // 	static void SendDNSPacket(Devices::NIC::GenericNIC* interface, string query, uint16_t id)
 // 	{
 // 		DNSMessageHeader* header = (DNSMessageHeader*) new uint8_t[sizeof(DNSMessageHeader) + query.Length() + 8];
-// 		Library::Memory::Set(header, 0, sizeof(DNSMessageHeader));
+// 		Memory::Set(header, 0, sizeof(DNSMessageHeader));
 // 		header->id = SwapEndian16(id);
 
 // 		// QR bit = 0

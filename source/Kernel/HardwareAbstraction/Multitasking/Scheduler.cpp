@@ -192,8 +192,7 @@ namespace Multitasking
 		PendingSleepList->push_back(p);
 
 		// if time is negative, we called from userspace, so don't nest interrupts.
-		if(time > 0)
-			YieldCPU();
+		YieldCPU();
 	}
 
 	uint64_t GetCurrentCR3()

@@ -48,7 +48,7 @@ namespace Filesystems
 		{
 			for(auto v : *mountedfses)
 			{
-				if(strcmp(path.substr(0, __min(path.length(), v->mountpoint->length())).c_str(), v->mountpoint->c_str()) == 0)
+				if(String::Compare(path.substr(0, __min(path.length(), v->mountpoint->length())).c_str(), v->mountpoint->c_str()) == 0)
 					return v;
 			}
 
@@ -118,7 +118,7 @@ namespace Filesystems
 			vnode* node = new vnode;
 
 			assert(node);
-			memset(node, 0, sizeof(vnode));
+			Memory::Set(node, 0, sizeof(vnode));
 
 			node->data = nullptr;
 			node->info = new fsref;
@@ -126,7 +126,7 @@ namespace Filesystems
 			node->type = VNodeType::None;
 			node->attrib = 0;
 
-			memset(node->info, 0, sizeof(fsref));
+			Memory::Set(node->info, 0, sizeof(fsref));
 			node->info->data = nullptr;
 			node->info->driver = fs;
 			node->info->id = fs->GetID();

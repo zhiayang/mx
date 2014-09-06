@@ -35,15 +35,15 @@ namespace Filesystems
 
 
 		// make a kernel-level copy
-		char* newpth = new char[strlen(path) + 1];
-		strcpy(newpth, path);
+		char* newpth = new char[String::Length(path) + 1];
+		String::Copy(newpth, path);
 
 		pathid* str = new pathid;
 		str->path = newpth;
 
 		// id is a simple hash of the path.
 		uint8_t* data = (uint8_t*) (newpth);
-		uint64_t length = strlen(newpth);
+		uint64_t length = String::Length(newpth);
 
 		uint64_t hash = 0;
 		for(uint64_t i = 0; i < length; i++)
@@ -70,7 +70,7 @@ namespace Filesystems
 
 		for(auto v : *this->messagequeue)
 		{
-			if(strcmp(path, v.first->path) == 0)
+			if(String::Compare(path, v.first->path) == 0)
 				return true;
 		}
 		return false;

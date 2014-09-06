@@ -48,7 +48,7 @@ CXXDEPS	= $(CXXOBJ:.o=.d)
 
 
 
-LIBRARIES         = -lstdc++ -liris -lm -lbitmap -lc -lsyscall -lsupc++ -lgcc -lrdestl
+LIBRARIES         = -lstdc++ -liris -lm -lsyscall -lsupc++ -lgcc -lrdestl
 OUTPUT            = build/kernel.mxa
 
 
@@ -73,7 +73,7 @@ build: $(OUTPUT)
 
 $(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) builduserspace
 	@echo "# Linking object files"
-	@$(LD) $(LDFLAGS) -o build/kernel64.elf source/Kernel/Bootstrap/Start.s.o $(shell find source -name "*.o" ! -name "Start.s.o") $(LIBRARIES)
+	@$(LD) $(LDFLAGS) -o build/kernel64.elf source/Kernel/Boot/Start.s.o $(shell find source -name "*.o" ! -name "Start.s.o") $(LIBRARIES)
 
 	@echo "# Performing objcopy"
 	@$(OBJCOPY) -g -O elf32-i386 build/kernel64.elf build/kernel.mxa

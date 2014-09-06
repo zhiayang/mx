@@ -28,7 +28,7 @@ namespace Storage
 		this->PartitionTypeGUID_low = tl;
 
 		// Library::String::Copy(this->Name, n);
-		strcpy(this->Name, n);
+		String::Copy(this->Name, n);
 
 		this->Bootable = b;
 
