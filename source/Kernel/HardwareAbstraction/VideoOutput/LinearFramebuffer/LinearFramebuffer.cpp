@@ -33,6 +33,19 @@ namespace LinearFramebuffer
 	#define CurrentFont			Font8x16_Thick
 
 
+	static void* memset32(void* dst, uint32_t val, uint64_t len)
+	{
+		uintptr_t d0 = 0;
+		uint64_t uval = ((uint64_t) val << 32) + val;
+		asm volatile(
+			"rep stosq"
+			:"=&D" (d0), "+&c" (len)
+			:"0" (dst), "a" (uval)
+			:"memory");
+
+		return dst;
+	}
+
 	void Initialise()
 	{
 		ResX = Kernel::GetVideoDevice()->GetResX();
@@ -86,7 +99,7 @@ namespace LinearFramebuffer
 		{
 			for(uint64_t i = y; i < y + CharHeight; i++)
 			{
-				Memory::Set32((void*)(Kernel::GetFramebufferAddress() + (i * GetResX() + x) * 4), backColour, 4);
+				memset32((void*)(Kernel::GetFramebufferAddress() + (i * GetResX() + x) * 4), backColour, 4);
 			}
 		}
 

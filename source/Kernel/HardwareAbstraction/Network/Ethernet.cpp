@@ -56,7 +56,7 @@
 // 		}
 
 // 		header->ethertype = SwapEndian16((uint16_t) type);
-// 		Library::Memory::Copy((void*) (newbuf + sizeof(EthernetFrameHeader)), data, length);
+// 		Memory::Copy((void*) (newbuf + sizeof(EthernetFrameHeader)), data, length);
 
 // 		*(uint32_t*)(newbuf + buffersize - 4) = CalculateCRC(newbuf, sizeof(EthernetFrameHeader) + length);
 // 		interface->SendData(newbuf, buffersize);

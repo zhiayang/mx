@@ -33,7 +33,8 @@ namespace IPC
 		if(signum >= __SIGCOUNT)
 		{
 			Log(1, "Invalid signal number, ignoring");
-			errno = EINVAL;
+			// errno = EINVAL;
+			// todo: errno
 			return;
 		}
 
@@ -42,7 +43,8 @@ namespace IPC
 		if(!thread || !thread->Parent)
 		{
 			Log(1, "Invalid target thread - %d", tid);
-			errno = ESRCH;
+			// errno = ESRCH;
+			// todo: errno
 			return;
 		}
 
@@ -244,7 +246,7 @@ namespace IPC
 
 		// // copy the message into the kernel heap.
 		// uint8_t* kernmsg = new uint8_t[size];
-		// memcpy(kernmsg, msg, size);
+		// Memory::Copy(kernmsg, msg, size);
 
 		// // todo: something about flags
 		// rde::list<uintptr_t>* queue = (*messagequeue)[key];
@@ -298,14 +300,16 @@ namespace IPC
 		if(signum >= __SIGCOUNT)
 		{
 			Log(1, "Error: invalid signal number %d", signum);
-			errno = EINVAL;
+			// errno = EINVAL;
+			// todo: errno
 			return SIG_ERR;
 		}
 
 		else if((signum == SIGKILL || signum == SIGSTOP) && handler != SIG_DFL)
 		{
 			Log(1, "Error: cannot override handler for signal %d, which is either SIGKILL or SIGSTOP", signum);
-			errno = EINVAL;
+			// errno = EINVAL;
+			// todo: errno
 			return SIG_ERR;
 		}
 
