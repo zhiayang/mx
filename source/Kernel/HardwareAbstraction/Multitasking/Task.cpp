@@ -7,7 +7,6 @@
 #include <HardwareAbstraction/MemoryManager.hpp>
 #include <List.hpp>
 #include <string.h>
-#include "../IPC/Dispatchers/CentralDispatch.hpp"
 
 using namespace Kernel;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
