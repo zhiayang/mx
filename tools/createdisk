@@ -51,8 +51,8 @@ if [ `uname` = "Darwin" ]; then
 
 elif [ `uname` = "Linux" ]; then
 	echo -e "n\np\n1\n2048\n\nt\n0B\na\nw\n" | fdisk $DISKNAME > /dev/null
-	dd if=$DISKNAME of=build/mbr.img bs=512 count=2047 &> /dev/null
-	dd if=$DISKNAME of=build/fs.img bs=512 skip=2047 &> /dev/null
+	dd if=$DISKNAME of=build/mbr.img bs=512 count=2048 &> /dev/null
+	dd if=$DISKNAME of=build/fs.img bs=512 skip=2048 &> /dev/null
 
 	mkdir -p mnt/disk
 	mkfs.vfat -F 32 build/fs.img
@@ -85,6 +85,8 @@ echo "=> Cleaning up"
 rm grub.img
 rm build/fs.img
 rm build/mbr.img
+
+rm -r mnt
 
 
 echo "=> Ready!"

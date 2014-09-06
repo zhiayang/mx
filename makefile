@@ -59,14 +59,14 @@ run:
 
 all: $(OUTPUT)
 	@# unmount??
-	@hdiutil detach -quiet /Volumes/mx
+	@tools/unmountdisk.sh
 
 	@echo "# Starting QEMU"
 	@$(QEMU) -s -vga std -serial file:"build/serialout.log" -no-reboot -m $(MEMORY) -hda build/disk.img -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap
 	-@rm -f build/.dmf
 
 	@# mount the disk again for inspection.
-	@hdiutil attach -quiet build/disk.img
+	@tools/mountdisk.sh
 
 build: $(OUTPUT)
 	# built
@@ -77,7 +77,7 @@ $(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) buildus
 
 	@echo "# Performing objcopy"
 	@$(OBJCOPY) -g -O elf32-i386 build/kernel64.elf build/kernel.mxa
-	@cp $(OUTPUT) /Volumes/mx/boot/kernel.mxa
+	@cp $(OUTPUT) $(shell tools/getpath.sh)/boot/kernel.mxa
 
 
 %.s.o: %.s
@@ -120,11 +120,11 @@ $(SYSROOT)/usr/lib/%.a:
 	@make -C Libraries/
 
 mountdisk:
-	@test -d /Volumes/mx || hdiutil attach -quiet build/disk.img
+	@tools/mountdisk.sh
 
 cleandisk:
-	@find /Volumes/mx -name "*.mxa" | xargs rm
-	@find /Volumes/mx -name "*.x" | xargs rm
+	@find $(shell tools/getpath.sh) -name "*.mxa" | xargs rm
+	@find $(shell tools/getpath.sh) -name "*.x" | xargs rm
 
 clean: cleandisk
 	@echo "# Cleaning directory tree"
