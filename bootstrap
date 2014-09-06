@@ -91,8 +91,7 @@ if [ -f build/disk.img ]; then
 	exit
 fi
 
-chmod +x createdisk
-./createdisk
+tools/createdisk
 
 # # first check for args.
 # if [ -z "$1" ]; then
