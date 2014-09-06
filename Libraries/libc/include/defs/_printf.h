@@ -3,8 +3,8 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "../stdint.h"
-#include "../stddef.h"
-#include "../stdarg.h"
+#include <stddef.h>
+#include <stdarg.h>
 
 size_t convert_integer(char* destination, uint64_t value, uint64_t base, const char* digits);
 extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t), void* user, const char* format, va_list parameters);
