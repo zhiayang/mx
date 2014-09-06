@@ -21,8 +21,6 @@ _GREEN=`tput setaf 2`
 
 
 
-
-
 mkdir build
 
 echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Setting up sysroot${_NORMAL}"
@@ -30,8 +28,8 @@ mkdir -p $SYSROOT/usr/include/
 mkdir -p $SYSROOT/usr/lib
 
 cp -r Libraries/libc/include/* $SYSROOT/usr/include/
+cp -r Libraries/libsyscall/syscall.h $SYSROOT/usr/include/sys/
 cp -r Libraries/libm/include/* $SYSROOT/usr/include/
-
 
 cd build
 
@@ -73,38 +71,37 @@ make -j$THREADS all-gcc &> /dev/null
 echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Building libgcc${_NORMAL}"
 make -j$THREADS all-target-libgcc &> /dev/null
 
+echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}Installing gcc and libgcc${_NORMAL}"
+make -j$THREADS install-gcc &> /dev/null
+make -j$THREADS install-target-libgcc &> /dev/null
+
+echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Building [mx] libc${_NORMAL}"
+make -C ../../Libraries/libc
+make -C ../../Libraries/libsyscall
+
 echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Building libstdc++${_NORMAL}"
 make -j$THREADS all-target-libstdc++-v3 &> /dev/null
 
-
-echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}Installing gcc${_NORMAL}"
-make -j$THREADS install-gcc &> /dev/null
-make -j$THREADS install-target-libgcc &> /dev/null
+echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}Installing libstdc++${_NORMAL}"
 make -j$THREADS install-target-libstdc++-v3 &> /dev/null
 
 cd ..
 cd ..
 
-
 rm -rf build/build-bin
 rm -rf build/build-gcc
-
 
 if [ -f build/disk.img ]; then
 	exit
 fi
 
+tools/createdisk
 
-
-
-# first check for args.
-if [ -z "$1" ]; then
-	echo "Please pass the size of the OS disk image in MEGABYTES (1024 KB) to ./bootstrap."
-	exit
-fi
-
-
-
+# # first check for args.
+# if [ -z "$1" ]; then
+# 	echo "Please pass the size of the OS disk image in MEGABYTES (1024 KB) to ./bootstrap."
+# 	exit
+# fi
 
 
 
@@ -113,62 +110,11 @@ fi
 
 
 
-echo "=> Creating disk image of $1 mb"
-# edit if not on mac, life will be easier.
-# seriously.
 
-# use 'dd' to create.
-BLOCKSIZE=$(($1 * 1024 * 1024 / 512))
-DISKNAME=build/disk.img
 
-# create the image first
-dd if=/dev/zero of=$DISKNAME bs=512 count=$BLOCKSIZE &> /dev/null
 
-# run fdisk on it
-echo -e "y\nedit 1\n0B\nn\n2047\n\nflag 1\nwrite\nexit\n" | fdisk -e $DISKNAME > /dev/null
 
-# separate the things.
-dd if=$DISKNAME of=build/mbr.img bs=512 count=2047 &> /dev/null
-dd if=$DISKNAME of=build/fs.img bs=512 skip=2047 &> /dev/null
 
-# EDIT HERE FOR NON MAC
-# mount the image
-IDENTIFER=`hdiutil attach -nomount build/fs.img`
 
-# make the fat32 image.
-newfs_msdos -F 32 -v "MX" $IDENTIFER &> /dev/null
 
-# detach
-hdiutil detach $IDENTIFER
 
-# recombine
-cat build/mbr.img build/fs.img > $DISKNAME
-
-# mount the entire image
-hdiutil attach $DISKNAME
-
-# copy over grub files
-mkdir -p /Volumes/MX/boot/grub
-cp grub/* /Volumes/MX/boot/grub/
-
-# create a quick grub floppy.
-dd if=grub/stage1 of=grub.img count=1 bs=512 &> /dev/null
-dd if=grub/stage2 of=grub.img seek=1 bs=512 &> /dev/null
-
-# give the user instructions
-echo "=> Installing GRUB"
-echo "You should see a shell grub>"
-echo "Enter these commands:"
-echo "root (hd0,0)"
-echo -e "setup (hd0)\n\n"
-echo "Press Command-Q to close QEMU once you're done."
-qemu-system-x86_64 -boot a -fda grub.img -hda $DISKNAME
-
-echo "=> GRUB setup complete."
-echo "=> Cleaning up"
-rm grub.img
-rm build/fs.img
-rm build/mbr.img
-hdiutil detach -quiet $IDENTIFER
-echo "=> Ready!"
-exit

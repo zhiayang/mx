@@ -4,37 +4,86 @@
 
 #include "HeaderFiles/String.hpp"
 #include "HeaderFiles/StandardIO.hpp"
+#include "HeaderFiles/Memory.hpp"
 #include <string.h>
 
-using namespace Library::String;
-using namespace Library::StandardIO;
-
-
-
-namespace Library
+namespace String
 {
-	namespace String
+	uint64_t Length(const char* str)
 	{
-		char* TrimWhitespace(char *str)
-		{
-			char *end;
+		uint64_t len = 0;
+		const char* endPtr = str;
+		asm("repne scasb" : "+D"(endPtr) : "a"(0), "c"(~0) : "cc");
+		len = (endPtr - str) - 1;
+		return len;
+	}
 
-			// Trim leading space
-			while(*str == ' ')
-				str++;
+	char* Copy(char* destination, const char* source)
+	{
+		return (char*) Memory::Copy(destination, source, String::Length(source) + 1);
+	}
 
-			if(*str == 0)  // All spaces?
-				return str;
+	int Compare(const char* str1, const char* str2)
+	{
+		size_t len1 = String::Length(str1);
+		size_t len2 = String::Length(str2);
 
-			// Trim trailing space
-			end = str + strlen(str) - 1;
-			while(end > str && *end == ' ')
-				end--;
+		int cmpResult = Memory::Compare(str1, str2, (len1 < len2) ? len1 : len2);
+		if(cmpResult != 0)
+			return cmpResult;
 
-			// Write new null terminator
-			*(end + 1) = 0;
+		if(len1 > len2)
+			return 1;
 
+		else if(len1 < len2)
+			return -1;
+
+		return 0;
+	}
+
+	char* TrimWhitespace(char *str)
+	{
+		char *end;
+
+		// Trim leading space
+		while(*str == ' ')
+			str++;
+
+		if(*str == 0)  // All spaces?
 			return str;
-		}
+
+		// Trim trailing space
+		end = str + String::Length(str) - 1;
+		while(end > str && *end == ' ')
+			end--;
+
+		// Write new null terminator
+		*(end + 1) = 0;
+
+		return str;
 	}
 }
+
+extern "C" uint64_t strlen(const char* str)
+{
+	return String::Length(str);
+}
+
+extern "C" char* strcpy(char* destination, const char* source)
+{
+	return String::Copy(destination, source);
+}
+
+extern "C" int strcmp(const char* str1, const char* str2)
+{
+	return String::Compare(str1, str2);
+}
+
+
+
+
+
+
+
+
+

@@ -2,9 +2,9 @@
 // Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
+#include <stdarg.h>
 #include "../../include/mqueue.h"
 #include "../../include/fcntl.h"
-#include "../../include/stdarg.h"
 #include "../../include/stdlib.h"
 #include "../../include/stdio.h"
 #include "../../include/string.h"

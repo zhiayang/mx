@@ -30,13 +30,25 @@ namespace Console80x25
 		ClearScreen(0x00);
 	}
 
+	static void* memset32(void* dst, uint32_t val, uint64_t len)
+	{
+		uintptr_t d0 = 0;
+		uint64_t uval = ((uint64_t) val << 32) + val;
+		asm volatile(
+			"rep stosq"
+			:"=&D" (d0), "+&c" (len)
+			:"0" (dst), "a" (uval)
+			:"memory");
+
+		return dst;
+	}
+
 	void ClearScreen(uint8_t Colour)
 	{
-		using namespace Library::Memory;
 		uint32_t s = (uint16_t)((' ') | (Colour << 8));
 
 		for(int i = 0; i < 25; i++)
-			Set32((uint16_t*)0xB8000 + i * 80, s, 80);
+			memset32((uint16_t*)0xB8000 + i * 80, s, 80);
 
 		CursorX = 0;
 		CursorY = 0;
@@ -103,9 +115,8 @@ namespace Console80x25
 	{
 		if(CursorY >= 25)
 		{
-			using namespace Library::Memory;
-			Copy((uint16_t*)0xB8000, (uint16_t*)0xB8000 + (CursorY - 24) * 80, (49 - CursorY) * 80 * 2);
-			Set32((uint16_t*)0xB8000 + (49 - CursorY) * 80, Space, 40);
+			Memory::Copy((uint16_t*)0xB8000, (uint16_t*)0xB8000 + (CursorY - 24) * 80, (49 - CursorY) * 80 * 2);
+			memset32((uint16_t*)0xB8000 + (49 - CursorY) * 80, Space, 40);
 			CursorY = 24;
 		}
 	}

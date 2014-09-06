@@ -395,7 +395,7 @@ namespace Library
 			for (new_len = initial_len + 1; new_len % (512 / 8) != 448 / 8; new_len++);
 
 			msg = new uint8_t[new_len + 8];
-			Library::Memory::Copy(msg, initial_msg, initial_len);
+			Memory::Copy(msg, initial_msg, initial_len);
 			msg[initial_len] = 0x80; // append the "1" bit; most significant bit is "first"
 
 			for(offset = initial_len + 1; offset < new_len; offset++)

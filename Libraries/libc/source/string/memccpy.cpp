@@ -2,7 +2,7 @@
 // Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
-#include "../../include/stddef.h"
+#include <stddef.h>
 extern "C" void* memccpy(void* dest_ptr, const void* src_ptr, int c, size_t n)
 {
 	unsigned char* dest = (unsigned char*) dest_ptr;
