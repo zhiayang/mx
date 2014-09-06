@@ -134,10 +134,13 @@ namespace Multitasking
 		uint64_t k = 0;
 		if(Parent->CR3 != GetKernelCR3())
 		{
-			k = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS);
 			auto pk = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
+			k = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS, pk);
+
 			Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x3, Parent->VAS->PML4);
-			Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x3);
+
+			if(Parent->VAS->PML4 != Virtual::GetCurrentPML4T())
+				Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x3);
 		}
 		else
 		{
@@ -159,7 +162,7 @@ namespace Multitasking
 		if(attr->stackptr == 0 || attr->stacksize == 0)
 		{
 			uint64_t pu = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
-			u = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS);
+			u = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS, pu);
 			us = DefaultRing3StackSize;
 
 			Virtual::MapRegion(u, pu, DefaultRing3StackSize / 0x1000, 0x7, (Virtual::PageMapStructure*) Parent->CR3);
@@ -240,7 +243,6 @@ namespace Multitasking
 		process->Flags					= Flags;
 		process->ProcessID				= NumProcesses;
 		process->CR3					= (uint64_t) PML4;
-		process->AllocatedPageList			= new Library::Vector<uint64_t>();
 		process->VAS					= new Virtual::VirtualAddressSpace(PML4);
 		process->SignalHandlers			= (sighandler_t*) KernelHeap::AllocateChunk(sizeof(sighandler_t) * __SIGCOUNT);
 		process->iocontext				= new Filesystems::IOContext();
@@ -260,7 +262,7 @@ namespace Multitasking
 			Kernel::KernelProcess = process;
 		}
 
-		strncpy(process->Name, name, 64);
+		String::Copy(process->Name, name);
 
 
 		NumProcesses++;

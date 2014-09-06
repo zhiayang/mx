@@ -47,7 +47,7 @@ namespace Virtual
 
 
 	// this models (exactly) the FPL pair system of the physical allocator.
-	uint64_t AllocateVirtual(uint64_t size, uint64_t addr, VirtualAddressSpace* v)
+	uint64_t AllocateVirtual(uint64_t size, uint64_t addr, VirtualAddressSpace* v, uint64_t phys)
 	{
 		Multitasking::Process* proc = Multitasking::GetCurrentProcess();
 		assert(proc);
@@ -102,7 +102,7 @@ namespace Virtual
 					found->length = found->length - size;
 				}
 
-				// Log("Allocated %x virtual as requested", addr);
+				vas->used->push_back(new ALPPair(addr, size, phys));
 				return addr;
 			}
 
@@ -129,12 +129,15 @@ namespace Virtual
 			uint64_t ret = pair->start;
 			pair->start += (size * 0x1000);
 			pair->length -= size;
+			vas->used->push_back(new ALPPair(ret, size, phys));
 			return ret;
 		}
 		else if(pair->length == size)
 		{
 			uint64_t ret = pair->start;
 			delete vas->pairs->pop_front();
+
+			vas->used->push_back(new ALPPair(ret, size, phys));
 			return ret;
 		}
 		else
@@ -163,12 +166,16 @@ namespace Virtual
 					uint64_t ret = found->start;
 					found->length -= size;
 					found->start += (size * 0x1000);
+
+					vas->used->push_back(new ALPPair(ret, size, phys));
 					return ret;
 				}
 				else
 				{
 					uint64_t ret = found->start;
 					delete found;
+
+					vas->used->push_back(new ALPPair(ret, size, phys));
 					return ret;
 				}
 			}
@@ -221,10 +228,36 @@ namespace Virtual
 		return vas;
 	}
 
+	void DestroyVAS(VirtualAddressSpace* vas)
+	{
+		// free every phys page in vas->used
+		// delete pair objects from both lists
+		// delete both lists
+
+		assert(vas);
+		assert(vas->used);
+		assert(vas->pairs);
+
+		for(ALPPair* pair : *vas->used)
+		{
+			if(pair->phys > 0)
+				Physical::FreePage(pair->phys, pair->length);
+
+			delete pair;
+		}
+
+		for(AddressLengthPair* pair : *vas->pairs)
+			delete pair;
+
+		delete vas->pairs;
+		delete vas->used;
+		delete vas;
+	}
+
 	uint64_t AllocatePage(uint64_t size, uint64_t addr, uint64_t flags)
 	{
 		uint64_t phys = Physical::AllocatePage(size);
-		uint64_t virt = AllocateVirtual(size, addr);
+		uint64_t virt = AllocateVirtual(size, addr, 0, phys);
 
 		MapRegion(virt, phys, size, flags);
 
@@ -233,8 +266,34 @@ namespace Virtual
 
 	void FreePage(uint64_t addr, uint64_t size)
 	{
-		uint64_t phys = GetMapping(addr, 0);
+		// freepage should only be called with a return from allocatepage
+		// we got to do some work here
+		// look through the vas pairs, looking for one that fits our description.
+		ALPPair* pair = 0;
+
+		Multitasking::Process* proc = Multitasking::GetCurrentProcess();
+		assert(proc);
+
+		VirtualAddressSpace* vas = proc->VAS;
+		assert(vas);
+
+		for(ALPPair* p : *vas->used)
+		{
+			if(p->start == addr && p->length == size)
+			{
+				pair = p;
+				break;
+			}
+		}
+
+		assert(pair);
+
+		uint64_t phys = pair->phys;
+		assert(phys > 0);
+
 		Physical::FreePage(phys, size);
+		Virtual::FreeVirtual(addr, size);
+
 		UnmapRegion(addr, size);
 	}
 
@@ -641,7 +700,7 @@ namespace Virtual
 		// we need to throw this address (aka pointer) into the created things.
 
 		PageMapStructure* PML4 = (PageMapStructure*) Physical::AllocateFromReserved();
-		memset(PML4, 0, 0x1000);
+		Memory::Set(PML4, 0, 0x1000);
 
 		Virtual::MapAddress((uint64_t) PML4, (uint64_t) PML4, 0x03);
 		PML4->Entry[I_RECURSIVE_SLOT] = (uint64_t) PML4 | I_Present | I_ReadWrite;

@@ -191,7 +191,7 @@ namespace Physical
 
 		uint64_t ret = ReservedRegionForVMM + ReservedRegionIndex;
 		ReservedRegionIndex += 0x1000;
-		Library::Memory::Set((void*) ret, 0x00, 0x1000);
+		Memory::Set((void*) ret, 0x00, 0x1000);
 		return ret;
 	}
 

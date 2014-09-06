@@ -57,8 +57,6 @@ namespace HardwareAbstraction
 			size_t tlssize;
 
 			Filesystems::IOContext* iocontext;
-
-			Library::Vector<uint64_t>* AllocatedPageList;
 			MemoryManager::Virtual::VirtualAddressSpace* VAS;
 			sighandler_t* SignalHandlers;
 
@@ -146,14 +144,13 @@ namespace HardwareAbstraction
 		void WakeForMessage(Thread* Thread);
 
 
+		// lol @ overloads
 		Thread* CreateThread(Process* Parent, void (*Function)(), uint8_t Priority = 1, void* p1 = 0, void* p2 = 0, void* p3 = 0, void* p4 = 0, void* p5 = 0, void* p6 = 0) __attribute__ ((warn_unused_result));
 
 		Thread* CreateThread(Process* Parent, void (*Function)(), Thread_attr* attribs)
 			__attribute__ ((warn_unused_result));
 
 		Thread* CreateKernelThread(void (*Function)(), uint8_t Priority = 1, void* p1 = 0, void* p2 = 0, void* p3 = 0, void* p4 = 0, void* p5 = 0, void* p6 = 0) 	__attribute__ ((warn_unused_result));
-
-
 
 		Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)())
 			__attribute__ ((warn_unused_result));
@@ -163,7 +160,6 @@ namespace HardwareAbstraction
 
 		Process* CreateProcess(const char name[64], uint8_t Flags, size_t tlssize, void (*Function)(), uint8_t prio = 1, void* a1 = 0, void* a2 = 0, void* a3 = 0, void* a4 = 0, void* a5 = 0, void* a6 = 0)
 			__attribute__ ((warn_unused_result));
-
 
 
 

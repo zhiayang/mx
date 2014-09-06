@@ -38,7 +38,10 @@ namespace Multitasking
 		// todo: better blocking
 		Thread* t = GetThread(tid);
 		if(t == 0)
-			errno = EINVAL;
+		{
+			// todo: errno
+			// errno = EINVAL;
+		}
 
 		void* retval = 0;
 
@@ -55,7 +58,10 @@ namespace Multitasking
 	{
 		volatile Thread* volatile t = GetThread(tid);
 		if(t == 0)
-			errno = EINVAL;
+		{
+			// todo: errno
+			// errno = EINVAL;
+		}
 
 		t->flags |= FLAG_DETACHED;
 	}
@@ -97,7 +103,35 @@ namespace Multitasking
 
 
 
+	void Cleanup(Thread* t)
+	{
+		// delete all the thread's resources.
+		assert(t);
 
+		if(t->messagequeue)		delete t->messagequeue;
+		if(t->watching)			delete t->watching;
+		if(t->watchers)			delete t->watchers;
+		if(t->CrashState)		delete t->CrashState;
+
+		delete t;
+	}
+
+	void Cleanup(Process* p)
+	{
+		// todo: close all file handles
+		// todo: delete ioctx
+
+		assert(p);
+		assert(p->Threads);
+		assert(p->Threads->size() == 0);
+		delete p->Threads;
+
+		// destroy its address space
+		assert(p->VAS);
+		MemoryManager::Virtual::DestroyVAS(p->VAS);
+
+		delete p;
+	}
 
 
 
@@ -368,17 +402,17 @@ namespace Multitasking
 		LinkedList<Thread>* list = new LinkedList<Thread>();
 		for(uint64_t s = 0; s < ThreadList_HighPrio->size(); s++)
 		{
-			if(strcmp(n, ThreadList_HighPrio->get(s)->Parent->Name) == 0)
+			if(String::Compare(n, ThreadList_HighPrio->get(s)->Parent->Name) == 0)
 				list->push_front(ThreadList_HighPrio->get(s));
 		}
 		for(uint64_t s = 0; s < ThreadList_HighPrio->size(); s++)
 		{
-			if(strcmp(n, ThreadList_NormPrio->get(s)->Parent->Name) == 0)
+			if(String::Compare(n, ThreadList_NormPrio->get(s)->Parent->Name) == 0)
 				list->push_front(ThreadList_NormPrio->get(s));
 		}
 		for(uint64_t s = 0; s < ThreadList_LowPrio->size(); s++)
 		{
-			if(strcmp(n, ThreadList_LowPrio->get(s)->Parent->Name) == 0)
+			if(String::Compare(n, ThreadList_LowPrio->get(s)->Parent->Name) == 0)
 				list->push_front(ThreadList_LowPrio->get(s));
 		}
 
@@ -387,7 +421,7 @@ namespace Multitasking
 
 		for(uint64_t s = 0; s < SleepList->size(); s++)
 		{
-			if(strcmp(n, SleepList->get(s)->Parent->Name) == 0)
+			if(String::Compare(n, SleepList->get(s)->Parent->Name) == 0)
 				list->push_front(SleepList->get(s));
 		}
 

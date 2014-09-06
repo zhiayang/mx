@@ -164,7 +164,7 @@ namespace Kernel
 			uint64_t a = (uint64_t) K_MemoryMap;
 			uint32_t s = K_MemoryMap->SizeOfThisStructure;
 			K_MemoryMap = (MemoryMap::MemoryMap_type*) Allocate_G(K_MemoryMap->SizeOfThisStructure + sizeof(uint64_t));
-			Library::Memory::CopyOverlap((void*) K_MemoryMap, (void*) a, s);
+			Memory::CopyOverlap((void*) K_MemoryMap, (void*) a, s);
 			Log("Memory map relocation complete");
 		}
 
