@@ -48,7 +48,7 @@ CXXDEPS	= $(CXXOBJ:.o=.d)
 
 
 
-LIBRARIES         = -lstdc++ -liris -lm -lsyscall -lsupc++ -lgcc -lrdestl
+LIBRARIES         = -liris -lm -lsyscall -lsupc++ -lgcc -lrdestl
 OUTPUT            = build/kernel.mxa
 
 

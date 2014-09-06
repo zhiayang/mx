@@ -28,6 +28,7 @@ mkdir -p $SYSROOT/usr/include/
 mkdir -p $SYSROOT/usr/lib
 
 cp -r Libraries/libc/include/* $SYSROOT/usr/include/
+cp -r Libraries/libsyscall/syscall.h $SYSROOT/usr/include/sys/
 cp -r Libraries/libm/include/* $SYSROOT/usr/include/
 
 
@@ -71,21 +72,27 @@ make -j$THREADS all-gcc &> /dev/null
 echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Building libgcc${_NORMAL}"
 make -j$THREADS all-target-libgcc &> /dev/null
 
+echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}Installing gcc and libgcc${_NORMAL}"
+make -j$THREADS install-gcc &> /dev/null
+make -j$THREADS install-target-libgcc &> /dev/null
+
+echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Building [mx] libc${_NORMAL}"
+make -C ../../Libraries/libc
+
+
 echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Building libstdc++${_NORMAL}"
 make -j$THREADS all-target-libstdc++-v3 &> /dev/null
 
 
-echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}Installing gcc${_NORMAL}"
-make -j$THREADS install-gcc &> /dev/null
-make -j$THREADS install-target-libgcc &> /dev/null
-make -j$THREADS install &> /dev/null
+echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}Installing libstdc++${_NORMAL}"
+make -j$THREADS install-target-libstdc++-v3 &> /dev/null
 
 cd ..
 cd ..
 
 
-# rm -rf build/build-bin
-# rm -rf build/build-gcc
+rm -rf build/build-bin
+rm -rf build/build-gcc
 
 if [ -f build/disk.img ]; then
 	exit
