@@ -66,6 +66,8 @@ elif [ `uname` = "Linux" ]; then
 
 	umount mnt/disk
 	cat build/mbr.img build/fs.img > $DISKNAME
+
+	mkdir -p build/mnt/mx
 fi
 
 
