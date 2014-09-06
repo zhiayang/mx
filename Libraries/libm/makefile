@@ -365,7 +365,7 @@ OBJS:=$(OBJS:.S=.o)
 
 BINS:=libm.a
 
-all: libs
+all: libs install
 
 libs: $(BINS)
 
@@ -379,33 +379,33 @@ arch/i387/s_modf.o: src/s_modf.c
 headers:
 
 libm.a: $(OBJS)
-	$(HOSTAR) rcs $@ $(OBJS)
+	@$(HOSTAR) rcs $@ $(OBJS)
 
 %.o: %.S
-	$(HOSTCC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
+	@$(HOSTCC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
 
 %.o: %.c
-	$(HOSTCC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
+	@$(HOSTCC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
 
 clean:
-	rm -f $(BINS) $(OBJS) $(ARCH_SUBDIR)/*.o src/*.o */*.o arch/*/*.o
+	@rm -f $(BINS) $(OBJS) $(ARCH_SUBDIR)/*.o src/*.o */*.o arch/*/*.o
 
 # Installation into sysroot
 install: install-headers install-libm
 
 install-include-dirs: headers
-	mkdir -p $(DESTDIR)$(INCLUDEDIR)
-	mkdir -p $(DESTDIR)$(INCLUDEDIR)/$(HOST)
-	mkdir -p $(DESTDIR)$(INCLUDEDIR)/$(HOST)/machine
+	@mkdir -p $(DESTDIR)$(INCLUDEDIR)
+	@mkdir -p $(DESTDIR)$(INCLUDEDIR)/$(HOST)
+	@mkdir -p $(DESTDIR)$(INCLUDEDIR)/$(HOST)/machine
 
 install-headers: install-include-dirs headers
-	gcp -RTv include $(DESTDIR)$(INCLUDEDIR)
-	gcp -v $(ARCH_MACHINE_HEADERS) $(DESTDIR)$(INCLUDEDIR)/$(HOST)/machine
+	@cp -R include $(DESTDIR)$(INCLUDEDIR)
+	@cp $(ARCH_MACHINE_HEADERS) $(DESTDIR)$(INCLUDEDIR)/$(HOST)/machine
 
 install-libs: install-libm
 
 install-libm-dirs:
-	mkdir -p $(DESTDIR)$(LIBDIR)
+	@mkdir -p $(DESTDIR)$(LIBDIR)
 
 install-libm: install-libm-dirs libm.a
-	gcp -P libm.a $(DESTDIR)$(LIBDIR)
+	@cp -P libm.a $(DESTDIR)$(LIBDIR)
