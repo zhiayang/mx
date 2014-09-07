@@ -82,7 +82,14 @@ namespace Multitasking
 		}
 
 		if(r == nullptr)
-			HALT("wtfs");
+		{
+			// error recovery: switch to the kernel thread
+			CurrentThread = KernelProcess->Threads->front();
+			r = CurrentThread;
+			assert(r);
+
+			// HALT("wtfs");
+		}
 
 		return r;
 	}

@@ -37,6 +37,7 @@ namespace NIC
 	{
 		public:
 			RTL8139(PCI::PCIDevice* pcidev);
+			~RTL8139();
 			void Reset();
 			void SendData(uint8_t* data, uint64_t bytes);
 			uint8_t* ReceiveData(uint8_t* data, uint64_t bytes);

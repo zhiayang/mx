@@ -5,16 +5,23 @@
 #pragma once
 #include <stdint.h>
 #include <String.hpp>
+#include <List.hpp>
 
 namespace Kernel
 {
+	namespace HardwareAbstraction {
+	namespace Multitasking
+	{
+		struct Thread;
+	}
+	}
+
 	class Mutex
 	{
 		public:
-			uint64_t owner = 0;
+			Library::LinkedList<HardwareAbstraction::Multitasking::Thread>* contestants;
+			HardwareAbstraction::Multitasking::Thread* owner = 0;
 			uint64_t recursion = 0;
-			uint64_t* contestants = 0;
-			uint64_t numcontestants = 0;
 			uint64_t lock = false;
 	};
 

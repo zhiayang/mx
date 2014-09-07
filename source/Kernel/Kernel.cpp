@@ -392,8 +392,8 @@ namespace Kernel
 				PrintFormatted("locking mutex\n");
 				LOCK(test);
 
-				PrintFormatted("sleeping for 5 seconds\n");
-				SLEEP(5000);
+				PrintFormatted("sleeping for 2 seconds\n");
+				SLEEP(2000);
 				PrintFormatted("lock released\n");
 				UNLOCK(test);
 			};
@@ -405,7 +405,7 @@ namespace Kernel
 				PrintFormatted("trying mutex\n");
 
 				while(!Mutexes::TryLockMutex(test))
-					PrintFormatted("boo\n");
+					PrintFormatted("x");
 
 				PrintFormatted("locked!\n");
 				UNLOCK(test);
