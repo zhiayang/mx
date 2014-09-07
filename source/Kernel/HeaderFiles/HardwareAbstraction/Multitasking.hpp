@@ -9,7 +9,7 @@
 #include "IPC.hpp"
 #include "MemoryManager/Virtual.hpp"
 #include <List.hpp>
-#include <Mutexes.hpp>
+#include <Synchro.hpp>
 #include <Vector.hpp>
 #include <defs/_pthreadstructs.h>
 
@@ -161,13 +161,6 @@ namespace HardwareAbstraction
 		Process* CreateProcess(const char name[64], uint8_t Flags, size_t tlssize, void (*Function)(), uint8_t prio = 1, void* a1 = 0, void* a2 = 0, void* a3 = 0, void* a4 = 0, void* a5 = 0, void* a6 = 0)
 			__attribute__ ((warn_unused_result));
 
-
-
-		void LockMutex(uint64_t* Lock);
-		void UnlockMutex(uint64_t* Lock);
-
-		void LockMutex(Mutex* Lock);
-		void UnlockMutex(Mutex* Lock);
 	}
 }
 }

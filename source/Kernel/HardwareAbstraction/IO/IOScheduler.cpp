@@ -51,6 +51,8 @@ namespace IO
 				IOTransfer req = Transfers->front();
 				Transfers->pop_front();
 
+				UNLOCK(listmtx);
+
 				assert(req.completed == false);
 				assert(req.device);
 				assert(req.owningthread);
@@ -73,8 +75,6 @@ namespace IO
 					assert(req.owningthread);
 					Multitasking::WakeForMessage(req.owningthread);
 				}
-
-				UNLOCK(listmtx);
 			}
 		}
 	}

@@ -11,7 +11,7 @@
 #include <ConfigFile.hpp>
 #include <Console.hpp>
 #include <Time.hpp>
-#include <Mutexes.hpp>
+#include <Synchro.hpp>
 #include <Kernel.hpp>
 
 #include <List.hpp>

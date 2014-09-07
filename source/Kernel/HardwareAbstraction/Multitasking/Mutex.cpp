@@ -9,44 +9,23 @@
 
 namespace Kernel {
 
+AutoMutex::AutoMutex(Mutex* l) { lock = l; Mutexes::LockMutex(l); }
+AutoMutex::AutoMutex(const AutoMutex& m) { this->lock = m.lock; Mutexes::LockMutex(this->lock); }
+AutoMutex::~AutoMutex() { Mutexes::UnlockMutex(lock); }
+
 // Mutex list
 namespace Mutexes
 {
-	Mutex* ConsoleOutput;
-	Mutex* SystemTime;
-	Mutex* KernelHeap;
-	Mutex* SerialLog;
-	Mutex* WindowDispatcher;
-	Mutex* TestMutex;
-
-	void Initialise()
-	{
-		// initialise the mutexes.
-		Mutexes::ConsoleOutput = new Mutex();
-		Mutexes::KernelHeap = new Mutex();
-		Mutexes::SystemTime = new Mutex();
-		Mutexes::SerialLog = new Mutex();
-		Mutexes::WindowDispatcher = new Mutex();
-
-		Mutexes::TestMutex = new Mutex();
-	}
-}
-
-AutoMutex::AutoMutex(Mutex* l) { lock = l; HardwareAbstraction::Multitasking::LockMutex(l); }
-AutoMutex::AutoMutex(const AutoMutex& m) { this->lock = m.lock; HardwareAbstraction::Multitasking::LockMutex(this->lock); }
-AutoMutex::~AutoMutex() { HardwareAbstraction::Multitasking::UnlockMutex(lock); }
-
-static const uint8_t MaxContestants = 32;
-
-namespace HardwareAbstraction {
-namespace Multitasking
-{
+	using namespace Kernel::HardwareAbstraction::Multitasking;
+	static const uint8_t MaxContestants = 32;
 	void LockMutex(Mutex* Lock)
 	{
 		if(NumThreads <= 1){ return; }
 
+		assert(Lock);
+
 		// check if we already own this mutex
-		if(Lock->owner == GetCurrentThread()->ThreadID && Lock->lock)
+		if(Lock->owner == GetCurrentThread() && Lock->lock)
 		{
 			Lock->recursion++;
 			return;
@@ -54,34 +33,33 @@ namespace Multitasking
 
 		if(Lock->lock)
 		{
-			if(Lock->numcontestants == MaxContestants)
+			if(Lock->contestants && Lock->contestants->size() >= MaxContestants)
 			{
-				while(Lock->numcontestants == MaxContestants)
+				while(Lock->contestants->size() >= MaxContestants)
 					YieldCPU();
 			}
 
 			if(!Lock->contestants)
-				Lock->contestants = new uint64_t[MaxContestants];
+				Lock->contestants = new Library::LinkedList<Thread>();
 
-			Lock->contestants[Lock->numcontestants] = GetCurrentThread()->ThreadID;
-			Lock->numcontestants++;
+			Lock->contestants->push_back(GetCurrentThread());
 		}
 
-		while(Lock->lock)
+		while(__sync_lock_test_and_set(&Lock->lock, 1))
 			BLOCK();
 
-		Lock->lock = true;
-		Lock->owner = GetCurrentThread()->ThreadID;
+		__sync_lock_test_and_set(&Lock->lock, 1);
+		Lock->owner = GetCurrentThread();
 		Lock->recursion = 1;
 	}
 
 	void UnlockMutex(Mutex* Lock)
 	{
 		if(NumThreads <= 1){ return; }
+		assert(Lock);
 
-		if(Lock->owner != GetCurrentThread()->ThreadID)
+		if(Lock->owner != GetCurrentThread())
 			return;
-
 
 		// check if this is but one dream in the sequence
 		if(Lock->recursion > 1)
@@ -90,21 +68,35 @@ namespace Multitasking
 			return;
 		}
 
-		uint64_t nc = Lock->numcontestants;
-		uint64_t o = Lock->owner;
+		Thread* o = Lock->owner;
 
 		Lock->owner = 0;
 		Lock->recursion = 0;
-		Lock->lock = false;
-		Lock->numcontestants = 0;
+		__sync_lock_release(&Lock->lock);
 
-		for(uint64_t i = 0; i < nc; i++)
+		if(Lock->contestants && Lock->contestants->size() > 0)
 		{
-			if(Lock->contestants[i] != o)
-				Multitasking::WakeForMessage(Multitasking::GetThread(Lock->contestants[i]));
+			if(Lock->contestants->front() != o)
+				WakeForMessage(Lock->contestants->pop_front());
+
+			else
+				Lock->contestants->pop_front();
 		}
 	}
-}
+
+	bool TryLockMutex(Mutex* Lock)
+	{
+		// if current was 1, since CheckLock gives us the old value then it's still locked.
+		// since this is a trylock, return.
+		if(__sync_lock_test_and_set(&Lock->lock, 1))
+			return false;
+
+		Lock->owner = GetCurrentThread();
+		Lock->recursion = 1;
+
+		// if not, we already locked it.
+		return true;
+	}
 }
 }
 
