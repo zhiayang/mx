@@ -58,7 +58,6 @@ int main(int argc, char** argv)
 	signal(SIGKILL, sh);
 	printf("errno: %d\n", errno);
 
-
 	raise(51);
 
 	printf("created thread with id %ld\n", thrid);

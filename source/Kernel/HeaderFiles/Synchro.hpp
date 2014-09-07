@@ -23,6 +23,7 @@ namespace Kernel
 			HardwareAbstraction::Multitasking::Thread* owner = 0;
 			uint64_t recursion = 0;
 			uint64_t lock = false;
+			uint64_t type = 0;
 	};
 
 	class AutoMutex

@@ -45,6 +45,13 @@ namespace Library
 		void* JoinThread(uint64_t tid);
 		pthread_t GetTID();
 
+		void CreateMutex(pthread_mutex_t* mtx, const pthread_mutexattr_t* attr);
+		void DestroyMutex(pthread_mutex_t* mtx);
+		int64_t LockMutex(pthread_mutex_t* mtx);
+		int64_t UnlockMutex(pthread_mutex_t* mtx);
+		int64_t TryLockMutex(pthread_mutex_t* mtx);
+
+
 		uint64_t Open(const char* path, uint64_t flags);
 		void Close(uint64_t fd);
 		uint64_t Read(uint64_t sd, void* buffer, uint64_t length);

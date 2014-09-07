@@ -41,6 +41,12 @@ HandleSyscall:
 
 		the Syscall* functions take the syscall parameter *LAST* in order to reduce work and register shifting.
 		If you're going to program in ASM, you should be smart enough to figure out the calling convention.
+
+		Indeed, calling the C function preserves the following registers for you:
+		rbx, rsp, rbp, r12, r13, r14, r15
+
+		However, we use %r13 to transmit errno information.
+		So there.
 	*/
 
 	push %rbp
@@ -209,16 +215,24 @@ GetThisTID:
 	call Syscall_GetTID
 	jmp CleanUp
 
+CreateMutex:
+	call Syscall_CreateMutex
+	jmp CleanUp
+
+DestroyMutex:
+	call Syscall_DestroyMutex
+	jmp CleanUp
+
 LockMutex:
-	// call Syscall_LockMutex
+	call Syscall_LockMutex
 	jmp CleanUp
 
 UnlockMutex:
-	// call Syscall_UnlockMutex
+	call Syscall_UnlockMutex
 	jmp CleanUp
 
 TryLockMutex:
-	// call Syscall_TryLockMutex
+	call Syscall_TryLockMutex
 	jmp CleanUp
 
 
@@ -300,9 +314,11 @@ SyscallTable1:
 	.quad	__ExitThread			// 4012
 	.quad	JoinThread			// 4013
 	.quad	GetThisTID			// 4014
-	.quad	LockMutex			// 4015
-	.quad	UnlockMutex			// 4016
-	.quad	TryLockMutex			// 4017
+	.quad	CreateMutex			// 4015
+	.quad	DestroyMutex			// 4016
+	.quad	LockMutex			// 4017
+	.quad	UnlockMutex			// 4018
+	.quad	TryLockMutex			// 4019
 EndSyscallTable1:
 
 

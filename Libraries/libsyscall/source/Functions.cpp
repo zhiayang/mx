@@ -30,6 +30,12 @@ namespace SystemCall
 		.quad	ExitThread			// 4012
 		.quad	JoinThread			// 4013
 		.quad	GetTID				// 4014
+		.quad	CreateMutex			// 4015
+		.quad	DestroyMutex			// 4016
+		.quad	LockMutex			// 4017
+		.quad	UnlockMutex			// 4018
+		.quad	TryLockMutex			// 4019
+
 
 		// file io things, page 8000+
 		.quad	OpenFile			// 8000
@@ -134,6 +140,49 @@ namespace SystemCall
 	{
 		return (pthread_t) Syscall0Param(4014);
 	}
+
+
+	void CreateMutex(pthread_mutex_t* mtx, const pthread_mutexattr_t* attr)
+	{
+		Syscall2Param((uintptr_t) mtx, (uintptr_t) attr, 4015);
+	}
+
+	void DestroyMutex(pthread_mutex_t* mtx)
+	{
+		Syscall1Param((uintptr_t) mtx, 4016);
+	}
+
+	int64_t LockMutex(pthread_mutex_t* mtx)
+	{
+		return Syscall1Param((uintptr_t) mtx, 4017);
+	}
+
+	int64_t UnlockMutex(pthread_mutex_t* mtx)
+	{
+		return Syscall1Param((uintptr_t) mtx, 4018);
+	}
+
+	int64_t TryLockMutex(pthread_mutex_t* mtx)
+	{
+		return Syscall1Param((uintptr_t) mtx, 4019);
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	// 8000, 8001
 
