@@ -45,9 +45,8 @@ namespace Kernel
 	class Semaphore
 	{
 		public:
+			Semaphore(uint64_t maxval) : value(maxval) { }
 			Library::LinkedList<HardwareAbstraction::Multitasking::Thread>* contestants = 0;
-			HardwareAbstraction::Multitasking::Thread* owner = 0;
-			uint64_t recursion = 0;
 			int64_t value = 0;
 	};
 
