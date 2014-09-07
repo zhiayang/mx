@@ -40,8 +40,6 @@ namespace Kernel
 
 		// if(tm.length() > 0)
 		// 	tm.insert(0, " - ");
-
-		LOCK(Mutexes::SerialLog);
 		switch(level)
 		{
 			case 0:
@@ -73,8 +71,6 @@ namespace Kernel
 				PrintString("\n", -1, pfsc);
 				break;
 		}
-
-		UNLOCK(Mutexes::SerialLog);
 	}
 
 	void Log(uint8_t level, const char* str, ...)

@@ -39,6 +39,7 @@ pid_t getpid();
 
 off_t lseek(int fildes, off_t offset, int whence);
 
+int usleep(useconds_t usec);
 
 #ifdef __cplusplus
 }

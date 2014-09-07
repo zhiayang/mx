@@ -15,9 +15,7 @@
 #include <HardwareAbstraction/LoadBinary.hpp>
 #include <ConfigFile.hpp>
 #include <Bootscreen.hpp>
-#include <Symbolicate.hpp>
 #include "../../.build.h"
-
 
 using namespace Kernel;
 using namespace Kernel::HardwareAbstraction;
@@ -73,6 +71,10 @@ namespace Kernel
 	static uint64_t VER_MINOR;
 	static uint64_t VER_REVSN;
 	static uint64_t VER_MINRV;
+
+
+	// test
+	static Mutex* test;
 
 
 	HardwareAbstraction::MemoryManager::MemoryMap::MemoryMap_type* K_MemoryMap;
@@ -136,7 +138,6 @@ namespace Kernel
 		Interrupts::Initialise();
 		Console80x25::Initialise();
 		PIT::Initialise();
-		Mutexes::Initialise();
 
 		// detect and print SSE support.
 		// Why?
@@ -362,22 +363,59 @@ namespace Kernel
 		}
 
 		Console::ClearScreen();
-		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
+		// Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
+		// {
+		// 	// setup args:
+		// 	// 0: prog name (duh)
+		// 	// 1: FB address
+		// 	// 2: width
+		// 	// 3: height
+		// 	// 4: bpp (32)
+
+		// 	const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
+		// 	auto proc = LoadBinary::Load(path, "displayd",
+		// 		(void*) 5, (void*) new uint64_t[5] { (uint64_t) path, GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
+
+		// 	proc->Threads->get(0)->Priority = 2;
+		// 	Multitasking::AddToQueue(proc);
+		// }
+
+
+		PrintFormatted("mutex tests\n");
 		{
-			// setup args:
-			// 0: prog name (duh)
-			// 1: FB address
-			// 2: width
-			// 3: height
-			// 4: bpp (32)
+			test = new Mutex;
+			auto func1 = []()
+			{
+				PrintFormatted("locking mutex\n");
+				LOCK(test);
 
-			const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
-			auto proc = LoadBinary::Load(path, "displayd",
-				(void*) 5, (void*) new uint64_t[5] { (uint64_t) path, GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
+				PrintFormatted("sleeping for 2 seconds\n");
+				SLEEP(2000);
+				PrintFormatted("lock released\n");
+				UNLOCK(test);
+			};
 
-			proc->Threads->get(0)->Priority = 2;
-			Multitasking::AddToQueue(proc);
+			auto func2 = []()
+			{
+				PrintFormatted("waiting for lock...");
+				SLEEP(1000);
+				PrintFormatted("trying mutex\n");
+
+				while(!Mutexes::TryLockMutex(test))
+					PrintFormatted("x");
+
+				PrintFormatted("locked!\n");
+				UNLOCK(test);
+			};
+
+			Multitasking::AddToQueue(Multitasking::CreateKernelThread(func2));
+			Multitasking::AddToQueue(Multitasking::CreateKernelThread(func1));
 		}
+
+
+
+
+
 
 		Log("Starting console...");
 		{
