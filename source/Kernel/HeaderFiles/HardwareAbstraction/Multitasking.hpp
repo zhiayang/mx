@@ -9,7 +9,7 @@
 #include "IPC.hpp"
 #include "MemoryManager/Virtual.hpp"
 #include <List.hpp>
-#include <Mutexes.hpp>
+#include <Synchro.hpp>
 #include <Vector.hpp>
 #include <defs/_pthreadstructs.h>
 

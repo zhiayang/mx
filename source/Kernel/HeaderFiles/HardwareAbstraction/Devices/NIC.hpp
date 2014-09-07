@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 #include "PCI.hpp"
-#include <Mutexes.hpp>
+#include <Synchro.hpp>
 #pragma once
 
 namespace Kernel {

@@ -15,9 +15,7 @@
 #include <HardwareAbstraction/LoadBinary.hpp>
 #include <ConfigFile.hpp>
 #include <Bootscreen.hpp>
-#include <Symbolicate.hpp>
 #include "../../.build.h"
-
 
 using namespace Kernel;
 using namespace Kernel::HardwareAbstraction;
@@ -140,7 +138,6 @@ namespace Kernel
 		Interrupts::Initialise();
 		Console80x25::Initialise();
 		PIT::Initialise();
-		Mutexes::Initialise();
 
 		// detect and print SSE support.
 		// Why?
