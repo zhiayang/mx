@@ -34,6 +34,8 @@ namespace Console
 
 	const uint16_t OffsetLeft = 4;
 
+	static Mutex* mtx;
+
 	void Initialise()
 	{
 		CharsPerLine = (GetResX() - OffsetLeft) / CharWidth - 1;
@@ -41,6 +43,8 @@ namespace Console
 		CharsPerColumn = CharsPerPage / CharsPerLine;
 
 		VT_DidInit = true;
+
+		mtx = new Mutex();
 	}
 
 	bool IsInitialised()
@@ -61,7 +65,7 @@ namespace Console
 			return;
 		}
 
-		AutoMutex lk = AutoMutex(Mutexes::ConsoleOutput);
+		AutoMutex lk = AutoMutex(mtx);
 
 		if(c == '\r')
 		{
@@ -216,7 +220,7 @@ namespace Console
 	{
 		if(x <= CharsPerLine && y <= CharsPerColumn)
 		{
-			AutoMutex lk = AutoMutex(Mutexes::ConsoleOutput);
+			AutoMutex lk = AutoMutex(mtx);
 			VT_CursorX = x;
 			VT_CursorY = y;
 		}

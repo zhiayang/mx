@@ -1,4 +1,4 @@
-// Mutexes.hpp
+// Synchro.hpp
 // Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
@@ -36,16 +36,27 @@ namespace Kernel
 
 	namespace Mutexes
 	{
-		void Initialise();
-		extern Mutex* ConsoleOutput;
-		extern Mutex* SystemTime;
-		extern Mutex* KernelHeap;
-		extern Mutex* SerialLog;
-		extern Mutex* WindowDispatcher;
-		extern Mutex* TestMutex;
-
 		bool TryLockMutex(Mutex* lock);
 		void LockMutex(Mutex* lock);
 		void UnlockMutex(Mutex* lock);
 	}
+
+	namespace Semaphores
+	{
+
+	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

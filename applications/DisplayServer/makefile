@@ -13,7 +13,6 @@ all: $(CXXOPT)
 	@:
 
 $(CXXOPT): $(CXXSRC) $(SYSROOT)/usr/lib/libc.a
-	@echo $(MOUNTPATH)
 	@$(CXX) $(CXXFLAGS) -o $@ $(CXXSRC)
 	@$(STRIP) --strip-debug $(CXXOPT)
 	@echo "userspace: displayserver"
