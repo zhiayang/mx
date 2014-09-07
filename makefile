@@ -121,14 +121,14 @@ mountdisk:
 	@tools/mountdisk.sh
 
 cleandisk:
-	@find $(MOUNTPATH) -name "*.mxa" -exec rm {} \;
-	@find $(MOUNTPATH) -name "*.x" -exec rm {} \;
+	@find $(MOUNTPATH) -name "*.mxa" | xargs rm -f
+	@find $(MOUNTPATH) -name "*.x" | xargs rm -f
 
 clean: cleandisk
 	@echo "# Cleaning directory tree"
-	@find source -name "*.o" -exec rm {} \;
-	@find Libraries -name "*.o" -exec rm {} \;
-	@find Libraries -name "*.a" -exec rm {} \;
-	@find applications -name "*.o" -exec rm {} \;
-	@find source -name "*.cpp.d" -exec rm {} \;
+	@find source -name "*.o" | xargs rm -f
+	@find Libraries -name "*.o" | xargs rm -f
+	@find Libraries -name "*.a" | xargs rm -f
+	@find applications -name "*.o" | xargs rm -f
+	@find source -name "*.cpp.d" | xargs rm -f
 
