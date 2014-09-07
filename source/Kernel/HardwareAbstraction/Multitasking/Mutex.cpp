@@ -42,42 +42,45 @@ namespace Mutexes
 		if(NumThreads <= 1){ return; }
 
 		// check if we already own this mutex
-		if(Lock->owner == GetCurrentThread()->ThreadID && Lock->lock)
+		if(Lock->owner == GetCurrentThread() && Lock->lock)
 		{
 			Lock->recursion++;
 			return;
 		}
 
+		int64_t lindex = -1;
 		if(Lock->lock)
 		{
-			if(Lock->numcontestants == MaxContestants)
+			if(Lock->contestants && Lock->contestants->size() >= MaxContestants)
 			{
-				while(Lock->numcontestants == MaxContestants)
+				while(Lock->contestants->size() >= MaxContestants)
 					YieldCPU();
 			}
 
 			if(!Lock->contestants)
-				Lock->contestants = new uint64_t[MaxContestants];
+				Lock->contestants = new Library::LinkedList<Thread>();
 
-			Lock->contestants[Lock->numcontestants] = GetCurrentThread()->ThreadID;
-			Lock->numcontestants++;
+			lindex = Lock->contestants->size();
+			Lock->contestants->push_back(GetCurrentThread());
 		}
 
-		while(Lock->lock)
+		while(__sync_lock_test_and_set(&Lock->lock, 1))
 			BLOCK();
 
-		Lock->lock = true;
-		Lock->owner = GetCurrentThread()->ThreadID;
+		__sync_lock_test_and_set(&Lock->lock, 1);
+		Lock->owner = GetCurrentThread();
 		Lock->recursion = 1;
+
+		if(lindex >= 0)
+		Lock->contestants->RemoveAt(lindex);
 	}
 
 	void UnlockMutex(Mutex* Lock)
 	{
 		if(NumThreads <= 1){ return; }
 
-		if(Lock->owner != GetCurrentThread()->ThreadID)
+		if(Lock->owner != GetCurrentThread())
 			return;
-
 
 		// check if this is but one dream in the sequence
 		if(Lock->recursion > 1)
@@ -86,32 +89,32 @@ namespace Mutexes
 			return;
 		}
 
-		uint64_t nc = Lock->numcontestants;
-		uint64_t o = Lock->owner;
+		Thread* o = Lock->owner;
 
 		Lock->owner = 0;
 		Lock->recursion = 0;
-		Lock->lock = false;
-		Lock->numcontestants = 0;
+		__sync_lock_release(&Lock->lock);
 
-		for(uint64_t i = 0; i < nc; i++)
+		if(Lock->contestants)
 		{
-			if(Lock->contestants[i] != o)
-				WakeForMessage(GetThread(Lock->contestants[i]));
+			for(uint64_t i = 0; i < Lock->contestants->size(); i++)
+			{
+				Thread* t = Lock->contestants->get(i);
+
+				if(t != o)
+					WakeForMessage(t);
+			}
 		}
 	}
 
 	bool TryLockMutex(Mutex* Lock)
 	{
-		// uint64_t current = __sync_lock_test_and_set(&Lock->lock, 1);
-
 		// if current was 1, since CheckLock gives us the old value then it's still locked.
 		// since this is a trylock, return.
-		if(Lock->lock)
+		if(__sync_lock_test_and_set(&Lock->lock, 1))
 			return false;
 
-		Lock->lock = 1;
-		Lock->owner = GetCurrentThread()->ThreadID;
+		Lock->owner = GetCurrentThread();
 		Lock->recursion = 1;
 
 		// if not, we already locked it.
