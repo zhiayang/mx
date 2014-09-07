@@ -4,5 +4,5 @@ if [ `uname` = "Darwin" ]; then
 	echo "/Volumes/mx"
 
 elif [ `uname` = "Linux" ]; then
-	echo "build/mnt/mx"
+	echo "`pwd`/build/mnt/mx"
 fi
