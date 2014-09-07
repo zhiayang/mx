@@ -16,49 +16,91 @@
 .type Syscall4Param, @function
 .type Syscall5Param, @function
 
+// any errno set by a syscall is stored in 0x2610 and preserved across context switches.
+// so we access 0x2610 to get the errno.
+
 Syscall0Param:
 	mov %rdi, %r10
+	push %r13
 	int $0xF8
+
+	// save rax, then get the address of errno
+	push %rax
+	call __fetch_errno
+	mov %r13, (%rax)
+	pop %rax
+
+	pop %r13
 	ret
 
 Syscall1Param:
-	mov %rdi, %r10
-	mov %rsi, %rdi
+	mov %rsi, %r10
+	push %r13
 	int $0xF8
+
+	// save rax, then get the address of errno
+	push %rax
+	call __fetch_errno
+	mov %r13, (%rax)
+	pop %rax
+
+	pop %r13
 	ret
 
 Syscall2Param:
-	mov %rdi, %r10
-	mov %rsi, %rdi
-	mov %rdx, %rsi
+	mov %rdx, %r10
+	push %r13
 	int $0xF8
+
+	// save rax, then get the address of errno
+	push %rax
+	call __fetch_errno
+	mov %r13, (%rax)
+	pop %rax
+
+	pop %r13
 	ret
 
 Syscall3Param:
-	mov %rdi, %r10
-	mov %rsi, %rdi
-	mov %rdx, %rsi
-	mov %rcx, %rdx
+	mov %rcx, %r10
+	push %r13
 	int $0xF8
+
+	// save rax, then get the address of errno
+	push %rax
+	call __fetch_errno
+	mov %r13, (%rax)
+	pop %rax
+
+	pop %r13
 	ret
 
 Syscall4Param:
-	mov %rdi, %r10
-	mov %rsi, %rdi
-	mov %rdx, %rsi
-	mov %rcx, %rdx
-	mov %r8, %rcx
+	mov %r8, %r10
+	push %r13
 	int $0xF8
+
+	// save rax, then get the address of errno
+	push %rax
+	call __fetch_errno
+	mov %r13, (%rax)
+	pop %rax
+
+	pop %r13
 	ret
 
 Syscall5Param:
-	mov %rdi, %r10
-	mov %rsi, %rdi
-	mov %rdx, %rsi
-	mov %rcx, %rdx
-	mov %r8, %rcx
-	mov %r9, %r8
+	mov %r9, %r10
+	push %r13
 	int $0xF8
+
+	// save rax, then get the address of errno
+	push %rax
+	call __fetch_errno
+	mov %r13, (%rax)
+	pop %rax
+
+	pop %r13
 	ret
 
 

@@ -31,5 +31,12 @@ struct Thread_attr
 	struct ThreadRegisterState_type regs;
 };
 
+
+struct Mutex_attr
+{
+	uint64_t type;
+};
+
+
 __END_DECLS
 #endif
