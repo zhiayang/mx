@@ -129,6 +129,18 @@ typedef uint64_t pthread_t;
 typedef struct Thread_attr pthread_attr_t;
 #endif
 
+#ifndef __pthread_mutex_t
+#define __pthread_mutex_t
+typedef uint64_t pthread_mutex_t;
+#endif
+
+#ifndef __pthread_mutexattr_t
+#define __pthread_mutexattr_t
+typedef struct Mutex_attr pthread_mutexattr_t;
+#endif
+
+
+
 
 
 
