@@ -22,10 +22,43 @@ HandleSyscall:
 
 		Syscall number in %r10
 		Parameters in order of ABI.
+
+
+		Clobbering:
+		*NEVER* *EVER* *EVER* do int $0xF8 directly.
+		This *WILL* clobber registers that you do not expect.
+
+		The Syscall[0-5]Param() functions are declared with C linkage (ie. extern "C"), so ALWAYS call that if you're working
+		directly in ASM, eg.
+
+		mov <param1>, %rdi
+		mov <param2>, %rsi
+		mov <syscallvec>, %rdx
+		call Syscall2Param
+
+		mov %rax, <somewhere>
+		<etc>
+
+		the Syscall* functions take the syscall parameter *LAST* in order to reduce work and register shifting.
+		If you're going to program in ASM, you should be smart enough to figure out the calling convention.
+
+		Indeed, calling the C function preserves the following registers for you:
+		rbx, rsp, rbp, r12, r13, r14, r15
+
+		However, we use %r13 to transmit errno information.
+		So there.
 	*/
 
 	push %rbp
 	mov %rsp, %rbp
+
+	push %r10
+	push %rdi
+	push %rsi
+	push %rdx
+	push %rcx
+	push %r8
+	push %r9
 
 	// push a constant, so we know where to stop on stack backtrace.
 	pushq $0xFFFFFFFFFFFFFFFF
@@ -68,8 +101,6 @@ Page2:
 	jge Fail
 	jmp DoCall
 
-
-
 Page0:
 	// multiply %r10 by 8
 	// shift left by 3	(2^3 = 8)
@@ -85,7 +116,21 @@ DoCall:
 
 
 CleanUp:
+	// remove the constant we pushed
 	addq $8, %rsp
+
+	pop %r9
+	pop %r8
+	pop %rcx
+	pop %rdx
+	pop %rsi
+	pop %rdi
+	pop %r10
+
+	// any errno set by a syscall is stored in 0x2610 and preserved across context switches.
+	// since all accesses to this are done via asm, we can just fetch the value out in userspace.
+	movq 0x2610, %r13
+
 	pop %rbp
 	iretq
 
@@ -170,8 +215,24 @@ GetThisTID:
 	call Syscall_GetTID
 	jmp CleanUp
 
-CreateMessageQueue:
-	call IPC_CreateQueue
+CreateMutex:
+	call Syscall_CreateMutex
+	jmp CleanUp
+
+DestroyMutex:
+	call Syscall_DestroyMutex
+	jmp CleanUp
+
+LockMutex:
+	call Syscall_LockMutex
+	jmp CleanUp
+
+UnlockMutex:
+	call Syscall_UnlockMutex
+	jmp CleanUp
+
+TryLockMutex:
+	call Syscall_TryLockMutex
 	jmp CleanUp
 
 
@@ -253,7 +314,11 @@ SyscallTable1:
 	.quad	__ExitThread			// 4012
 	.quad	JoinThread			// 4013
 	.quad	GetThisTID			// 4014
-	.quad	CreateMessageQueue		// 4015
+	.quad	CreateMutex			// 4015
+	.quad	DestroyMutex			// 4016
+	.quad	LockMutex			// 4017
+	.quad	UnlockMutex			// 4018
+	.quad	TryLockMutex			// 4019
 EndSyscallTable1:
 
 

@@ -182,10 +182,10 @@ namespace Multitasking
 		thread->messagequeue			= new rde::list<uintptr_t>();
 		thread->Priority				= attr->priority;
 		thread->ExecutionTime			= 0;
-		thread->InstructionPointer		= 0;
 		thread->tlsptr				= new uint8_t[Parent->tlssize];
 		thread->CrashState			= new ThreadRegisterState_type;
 		thread->flags				= Parent->Flags;
+		thread->currenterrno			= 0;
 
 		Parent->Threads->push_front(thread);
 

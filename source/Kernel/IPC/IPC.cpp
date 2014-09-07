@@ -33,8 +33,7 @@ namespace IPC
 		if(signum >= __SIGCOUNT)
 		{
 			Log(1, "Invalid signal number, ignoring");
-			// errno = EINVAL;
-			// todo: errno
+			Multitasking::SetThreadErrno(EINVAL);
 			return;
 		}
 
@@ -43,8 +42,7 @@ namespace IPC
 		if(!thread || !thread->Parent)
 		{
 			Log(1, "Invalid target thread - %d", tid);
-			// errno = ESRCH;
-			// todo: errno
+			Multitasking::SetThreadErrno(ESRCH);
 			return;
 		}
 
@@ -120,7 +118,6 @@ namespace IPC
 		if(handler == (sighandler_t) 0)
 			handler = GetHandler(signum);
 
-
 		if(thread != Multitasking::GetCurrentThread())
 		{
 			uint64_t oldrip					= *((uint64_t*) (ptr + 120));
@@ -182,8 +179,7 @@ namespace IPC
 				push %r9		(+1)
 
 				// push a constant, so we know where to stop on stack backtrace.
-				pushq $0xFFFFFFFFFFFFFFFF
-
+				pushq $0xFADD00D15CAFED06
 
 				rbp now points to the -1 constant.
 				rbp + 1 is %r9
@@ -230,9 +226,6 @@ namespace IPC
 		assert(proc);
 		IPC_SignalThread(proc->Threads->get(0)->ThreadID, signum);
 	}
-
-
-
 
 	extern "C" int IPC_SendMessage(long key, void* msg, size_t size, uint64_t flags)
 	{
@@ -300,16 +293,14 @@ namespace IPC
 		if(signum >= __SIGCOUNT)
 		{
 			Log(1, "Error: invalid signal number %d", signum);
-			// errno = EINVAL;
-			// todo: errno
+			Multitasking::SetThreadErrno(EINVAL);
 			return SIG_ERR;
 		}
 
 		else if((signum == SIGKILL || signum == SIGSTOP) && handler != SIG_DFL)
 		{
 			Log(1, "Error: cannot override handler for signal %d, which is either SIGKILL or SIGSTOP", signum);
-			// errno = EINVAL;
-			// todo: errno
+			Multitasking::SetThreadErrno(EINVAL);
 			return SIG_ERR;
 		}
 
