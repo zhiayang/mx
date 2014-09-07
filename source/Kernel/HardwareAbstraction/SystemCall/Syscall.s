@@ -22,6 +22,25 @@ HandleSyscall:
 
 		Syscall number in %r10
 		Parameters in order of ABI.
+
+
+		Clobbering:
+		*NEVER* *EVER* *EVER* do int $0xF8 directly.
+		This *WILL* clobber registers that you do not expect.
+
+		The Syscall[0-5]Param() functions are declared with C linkage (ie. extern "C"), so ALWAYS call that if you're working
+		directly in ASM, eg.
+
+		mov <param1>, %rdi
+		mov <param2>, %rsi
+		mov <syscallvec>, %rdx
+		call Syscall2Param
+
+		mov %rax, <somewhere>
+		<etc>
+
+		the Syscall* functions take the syscall parameter *LAST* in order to reduce work and register shifting.
+		If you're going to program in ASM, you should be smart enough to figure out the calling convention.
 	*/
 
 	push %rbp
