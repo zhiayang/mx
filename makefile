@@ -15,9 +15,7 @@ export READELF	:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-readelf
 export STRIP		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-strip
 export AR		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-ar
 export RANLIB		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-ranlib
-export MOUNTPATH	:= $(shell $(CURDIR)/tools/getpath.sh)
-
-
+export MOUNTPATH	:= $(shell tools/getpath.sh)
 
 
 # we use clang only for the kernel, don't pollute makefiles
