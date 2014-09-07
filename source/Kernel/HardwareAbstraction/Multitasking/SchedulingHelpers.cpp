@@ -39,8 +39,7 @@ namespace Multitasking
 		Thread* t = GetThread(tid);
 		if(t == 0)
 		{
-			// todo: errno
-			// errno = EINVAL;
+			SetThreadErrno(EINVAL);
 		}
 
 		void* retval = 0;
@@ -59,8 +58,7 @@ namespace Multitasking
 		volatile Thread* volatile t = GetThread(tid);
 		if(t == 0)
 		{
-			// todo: errno
-			// errno = EINVAL;
+			SetThreadErrno(EINVAL);
 		}
 
 		t->flags |= FLAG_DETACHED;
@@ -133,6 +131,15 @@ namespace Multitasking
 		delete p;
 	}
 
+	void SetThreadErrno(int errno)
+	{
+		// set here in case we get switched
+		// the 'ol bait 'n' switch
+		GetCurrentThread()->currenterrno = errno;
+
+		// set here for return asm to find.
+		*((int64_t*) 0x2610) = errno;
+	}
 
 
 
@@ -187,7 +194,6 @@ namespace Multitasking
 	{
 		if(thread->State != STATE_BLOCKING)
 		{
-			HALT("");
 			GetThreadList(thread)->push_front(FetchAndRemoveThread(thread));
 		}
 		else

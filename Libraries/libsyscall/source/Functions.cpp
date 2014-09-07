@@ -3,6 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "../syscall.h"
+#include <errno.h>
 
 namespace Library {
 namespace SystemCall
@@ -49,49 +50,49 @@ namespace SystemCall
 
 	void InstallIRQHandler(uint64_t irq, uint64_t handleraddr)
 	{
-		Syscall2Param(1, irq, handleraddr);
+		Syscall2Param(irq, handleraddr, 1);
 	}
 
 	void InstallIRQHandlerWithRegs(uint64_t irq, uint64_t handleraddr)
 	{
-		Syscall2Param(2, irq, handleraddr);
+		Syscall2Param(irq, handleraddr, 2);
 	}
 
 
 
 	pthread_t CreateThread(pthread_attr_t* attr, void (*thr)())
 	{
-		return Syscall2Param(4000, (uintptr_t) thr, (uintptr_t) attr);
+		return Syscall2Param((uintptr_t) thr, (uintptr_t) attr, 4000);
 	}
 
 	void SpawnProcess(const char* path, const char* name)
 	{
-		Syscall2Param(4001, (uint64_t) path, (uint64_t) name);
+		Syscall2Param((uint64_t) path, (uint64_t) name, 4001);
 	}
 
 	void SignalProcess(pid_t pid, int signum)
 	{
-		Syscall2Param(4002, pid, signum);
+		Syscall2Param(pid, signum, 4002);
 	}
 
 	void SignalThread(pid_t tid, int signum)
 	{
-		Syscall2Param(4003, tid, signum);
+		Syscall2Param(tid, signum, 4003);
 	}
 
 	int SendMessage(const char* path, void* msg, size_t size, uint64_t flags)
 	{
-		return (int) Syscall4Param(4004, (uintptr_t) path, (uint64_t) msg, size, flags);
+		return (int) Syscall4Param((uintptr_t) path, (uint64_t) msg, size, flags, 4004);
 	}
 
 	ssize_t ReceiveMessage(const char* path, void* msg, size_t size, uint64_t type, uint64_t flags)
 	{
-		return (int) Syscall5Param(4005, (uintptr_t) path, (uint64_t) msg, size, type, flags);
+		return (int) Syscall5Param((uintptr_t) path, (uint64_t) msg, size, type, flags, 4005);
 	}
 
 	void Sleep(uint64_t ms)
 	{
-		Syscall1Param(4006, ms);
+		Syscall1Param(ms, 4006);
 	}
 
 	void Yield()
@@ -106,7 +107,7 @@ namespace SystemCall
 
 	sighandler_t InstallSignalHandler(uint64_t signum, sighandler_t handler)
 	{
-		return (sighandler_t) Syscall2Param(4009, signum, (uint64_t) handler);
+		return (sighandler_t) Syscall2Param(signum, (uint64_t) handler, 4009);
 	}
 
 	uint64_t GetPID()
@@ -126,7 +127,7 @@ namespace SystemCall
 
 	void* JoinThread(uint64_t tid)
 	{
-		return (void*) Syscall1Param(4013, tid);
+		return (void*) Syscall1Param(tid, 4013);
 	}
 
 	pthread_t GetTID()
@@ -138,27 +139,51 @@ namespace SystemCall
 
 	uint64_t Open(const char* path, uint64_t flags)
 	{
-		return Syscall2Param(8002, (uint64_t) path, flags);
+		return Syscall2Param((uint64_t) path, flags, 8002);
 	}
 
 	void Close(uint64_t fd)
 	{
-		Syscall1Param(8003, fd);
+		Syscall1Param(fd, 8003);
 	}
 
 	uint64_t Read(uint64_t sd, void* buffer, uint64_t length)
 	{
-		return Syscall3Param(8004, sd, (uint64_t) buffer, length);
+		return Syscall3Param(sd, (uint64_t) buffer, length, 8004);
 	}
 
 	uint64_t Write(uint64_t sd, const void* buffer, uint64_t length)
 	{
-		return Syscall3Param(8005, sd, (uint64_t) buffer, length);
+		return Syscall3Param(sd, (uint64_t) buffer, length, 8005);
 	}
 
 	uint64_t MMap_Anonymous(uint64_t addr, uint64_t size, uint64_t prot, uint64_t flags)
 	{
-		return Syscall4Param(8006, addr, size, prot, flags);
+		return Syscall4Param(addr, size, prot, flags, 8006);
 	}
 }
 }
+
+
+
+
+
+
+extern "C" void* __fetch_errno()
+{
+	return &errno;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
