@@ -125,8 +125,8 @@ namespace Kernel
 #define SLEEP(x)			Kernel::HardwareAbstraction::Multitasking::Sleep(x)
 #define BLOCK()			Kernel::HardwareAbstraction::Multitasking::Block()
 
-#define LOCK(x)			Kernel::HardwareAbstraction::Multitasking::LockMutex(x);
-#define UNLOCK(x)			Kernel::HardwareAbstraction::Multitasking::UnlockMutex(x);
+#define LOCK(x)			Kernel::Mutexes::LockMutex(x);
+#define UNLOCK(x)			Kernel::Mutexes::UnlockMutex(x);
 
 #define Allocate_G(x)			Kernel::HardwareAbstraction::MemoryManager::KernelHeap::AllocateChunk(x)
 #define Free_G(x)			Kernel::HardwareAbstraction::MemoryManager::KernelHeap::FreeChunk(x)

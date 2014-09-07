@@ -187,6 +187,7 @@ namespace Multitasking
 	{
 		if(thread->State != STATE_BLOCKING)
 		{
+			HALT("");
 			GetThreadList(thread)->push_front(FetchAndRemoveThread(thread));
 		}
 		else
@@ -198,8 +199,8 @@ namespace Multitasking
 				HALT("Thread corrupted");
 
 			Thread* t = SleepList->RemoveAt((uint64_t) id);
-			GetThreadList(t)->push_front(t);
 			t->State = STATE_NORMAL;
+			GetThreadList(t)->push_front(t);
 		}
 
 		YieldCPU();
@@ -221,8 +222,9 @@ namespace Multitasking
 		thread->State = STATE_BLOCKING;
 		SleepList->push_back(thread);
 
-		if(purpose == 0)
-			YieldCPU();
+		// if(purpose == 0)
+		(void) purpose;
+		YieldCPU();
 	}
 
 

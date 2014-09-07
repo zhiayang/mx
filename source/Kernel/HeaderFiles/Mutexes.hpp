@@ -15,7 +15,7 @@ namespace Kernel
 			uint64_t recursion = 0;
 			uint64_t* contestants = 0;
 			uint64_t numcontestants = 0;
-			bool lock = false;
+			uint64_t lock = false;
 	};
 
 	class AutoMutex
@@ -36,5 +36,9 @@ namespace Kernel
 		extern Mutex* SerialLog;
 		extern Mutex* WindowDispatcher;
 		extern Mutex* TestMutex;
+
+		bool TryLockMutex(Mutex* lock);
+		void LockMutex(Mutex* lock);
+		void UnlockMutex(Mutex* lock);
 	}
 }
