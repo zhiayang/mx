@@ -151,8 +151,8 @@ namespace IsIndentedProperly
 		{
 			// Public/Private/Protected qualifiers MUST be indented one tab from the braceline.
 			public:
-				// Empty code blocks must be preceeded by a space after the closing argument bracket.
-				// They can choose to have a space between the opening and closing brace.
+				// Empty code blocks MUST be preceeded by a space after the closing argument bracket.
+				// They MAY choose to have a space between the opening and closing brace.
 				Class(int val) : somemember(val) { }
 				Class() : somemember(31) { }
 				int somemember;
