@@ -29,32 +29,55 @@ namespace Kernel
 
 	void AquireSemaphore(Semaphore* sem)
 	{
-		if(NumThreads <= 1){ return; }
-
+		if(NumThreads <= 1) { return; }
 		assert(sem);
-
-		// check if we already own this mutex
-		if(sem->owner == GetCurrentThread())
-		{
-			sem->recursion++;
-			return;
-		}
 
 		// check if we have zero shits left to give
 		if(__sync_fetch_and_sub(&sem->value, 1) < 0)
 		{
+			// we do
+			// queue up for the toilet.
+
 			// add ourselves to the waiting list
 			if(!sem->contestants)
 				sem->contestants = new Library::LinkedList<Thread>();
 
 			sem->contestants->push_back(GetCurrentThread());
 		}
-	}
 
+		while(sem->value <= 0)
+			BLOCK();
+	}
 
 	void ReleaseSemaphore(Semaphore* sem)
 	{
+		if(NumThreads <= 1) { return; }
+		assert(sem);
 
+		__sync_add_and_fetch(&sem->value, 1);
+		if(sem->value < 0 && sem->contestants && sem->contestants->size() > 0)
+			WakeForMessage(sem->contestants->pop_front());
 	}
-	bool TrySemaphore(Semaphore* sem);
+
+	bool TrySemaphore(Semaphore* sem)
+	{
+		if(NumThreads <= 1) { return true; }
+		assert(sem);
+
+		if(sem->value <= 0)
+			return false;
+
+		__sync_sub_and_fetch(&sem->value, 1);
+		return true;
+	}
 }
+
+
+
+
+
+
+
+
+
+

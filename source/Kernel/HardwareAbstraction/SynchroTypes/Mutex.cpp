@@ -15,7 +15,7 @@ namespace Kernel
 
 	void LockMutex(Mutex* Lock)
 	{
-		if(NumThreads <= 1){ return; }
+		if(NumThreads <= 1) { return; }
 		assert(Lock);
 
 		// check if we already own this mutex
@@ -43,7 +43,7 @@ namespace Kernel
 
 	void UnlockMutex(Mutex* Lock)
 	{
-		if(NumThreads <= 1){ return; }
+		if(NumThreads <= 1) { return; }
 		assert(Lock);
 
 		if(Lock->owner != GetCurrentThread())
@@ -74,6 +74,9 @@ namespace Kernel
 
 	bool TryLockMutex(Mutex* Lock)
 	{
+		if(NumThreads <= 1) { return true; }
+		assert(Lock);
+
 		// if current was 1, since CheckLock gives us the old value then it's still locked.
 		// since this is a trylock, return.
 		if(__sync_lock_test_and_set(&Lock->lock, 1))
