@@ -41,7 +41,7 @@ namespace Kernel
 		// if(tm.length() > 0)
 		// 	tm.insert(0, " - ");
 
-		LOCK(Mutexes::SerialLog);
+		// LOCK(Mutexes::SerialLog);
 		switch(level)
 		{
 			case 0:
@@ -74,7 +74,7 @@ namespace Kernel
 				break;
 		}
 
-		UNLOCK(Mutexes::SerialLog);
+		// UNLOCK(Mutexes::SerialLog);
 	}
 
 	void Log(uint8_t level, const char* str, ...)

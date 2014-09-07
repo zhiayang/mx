@@ -9,6 +9,10 @@
 
 namespace Kernel {
 
+AutoMutex::AutoMutex(Mutex* l) { lock = l; Mutexes::LockMutex(l); }
+AutoMutex::AutoMutex(const AutoMutex& m) { this->lock = m.lock; Mutexes::LockMutex(this->lock); }
+AutoMutex::~AutoMutex() { Mutexes::UnlockMutex(lock); }
+
 // Mutex list
 namespace Mutexes
 {
@@ -30,17 +34,9 @@ namespace Mutexes
 
 		Mutexes::TestMutex = new Mutex();
 	}
-}
 
-AutoMutex::AutoMutex(Mutex* l) { lock = l; HardwareAbstraction::Multitasking::LockMutex(l); }
-AutoMutex::AutoMutex(const AutoMutex& m) { this->lock = m.lock; HardwareAbstraction::Multitasking::LockMutex(this->lock); }
-AutoMutex::~AutoMutex() { HardwareAbstraction::Multitasking::UnlockMutex(lock); }
-
-static const uint8_t MaxContestants = 32;
-
-namespace HardwareAbstraction {
-namespace Multitasking
-{
+	using namespace Kernel::HardwareAbstraction::Multitasking;
+	static const uint8_t MaxContestants = 32;
 	void LockMutex(Mutex* Lock)
 	{
 		if(NumThreads <= 1){ return; }
@@ -101,10 +97,26 @@ namespace Multitasking
 		for(uint64_t i = 0; i < nc; i++)
 		{
 			if(Lock->contestants[i] != o)
-				Multitasking::WakeForMessage(Multitasking::GetThread(Lock->contestants[i]));
+				WakeForMessage(GetThread(Lock->contestants[i]));
 		}
 	}
-}
+
+	bool TryLockMutex(Mutex* Lock)
+	{
+		// uint64_t current = __sync_lock_test_and_set(&Lock->lock, 1);
+
+		// if current was 1, since CheckLock gives us the old value then it's still locked.
+		// since this is a trylock, return.
+		if(Lock->lock)
+			return false;
+
+		Lock->lock = 1;
+		Lock->owner = GetCurrentThread()->ThreadID;
+		Lock->recursion = 1;
+
+		// if not, we already locked it.
+		return true;
+	}
 }
 }
 
