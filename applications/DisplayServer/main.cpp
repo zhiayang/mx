@@ -16,26 +16,6 @@ static uint64_t width = 0;
 static uint64_t height = 0;
 static uint64_t bpp = 0;
 
-static __thread int m = 410;
-volatile static bool flag = false;
-
-void* thr(void*)
-{
-	flag = true;
-	m = 200;
-	printf("m in thr: %d\n\n", m);
-	printf("sleeping for 1000ms\n");
-	usleep(1000 * 1000);
-	printf("awake, hello!\n");
-
-	return (void*) 0xFAD;
-}
-
-void sh(int signum)
-{
-	printf("signaled: %d\n", signum);
-}
-
 int main(int argc, char** argv)
 {
 	assert(argc == 5);
@@ -46,28 +26,6 @@ int main(int argc, char** argv)
 		4. framebuffer bpp
 	*/
 
-	m = 512;
-	printf("m in main: %d\n", m);
-
-	pthread_t thrid = 0;
-	pthread_create(&thrid, NULL, thr, NULL);
-
-	signal(51, sh);
-	printf("sighandler installed\n");
-	printf("doing something stupid\n");
-	signal(SIGKILL, sh);
-	printf("errno: %d\n", errno);
-
-	raise(51);
-
-	printf("created thread with id %ld\n", thrid);
-
-	void* retval = 0;
-	// while(!flag);
-	pthread_join(thrid, &retval);
-	printf("m in main: %d\n", m);
-	printf("thread retval: %p\n", retval);
-
 	framebuffer	= (uint64_t) argv[1];
 	width		= (uint64_t) argv[2];
 	height		= (uint64_t) argv[3];
@@ -75,6 +33,34 @@ int main(int argc, char** argv)
 
 	printf("Display server online\n");
 	// auto fd = mq_open("/random/path", O_CREATE);
+
+
+	while(true)
+	{
+		int c = 0;
+		while((c = getchar()) == 0);
+
+		printf("%c", c);
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	// that's really all we need to do, except watch for messages and flush the screen on occasion.
 	return 0;
