@@ -31,6 +31,11 @@ void* thr(void*)
 	return (void*) 0xFAD;
 }
 
+void sh(int signum)
+{
+	printf("signaled: %d\n", signum);
+}
+
 int main(int argc, char** argv)
 {
 	assert(argc == 5);
@@ -46,6 +51,15 @@ int main(int argc, char** argv)
 
 	pthread_t thrid = 0;
 	pthread_create(&thrid, NULL, thr, NULL);
+
+	signal(51, sh);
+	printf("sighandler installed\n");
+	printf("doing something stupid\n");
+	signal(SIGKILL, sh);
+	printf("errno: %d\n", errno);
+
+
+	raise(51);
 
 	printf("created thread with id %ld\n", thrid);
 

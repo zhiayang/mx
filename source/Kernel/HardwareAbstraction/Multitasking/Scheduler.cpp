@@ -45,6 +45,7 @@ namespace Multitasking
 		ThreadList_HighPrio = new LinkedList<Thread>();
 
 		listlock = new Mutex();
+		*((int64_t*) 0x2610) = 0;
 	}
 
 	Process* GetCurrentProcess()			{ return CurrentThread ? CurrentThread->Parent : Kernel::KernelProcess;	}
@@ -145,7 +146,11 @@ namespace Multitasking
 			r15		(+120)
 			rip		<-- this.
 		*/
-		CurrentThread->InstructionPointer = *((uint64_t*) (context + 120));
+
+
+		// 0x2610 stores the thread's current errno.
+		// we therefore need to save it before switching threads.
+		CurrentThread->currenterrno = *((int64_t*) 0x2610);
 		CurrentThread = GetNextThread();
 
 
@@ -165,6 +170,7 @@ namespace Multitasking
 		}
 		else
 			*((uint64_t*) 0x2600) = 0;
+
 
 
 		// set tss

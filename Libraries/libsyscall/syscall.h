@@ -19,11 +19,11 @@ namespace Library
 
 
 		extern "C" uint64_t Syscall0Param(uint64_t scvec);
-		extern "C" uint64_t Syscall1Param(uint64_t scvec, uint64_t p1);
-		extern "C" uint64_t Syscall2Param(uint64_t scvec, uint64_t p1, uint64_t p2);
-		extern "C" uint64_t Syscall3Param(uint64_t scvec, uint64_t p1, uint64_t p2, uint64_t p3);
-		extern "C" uint64_t Syscall4Param(uint64_t scvec, uint64_t p1, uint64_t p2, uint64_t p3, uint64_t p4);
-		extern "C" uint64_t Syscall5Param(uint64_t scvec, uint64_t p1, uint64_t p2, uint64_t p3, uint64_t p4, uint64_t p5);
+		extern "C" uint64_t Syscall1Param(uint64_t p1, uint64_t scvec);
+		extern "C" uint64_t Syscall2Param(uint64_t p1, uint64_t p2, uint64_t scvec);
+		extern "C" uint64_t Syscall3Param(uint64_t p1, uint64_t p2, uint64_t p3, uint64_t scvec);
+		extern "C" uint64_t Syscall4Param(uint64_t p1, uint64_t p2, uint64_t p3, uint64_t p4, uint64_t scvec);
+		extern "C" uint64_t Syscall5Param(uint64_t p1, uint64_t p2, uint64_t p3, uint64_t p4, uint64_t p5, uint64_t scvec);
 
 
 		void ExitProc();

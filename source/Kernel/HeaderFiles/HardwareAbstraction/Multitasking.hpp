@@ -31,7 +31,6 @@ namespace HardwareAbstraction
 			uint8_t State;
 			uint32_t Sleep;
 			uint8_t Priority;
-			uint64_t InstructionPointer;
 			uint8_t flags;
 
 			rde::list<uintptr_t>* messagequeue;
@@ -43,6 +42,9 @@ namespace HardwareAbstraction
 
 			Library::LinkedList<Thread>* watchers;
 			Library::LinkedList<Thread>* watching;
+
+			// a bit hacky, but this stores the current thread errno.
+			int64_t currenterrno;
 
 			void* returnval;
 			void (*Thread)();
@@ -118,6 +120,9 @@ namespace HardwareAbstraction
 		void TerminateCurrentThread(ThreadRegisterState_type* r);
 		extern "C" void ExitThread();
 		extern "C" void ExitThread_Userspace();
+
+		void SetThreadErrno(int errno);
+
 
 		void Suspend(Process* p);
 		void Resume(Process* p);

@@ -27,6 +27,14 @@ HandleSyscall:
 	push %rbp
 	mov %rsp, %rbp
 
+	push %r10
+	push %rdi
+	push %rsi
+	push %rdx
+	push %rcx
+	push %r8
+	push %r9
+
 	// push a constant, so we know where to stop on stack backtrace.
 	pushq $0xFFFFFFFFFFFFFFFF
 
@@ -68,8 +76,6 @@ Page2:
 	jge Fail
 	jmp DoCall
 
-
-
 Page0:
 	// multiply %r10 by 8
 	// shift left by 3	(2^3 = 8)
@@ -85,7 +91,21 @@ DoCall:
 
 
 CleanUp:
+	// remove the constant we pushed
 	addq $8, %rsp
+
+	pop %r9
+	pop %r8
+	pop %rcx
+	pop %rdx
+	pop %rsi
+	pop %rdi
+	pop %r10
+
+	// any errno set by a syscall is stored in 0x2610 and preserved across context switches.
+	// since all accesses to this are done via asm, we can just fetch the value out in userspace.
+	movq 0x2610, %r13
+
 	pop %rbp
 	iretq
 
@@ -170,8 +190,16 @@ GetThisTID:
 	call Syscall_GetTID
 	jmp CleanUp
 
-CreateMessageQueue:
-	call IPC_CreateQueue
+LockMutex:
+	// call Syscall_LockMutex
+	jmp CleanUp
+
+UnlockMutex:
+	// call Syscall_UnlockMutex
+	jmp CleanUp
+
+TryLockMutex:
+	// call Syscall_TryLockMutex
 	jmp CleanUp
 
 
@@ -253,7 +281,9 @@ SyscallTable1:
 	.quad	__ExitThread			// 4012
 	.quad	JoinThread			// 4013
 	.quad	GetThisTID			// 4014
-	.quad	CreateMessageQueue		// 4015
+	.quad	LockMutex			// 4015
+	.quad	UnlockMutex			// 4016
+	.quad	TryLockMutex			// 4017
 EndSyscallTable1:
 
 
