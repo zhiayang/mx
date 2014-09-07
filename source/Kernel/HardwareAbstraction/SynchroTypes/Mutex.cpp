@@ -4,24 +4,18 @@
 
 
 #include <Kernel.hpp>
-#include <StandardIO.hpp>
-#include <Memory.hpp>
 
-namespace Kernel {
+using namespace Kernel::HardwareAbstraction::Multitasking;
 
-AutoMutex::AutoMutex(Mutex* l) { lock = l; Mutexes::LockMutex(l); }
-AutoMutex::AutoMutex(const AutoMutex& m) { this->lock = m.lock; Mutexes::LockMutex(this->lock); }
-AutoMutex::~AutoMutex() { Mutexes::UnlockMutex(lock); }
-
-// Mutex list
-namespace Mutexes
+namespace Kernel
 {
-	using namespace Kernel::HardwareAbstraction::Multitasking;
-	static const uint8_t MaxContestants = 32;
+	AutoMutex::AutoMutex(Mutex* l) { lock = l; LockMutex(l); }
+	AutoMutex::AutoMutex(const AutoMutex& m) { this->lock = m.lock; LockMutex(this->lock); }
+	AutoMutex::~AutoMutex() { UnlockMutex(lock); }
+
 	void LockMutex(Mutex* Lock)
 	{
 		if(NumThreads <= 1){ return; }
-
 		assert(Lock);
 
 		// check if we already own this mutex
@@ -33,12 +27,6 @@ namespace Mutexes
 
 		if(Lock->lock)
 		{
-			if(Lock->contestants && Lock->contestants->size() >= MaxContestants)
-			{
-				while(Lock->contestants->size() >= MaxContestants)
-					YieldCPU();
-			}
-
 			if(!Lock->contestants)
 				Lock->contestants = new Library::LinkedList<Thread>();
 
@@ -97,7 +85,6 @@ namespace Mutexes
 		// if not, we already locked it.
 		return true;
 	}
-}
 }
 
 
