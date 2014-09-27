@@ -401,7 +401,7 @@ namespace Kernel
 				SLEEP(1000);
 				PrintFormatted("trying mutex\n");
 
-				while(!Mutexes::TryLockMutex(test))
+				while(!TryLockMutex(test))
 					PrintFormatted("x");
 
 				PrintFormatted("locked!\n");
