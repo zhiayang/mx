@@ -19,7 +19,7 @@ namespace Kernel
 	class Mutex
 	{
 		public:
-			Library::LinkedList<HardwareAbstraction::Multitasking::Thread>* contestants;
+			Library::LinkedList<HardwareAbstraction::Multitasking::Thread>* contestants = 0;
 			HardwareAbstraction::Multitasking::Thread* owner = 0;
 			uint64_t recursion = 0;
 			uint64_t lock = false;
@@ -34,17 +34,34 @@ namespace Kernel
 			~AutoMutex();
 	};
 
-	namespace Mutexes
-	{
-		bool TryLockMutex(Mutex* lock);
-		void LockMutex(Mutex* lock);
-		void UnlockMutex(Mutex* lock);
-	}
+	bool TryLockMutex(Mutex* lock);
+	void LockMutex(Mutex* lock);
+	void UnlockMutex(Mutex* lock);
 
-	namespace Semaphores
-	{
 
-	}
+
+
+
+	class Semaphore
+	{
+		public:
+			Semaphore(uint64_t maxval) : value(maxval) { }
+			Library::LinkedList<HardwareAbstraction::Multitasking::Thread>* contestants = 0;
+			int64_t value = 0;
+	};
+
+	class AutoSemaphore
+	{
+		Semaphore* sem;
+		public:
+			AutoSemaphore(Semaphore* _sem);
+			AutoSemaphore(const AutoSemaphore& as);
+			~AutoSemaphore();
+	};
+
+	bool TrySemaphore(Semaphore* sem);
+	void AquireSemaphore(Semaphore* sem);
+	void ReleaseSemaphore(Semaphore* sem);
 }
 
 
