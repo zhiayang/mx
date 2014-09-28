@@ -12,13 +12,25 @@
 extern "C" {
 #endif
 
-#define	BUFSIZ			1
+#define __LASTOP_READ	1
+#define __LASTOP_WRITE	2
 
 
 struct _FILE
 {
 	uint64_t __fd;
 	uint8_t __PermFlags;
+
+	// buffer stuff
+	uint64_t bufferoffset;
+	uint64_t bufferfill;
+	uint64_t buffersize;
+	uint64_t bufferread;
+	uint8_t* buffer;
+
+
+	uint8_t bufmode;
+	uint8_t lastop;
 };
 
 typedef struct _FILE FILE;

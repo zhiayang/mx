@@ -34,15 +34,17 @@ int main(int argc, char** argv)
 	printf("Display server online\n");
 	// auto fd = mq_open("/random/path", O_CREATE);
 
-
-	while(true)
+	int c = 0;
+	puts("Enter text. Include a dot ('.') in a sentence to exit:");
+	do
 	{
-		int c = 0;
-		while((c = getchar()) == 0);
+		c = getchar();
+		putchar(c);
+		// printf("hello: %c\n", c);
 
-		printf("%c", c);
-	}
-
+	} while(c != '.');
+	printf("done\n");
+	return 0;
 
 
 

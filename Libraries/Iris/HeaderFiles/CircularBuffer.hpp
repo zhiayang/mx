@@ -19,12 +19,17 @@ namespace Library
 			void MoveWritePointer(uint64_t p);
 			void MoveReadPointer(uint64_t p);
 
+			uint64_t GetReadPointer();
 			uint64_t GetWritePointer();
 			uint64_t TotalSize();
 			uint64_t ByteCount();
 
-			uint8_t* Read(uint8_t* data, uint64_t bytes);
-			uint8_t* Write(uint8_t* data, uint64_t bytes);
+
+			uint64_t PeekRead(uint8_t* data, uint64_t bytes);
+			uint64_t PeekWrite(uint8_t* data, uint64_t bytes);
+
+			uint64_t Read(uint8_t* data, uint64_t bytes);
+			uint64_t Write(uint8_t* data, uint64_t bytes);
 
 
 			uint8_t* backingstore;

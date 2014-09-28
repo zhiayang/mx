@@ -41,13 +41,8 @@ namespace PCI
 		uint16_t vendor = 0, device = 0;
 		Library::LinkedList<PCIDevice>* ret = new Library::LinkedList<PCIDevice>();
 
-		// for(uint16_t i = 0; i < PCIDevice::PCIDevices->size(); i++)
 		for(auto dev : *PCIDevice::PCIDevices)
 		{
-			// bus = PCIDevice::PCIDevices->get(i)->GetBus();
-			// slot = PCIDevice::PCIDevices->get(i)->GetSlot();
-			// func = PCIDevice::PCIDevices->get(i)->GetFunction();
-
 			bus = dev->GetBus();
 			slot = dev->GetSlot();
 			func = dev->GetFunction();
@@ -57,8 +52,6 @@ namespace PCI
 
 			if(vendor == (VendorID == 0xFFFF ? vendor : VendorID) && device == (DeviceID == 0xFFFF ? device : DeviceID))
 				ret->push_back(dev);
-
-				// ret->push_back(PCIDevice::PCIDevices->get(i));
 		}
 
 		return ret;

@@ -3,6 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
+#include <Console.hpp>
 #include <HardwareAbstraction/Filesystems.hpp>
 
 namespace Kernel {
@@ -45,7 +46,7 @@ namespace Filesystems
 		(void) length;
 
 		// line buffer it.
-		return IO::Manager::Read(buf, length);
+		return TTY::ReadTTY(0, (uint8_t*) buf, length);
 	}
 
 	size_t FSDriverStdin::Write(VFS::vnode* node, const void* buf, off_t offset, size_t length)

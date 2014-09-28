@@ -100,9 +100,13 @@ int asprintf(char** result_ptr, const char* format, ...);
 int vasprintf(char** result_ptr, const char* format, va_list ap);
 
 
-#define _IOFBF	0	// Fully buffered.
-#define _IOLBF	1	// Line buffered.
-#define _IONBF	2	// No buffering.
+// in addition to bufmode being 0, 1 or 2, when ORed with 0x4 or 0x8, it means either blocking or async.
+#define __BUFMODE_BLOCK	0x4
+#define __BUFMODE_ASYNC	0x8
+#define	BUFSIZ			4096	// IDGAF
+#define _IOFBF			1	// Fully buffered.
+#define _IOLBF			2	// Line buffered.
+#define _IONBF		4	// No buffering.
 
 
 #ifdef __cplusplus

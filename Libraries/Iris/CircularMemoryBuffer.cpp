@@ -39,7 +39,7 @@ namespace Library
 
 	uint64_t CircularMemoryBuffer::GetWritePointer()
 	{
-		return this->readp;
+		return this->writep;
 	}
 
 	uint64_t CircularMemoryBuffer::TotalSize()
@@ -52,28 +52,58 @@ namespace Library
 		return this->elements;
 	}
 
-	uint8_t* CircularMemoryBuffer::Read(uint8_t* buf, uint64_t bytes)
+	uint64_t CircularMemoryBuffer::Read(uint8_t* buf, uint64_t bytes)
 	{
 		if(bytes > this->elements)
 			bytes = this->elements;
 
-		// allocate and copy.
+
 		uint64_t firstpass = (this->size - this->readp);
 		uint64_t remaining = bytes > firstpass ? bytes - firstpass : 0;
 
-		Memory::Copy(buf, this->backingstore + this->readp, __min(firstpass, bytes));
-		this->readp = (this->readp + __min(firstpass, bytes)) % this->size;
-		if(bytes > firstpass)
-		{
-			Memory::Copy(buf + firstpass, this->backingstore + this->readp, remaining);
-			this->readp = (this->readp + remaining) % this->size;
-		}
+		uint64_t ret = this->PeekRead(buf, bytes);
 
 		this->elements -= bytes;
-		return buf;
+		this->readp = (this->readp + __min(firstpass, bytes)) % this->size;
+		if(bytes > firstpass)
+			this->readp = (this->readp + remaining) % this->size;
+
+		return ret;
 	}
 
-	uint8_t* CircularMemoryBuffer::Write(uint8_t* buf, uint64_t bytes)
+	uint64_t CircularMemoryBuffer::PeekWrite(uint8_t* buf, uint64_t bytes)
+	{
+		// TODO
+		return this->Write(buf, bytes);
+	}
+
+
+
+
+
+	uint64_t CircularMemoryBuffer::PeekRead(uint8_t* buf, uint64_t bytes)
+	{
+		if(bytes > this->elements)
+			bytes = this->elements;
+
+		uintptr_t rdptr = this->readp;
+
+		// allocate and copy.
+		uint64_t firstpass = (this->size - rdptr);
+		uint64_t remaining = bytes > firstpass ? bytes - firstpass : 0;
+
+		Memory::Copy(buf, this->backingstore + rdptr, __min(firstpass, bytes));
+		rdptr = (rdptr + __min(firstpass, bytes)) % this->size;
+		if(bytes > firstpass)
+		{
+			Memory::Copy(buf + firstpass, this->backingstore + rdptr, remaining);
+			rdptr = (rdptr + remaining) % this->size;
+		}
+
+		return bytes;
+	}
+
+	uint64_t CircularMemoryBuffer::Write(uint8_t* buf, uint64_t bytes)
 	{
 		if(bytes > this->size)
 			bytes = this->size;
@@ -90,7 +120,7 @@ namespace Library
 		}
 
 		this->elements += bytes;
-		return buf;
+		return bytes;
 	}
 }
 

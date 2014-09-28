@@ -5,11 +5,14 @@
 #include "../include/stdint.h"
 #include "../include/stdio.h"
 #include "../include/errno.h"
+#include "../include/stdlib.h"
 
 static FILE _stdin;
 static FILE _stdout;
 static FILE _stderr;
 static FILE _stdlog;
+
+#define BUFFER_SIZE		4096
 
 namespace Heap
 {
@@ -33,7 +36,22 @@ extern "C" void init_libc()
 	Heap::Initialise();
 
 	errno = 0;
+
+	// set the proper properties.
+	stdin->buffer = (uint8_t*) malloc(BUFSIZ);
+	stdin->buffersize = BUFSIZ;
+	stdin->bufmode = _IOLBF | __BUFMODE_BLOCK;
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
