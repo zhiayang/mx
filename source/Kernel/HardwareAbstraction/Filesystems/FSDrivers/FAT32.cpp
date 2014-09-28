@@ -221,6 +221,8 @@ namespace Filesystems
 
 		name = String::TrimWhitespace(name);
 		MemoryManager::Physical::FreeDMA(buf, 1);
+
+		this->_seekable = true;
 	}
 
 	FSDriverFat32::~FSDriverFat32()
@@ -368,13 +370,15 @@ namespace Filesystems
 		return 0;
 	}
 
-	void FSDriverFat32::Stat(vnode* node, struct stat* stat)
+	void FSDriverFat32::Stat(vnode* node, struct stat* stat, bool statlink)
 	{
 		// we really just need the dirent.
 		assert(node);
 		assert(node->info);
 		assert(node->info->data);
 		assert(node->info->driver == this);
+
+		(void) statlink;
 
 		assert(stat);
 		DirectoryEntry* dirent = &tovnd(node)->dirent;
@@ -536,6 +540,9 @@ namespace Filesystems
 		return false;
 	}
 
+	void FSDriverFat32::Flush(VFS::vnode*)
+	{
+	}
 
 
 

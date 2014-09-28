@@ -119,7 +119,7 @@ namespace Devices
 		if(!IsF0 && !IsE0)
 		{
 			uint8_t x = this->Translate(PS2::Device1Buffer);
-			TTY::EchoToTTY(0, &x, 1);
+			TTY::WriteTTY(0, &x, 1);
 			// IO::Manager::Write(&x, 1);
 		}
 		else if(!IsF0 && IsE0)
@@ -128,7 +128,7 @@ namespace Devices
 			// ORed with 0x80, to avoid the ASCII printable range.
 
 			uint8_t x = this->TranslateE0(PS2::Device1Buffer) | 0x80;
-			TTY::EchoToTTY(0, &x, 1);
+			TTY::WriteTTY(0, &x, 1);
 		}
 	}
 

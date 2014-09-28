@@ -40,7 +40,6 @@ int main(int argc, char** argv)
 	{
 		c = getchar();
 		putchar(c);
-		// printf("hello: %c\n", c);
 
 	} while(c != '.');
 	printf("done\n");

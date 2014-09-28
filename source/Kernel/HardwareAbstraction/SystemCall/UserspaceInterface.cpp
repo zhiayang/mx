@@ -24,6 +24,11 @@ namespace SystemCalls
 		(void) fd;
 	}
 
+	extern "C" void Syscall_FlushAny(uint64_t fd)
+	{
+		Flush(fd);
+	}
+
 	extern "C" uint64_t Syscall_ReadAny(uint64_t fd, const void* dat, uint64_t size)
 	{
 		return Read(fd, (void*) dat, size);
@@ -33,6 +38,27 @@ namespace SystemCalls
 	{
 		return Write(fd, (void*) dat, size);
 	}
+
+	extern "C" int Syscall_SeekAny(uint64_t fd, long offset, int whence)
+	{
+		return Seek(fd, offset, whence);
+	}
+
+	extern "C" int Syscall_StatAny(uint64_t fd, struct stat* st, bool statlink)
+	{
+		return Stat(fd, st, statlink);
+	}
+
+	extern "C" uint64_t Syscall_GetSeekPos(uint64_t fd)
+	{
+		return GetSeekPos(fd);
+	}
 }
 }
 }
+
+
+
+
+
+

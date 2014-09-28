@@ -274,7 +274,7 @@ namespace Filesystems
 			return fs->Write(node, buf, off, len);
 		}
 
-		void Stat(IOContext* ioctx, vnode* node, struct stat* st)
+		err_t Stat(IOContext* ioctx, vnode* node, struct stat* st, bool statlink)
 		{
 			assert(ioctx);
 			assert(node);
@@ -283,18 +283,42 @@ namespace Filesystems
 			assert(node->info->driver);
 
 			auto fs = node->info->driver;
-			fs->Stat(node, st);
+			fs->Stat(node, st, statlink);
+
+			return 0;
 		}
 
-		void Seek(fileentry* fe, off_t offset, int origin)
+		err_t Seek(fileentry* fe, off_t offset, int origin)
 		{
 			assert(fe);
 			assert(fe->node);
 
-			if(origin == SEEK_SET)
-				fe->offset = 0;
+			if(fe->node->info->driver->Seekable())
+			{
+				if(origin == SEEK_SET)
+					fe->offset = 0;
 
-			fe->offset += offset;
+				fe->offset += offset;
+				return 0;
+			}
+			else
+			{
+				Multitasking::SetThreadErrno(EBADF);
+				return -1;
+			}
+		}
+
+		err_t Flush(IOContext* ioctx, vnode* node)
+		{
+			assert(ioctx);
+			assert(node);
+			assert(node->info);
+			assert(node->refcount > 0);
+			assert(node->info->driver);
+
+			auto fs = node->info->driver;
+			fs->Flush(node);
+			return 0;
 		}
 
 		fileentry* Duplicate(IOContext* ctx, fileentry* old)
@@ -358,32 +382,78 @@ namespace Filesystems
 		return written;
 	}
 
-	VFSError Stat(fd_t fd, struct stat* out)
+	err_t Stat(fd_t fd, struct stat* out, bool statlink)
 	{
 		auto ctx = getctx();
 		if(fd < 0)
-			return VFSError::NOT_FOUND;
+			return -1;
 
 		auto node = VFS::NodeFromFD(ctx, fd);
 		if(node == nullptr)
-			return VFSError::NOT_FOUND;
+			return -1;
 
-		VFS::Stat(ctx, node, out);
-		return VFSError::NO_ERROR;
+		VFS::Stat(ctx, node, out, statlink);
+		return 0;
 	}
 
-	void Seek(fd_t fd, off_t offset, int origin)
+	err_t Seek(fd_t fd, off_t offset, int origin)
 	{
 		auto ctx = getctx();
 		if(fd < 0)
+		{
 			// todo: set errno
-			return;
+			Multitasking::SetThreadErrno(EBADF);
+			return -1;
+		}
 
 		auto fe = VFS::FileEntryFromFD(ctx, fd);
 		if(fe == nullptr)
-			return;
+		{
+			Multitasking::SetThreadErrno(EBADF);
+			return -1;
+		}
 
-		VFS::Seek(fe, offset, origin);
+		return VFS::Seek(fe, offset, origin);
+	}
+
+	err_t Flush(fd_t fd)
+	{
+		auto ctx = getctx();
+		if(fd < 0)
+		{
+			// todo: set errno
+			Multitasking::SetThreadErrno(EBADF);
+			return -1;
+		}
+
+		auto node = VFS::NodeFromFD(ctx, fd);
+		if(node == nullptr)
+		{
+			Multitasking::SetThreadErrno(EBADF);
+			return -1;
+		}
+
+		return VFS::Flush(ctx, node);
+	}
+
+	uint64_t GetSeekPos(fd_t fd)
+	{
+		auto ctx = getctx();
+		if(fd < 0)
+		{
+			// todo: set errno
+			Multitasking::SetThreadErrno(EBADF);
+			return -1;
+		}
+
+		auto fe = VFS::FileEntryFromFD(ctx, fd);
+		if(fe == nullptr)
+		{
+			Multitasking::SetThreadErrno(EBADF);
+			return -1;
+		}
+
+		return fe->offset;
 	}
 
 	fd_t Duplicate(fd_t old)

@@ -34,12 +34,6 @@ namespace Kernel
 
 			namespace VFS
 			{
-				enum VFSError
-				{
-					NO_ERROR = 0,
-					NOT_FOUND,
-				};
-
 				enum class VNodeType
 				{
 					None = 0,
@@ -109,16 +103,20 @@ namespace Kernel
 
 				size_t Read(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len);
 				size_t Write(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len);
-				void Stat(IOContext* ioctx, vnode* node, struct stat* st);
-				void Seek(fileentry* fe, off_t offset, int origin);
+				err_t Stat(IOContext* ioctx, vnode* node, struct stat* st, bool statlink);
+				err_t Seek(fileentry* fe, off_t offset, int origin);
+				err_t Flush(IOContext* ioctx, vnode* node);
 			}
 
 			fd_t OpenFile(const char* path, int flags);
 			size_t Read(fd_t fd, void* buf, size_t len);
 			size_t Write(fd_t fd, void* buf, size_t len);
-			void Seek(fd_t, off_t offset, int origin);
-			VFS::VFSError Stat(fd_t fd, struct stat* out);
+
+			err_t Flush(fd_t fd);
+			err_t Seek(fd_t, off_t offset, int origin);
+			err_t Stat(fd_t fd, struct stat* out, bool statlink = false);
 			fd_t Duplicate(fd_t old);
+			uint64_t GetSeekPos(fd_t fd);
 
 			enum class FSDriverType
 			{
@@ -147,18 +145,21 @@ namespace Kernel
 					virtual bool Traverse(VFS::vnode* node, const char* path, char** symlink);
 					virtual size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length);
 					virtual size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length);
-					virtual void Stat(VFS::vnode* node, struct stat* stat);
+					virtual void Flush(VFS::vnode* node);
+					virtual void Stat(VFS::vnode* node, struct stat* stat, bool statlink);
 
 					// returns a list of items inside the directory, as vnodes.
 					virtual Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node);
 
 					virtual dev_t GetID() final { return this->fsid; }
 					virtual FSDriverType GetType() final { return this->_type; }
+					virtual bool Seekable() final { return this->_seekable; }
 
 				protected:
 					Devices::Storage::Partition* partition;
 					FSDriverType _type;
 					dev_t fsid;
+					bool _seekable;
 			};
 
 			class FSDriverConsole : public FSDriver
@@ -171,7 +172,8 @@ namespace Kernel
 					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
 					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
-					void Stat(VFS::vnode* node, struct stat* stat) override;
+					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
+					void Flush(VFS::vnode* node);
 
 					Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 			};
@@ -186,7 +188,8 @@ namespace Kernel
 					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
 					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
-					void Stat(VFS::vnode* node, struct stat* stat) override;
+					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
+					void Flush(VFS::vnode* node);
 
 					Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 			};
@@ -201,7 +204,8 @@ namespace Kernel
 					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
 					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
-					void Stat(VFS::vnode* node, struct stat* stat) override;
+					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
+					void Flush(VFS::vnode* node);
 
 					Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 			};
@@ -222,7 +226,8 @@ namespace Kernel
 					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
 					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
-					void Stat(VFS::vnode* node, struct stat* stat) override;
+					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
+					void Flush(VFS::vnode* node);
 
 					Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 
@@ -243,7 +248,8 @@ namespace Kernel
 					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
 					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
-					void Stat(VFS::vnode* node, struct stat* stat) override;
+					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
+					void Flush(VFS::vnode* node);
 
 					Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 

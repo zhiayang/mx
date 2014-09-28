@@ -57,6 +57,10 @@ namespace Library
 		uint64_t Read(uint64_t sd, void* buffer, uint64_t length);
 		uint64_t Write(uint64_t sd, const void* buffer, uint64_t length);
 		uint64_t MMap_Anonymous(uint64_t addr, uint64_t size, uint64_t prot, uint64_t flags);
+		int Flush(uint64_t fd);
+		int Seek(uint64_t fd, off_t offset, int whence);
+		int Stat(uint64_t fd, struct stat* st, bool statlink);
+		uint64_t GetSeekPos(uint64_t fd);
 	}
 }
 #else

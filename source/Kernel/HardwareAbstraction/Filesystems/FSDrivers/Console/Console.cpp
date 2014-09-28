@@ -28,6 +28,7 @@ namespace Filesystems
 	FSDriverConsole::FSDriverConsole() : FSDriver(nullptr, FSDriverType::Virtual)
 	{
 		// nothing to do here.
+		this->_seekable = false;
 	}
 
 	FSDriverConsole::~FSDriverConsole()
@@ -44,43 +45,31 @@ namespace Filesystems
 		return false;
 	}
 
-	bool FSDriverConsole::Traverse(VFS::vnode* node, const char* path, char** symlink)
+	bool FSDriverConsole::Traverse(VFS::vnode*, const char*, char**)
 	{
-		(void) node;
-		(void) path;
-		(void) symlink;
-
 		return false;
 	}
 
-	size_t FSDriverConsole::Read(VFS::vnode* node, void* buf, off_t offset, size_t length)
+	size_t FSDriverConsole::Read(VFS::vnode*, void*, off_t, size_t)
 	{
-		(void) node;
-		(void) buf;
-		(void) offset;
-		(void) length;
 		return 0;
 	}
 
-	size_t FSDriverConsole::Write(VFS::vnode* node, const void* buf, off_t offset, size_t length)
+	size_t FSDriverConsole::Write(VFS::vnode*, const void*, off_t, size_t)
 	{
-		(void) node;
-		(void) buf;
-		(void) offset;
-		(void) length;
-
 		return 0;
 	}
 
-	void FSDriverConsole::Stat(VFS::vnode* node, struct stat* st)
+	void FSDriverConsole::Stat(VFS::vnode*, struct stat*, bool)
 	{
-		(void) node;
-		(void) st;
 	}
 
-	Library::Vector<VFS::vnode*>* FSDriverConsole::ReadDir(VFS::vnode* node)
+	void FSDriverConsole::Flush(VFS::vnode*)
 	{
-		(void) node;
+	}
+
+	Library::Vector<VFS::vnode*>* FSDriverConsole::ReadDir(VFS::vnode*)
+	{
 		return nullptr;
 	}
 }

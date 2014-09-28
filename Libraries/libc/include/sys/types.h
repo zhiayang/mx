@@ -119,6 +119,15 @@ typedef uint64_t uid_t;
 typedef uint64_t useconds_t;
 #endif
 
+
+
+#ifndef __err_t
+#define __err_t
+typedef int err_t;
+#endif
+
+
+// pthreads
 #ifndef __pthread_t
 #define __pthread_t
 typedef uint64_t pthread_t;
