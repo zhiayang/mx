@@ -69,7 +69,7 @@ namespace Library
 				if(!backingstore[hash])
 					backingstore[hash] = new LinkedList<HashBucket>();
 
-				backingstore[hash]->InsertBack(bucket);
+				backingstore[hash]->push_back(bucket);
 			}
 
 			V* Get(K key)
@@ -79,7 +79,7 @@ namespace Library
 				hash %= this->size;
 
 				if(!this->backingstore[hash])
-					return nullptr;
+					return 0;
 
 				for(uint64_t i = 0; i < this->backingstore[hash]->size(); i++)
 				{
@@ -87,7 +87,7 @@ namespace Library
 						return &this->backingstore[hash]->get(i)->value;
 				}
 
-				return nullptr;
+				return 0;
 			}
 
 			void Remove(K key)
@@ -129,7 +129,7 @@ namespace Library
 						for(uint64_t k = 0; k < this->backingstore[i]->size(); k++)
 						{
 							if(this->backingstore[i]->get(k))
-								list->InsertBack(&(this->backingstore[i]->get(k)->key));
+								list->push_back(&(this->backingstore[i]->get(k)->key));
 						}
 					}
 				}

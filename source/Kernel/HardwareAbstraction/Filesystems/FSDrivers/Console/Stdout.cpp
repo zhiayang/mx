@@ -4,6 +4,7 @@
 
 
 #include <Kernel.hpp>
+#include <Console.hpp>
 #include <HardwareAbstraction/Filesystems.hpp>
 
 namespace Kernel {
@@ -75,7 +76,8 @@ namespace Filesystems
 		if(length == 0)
 			return 0;
 
-		Library::StandardIO::PrintString((const char*) buf, length);
+		// Library::StandardIO::PrintString((const char*) buf, length);
+		TTY::WriteTTY(1, (uint8_t*) buf, length);
 		return length;
 	}
 

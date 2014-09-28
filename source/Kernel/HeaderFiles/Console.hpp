@@ -4,6 +4,8 @@
 
 #pragma once
 #include <stdint.h>
+#include <rdestl/rdestl.h>
+#include <CircularBuffer.hpp>
 
 namespace Kernel
 {
@@ -26,4 +28,33 @@ namespace Kernel
 		uint16_t GetCursorY();
 	}
 
+	namespace TTY
+	{
+		class TTYObject
+		{
+			public:
+				TTYObject(uint8_t bufmode, uint64_t (*)(TTYObject*, uint8_t*, uint64_t), uint64_t (*)(TTYObject*, uint8_t*, uint64_t), void (*)(TTYObject*));
+				uint64_t (*in)(TTYObject*, uint8_t*, uint64_t);
+				uint64_t (*out)(TTYObject*, uint8_t*, uint64_t);
+				void (*flush)(TTYObject*);
+
+				bool echomode;
+				uint8_t BufferMode;
+				rde::vector<uint8_t>* buffer;
+				rde::vector<uint8_t>* internalbuffer;
+		};
+
+		void Initialise();
+		void EchoToTTY(long ttyid, uint8_t* data, uint64_t length);
+
+		uint64_t WriteTTY(long ttyid, uint8_t* data, uint64_t length);
+		uint64_t ReadTTY(long ttyid, uint8_t* data, uint64_t length);
+		uint64_t ConfigureTTY(uint64_t configkey, void* data);
+	}
 }
+
+
+
+
+
+

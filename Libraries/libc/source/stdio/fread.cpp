@@ -3,9 +3,21 @@
 // Licensed under the Apache License Version 2.0.
 
 #include "../../include/unistd.h"
+#include "../../include/assert.h"
+#include "../../include/stdlib.h"
+#include "../../include/string.h"
 
-extern "C" size_t fread(void* ptr, size_t size, size_t count, FILE* stream)
+extern "C" size_t fread(void* ptr, size_t esize, size_t length, FILE* stream)
 {
-	read((int) stream->__fd, ptr, size * count);
-	return count;
+	return read((int) stream->__fd, ptr, esize * length);
 }
+
+
+
+
+
+
+
+
+
+

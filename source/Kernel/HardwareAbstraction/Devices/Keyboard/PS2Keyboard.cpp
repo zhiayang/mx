@@ -3,6 +3,7 @@
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
+#include <Console.hpp>
 #include <HardwareAbstraction/Devices/IOPort.hpp>
 #include "Translation.hpp"
 
@@ -118,18 +119,16 @@ namespace Devices
 		if(!IsF0 && !IsE0)
 		{
 			uint8_t x = this->Translate(PS2::Device1Buffer);
-			IO::Manager::Write(&x, 1);
-			// this->Buffer->Write(&x, 1);
-			// IPC::SendSimpleMessage(0, IPC::MessageTypes::ServiceData, 2, x, 0, 0);
+			TTY::EchoToTTY(0, &x, 1);
+			// IO::Manager::Write(&x, 1);
 		}
 		else if(!IsF0 && IsE0)
 		{
 			// because E0 codes have no printable thingy, we just forward the actual HID code.
 			// ORed with 0x80, to avoid the ASCII printable range.
-			// IPC::SendSimpleMessage(0, IPC::MessageTypes::ServiceData, 2, this->TranslateE0(PS2::Device1Buffer) | 0x80, 0, 0);
+
 			uint8_t x = this->TranslateE0(PS2::Device1Buffer) | 0x80;
-			IO::Manager::Write(&x, 1);
-			// this->Buffer->Write(&x, 1);
+			TTY::EchoToTTY(0, &x, 1);
 		}
 	}
 

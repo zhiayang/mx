@@ -356,25 +356,29 @@ namespace Kernel
 			// mount root fs from partition 0 at /
 			VFS::Mount(f1->Partitions->get(0), fs, "/");
 			Log("Root FS Mounted at /");
-
 		}
 
 		Console::ClearScreen();
+
+		TTY::Initialise();
+
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
 		{
-			// setup args:
-			// 0: prog name (duh)
-			// 1: FB address
-			// 2: width
-			// 3: height
-			// 4: bpp (32)
+			{
+				// setup args:
+				// 0: prog name (duh)
+				// 1: FB address
+				// 2: width
+				// 3: height
+				// 4: bpp (32)
 
-			const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
-			auto proc = LoadBinary::Load(path, "displayd",
-				(void*) 5, (void*) new uint64_t[5] { (uint64_t) path, GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
+				const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
+				auto proc = LoadBinary::Load(path, "displayd",
+					(void*) 5, (void*) new uint64_t[5] { (uint64_t) path, GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
 
-			proc->Threads->get(0)->Priority = 2;
-			Multitasking::AddToQueue(proc);
+				proc->Threads->get(0)->Priority = 2;
+				Multitasking::AddToQueue(proc);
+			}
 		}
 
 

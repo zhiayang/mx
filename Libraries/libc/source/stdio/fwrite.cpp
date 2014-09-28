@@ -6,6 +6,6 @@
 
 extern "C" size_t fwrite(const void* ptr, size_t size, size_t count, FILE* stream)
 {
-	write((int) stream->__fd, ptr, count * size);
-	return count;
+	// stdout buffering will be handled by the kernel.
+	return write((int) stream->__fd, ptr, count * size);
 }

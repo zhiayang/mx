@@ -4,6 +4,322 @@
 		"selected_items":
 		[
 			[
+				"BUFS",
+				"BUFSIZ	macro"
+			],
+			[
+				"BUFSI",
+				"BUFFER_SIZE	macro"
+			],
+			[
+				"__BUFMODE_",
+				"__BUFMODE_BLOCK	macro"
+			],
+			[
+				"buff",
+				"bufferoffset	uint64_t"
+			],
+			[
+				"buf",
+				"bufferoffset	uint64_t"
+			],
+			[
+				"read",
+				"read(int fd, void *buf, size_t count)	ssize_t"
+			],
+			[
+				"buffe",
+				"buffersize	uint64_t"
+			],
+			[
+				"_IO",
+				"_IONBF	macro"
+			],
+			[
+				"__str",
+				"__streambuf_create(size_t size)	struct streambuf *"
+			],
+			[
+				"__steam",
+				"__streambuf_create(size_t size)	struct streambuf *"
+			],
+			[
+				"bu",
+				"buffer	void *"
+			],
+			[
+				"str",
+				"streambuf	struct"
+			],
+			[
+				"Create",
+				"CreateMutex(pthread_mutex_t *mtx, const pthread_mutexattr_t *attr)	void"
+			],
+			[
+				"Gte",
+				"GetCurrentThread()	Kernel::HardwareAbstraction::Multitasking::Thread *"
+			],
+			[
+				"Set",
+				"SetThreadErrno(int errno)	void"
+			],
+			[
+				"PTHR",
+				"PTHREAD_MUTEX_ERRORCHECK	macro"
+			],
+			[
+				"PTH",
+				"PTHREAD_MUTEX_NORMAL	macro"
+			],
+			[
+				"erase",
+				"erase(const key_type &key)	size_type"
+			],
+			[
+				"mtx",
+				"mtxmap	rde::hash_map<pthread_mutex_t, Mutex *> *"
+			],
+			[
+				"pth",
+				"pthread_mutex_t	typedef"
+			],
+			[
+				"Mu",
+				"Mutex	class"
+			],
+			[
+				"pthr",
+				"pthread_mutex_t	typedef"
+			],
+			[
+				"pt",
+				"pthread_mutex_t	typedef"
+			],
+			[
+				"cur",
+				"CurrentThread	Kernel::HardwareAbstraction::Multitasking::Thread *"
+			],
+			[
+				"Auto",
+				"AutoSemaphore	class"
+			],
+			[
+				"pop",
+				"pop_front()	Thread *"
+			],
+			[
+				"M",
+				"Multitasking	namespace"
+			],
+			[
+				"pus",
+				"push_back(const ALPPair &v)	void"
+			],
+			[
+				"sr",
+				"str1	const char*"
+			],
+			[
+				"Is",
+				"IsParsingWidth	bool"
+			],
+			[
+				"wa",
+				"watching	Library::LinkedList<Thread> *"
+			],
+			[
+				"remove",
+				"RemoveFront()	Thread *"
+			],
+			[
+				"Thr",
+				"Thread	struct"
+			],
+			[
+				"wat",
+				"watching	Library::LinkedList<Thread> *"
+			],
+			[
+				"sta",
+				"State	uint8_t"
+			],
+			[
+				"stac",
+				"StackSize	uint64_t"
+			],
+			[
+				"Sta",
+				"StackPointer	uint64_t"
+			],
+			[
+				"FreeVirtual",
+				"FreeVirtual(uint64_t addr)	void"
+			],
+			[
+				"hash",
+				"hash_map<typename TKey, typename TValue>()	constructor"
+			],
+			[
+				"FLAG_",
+				"FLAG_DETACHED	macro"
+			],
+			[
+				"BLO",
+				"Block()	void"
+			],
+			[
+				"WakeForMessage",
+				"WakeForMessage(Kernel::HardwareAbstraction::Multitasking::Thread *thread)	void"
+			],
+			[
+				"watch",
+				"watching	rde::list<Thread *> *"
+			],
+			[
+				"w",
+				"watchers	rde::list<Thread *> *"
+			],
+			[
+				"TH",
+				"Thread	struct"
+			],
+			[
+				"GetCurrent",
+				"GetCurrentThread()	Kernel::HardwareAbstraction::Multitasking::Thread *"
+			],
+			[
+				"Threa",
+				"Thread	struct"
+			],
+			[
+				"pthrea",
+				"pthread_t	typedef"
+			],
+			[
+				"S",
+				"StandardIO"
+			],
+			[
+				"Process",
+				"ProcessList	rde::list<Process *> *"
+			],
+			[
+				"Thread",
+				"ThreadList_LowPrio	rde::list<Thread *> *"
+			],
+			[
+				"Th",
+				"Thread	struct"
+			],
+			[
+				"thr",
+				"thrlist	rde::list<Thread*>* thrlist = GetThreadList(thread);"
+			],
+			[
+				"Get",
+				"GetTID()	pthread_t"
+			],
+			[
+				"pthread_",
+				"pthread_Join(pthread_t thread, void **retval)	int"
+			],
+			[
+				"GetThread",
+				"GetThread(uint64_t tid)	Kernel::HardwareAbstraction::Multitasking::Thread *"
+			],
+			[
+				"Exit",
+				"ExitThread"
+			],
+			[
+				"stack",
+				"stacksize	uint64_t"
+			],
+			[
+				"THrea",
+				"Thread_attr	struct"
+			],
+			[
+				"pthread",
+				"pthread_attr_t	typedef"
+			],
+			[
+				"NO",
+				"_NORMAL"
+			],
+			[
+				"_B",
+				"_BOLD"
+			],
+			[
+				"BOLD",
+				"_BOLD"
+			],
+			[
+				"CPU",
+				"KernelCPUID	CPUID::CPUIDData *"
+			],
+			[
+				"Section",
+				"ElfSectionHeaderEntrySize	uint16_t"
+			],
+			[
+				"ElfSection",
+				"ElfSectionHeaderEntries	uint16_t"
+			],
+			[
+				"Cir",
+				"CircularMemoryBuffer(uint64_t s)	constructor"
+			],
+			[
+				"id",
+				"fsid	dev_t"
+			],
+			[
+				"O_CRE",
+				"O_CREATE	macro"
+			],
+			[
+				"Circu",
+				"CircularMemoryBuffer	class"
+			],
+			[
+				"Signal",
+				"SignalProcess(pid_t pid, int signum)	void"
+			],
+			[
+				"Syscall",
+				"SyscallTable0"
+			],
+			[
+				"SubP",
+				"SubPage2"
+			],
+			[
+				"Do",
+				"DoCall"
+			],
+			[
+				"Cru",
+				"CurrentCR3	uint64_t"
+			],
+			[
+				"NUm",
+				"NumProcesses	uint64_t"
+			],
+			[
+				"Num",
+				"NumProcesses	uint64_t"
+			],
+			[
+				"MAXMESS",
+				"MaxMessages	macro"
+			],
+			[
+				"Lo",
+				"LoadBinary	namespace"
+			],
+			[
 				"Heap",
 				"HeapAddr	uint64_t"
 			],
@@ -96,10 +412,6 @@
 				"Syscall1Param(uint64_t scvec, uint64_t p1)	uint64_t"
 			],
 			[
-				"Syscall",
-				"Syscall0Param(uint64_t scvec)	uint64_t"
-			],
-			[
 				"Syscaa",
 				"Syscall1Param(uint64_t scvec, uint64_t p1)	uint64_t"
 			],
@@ -114,10 +426,6 @@
 			[
 				"Cu",
 				"CircularMemoryBuffer(uint64_t s)	constructor"
-			],
-			[
-				"Cir",
-				"CircularMemoryBuffer	class"
 			],
 			[
 				"driver",
@@ -206,324 +514,16 @@
 			[
 				"c",
 				"createdate	uint16_t"
-			],
-			[
-				"st",
-				"st_blksize	blksize_t"
-			],
-			[
-				"at",
-				"accessdate	uint16_t"
-			],
-			[
-				"cl",
-				"cluslen	uint64_t"
-			],
-			[
-				"clus",
-				"clusoffset	uint64_t"
-			],
-			[
-				"skip",
-				"skippedclus	uint64_t"
-			],
-			[
-				"readfile",
-				"Read(fd_t fd, void *buf, off_t off, size_t len)	size_t"
-			],
-			[
-				"KHeap",
-				"KernelHeap::	namespace"
-			],
-			[
-				"MMM",
-				"MemoryManager	namespace"
-			],
-			[
-				"a",
-				"attrib	uint8_t"
-			],
-			[
-				"ATTR_",
-				"ATTR_READONLY	macro"
-			],
-			[
-				"pushback",
-				"push_back(const rde::basic_string<char, rde::allocator, rde::simple_string_storage<char, rde::allocator> > &v)	void"
-			],
-			[
-				"primar",
-				"PrimaryBaseIO	uint16_t"
-			],
-			[
-				"Page",
-				"PageDirectoryIndex	uint64_t"
-			],
-			[
-				"Phy",
-				"Physical::	namespace"
-			],
-			[
-				"PDPTI",
-				"PageDirectoryPointerTableIndex	uint64_t"
-			],
-			[
-				"All",
-				"AllocateFromReserved()	uint64_t"
-			],
-			[
-				"Phys",
-				"PhysAddr	uint64_t"
-			],
-			[
-				"Kernelheap",
-				"KernelHeapMetadata	macro"
-			],
-			[
-				"Virt",
-				"VirtAddr	uint64_t"
-			],
-			[
-				"Get",
-				"GetKernelCR3()	uint64_t"
-			],
-			[
-				"Kern",
-				"Kernel::	namespace"
-			],
-			[
-				"Kernel",
-				"Kernel::	namespace"
-			],
-			[
-				"PCIDev",
-				"PCIDevices	rde::list<PCIDevice *> *"
-			],
-			[
-				"p",
-				"push_back(Kernel::HardwareAbstraction::MemoryManager::Physical::Pair *const &value)	void"
-			],
-			[
-				"pop",
-				"pop_front()	void"
-			],
-			[
-				"Chunk",
-				"ChunksInHeap	uint64_t"
-			],
-			[
-				"Set",
-				"Set(void *Dest, uint8_t Value, uint64_t Length)	void *"
-			],
-			[
-				"push",
-				"push_back(const rde::basic_string<char, rde::allocator, rde::simple_string_storage<char, rde::allocator> > &v)	void"
-			],
-			[
-				"Mutex",
-				"Mutex	class"
-			],
-			[
-				"round",
-				"round(uint64_t s)	uint64_t"
-			],
-			[
-				"KernelHea",
-				"KernelHeap::	namespace"
-			],
-			[
-				"nu",
-				"nument	int"
-			],
-			[
-				"Alloca",
-				"AllocateDMA(uint64_t size)	uint64_t"
-			],
-			[
-				"Print",
-				"PrintFormatted(const char *string, ...)	void"
-			],
-			[
-				"OpenFile",
-				"OpenFile(const char *path, int flags)	fd_t"
-			],
-			[
-				"par",
-				"StorageDevice::Partitions	Library::LinkedList<Partition> *"
-			],
-			[
-				"cluster",
-				"Cluster	uint32_t"
-			],
-			[
-				"A",
-				"AllocateDMA(uint64_t size)	uint64_t"
-			],
-			[
-				"Memory",
-				"MemoryManager::	namespace"
-			],
-			[
-				"d",
-				"driver	Kernel::HardwareAbstraction::Filesystems::FSDriver *"
-			],
-			[
-				"V",
-				"vnode	struct"
-			],
-			[
-				"Type",
-				"VNodeType	enum"
-			],
-			[
-				"VN",
-				"vnode	struct"
-			],
-			[
-				"vnode",
-				"vnode_data	struct"
-			],
-			[
-				"vnod",
-				"vnode_data	struct"
-			],
-			[
-				"Open",
-				"Open(Kernel::HardwareAbstraction::Filesystems::IOContext *ioctx, Kernel::HardwareAbstraction::Filesystems::VFS::vnode *node, int flags)	Kernel::HardwareAbstraction::Filesystems::VFS::fileentry *"
-			],
-			[
-				"Mount",
-				"Mount(Kernel::HardwareAbstraction::Filesystems::FSDriver *fs, const char *path)	void"
-			],
-			[
-				"if",
-				"info	Kernel::HardwareAbstraction::Filesystems::VFS::fsref *"
-			],
-			[
-				"blk",
-				"blksize_t	typedef"
-			],
-			[
-				"x86_64-",
-				"x86_64-orionx-as"
-			],
-			[
-				"GetStra",
-				"GetStorageDevice()	Kernel::HardwareAbstraction::Devices::Storage::StorageDevice *"
-			],
-			[
-				"IO",
-				"IOTransfer	struct"
-			],
-			[
-				"FT_LOAD_FACE",
-				"FT_Open_Face(FT_Library library, const FT_Open_Args *args, FT_Long face_index, FT_Face *aface)	FT_Error"
-			],
-			[
-				"jmp",
-				"__jmp_buf_regs	struct"
-			],
-			[
-				"Bitm",
-				"BitmapImage	class"
-			],
-			[
-				"Bi",
-				"BitmapImage	class"
-			],
-			[
-				"mn",
-				"tm_mon	int"
-			],
-			[
-				"tm_day",
-				"tm_mday	int"
-			],
-			[
-				"tmy",
-				"tm_year	int"
-			],
-			[
-				"O",
-				"O_RDWR	macro"
-			],
-			[
-				"S",
-				"StandardIO	namespace"
-			],
-			[
-				"Prinnt",
-				"PrintFormatted(const char *string, ...)	void"
-			],
-			[
-				"getcur",
-				"GetCurrentThread()	Kernel::HardwareAbstraction::Multitasking::Thread *"
-			],
-			[
-				"mult",
-				"Multitasking::	namespace"
-			],
-			[
-				"curr",
-				"CurrentThread	Kernel::HardwareAbstraction::Multitasking::Thread *"
-			],
-			[
-				"Ge",
-				"GetCurrentProcess()	Kernel::HardwareAbstraction::Multitasking::Process *"
-			],
-			[
-				"MUlti",
-				"Multitasking::	namespace"
-			],
-			[
-				"STATE_",
-				"STATE_SUSPEND	macro"
-			],
-			[
-				"Sta",
-				"State	uint8_t"
-			],
-			[
-				"GeTThrea",
-				"GetThreadList(Kernel::HardwareAbstraction::Multitasking::Thread *t)	Library::LinkedList<Thread> *"
-			],
-			[
-				"GetThrea",
-				"GetThreadList(Kernel::HardwareAbstraction::Multitasking::Thread *t)	Library::LinkedList<Thread> *"
-			],
-			[
-				"Comm",
-				"CommandList	Library::LinkedList<Command> *"
-			],
-			[
-				"LOG",
-				"Log(const char *str, ...)	void"
-			],
-			[
-				"GetCUr",
-				"GetCurrentThread()	Kernel::HardwareAbstraction::Multitasking::Thread *"
-			],
-			[
-				"__s",
-				"__sighandle_other()	void"
-			],
-			[
-				"Curr",
-				"GetCurrentThread()	Kernel::HardwareAbstraction::Multitasking::Thread *"
-			],
-			[
-				"GetCur",
-				"GetCurrentThread()	Kernel::HardwareAbstraction::Multitasking::Thread *"
 			]
 		]
 	},
 	"buffers":
 	[
 		{
-			"file": "applications/Console/makefile",
+			"file": "applications/DisplayServer/main.cpp",
 			"settings":
 			{
-				"buffer_size": 670,
+				"buffer_size": 1138,
 				"line_ending": "Unix"
 			}
 		},
@@ -531,12 +531,28 @@
 			"file": "source/Kernel/Kernel.cpp",
 			"settings":
 			{
-				"buffer_size": 18957,
+				"buffer_size": 19322,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "Libraries/libc/source/support.cpp",
+			"settings":
+			{
+				"buffer_size": 831,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "source/Kernel/Console/UserspaceTTY.cpp",
+			"settings":
+			{
+				"buffer_size": 905,
 				"line_ending": "Unix"
 			}
 		}
 	],
-	"build_system": "Packages/User/makefile.sublime-build",
+	"build_system": "Packages/Makefile/Make.sublime-build",
 	"command_palette":
 	{
 		"height": 287.0,
@@ -547,12 +563,16 @@
 				"Snippet: Copyright Header"
 			],
 			[
+				"c",
+				"Snippet: Copyright Header"
+			],
+			[
 				"clean",
 				"Build: Make clean"
 			],
 			[
-				"c",
-				"Snippet: Copyright Header"
+				"clena",
+				"Build: Make clean"
 			],
 			[
 				"",
@@ -569,10 +589,6 @@
 			[
 				"instal",
 				"Package Control: Install Package"
-			],
-			[
-				"clena",
-				"Build: Make clean"
 			],
 			[
 				"hea",
@@ -805,147 +821,149 @@
 	[
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/DisplayServer",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/defs",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/Console",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/VideoOutput",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/VideoOutput/LinearFramebuffer",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/Utility"
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Devices",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Multitasking"
 	],
 	"file_history":
 	[
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/Console/main.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/DisplayServer/main.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/mx.sublime-project",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/Console/makefile",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/malloc.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/stb_truetype.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/_heap.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/include/stb_truetype.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/stdlib.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/memory.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/malloc.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/MemoryManager/KernelHeap.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/platform/jmp/longjmp.s",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/platform/jmp/setjmp.s",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Multitasking/Scheduler.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/LoadBinary/LoadELF.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/Console/Console.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/sys/mmap.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/_format.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/Kernel.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/Memory.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/String.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Devices/StorageDevices/ATA/PIO.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/BitmapLibrary/BitmapLibrary.cpp",
-		"/Users/zhiayang/Desktop/tmp/coverpage.html",
-		"/Users/zhiayang/Library/Application Support/Sublime Text 3/Packages/User/Preferences.sublime-settings",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/limits.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Filesystems/FSDrivers/FAT32.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Filesystems/VFS.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/defs/_limits.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdlib/strtoul.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/makefile",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdlib/strtol.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdlib/strtoull.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdlib/strtoll.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/stdint.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/include/__/math.h",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Devices/PCI.cpp",
+		"/Users/zhiayang/Desktop/Stuff/Orion Industries/Vx/output/rom.vxs",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/StandardIO.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/CircularMemoryBuffer.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/sortix/libc/include/unistd.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libm/Makefile",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libm-old/makefile",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libm/include/math.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/sys/cdefs.h",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/ttyServer/main.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/ttyServer/makefile",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/fread.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/fgetc.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/Kernel.cpp",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/stdio.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libz/Makefile",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/printf.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/defs/_file.h",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/CircularMemoryBuffer.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/mx.sublime-project",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/_streambuffer.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/defs/_streambuf.h",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/fwrite.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/support.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/unistd/read.cpp",
+		"/Users/zhiayang/Downloads/Invictus_Universal_1.6.x/assets/minecraft/mcpatcher/ctm/blocks/glass/black/glass_black.properties",
+		"/Users/zhiayang/Downloads/Invictus_Universal_1.6.x/assets/minecraft/mcpatcher/ctm/blocks/glass/blue/glass_blue.properties",
+		"/Users/zhiayang/Downloads/Invictus_Universal_1.6.x/assets/minecraft/mcpatcher/ctm/blocks/glass/brown/glass_brown.properties",
+		"/Users/zhiayang/Downloads/Invictus_Universal_1.6.x/assets/minecraft/mcpatcher/ctm/blocks/glass/cyan/glass_cyan.properties",
+		"/Users/zhiayang/Downloads/Invictus_Universal_1.6.x/assets/minecraft/mcpatcher/ctm/blocks/glass/gray/glass_gray.properties",
+		"/Users/zhiayang/Downloads/Invictus_Universal_1.6.x/assets/minecraft/mcpatcher/ctm/blocks/glass/green/glass_green.properties",
+		"/Users/zhiayang/Downloads/Invictus_Universal_1.6.x/assets/minecraft/mcpatcher/ctm/blocks/glass/light_blue/glass_light_blue.properties",
+		"/Users/zhiayang/Downloads/Invictus_Universal_1.6.x/assets/minecraft/mcpatcher/ctm/blocks/glass/lime/glass_lime.properties",
+		"/Users/zhiayang/Downloads/Invictus_Universal_1.6.x/assets/minecraft/mcpatcher/ctm/blocks/glass/magenta/glass_magenta.properties",
+		"/Users/zhiayang/Downloads/Invictus_Universal_1.6.x/assets/minecraft/mcpatcher/ctm/blocks/glass/orange/glass_orange.properties",
+		"/Users/zhiayang/Downloads/Invictus_Universal_1.6.x/assets/minecraft/mcpatcher/ctm/blocks/glass/pink/glass_pink.properties",
+		"/Users/zhiayang/Downloads/Invictus_Universal_1.6.x/assets/minecraft/mcpatcher/ctm/blocks/glass/purple/glass_purple.properties",
+		"/Users/zhiayang/Downloads/Invictus_Universal_1.6.x/assets/minecraft/mcpatcher/ctm/blocks/glass/red/glass_red.properties",
+		"/Users/zhiayang/Downloads/Invictus_Universal_1.6.x/assets/minecraft/mcpatcher/ctm/blocks/glass/silver/glass_silver.properties",
+		"/Users/zhiayang/Downloads/Invictus_Universal_1.6.x/assets/minecraft/mcpatcher/ctm/blocks/glass/white/glass_white.properties",
+		"/Users/zhiayang/Downloads/Invictus_Universal_1.6.x/assets/minecraft/mcpatcher/ctm/blocks/glass/yellow/glass_yellow.properties",
+		"/Users/zhiayang/Downloads/Invictus_Universal_1.6.x/assets/minecraft/mcpatcher/ctm/blocks/glass/default/transparency/glass_pane.properties",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/defs/_printf.h",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/Kernel.hpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libsyscall/source/Functions.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/pthread.h",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/DisplayServer/main.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/SynchroTypes/Mutex.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/pthread/pthread_mutex.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/SystemCall/Syscall.s",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libsyscall/syscall.h",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/sys/types.h",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/Synchro.hpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/defs/_pthreadstructs.h",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/LoadBinary/LoadELF.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/IPC/IPC.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Multitasking/SchedulingHelpers.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libsyscall/source/helper.s",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Multitasking/Scheduler.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Multitasking/Task.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/makefile",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Filesystems/VFS.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/HardwareAbstraction/Multitasking.hpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/SynchroTypes/Semaphore.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/MemoryManager/KernelHeap.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/Utility/Log.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/DisplayServer/makefile",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/Console.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Interrupts/Exceptions.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/Global.hpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/HardwareAbstraction/Devices/NIC.hpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Multitasking/Mutex.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/IO/IOScheduler.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/HardwareAbstraction/MemoryManager.hpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/unistd/misc.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/unistd.h",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/tools/getpath.sh",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/BitmapLibrary/makefile",
+		"/Users/zhiayang/Library/Application Support/Sublime Text 3/Packages/Default/Preferences.sublime-settings",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/rdestl/makefile",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/makefile",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/defines.mk",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libsyscall/makefile",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libm/makefile",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/makefile",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/makefile",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/makefile",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/bootstrap",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/string/strlen.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/string/memset.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/string/memrchr.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/string/memmove.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/string/memcpy.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/string/memcmp.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/string/memchr.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/string/memccpy.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdlib/qsort.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/malloc.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/mqueue/mq_open.cpp",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/vasprintf.cpp",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/unistd/open.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/support.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/sortix/libc/stdio/vasprintf.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/makefile",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/fcntl.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/endian.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/sortix/libc/include/endian.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/HardwareAbstraction/Filesystems.hpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/local/include/freetype2/ftsystem.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/local/include/freetype2/config/ftconfig.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/makefile",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/defs/_file.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/_file.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/defs/_func.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/fread.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/fwrite.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/fopen.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/fclose.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Multitasking/SchedulingHelpers.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/SystemCall/Process.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/bootstrap",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Filesystems/FSDrivers/Console/Stdin.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/HelloSpamTest/makefile",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/makefile",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/sys/mman.h",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/string.h",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/stdlib.h",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/stddef.h",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/include/stdbool.h",
+		"/Users/zhiayang/Desktop/test-mx/Libraries/libc/include/stddef.h",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/tools/mountdisk.sh",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/tools/unmountdisk.sh",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/tools/createdisk",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/HardwareAbstraction/MemoryManager/Virtual.hpp",
 		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/MemoryManager/Virtual.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Multitasking/Task.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/SystemCall/UserspaceInterface.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Filesystems/FSDrivers/Console/Stdout.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/platform/support/crt0.s",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libsyscall/source/Functions.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libsyscall/syscall.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/stdio/fgetc.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/IO/IOScheduler.cpp",
-		"/Users/zhiayang/Downloads/KerbalJointReinforcement_v2.4.3/README.md",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/grub/grub-core/kern/misc.c",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libsyscall/makefile",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/LibUserspace/Setup.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/LibUserspace/PrintCharU.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/LibUserspace/Heap.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/LibUserspace/SystemCall.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/unistd/close.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/unistd/read.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source/unistd/write.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/LoadBinary/GenericExecutable.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/CodingStyle.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/include/c++/bits/ctype_inline.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/toolchain/share/man/man7/gfdl.7",
-		"/Users/zhiayang/Library/Application Support/Steam/SteamApps/common/Kerbal Space Program/saves/World/persistent.sfs",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libsyscall/source/InstallIRQ.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libsyscall/source/IPC.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libsyscall/source/FileIO.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libsyscall/source/helper.s",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/SystemCall/Syscall.s",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libsyscall/source/MiscFileIO.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libsyscall/source/Close.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libsyscall/source/Physical.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libsyscall/source/Misc.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/applications/HelloSpamTest/HelloSpamTest.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/HeaderFiles/Heap.hpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/HardwareAbstraction.hpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/include/c++/bits/hashtable_policy.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/HardwareAbstraction/LoadBinary.hpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/IPC/IPC.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/SystemCall/ScreenIO.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/include/c++/ext/aligned_buffer.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/toolchain/lib/gcc/x86_64-orionx/4.9.1/plugin/include/langhooks.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/include/c++/bits/locale_facets_nonio.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/build/sysroot/usr/include/c++/bits/locale_classes.h",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/freetype-2.5.3/ChangeLog",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/link.ld",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/SystemCall/InterruptPlugs.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Devices/Keyboard/PS2Keyboard.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/IO/InputManager.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/HardwareAbstraction/Devices/Keyboard.hpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Devices/Keyboard/Keyboard.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Filesystems/FSDrivers/Console/Console.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Devices/PS2/PS2Controller.cpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/HardwareAbstraction/IO.hpp",
-		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HeaderFiles/Kernel.hpp",
-		"/Users/zhiayang/Library/Application Support/Sublime Text 3/Packages/SublimeClang/SublimeClang.sublime-settings"
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/Memory.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/String.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Filesystems/FSDrivers/FAT32.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/HeaderFiles/String.hpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Filesystems/Partition.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Filesystems/FSDrivers/MessagingIPC.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/VideoOutput/LinearFramebuffer/LinearFramebuffer.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/Utility.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/VideoOutput/Console80x25.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/HeaderFiles/Memory.hpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Network/Ethernet.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Network/DNS.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/MemoryManager/Physical.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/MemoryManager/MemoryMap.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/SystemCall/Process.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/HeaderFiles/List.hpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/HeaderFiles/Vector.hpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/HeaderFiles/Iterator.hpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Devices/PCI/PCI.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/StringStream.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/LibKernel/KernelPlugs.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/HeaderFiles/FileIO.hpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Interrupts/Interrupts.cpp",
+		"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source/Kernel/HardwareAbstraction/Devices/StorageDevices/ATA/ATA.cpp"
 	],
 	"find":
 	{
@@ -956,6 +974,20 @@
 		"height": 93.0,
 		"where_history":
 		[
+			"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source,-*.cpp.d",
+			"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source",
+			"",
+			"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc/source",
+			"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source",
+			"",
+			"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source",
+			"/Users/zhiayang/Desktop/Stuff/OSDev/mx/libraries/iris",
+			"/Users/zhiayang/Desktop/Stuff/OSDev/mx/source",
+			"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris",
+			"",
+			"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/Iris/StringStream.cpp",
+			"",
+			"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/libc",
 			"",
 			"/Users/zhiayang/Desktop/Stuff/OSDev/mx/Libraries/rdestl",
 			"",
@@ -977,141 +1009,156 @@
 		"case_sensitive": false,
 		"find_history":
 		[
-			"getfontoffsetforindex",
-			" \\{\\n",
-			"Reallocate(",
-			"Reallocate",
-			"mmap",
-			"malloc",
-			"memory::set",
-			"#pragma clang diagnostic ignored",
-			"#pragma clang ignored",
-			"#pragma clang",
-			"#pragma",
-			"min",
-			"cp",
-			" )",
-			" ( ",
-			"LLONG_MIN",
-			"restrict ",
-			" )",
-			" ( ",
-			"wno-doc",
-			"->fd",
-			"killing %d threads",
-			"%x, %x",
-			"Log(3,",
+			"sb->writep",
+			"sb->size",
+			"this",
+			"hash_map",
+			"end",
+			"rde::hash_map",
+			"errno",
+			"todo errno",
+			"InstructionPointer",
+			"signal",
+			"Mutexes::",
+			"Symbolicate.hpp",
+			"Mutexes.hpp",
+			"LOCK",
+			"useconds_t",
+			"dev",
+			"update",
+			"$(CXX)",
+			"stddef",
+			"stdarg",
+			"errno",
+			"strcpy",
+			"strcmp",
+			"strlen",
+			"strcpy",
+			"Library::Memory",
+			"memmove",
 			"memcpy",
-			"SEEK_SET",
-			"read",
-			"printfor",
-			"createnode",
-			"Log(3, ",
-			"DIRECTREAD",
-			" )",
-			" ( ",
-			" int ",
-			" int",
-			"int",
-			"size",
-			"int64",
-			"int32",
-			"int16",
-			"int8",
-			"uint64",
-			"uint32",
-			"uint16",
-			"uint8",
-			"#include \"rdestl.h\"",
-			"size_type",
-			"struct",
-			"new",
-			"duplicate",
+			"memset",
+			"Colours.hpp",
+			"Colours.cpp",
+			"Colours::",
+			"Comparable",
+			"->Size(",
+			"->Size",
+			"Size",
+			"back",
+			"Back",
+			"RemoveBack",
+			"RemoveFront",
+			"Front",
+			"pop_front",
+			"RemoveFront",
+			"RemoveBack",
+			"InsertFront",
+			"InsertBack",
+			"->Size(",
+			"this->size",
+			"->Size(",
+			"->Get(",
+			"Get",
+			"->Get(",
+			"->Get",
+			"LinkedObjList",
+			"getthread(",
+			"getthread",
+			"getth",
+			"kill",
+			"UnMap",
+			"lfbbuffer",
+			"gettrue",
 			"UHALT",
-			"HALT",
-			"UHALT",
-			"Print()",
-			"PCIDevices",
-			"__assert",
-			"AllocateVia",
-			"->size",
-			"assert",
-			"#([:blank:]*)define([:blank:]*)assert",
-			"#(:blank:*)define(:blank:*)assert",
-			"#(:blank:+)define(:blank:+)assert",
-			"#( +)define( +)assert",
-			"#define assert",
-			"sizeof\\((.*)\\);",
-			"sizeof\\((.*)\\)",
-			"sizeof\\([.*]\\)",
-			"sizeof\\([.+]\\)",
-			"sizeof\\([*]+\\)",
-			"sizeof\\([.]+\\)",
-			"sizeof\\(([.]+)\\)",
-			"std::",
-			"#include",
-			"std::",
-			"std",
-			"deque",
-			"std::string",
-			"mbtowc",
-			"failure",
-			"round",
-			"malloc",
-			"operator new",
-			"delete",
-			"->insert",
-			"insert",
+			"cli",
+			"@",
+			"unwatch",
+			"errno",
+			"_errno",
+			"strcmp",
+			"strlen",
+			"strcpy",
+			"Set32",
+			"memmove",
+			"memset",
+			"memcpy",
+			"memmove",
+			"memset",
+			"TopOfStack",
+			"TopOfSack",
+			"find",
+			"AllocateDMA",
 			"allocate",
-			"getclusterchain",
-			"clusterchain",
-			"delete",
-			"__cxa",
-			"traverse",
-			"DirectoryEntry",
-			"operator new",
-			"fsdriver",
-			"Loading",
-			"Orion-X4",
-			"backup",
-			"oex",
-			"output",
-			"cross64",
-			"cr3",
-			"SwitchPML4T",
-			"MAC",
-			"tx",
-			"initialise",
-			"virtual",
-			"initialise",
-			"expanding",
-			"goto repeat",
-			"GetFSObjects",
-			"ScheduleRead",
-			"Read(",
-			"Read",
-			"ATA->Read",
-			"block",
-			"sigsetjmp",
-			"setsigjmp",
-			"setjmp",
-			"SIG_SETMASK",
-			"FT_EXPORT_DEF",
-			"FT_Init_Freetype",
-			"extern \"C\"",
-			"FT_Init_FreeType",
-			"EDOM",
-			"TODO",
-			"lseek",
-			"exit",
-			"__tm"
+			"Memory.hpp",
+			"#include \"Memory.hpp\"",
+			"#include <Memory.hpp>",
+			"UnMap",
+			"GetPagingFlag",
+			"Memory::",
+			"String.hpp",
+			"TrimWhitespace",
+			"CircularBuffer",
+			"erase",
+			"Vector",
+			"Comparable",
+			"#include <List.hpp>",
+			"LinkedObjList",
+			"LinkedList",
+			"APCI",
+			"acip",
+			"LinkedList",
+			"LinkedLi",
+			"LinkedList",
+			"SimpleStringMap",
+			"LinkedList",
+			"HashMap",
+			"LinkedList",
+			"Library::LinkedList",
+			"MapToAllProcesses",
+			"SearchByName",
+			"FetchAndRemove",
+			"destruct_node",
+			"FetchAndRemove",
+			"allocatedpagelist",
+			"Flags",
+			"getthread",
+			"getret",
+			"getthread",
+			"CurrentFDIndex",
+			"type",
+			"CurrentSharedMemoryOffset",
+			"fs",
+			"sf",
+			"allocate",
+			"%fs",
+			"wtfs",
+			"malloc",
+			"curid",
+			"errno",
+			"todo"
 		],
 		"highlight": true,
 		"in_selection": false,
 		"preserve_case": false,
-		"regex": true,
+		"regex": false,
 		"replace_history":
 		[
+			"sb->writeptr",
+			"sb->buffersize",
+			"sb",
+			"$(CXX_)",
+			"->size(",
+			"back",
+			"front",
+			"pop_front",
+			"push_front",
+			"push_back",
+			"->size(",
+			"->get(",
+			"Unmap",
+			"",
+			"Unmap",
 			"\\n{\\n",
 			")",
 			"(",
@@ -1224,22 +1271,7 @@
 			"/* \\1 */",
 			"// \\1",
 			"\\1",
-			"\\0",
-			"\\1",
-			"VT_CursorX * 8 + 10",
-			"VT_CursorX * 8 + 3",
-			"do(",
-			"if(",
-			")\\n{",
-			"if(",
-			"while(",
-			"for(",
-			")\\n{",
-			"long double",
-			"fldl %\\1",
-			"fldl %\\0",
-			")\\n{",
-			"false"
+			"\\0"
 		],
 		"reverse": false,
 		"show_context": true,
@@ -1250,52 +1282,24 @@
 	"groups":
 	[
 		{
-			"selected": 1,
+			"selected": 3,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "applications/Console/makefile",
+					"file": "applications/DisplayServer/main.cpp",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 670,
+						"buffer_size": 1138,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								613,
-								613
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Makefile/Makefile.tmLanguage"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "source/Kernel/Kernel.cpp",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 18957,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								10719,
-								10719
+								1014,
+								1014
 							]
 						],
 						"settings":
@@ -1304,7 +1308,94 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 6378.0,
+						"translation.y": 548.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "source/Kernel/Kernel.cpp",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 19322,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								10253,
+								10253
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 6253.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "Libraries/libc/source/support.cpp",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 831,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								816,
+								816
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 368.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "source/Kernel/Console/UserspaceTTY.cpp",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 905,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								327,
+								327
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
@@ -1525,7 +1616,7 @@
 		[
 			[
 				"",
-				"~/Desktop/Stuff/OSDev/Orion-X4/testbed/testbed.sublime-project"
+				"~/Desktop/Stuff/Orion Industries/corevm/corevm.sublime-project"
 			],
 			[
 				"web",
@@ -1546,6 +1637,7 @@
 		],
 		"width": 0.0
 	},
+	"selected_group": 0,
 	"settings":
 	{
 	},
