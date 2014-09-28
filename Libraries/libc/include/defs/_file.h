@@ -31,6 +31,7 @@ struct _FILE
 
 	uint8_t bufmode;
 	uint8_t lastop;
+	uint8_t indicatorflags;
 };
 
 typedef struct _FILE FILE;

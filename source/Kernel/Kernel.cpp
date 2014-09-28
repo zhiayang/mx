@@ -358,9 +358,8 @@ namespace Kernel
 			Log("Root FS Mounted at /");
 		}
 
-		Console::ClearScreen();
-
 		TTY::Initialise();
+		Console::ClearScreen();
 
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
 		{
@@ -373,8 +372,10 @@ namespace Kernel
 				// 4: bpp (32)
 
 				const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
+				// const char* path = "/a.out";
 				auto proc = LoadBinary::Load(path, "displayd",
-					(void*) 5, (void*) new uint64_t[5] { (uint64_t) path, GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
+					(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
+					GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
 
 				proc->Threads->get(0)->Priority = 2;
 				Multitasking::AddToQueue(proc);

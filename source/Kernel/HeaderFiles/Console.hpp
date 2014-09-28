@@ -40,13 +40,13 @@ namespace Kernel
 
 				bool echomode;
 				uint8_t BufferMode;
+				size_t buffersize;
 				rde::vector<uint8_t>* buffer;
 				rde::vector<uint8_t>* internalbuffer;
 		};
 
 		void Initialise();
-		void EchoToTTY(long ttyid, uint8_t* data, uint64_t length);
-
+		void FlushTTY(long ttyid);
 		uint64_t WriteTTY(long ttyid, uint8_t* data, uint64_t length);
 		uint64_t ReadTTY(long ttyid, uint8_t* data, uint64_t length);
 		uint64_t ConfigureTTY(uint64_t configkey, void* data);

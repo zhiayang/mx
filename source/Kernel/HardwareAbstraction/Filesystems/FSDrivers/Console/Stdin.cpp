@@ -14,6 +14,7 @@ namespace Filesystems
 	FSDriverStdin::FSDriverStdin() : FSDriver(nullptr, FSDriverType::Virtual)
 	{
 		// nothing to do here.
+		this->_seekable = false;
 	}
 
 	FSDriverStdin::~FSDriverStdin()
@@ -29,45 +30,34 @@ namespace Filesystems
 	{
 		return false;
 	}
-	bool FSDriverStdin::Traverse(VFS::vnode* node, const char* path, char** symlink)
+	bool FSDriverStdin::Traverse(VFS::vnode*, const char*, char**)
 	{
-		(void) node;
-		(void) path;
-		(void) symlink;
-
 		return true;
 	}
 
-	size_t FSDriverStdin::Read(VFS::vnode* node, void* buf, off_t offset, size_t length)
+	size_t FSDriverStdin::Read(VFS::vnode*, void* buf, off_t, size_t length)
 	{
-		(void) node;
-		(void) buf;
-		(void) offset;
-		(void) length;
-
 		// line buffer it.
 		return TTY::ReadTTY(0, (uint8_t*) buf, length);
 	}
 
-	size_t FSDriverStdin::Write(VFS::vnode* node, const void* buf, off_t offset, size_t length)
+	size_t FSDriverStdin::Write(VFS::vnode*, const void*, off_t, size_t)
 	{
-		(void) node;
-		(void) buf;
-		(void) offset;
-		(void) length;
-
 		return 0;
 	}
 
-	void FSDriverStdin::Stat(VFS::vnode* node, struct stat* st)
+	void FSDriverStdin::Flush(VFS::vnode* node)
 	{
 		(void) node;
-		(void) st;
+		TTY::FlushTTY(0);
 	}
 
-	Library::Vector<VFS::vnode*>* FSDriverStdin::ReadDir(VFS::vnode* node)
+	void FSDriverStdin::Stat(VFS::vnode*, struct stat*, bool)
 	{
-		(void) node;
+	}
+
+	Library::Vector<VFS::vnode*>* FSDriverStdin::ReadDir(VFS::vnode*)
+	{
 		return nullptr;
 	}
 }

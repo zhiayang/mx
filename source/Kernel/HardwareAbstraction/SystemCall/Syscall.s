@@ -277,6 +277,21 @@ MemoryMapFile:
 	// call Syscall_MMapFile
 	jmp CleanUp
 
+FlushAnyFD:
+	call Syscall_FlushAny
+	jmp CleanUp
+
+SeekAnyFD:
+	call Syscall_SeekAny
+	jmp CleanUp
+
+StatAnyFD:
+	call Syscall_StatAny
+	jmp CleanUp
+
+GetSeekPos:
+	call Syscall_GetSeekPos
+	jmp CleanUp
 
 .section .data
 
@@ -334,6 +349,10 @@ SyscallTable2:
 	.quad	WriteAnyFD			// 8005
 	.quad	MemoryMapAnonymous	// 8006
 	.quad	MemoryMapFile		// 8007
+	.quad	FlushAnyFD			// 8008
+	.quad	SeekAnyFD			// 8009
+	.quad	StatAnyFD			// 8010
+	.quad	GetSeekPos			// 8011
 EndSyscallTable2:
 
 

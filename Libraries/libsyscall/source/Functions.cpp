@@ -46,6 +46,10 @@ namespace SystemCall
 		.quad	WriteAnyFD			// 8005
 		.quad	MemoryMapAnonymous	// 8006
 		.quad	MemoryMapFile		// 8007
+		.quad	FlushAnyFD			// 8008
+		.quad	SeekAnyFD			// 8009
+		.quad	StatAnyFD			// 8010
+		.quad	GetSeekPos			// 8011
 	*/
 
 
@@ -209,6 +213,29 @@ namespace SystemCall
 	uint64_t MMap_Anonymous(uint64_t addr, uint64_t size, uint64_t prot, uint64_t flags)
 	{
 		return Syscall4Param(addr, size, prot, flags, 8006);
+	}
+
+	// 8007, mmap file
+
+	int Flush(uint64_t fd)
+	{
+		return (int) Syscall1Param(fd, 8008);
+	}
+
+	int Seek(uint64_t fd, off_t offset, int whence)
+	{
+		return (int) Syscall3Param(fd, offset, whence, 8009);
+	}
+
+	int Stat(uint64_t fd, struct stat* st, bool statlink)
+	{
+		// return (int) Syscall3Param(fd, offset, whence, 8009);
+		return (int) Syscall3Param(fd, (uintptr_t) st, statlink, 8010);
+	}
+
+	uint64_t GetSeekPos(uint64_t fd)
+	{
+		return Syscall1Param(fd, 8011);
 	}
 }
 }

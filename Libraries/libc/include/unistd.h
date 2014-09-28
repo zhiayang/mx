@@ -38,6 +38,7 @@ pid_t getppid();
 pid_t getpid();
 
 off_t lseek(int fildes, off_t offset, int whence);
+off_t tell(int filedes);
 
 int usleep(useconds_t usec);
 

@@ -17,6 +17,7 @@ namespace Filesystems
 	{
 		// init the message queue.
 		this->messagequeue = new rde::hash_map<pathid*, Library::CircularMemoryBuffer*>();
+		this->_seekable = false;
 	}
 
 	FSDriverIPCMsg::~FSDriverIPCMsg()
@@ -63,6 +64,12 @@ namespace Filesystems
 		return false;
 	}
 
+	void FSDriverIPCMsg::Flush(VFS::vnode*)
+	{
+	}
+
+
+
 	bool FSDriverIPCMsg::Traverse(VFS::vnode* node, const char* path, char** symlink)
 	{
 		(void) node;
@@ -97,7 +104,7 @@ namespace Filesystems
 		return 0;
 	}
 
-	void FSDriverIPCMsg::Stat(VFS::vnode* node, struct stat* st)
+	void FSDriverIPCMsg::Stat(VFS::vnode* node, struct stat* st, bool)
 	{
 		(void) node;
 		(void) st;
