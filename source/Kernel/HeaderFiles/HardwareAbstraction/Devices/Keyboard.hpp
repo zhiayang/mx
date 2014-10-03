@@ -16,8 +16,6 @@ namespace Devices
 		public:
 			Keyboard() { }
 			virtual ~Keyboard() { }
-			void Enable();
-			void Disable();
 
 			virtual void HandleKeypress();
 			virtual uint8_t ReadBuffer();

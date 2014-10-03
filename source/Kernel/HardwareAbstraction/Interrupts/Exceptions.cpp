@@ -343,21 +343,14 @@ namespace Interrupts
 		asm volatile("mov %%cr3, %0" : "=r" (cr3));
 		Log(1, "%s Exception: RIP: %x, Error Code: %x, CR3: %x, CR2: %x, ErrCode: %x, TID: %d", ExceptionMessages[r->InterruptID], r->rip, r->ErrorCode, cr3, r->cr2, r->ErrorCode, Multitasking::GetCurrentThread()->ThreadID);
 
-		// // fetch faulting address.
-		// // risky.
-		// {
-		// 	Symbolicate::LineNamePair* pair = Symbolicate::ResolveAddress(r->rip);
-		// 	if(pair)
-		// 	{
-		// 		Log("Symbolicated location: %s : %d", pair->name->CString(), pair->line);
-		// 	}
-		// }
-
-
-		if(Multitasking::GetCurrentThread()->State & 0x1)
+		// check if this page fault can be handled gracefully, ie. swapping from disk, doing a cow, etc.
+		if(MemoryManager::Virtual::HandlePageFault(cr2, cr3, r->ErrorCode))
+		{
+			return;
+		}
+		else if(Multitasking::GetCurrentThread()->State & 0x1)
 		{
 			Log(1, "Terminated thread %d belonging to parent %s, for exception: %s", Multitasking::GetCurrentThread()->ThreadID, Multitasking::GetCurrentThread()->Parent->Name, ExceptionMessages[r->InterruptID]);
-
 
 			Multitasking::Thread* thr = Multitasking::GetCurrentThread();
 			if(thr)
@@ -388,9 +381,6 @@ namespace Interrupts
 
 
 		PrintFormatted("\n\n\nCPU Exception: %s; Error Code: %x", ExceptionMessages[r->InterruptID], r->ErrorCode);
-
-
-
 		PrintFormatted("\n[mx] has met an unresolvable error, and will now halt.\n");
 
 
@@ -429,11 +419,6 @@ namespace Interrupts
 
 
 		PrintFormatted("\n");
-
-
-		// if(DEBUG && !SKIPREGDUMP)
-			// PrintRegisterDump(r);
-
 		UHALT();
 	}
 }

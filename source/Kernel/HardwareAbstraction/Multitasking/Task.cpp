@@ -284,6 +284,71 @@ namespace Multitasking
 		Log("Creating new process in VAS (%s): CR3(phys): %x, PID %d", name, (uint64_t) PML4, process->ProcessID);
 		return process;
 	}
+
+
+	// copy all the mappings to the current space.
+	// in fact, just copy the entire VAS map set + bookkeeping.
+	// the only thread shall be the current thread.
+	// child proc gets ret = 0, parent proc gets pid of child.
+	// -1 on error.
+	Process* ForkProcess(const char name[64], uint8_t Flags, uint64_t tlssize, void (*Function)(), uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
+	{
+		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
+		using Library::LinkedList;
+
+		Process* process = new Process();
+		process->Threads = new LinkedList<Thread>();
+
+		PageMapStructure* PML4 = FirstProc ? (PageMapStructure*)(GetKernelCR3()) : (PageMapStructure*) Virtual::CreateVAS();
+
+		// everybody needs some tls
+		if(tlssize == 0)
+			tlssize = 8;
+
+		process->Flags					= Flags;
+		process->ProcessID				= NumProcesses;
+		process->CR3					= (uint64_t) PML4;
+		process->VAS					= new Virtual::VirtualAddressSpace(PML4);
+		process->SignalHandlers			= (sighandler_t*) KernelHeap::AllocateChunk(sizeof(sighandler_t) * __SIGCOUNT);
+		process->iocontext				= new Filesystems::IOContext();
+		process->tlssize				= tlssize;
+		for(int i = 0; i < __SIGCOUNT; i++)
+			process->SignalHandlers[i] = __signal_ignore;
+
+		Virtual::SetupVAS(process->VAS);
+
+		if(!FirstProc)
+		{
+			process->Parent = Multitasking::GetCurrentProcess();
+		}
+		else
+		{
+			process->Parent = 0;
+			Kernel::KernelProcess = process;
+		}
+
+		String::Copy(process->Name, name);
+
+
+		NumProcesses++;
+
+		(void) CreateThread(process, Function, Priority, a1, a2, a3, a4, a5, a6);
+
+		if(FirstProc)
+			FirstProc = false;
+
+		else
+		{
+			// setup the descriptors.
+			// manually.
+			using namespace Filesystems::VFS;
+			assert(OpenFile(process->iocontext, "/dev/stdin", 0)->fd == 0);
+			assert(OpenFile(process->iocontext, "/dev/stdout", 0)->fd == 1);
+		}
+
+		Log("Creating new process in VAS (%s): CR3(phys): %x, PID %d", name, (uint64_t) PML4, process->ProcessID);
+		return process;
+	}
 }
 }
 }

@@ -51,7 +51,7 @@
 #define DEBUG			1
 #define SKIPREGDUMP		0
 #define SERIALMIRROR		0
-#define LOGSPAM		0
+#define LOGSPAM		1
 #define DMABUFFERSIZE	0x4000
 #define ENABLELOGGING	1
 #define EXTRADELAY		1

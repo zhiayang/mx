@@ -52,7 +52,6 @@ namespace Kernel
 	Multitasking::Process* KernelProcess;
 	Time::TimeStruct* SystemTime;
 	ACPI::RootTable* RootACPITable;
-	// Filesystems::VFS::Filesystem* RootFS;
 	CPUID::CPUIDData* KernelCPUID;
 
 
@@ -170,7 +169,7 @@ namespace Kernel
 		PrintFormatted("Loading [mx]...\n");
 		Log("Initialising Kernel subsystem");
 
-		// tss on page 337 of manual.
+		// tss on page 337 of manual. (AMD Vol. 3)
 		// Setup the TSS. this will mostly be void once the scheduler initialises.
 		{
 			*((uint64_t*) (0x2504)) = 0x0000000000060000;
@@ -300,7 +299,6 @@ namespace Kernel
 
 		KernelKeyboard = new PS2Keyboard();
 
-
 		// setup framebuffer
 		{
 			uint16_t PrefResX = 1024;
@@ -350,6 +348,7 @@ namespace Kernel
 			// open fds for stdin, stdout and stderr.
 			VFS::InitIO();
 
+			// todo: detect fs type.
 			Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->get(0);
 			FSDriverFat32* fs = new FSDriverFat32(f1->Partitions->get(0));
 
@@ -360,6 +359,11 @@ namespace Kernel
 
 		TTY::Initialise();
 		Console::ClearScreen();
+		Virtual::MarkCOW(0x1000);
+
+		Log(3, "attempting to accesss 0x1008...");
+		uint64_t* ptr = (uint64_t*) 0x1008;
+		Log(3, "value: %x", *ptr);
 
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
 		{

@@ -5,3 +5,4 @@
 build
 Libraries/ports
 .build.h
+*.sublime-*

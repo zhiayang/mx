@@ -35,6 +35,9 @@ namespace Kernel
 		if(!ENABLELOGGING)
 			return;
 
+		if(LOGSPAM)
+			level = 3;
+
 		// std::string tm;
 		// // Time::GetHumanReadableTime(tm);
 

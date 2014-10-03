@@ -22,8 +22,7 @@ namespace Virtual
 	static PageMapStructure* CurrentPML4T;
 	static bool IsPaging;
 
-	#define I_RECURSIVE_SLOT      510
-
+	#define I_RECURSIVE_SLOT	510
 
 	// Convert an address into array index of a structure
 	// E.G. int index = I_PML4_INDEX(0xFFFFFFFFFFFFFFFF); // index = 511
@@ -31,8 +30,6 @@ namespace Virtual
 	#define I_PDPT_INDEX(addr)		((((uintptr_t)(addr))>>30) & 511)
 	#define I_PD_INDEX(addr)		((((uintptr_t)(addr))>>21) & 511)
 	#define I_PT_INDEX(addr)		((((uintptr_t)(addr))>>12) & 511)
-
-
 
 
 	void Initialise()
@@ -663,16 +660,131 @@ namespace Virtual
 		}
 	}
 
-	bool GetPagingFlag()
+
+	static void ChangeCOWFlag(uint64_t virt, PageMapStructure* pml, bool cow)
 	{
-		return IsPaging;
+		// First, find out which page we will need.
+		uint64_t PageTableIndex = virt / 0x1000;
+
+		// Next, which Page Table does that page reside in?
+		// Let's find out:
+		uint64_t PageDirectoryIndex = PageTableIndex / 512;
+
+		// Page Directory:
+		uint64_t PageDirectoryPointerTableIndex = PageDirectoryIndex / 512;
+
+		// Finally, which PDPT is it in?
+		uint64_t PML4TIndex = PageDirectoryPointerTableIndex / 512;
+
+
+
+		// Because these are indexes into structures, we need to use MODULO '%'
+		// To change them to relative indexes, not absolute ones.
+
+
+
+		PML4TIndex %= 512;
+		PageTableIndex %= 512;
+		PageDirectoryIndex %= 512;
+		PageDirectoryPointerTableIndex %= 512;
+
+		PageMapStructure* PML = (pml == 0 ? GetCurrentPML4T() : pml);
+		bool other = (PML != GetCurrentPML4T());
+
+		if(PML)
+		{
+			if(other)
+				Virtual::MapAddress((uint64_t) PML, (uint64_t) PML, 0x7);
+
+			PageMapStructure* PDPT = (PageMapStructure*)(PML->Entry[PML4TIndex] & I_AlignMask);
+
+			if(PDPT)
+			{
+				if(other)
+					Virtual::MapAddress((uint64_t) PDPT, (uint64_t) PDPT, 0x7);
+
+				PageMapStructure* PageDirectory = (PageMapStructure*)(PDPT->Entry[PageDirectoryPointerTableIndex] & I_AlignMask);
+
+				if(PageDirectory)
+				{
+					if(other)
+						Virtual::MapAddress((uint64_t) PageDirectory, (uint64_t) PageDirectory, 0x7);
+
+					PageMapStructure* PageTable = (PageMapStructure*)(PageDirectory->Entry[PageDirectoryIndex] & I_AlignMask);
+
+					if(PageTable)
+					{
+						if(other)
+							Virtual::MapAddress((uint64_t) PageTable, (uint64_t) PageTable, 0x7);
+
+						if(cow)
+						{
+							PageTable->Entry[PageTableIndex] |= I_CopyOnWrite;
+							PageTable->Entry[PageTableIndex] &= ~I_Present;
+						}
+						else
+						{
+							PageTable->Entry[PageTableIndex] &= ~I_CopyOnWrite;
+							PageTable->Entry[PageTableIndex] |= I_Present;
+						}
+
+
+						if(other)
+						{
+							Virtual::UnmapAddress((uint64_t) PageTable);
+							Virtual::UnmapAddress((uint64_t) PageDirectory);
+							Virtual::UnmapAddress((uint64_t) PDPT);
+							Virtual::UnmapAddress((uint64_t) PML);
+						}
+					}
+					else
+					{
+						if(other)
+						{
+							Virtual::UnmapAddress((uint64_t) PageDirectory);
+							Virtual::UnmapAddress((uint64_t) PDPT);
+							Virtual::UnmapAddress((uint64_t) PML);
+						}
+					}
+				}
+				else
+				{
+					if(other)
+					{
+						Virtual::UnmapAddress((uint64_t) PDPT);
+						Virtual::UnmapAddress((uint64_t) PML);
+					}
+				}
+			}
+			else
+			{
+				if(other)
+				{
+					Virtual::UnmapAddress((uint64_t) PML);
+				}
+			}
+		}
+		else
+		{
+		}
+	}
+
+	void MarkCOW(uint64_t virt, VirtualAddressSpace* vas)
+	{
+		ChangeCOWFlag(virt, vas ? vas->PML4 : GetCurrentPML4T(), true);
+	}
+
+	void UnmarkCOW(uint64_t virt, VirtualAddressSpace* vas)
+	{
+		ChangeCOWFlag(virt, vas ? vas->PML4 : GetCurrentPML4T(), 0);
 	}
 
 
-
-
-
-
+	bool HandlePageFault(uint64_t cr2, uint64_t cr3, uint64_t errorcode)
+	{
+		Log(3, "Received page fault: cr2 %x, cr3 %x, errcode %x", cr2, cr3, errorcode);
+		return false;
+	}
 
 
 
@@ -736,15 +848,6 @@ namespace Virtual
 			Virtual::MapAddress(Kernel::GetFramebufferAddress() + (i * 0x1000), Kernel::GetFramebufferAddress() + (i * 0x1000), I_Present | I_ReadWrite | I_UserAccess, PML4);
 
 		return (uint64_t) PML4;
-	}
-
-
-	void MapToAllProcesses(uint64_t v, uint64_t p, uint64_t f)
-	{
-		for(uint64_t d = 0; d < Multitasking::ProcessList->size(); d++)
-		{
-			MapAddress(v, p, f, (PageMapStructure*) Multitasking::ProcessList->get(d)->CR3);
-		}
 	}
 }
 }
