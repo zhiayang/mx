@@ -557,7 +557,7 @@ namespace Virtual
 	}
 
 
-	uint64_t GetMapping(uint64_t VirtAddr, PageMapStructure* VAS)
+	static uint64_t* GetPageTableEntry(uint64_t VirtAddr, PageMapStructure* VAS, PageMapStructure** pdpt, PageMapStructure** pd, PageMapStructure** pt)
 	{
 		// First, find out which page we will need.
 		uint64_t PageTableIndex = VirtAddr / 0x1000;
@@ -613,16 +613,11 @@ namespace Virtual
 						if(other)
 							Virtual::MapAddress((uint64_t) PageTable, (uint64_t) PageTable, 0x7);
 
-						uint64_t ret = (uint64_t)(PageTable->Entry[PageTableIndex] & I_AlignMask);
+						*pdpt = PDPT;
+						*pd = PageDirectory;
+						*pt = PageTable;
 
-						if(other)
-						{
-							Virtual::UnmapAddress((uint64_t) PageTable);
-							Virtual::UnmapAddress((uint64_t) PageDirectory);
-							Virtual::UnmapAddress((uint64_t) PDPT);
-							Virtual::UnmapAddress((uint64_t) PML);
-						}
-						return ret;
+						return &PageTable->Entry[PageTableIndex];
 					}
 					else
 					{
@@ -661,111 +656,50 @@ namespace Virtual
 	}
 
 
+	uint64_t GetMapping(uint64_t VirtAddr, PageMapStructure* VAS)
+	{
+		PageMapStructure* pdpt = 0;
+		PageMapStructure* pd = 0;
+		PageMapStructure* pt = 0;
+
+		uint64_t ret =  *GetPageTableEntry(VirtAddr, VAS, &pdpt, &pd, &pt);
+
+
+		if(VAS != GetCurrentPML4T())
+		{
+			UnmapAddress((uintptr_t) pdpt);
+			UnmapAddress((uintptr_t) pd);
+			UnmapAddress((uintptr_t) pt);
+		}
+
+		return ret;
+	}
+
+
 	static void ChangeCOWFlag(uint64_t virt, PageMapStructure* pml, bool cow)
 	{
-		// First, find out which page we will need.
-		uint64_t PageTableIndex = virt / 0x1000;
+		PageMapStructure* pdpt = 0;
+		PageMapStructure* pd = 0;
+		PageMapStructure* pt = 0;
 
-		// Next, which Page Table does that page reside in?
-		// Let's find out:
-		uint64_t PageDirectoryIndex = PageTableIndex / 512;
-
-		// Page Directory:
-		uint64_t PageDirectoryPointerTableIndex = PageDirectoryIndex / 512;
-
-		// Finally, which PDPT is it in?
-		uint64_t PML4TIndex = PageDirectoryPointerTableIndex / 512;
-
-
-
-		// Because these are indexes into structures, we need to use MODULO '%'
-		// To change them to relative indexes, not absolute ones.
-
-
-
-		PML4TIndex %= 512;
-		PageTableIndex %= 512;
-		PageDirectoryIndex %= 512;
-		PageDirectoryPointerTableIndex %= 512;
-
-		PageMapStructure* PML = (pml == 0 ? GetCurrentPML4T() : pml);
-		bool other = (PML != GetCurrentPML4T());
-
-		if(PML)
+		uint64_t* pg = GetPageTableEntry(virt, pml, &pdpt, &pd, &pt);
+		if(cow)
 		{
-			if(other)
-				Virtual::MapAddress((uint64_t) PML, (uint64_t) PML, 0x7);
-
-			PageMapStructure* PDPT = (PageMapStructure*)(PML->Entry[PML4TIndex] & I_AlignMask);
-
-			if(PDPT)
-			{
-				if(other)
-					Virtual::MapAddress((uint64_t) PDPT, (uint64_t) PDPT, 0x7);
-
-				PageMapStructure* PageDirectory = (PageMapStructure*)(PDPT->Entry[PageDirectoryPointerTableIndex] & I_AlignMask);
-
-				if(PageDirectory)
-				{
-					if(other)
-						Virtual::MapAddress((uint64_t) PageDirectory, (uint64_t) PageDirectory, 0x7);
-
-					PageMapStructure* PageTable = (PageMapStructure*)(PageDirectory->Entry[PageDirectoryIndex] & I_AlignMask);
-
-					if(PageTable)
-					{
-						if(other)
-							Virtual::MapAddress((uint64_t) PageTable, (uint64_t) PageTable, 0x7);
-
-						if(cow)
-						{
-							PageTable->Entry[PageTableIndex] |= I_CopyOnWrite;
-							PageTable->Entry[PageTableIndex] &= ~I_Present;
-						}
-						else
-						{
-							PageTable->Entry[PageTableIndex] &= ~I_CopyOnWrite;
-							PageTable->Entry[PageTableIndex] |= I_Present;
-						}
-
-
-						if(other)
-						{
-							Virtual::UnmapAddress((uint64_t) PageTable);
-							Virtual::UnmapAddress((uint64_t) PageDirectory);
-							Virtual::UnmapAddress((uint64_t) PDPT);
-							Virtual::UnmapAddress((uint64_t) PML);
-						}
-					}
-					else
-					{
-						if(other)
-						{
-							Virtual::UnmapAddress((uint64_t) PageDirectory);
-							Virtual::UnmapAddress((uint64_t) PDPT);
-							Virtual::UnmapAddress((uint64_t) PML);
-						}
-					}
-				}
-				else
-				{
-					if(other)
-					{
-						Virtual::UnmapAddress((uint64_t) PDPT);
-						Virtual::UnmapAddress((uint64_t) PML);
-					}
-				}
-			}
-			else
-			{
-				if(other)
-				{
-					Virtual::UnmapAddress((uint64_t) PML);
-				}
-			}
+			*pg |= I_CopyOnWrite;
+			*pg &= ~I_Present;
 		}
 		else
 		{
+			*pg &= ~I_CopyOnWrite;
+			*pg |= I_Present;
+		}
+
+
+		if(pml != GetCurrentPML4T())
+		{
+			UnmapAddress((uintptr_t) pdpt);
+			UnmapAddress((uintptr_t) pd);
+			UnmapAddress((uintptr_t) pt);
 		}
 	}
 
@@ -782,7 +716,25 @@ namespace Virtual
 
 	bool HandlePageFault(uint64_t cr2, uint64_t cr3, uint64_t errorcode)
 	{
-		Log(3, "Received page fault: cr2 %x, cr3 %x, errcode %x", cr2, cr3, errorcode);
+		Log("Received page fault: cr2 %x, cr3 %x, errcode %x", cr2, cr3, errorcode);
+
+		PageMapStructure* pdpt = 0;
+		PageMapStructure* pd = 0;
+		PageMapStructure* pt = 0;
+
+		// check if cow.
+		uint64_t value = *GetPageTableEntry(cr2, Multitasking::GetCurrentProcess()->VAS->PML4, &pdpt, &pd, &pt);
+		Log("Value: %x", value);
+
+		// conditions for cow:
+		// bit 11 (0x800) for COW set, bit 0 (0x1, present bit) not set.
+		if(value & I_CopyOnWrite && !(value & I_Present))
+		{
+			Log("Copy-on-write page detected");
+		}
+
+
+
 		return false;
 	}
 

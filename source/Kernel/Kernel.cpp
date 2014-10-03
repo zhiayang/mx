@@ -363,6 +363,7 @@ namespace Kernel
 
 		Log(3, "attempting to accesss 0x1008...");
 		uint64_t* ptr = (uint64_t*) 0x1008;
+		*ptr = 0xDEADBEEF10243481;
 		Log(3, "value: %x", *ptr);
 
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
