@@ -20,7 +20,6 @@ namespace MBR
 
 		// read the mbr
 		uint64_t b = MemoryManager::Physical::AllocateDMA(1);
-		// atadev->Read(0, b, 512);
 		IO::Read(atadev, 0, b, 512);
 
 		// verify the MBR signature: 0x55, 0xAA

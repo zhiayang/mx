@@ -82,7 +82,7 @@ Prep64:
 	movl $0x3000, %edi
 	mov %edi, %cr3
 	xorl %eax, %eax
-	movl $0xC000, %ecx
+	movl $0xF000, %ecx
 
 	rep stosl
 	movl %cr3, %edi
@@ -97,32 +97,32 @@ Prep64:
 	// OR with 0x3 (R/W, Present)
 	// Point the first entry in the PML4T to the first PDPT.
 
-	movl $0x4007, (%edi)		// Make put the address + flags of the PDPT into 0x1000.
-	addl $0x1000, %edi			// We only want 1 PDPT, so we add 0x1000 to make it point to the PDPT entries.
+	movl $0x4003, (%edi)		// Make put the address + flags of the PDPT into 0x1000.
+	addl $0x1000, %edi		// We only want 1 PDPT, so we add 0x1000 to make it point to the PDPT entries.
 
 
 	// Point the first PDPT entry to the first PD.
 
-	movl $0x5007, (%edi)		// Same deal, point PDPT entry number one to the PD we create below.
-	addl $0x1000, %edi			// Point to the PD now.
+	movl $0x5003, (%edi)		// Same deal, point PDPT entry number one to the PD we create below.
+	addl $0x1000, %edi		// Point to the PD now.
 
 
 	// PD
 
-	movl $0x6007, (%edi)		// Exactly the same as above. Except:
-	movl $0x7007, 8(%edi)		// There's a page table at 0x6000, 0x1000 long. There's another one at 0x5000. We address 4MB this way.
-	movl $0x8007, 16(%edi)		// 6 MB
-	movl $0x9007, 24(%edi)		// 8 MB
-	movl $0xA007, 32(%edi)		// 10 MB
-	movl $0xB007, 40(%edi)		// 12 MB
-	movl $0xC007, 48(%edi)		// 14 MB
-	movl $0xD007, 56(%edi)		// 16 MB
-	addl $0x1000, %edi			// Reference the page table at 0x6000.
+	movl $0x6003, (%edi)		// Exactly the same as above. Except:
+	movl $0x7003, 8(%edi)		// There's a page table at 0x6000, 0x1000 long. There's another one at 0x5000. We address 4MB this way.
+	movl $0x8003, 16(%edi)	// 6 MB
+	movl $0x9003, 24(%edi)	// 8 MB
+	movl $0xA003, 32(%edi)	// 10 MB
+	movl $0xB003, 40(%edi)	// 12 MB
+	movl $0xC003, 48(%edi)	// 14 MB
+	movl $0xD003, 56(%edi)	// 16 MB
+	addl $0x1000, %edi		// Reference the page table at 0x6000.
 
 
 	// PT
-	movl $0x07, %ebx			// Set our flags.
-	movl $4096, %ecx			// Since the page tables are contiguous, we can simply loop 4096 times (512 x 8).
+	movl $0x03, %ebx		// Set our flags.
+	movl $4096, %ecx		// Since the page tables are contiguous, we can simply loop 4096 times (512 x 8).
 
 
 	// Memory Map 4MB

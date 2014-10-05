@@ -106,17 +106,22 @@ namespace Kernel
 		Virtual::Initialise();
 		Physical::Bootstrap();
 		KernelHeap::Initialise();
+
 		// copy kernel CR3 to somewhere sane-r
 		{
-			uint64_t newcr3 = Physical::AllocateDMA(0x18, false);
-			Memory::Copy((void*) newcr3, (void*) 0x3000, 0x18000);
+			uint64_t oldcr3 = 0x3000;
+			uint64_t newcr3 = Physical::AllocateDMA(0x20, false);
+			Memory::Copy((void*) newcr3, (void*) 0x3000, 0xF000);
 
 			// switch to that cr3.
 			Virtual::SwitchPML4T((Virtual::PageMapStructure*) newcr3);
+
 			asm volatile("mov %0, %%cr3" :: "r"(newcr3));
+			asm volatile("invlpg (%0)" : : "a" (newcr3));
+			asm volatile("invlpg (%0)" : : "a" (oldcr3));
+
 			CR3Value = newcr3;
 		}
-
 		Physical::Initialise();
 
 		Multitasking::Initialise();
@@ -359,12 +364,6 @@ namespace Kernel
 
 		TTY::Initialise();
 		Console::ClearScreen();
-		Virtual::MarkCOW(0x1000);
-
-		Log(3, "attempting to accesss 0x1008...");
-		uint64_t* ptr = (uint64_t*) 0x1008;
-		*ptr = 0xDEADBEEF10243481;
-		Log(3, "value: %x", *ptr);
 
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
 		{

@@ -53,7 +53,7 @@ OUTPUT            = build/kernel.mxa
 .PHONY: builduserspace buildlib mountdisk clean all cleandisk copyheader
 
 run:
-	@$(QEMU) -s -vga std -serial stdio -no-reboot -m 128 -hda build/disk.img -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap -monitor stdio
+	@$(QEMU) -s -vga std -serial stdio -no-reboot -m $(MEMORY) -hda build/disk.img -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap -monitor stdio
 
 all: $(OUTPUT)
 	@# unmount??

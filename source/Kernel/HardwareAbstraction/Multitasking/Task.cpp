@@ -316,6 +316,7 @@ namespace Multitasking
 			process->SignalHandlers[i] = __signal_ignore;
 
 		Virtual::SetupVAS(process->VAS);
+		// Virtual::MarkCOW(0x4000, process->VAS);
 
 		if(!FirstProc)
 		{

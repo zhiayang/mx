@@ -42,7 +42,13 @@ int main(int argc, char** argv)
 		putchar(c);
 
 	} while(c != '.');
-	printf("done\n");
+	printf("\ndone\n");
+
+
+	uint64_t* ptr = (uint64_t*) 0xf000;
+	*ptr = 5912344;
+	printf("value = %lx\n", *ptr);
+
 	return 0;
 
 

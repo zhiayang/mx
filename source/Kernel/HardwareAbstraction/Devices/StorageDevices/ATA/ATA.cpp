@@ -149,9 +149,7 @@ namespace Storage
 			DMA::Initialise();
 
 			for(uint64_t i = 0; i < ATADrive::ATADrives->size(); i++)
-			{
 				HardwareAbstraction::Filesystems::MBR::ReadPartitions(ATADrive::ATADrives->get(i));
-			}
 		}
 
 		ATADrive* IdentifyDevice(uint16_t BaseIO, bool IsMaster)

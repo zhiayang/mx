@@ -34,7 +34,7 @@ namespace Virtual
 
 	void Initialise()
 	{
-		PageMapStructure* const OriginalPml4 = (PageMapStructure* const) GetKernelCR3();
+		PageMapStructure* OriginalPml4 = (PageMapStructure*) GetKernelCR3();
 
 		OriginalPml4->Entry[I_RECURSIVE_SLOT] = (uint64_t) OriginalPml4 | I_Present | I_ReadWrite;
 		CurrentPML4T = OriginalPml4;
@@ -338,7 +338,7 @@ namespace Virtual
 	{
 		if(Multitasking::CurrentProcessInRing3())
 		{
-			asm volatile("mov $0x8, %%r10; mov %[c], %%rdi; int $0xF8" :: [c]"r"((uint64_t) p) : "%r10");
+			// asm volatile("mov $0x8, %%r10; mov %[c], %%rdi; int $0xF8" :: [c]"r"((uint64_t) p) : "%r10");
 		}
 		else
 		{
@@ -551,9 +551,7 @@ namespace Virtual
 	void UnmapRegion(uint64_t VirtAddr, uint64_t LengthInPages, PageMapStructure* PML4)
 	{
 		for(uint64_t i = 0; i < LengthInPages; i++)
-		{
 			UnmapAddress(VirtAddr + (i * 0x1000), PML4);
-		}
 	}
 
 
@@ -686,12 +684,12 @@ namespace Virtual
 		if(cow)
 		{
 			*pg |= I_CopyOnWrite;
-			*pg &= ~I_Present;
+			*pg &= ~I_ReadWrite;
 		}
 		else
 		{
 			*pg &= ~I_CopyOnWrite;
-			*pg |= I_Present;
+			*pg |= I_ReadWrite;
 		}
 
 
@@ -716,23 +714,39 @@ namespace Virtual
 
 	bool HandlePageFault(uint64_t cr2, uint64_t cr3, uint64_t errorcode)
 	{
-		Log("Received page fault: cr2 %x, cr3 %x, errcode %x", cr2, cr3, errorcode);
+		Log(3, "Received page fault: cr2 %x, cr3 %x, errcode %x", cr2, cr3, errorcode);
 
 		PageMapStructure* pdpt = 0;
 		PageMapStructure* pd = 0;
 		PageMapStructure* pt = 0;
 
 		// check if cow.
-		uint64_t value = *GetPageTableEntry(cr2, Multitasking::GetCurrentProcess()->VAS->PML4, &pdpt, &pd, &pt);
-		Log("Value: %x", value);
+		uint64_t* value = GetPageTableEntry(cr2, Multitasking::GetCurrentProcess()->VAS->PML4, &pdpt, &pd, &pt);
+		Log("Value: %x", *value);
+
 
 		// conditions for cow:
 		// bit 11 (0x800) for COW set, bit 0 (0x1, present bit) not set.
-		if(value & I_CopyOnWrite && !(value & I_Present))
+		if(*value & I_CopyOnWrite && !(*value & I_ReadWrite))
 		{
 			Log("Copy-on-write page detected");
-		}
 
+			// allocate a page, copy existing data, then return.
+			uint64_t np = Physical::AllocatePage();
+			uint64_t old = *value & I_AlignMask;
+
+			*value |= np;
+			*value |= I_ReadWrite;
+
+
+			// we need to copy the old bytes to the new page.
+			// _old_ should contain the virtual address of the parent
+
+			Memory::Copy((void*) (*value & I_AlignMask) , (void*) old, 0x1000);
+			Log("new: %x, old: %x", *value, old);
+			return true;
+		}
+		Log("Invalid access");
 
 
 		return false;
@@ -773,6 +787,7 @@ namespace Virtual
 		{
 			if(!(PML4->Entry[0] & I_Present))
 				PML4->Entry[0] = Physical::AllocateFromReserved() | I_Present | I_ReadWrite | I_UserAccess;
+
 			else
 				Log(3, "%x", PML4->Entry[0]);
 
@@ -786,7 +801,7 @@ namespace Virtual
 
 		// Map 16 MB, includes the kernel.
 		// start at 0x3000, since we handle 0x2000 and 0x3000 specially.
-		Virtual::MapAddress(0x1000, 0x1000, 0x07, PML4);
+		Virtual::MapAddress(0x1000, 0x1000, 0x03, PML4);
 
 		// map 0x2000 as supervisor only, since we store sensitive stuff there
 		// namely TSS stuff.
