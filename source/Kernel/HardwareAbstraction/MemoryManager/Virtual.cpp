@@ -64,11 +64,9 @@ namespace Virtual
 		if(addr > 0)
 		{
 			uint64_t end = addr + (size * 0x1000);
-			// Log("Trying to allocate %d page%s at %x -- end = %x", size, size > 1 ? "s" : "", addr, end);
 			AddressLengthPair* found = 0;
 			for(auto pair : *vas->pairs)
 			{
-				// Log("Found pair: %x - %x, overflow check: %.016x", pair->start, pair->length, pair->start + (pair->length * 0x1000));
 				if(pair->start <= addr && pair->start + (pair->length * 0x1000) >= end)
 				{
 					found = pair;
@@ -807,12 +805,16 @@ namespace Virtual
 		// namely TSS stuff.
 		Virtual::MapAddress(0x2000, 0x2000, 0x03, PML4);
 
-		for(uint64_t i = 0x3000; i < (8 * 0x01000000); i += 0x1000)
+		// todo: make it more robust, right now it's always 16mb identity mapped.
+		for(uint64_t i = 0x3000; i < 0x00400000; i += 0x1000)
+			Virtual::MapAddress(i, i, 0x03, PML4);
+
+		for(uint64_t i = 0x00400000; i < 0x01000000; i += 0x1000)
 			Virtual::MapAddress(i, i, 0x07, PML4);
 
 		// Map the LFB.
 		for(uint64_t i = 0; i < Kernel::GetLFBLengthInPages(); i++)
-			Virtual::MapAddress(Kernel::GetFramebufferAddress() + (i * 0x1000), Kernel::GetFramebufferAddress() + (i * 0x1000), I_Present | I_ReadWrite | I_UserAccess, PML4);
+			Virtual::MapAddress(Kernel::GetFramebufferAddress() + (i * 0x1000), Kernel::GetFramebufferAddress() + (i * 0x1000), 0x07, PML4);
 
 		return (uint64_t) PML4;
 	}

@@ -45,7 +45,7 @@ int main(int argc, char** argv)
 	printf("\ndone\n");
 
 
-	uint64_t* ptr = (uint64_t*) 0xf000;
+	uint64_t* ptr = (uint64_t*) 0x3000;
 	*ptr = 5912344;
 	printf("value = %lx\n", *ptr);
 

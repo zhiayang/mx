@@ -98,10 +98,8 @@ namespace LoadBinary
 				uint64_t t = Physical::AllocatePage();
 				Virtual::MapAddress(actualvirt, t, 0x07, (Virtual::PageMapStructure*) proc->CR3);
 
-				// Log(3, "mapped virt %x", actualvirt);
-
 				// map it to this address space for a bit.
-				Virtual::MapAddress(TemporaryVirtualMapping + actualvirt, t, 0x07, true);
+				Virtual::MapAddress(TemporaryVirtualMapping + actualvirt, t, 0x03);
 			}
 
 			if(ProgramHeader->ProgramMemorySize > ProgramHeader->ProgramFileSize)
@@ -118,7 +116,7 @@ namespace LoadBinary
 				uint64_t actualvirt = (ProgramHeader->ProgramVirtualAddress + (m * 0x1000)) & ~0xFFF;
 
 				// unmap what we did just now.
-				Virtual::UnmapAddress(TemporaryVirtualMapping + actualvirt, true);
+				Virtual::UnmapAddress(TemporaryVirtualMapping + actualvirt);
 			}
 		}
 

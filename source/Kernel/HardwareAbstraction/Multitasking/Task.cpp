@@ -131,16 +131,17 @@ namespace Multitasking
 		Thread* thread = new Thread();
 		Thread_attr* attr = 0;
 
+		// allocate user stack.
 		uint64_t k = 0;
 		if(Parent->CR3 != GetKernelCR3())
 		{
 			auto pk = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
 			k = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS, pk);
 
-			Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x3, Parent->VAS->PML4);
+			Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x07, Parent->VAS->PML4);
 
 			if(Parent->VAS->PML4 != Virtual::GetCurrentPML4T())
-				Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x3);
+				Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x03);
 		}
 		else
 		{
@@ -165,7 +166,7 @@ namespace Multitasking
 			u = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS, pu);
 			us = DefaultRing3StackSize;
 
-			Virtual::MapRegion(u, pu, DefaultRing3StackSize / 0x1000, 0x7, (Virtual::PageMapStructure*) Parent->CR3);
+			Virtual::MapRegion(u, pu, DefaultRing3StackSize / 0x1000, 0x07, (Virtual::PageMapStructure*) Parent->CR3);
 		}
 		else
 		{
