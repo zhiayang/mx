@@ -699,20 +699,31 @@ namespace Virtual
 		}
 	}
 
+	void MarkCOW(uint64_t virt, PageMapStructure* pml)
+	{
+		ChangeCOWFlag(virt, pml, 1);
+	}
+
+	void UnmarkCOW(uint64_t virt, PageMapStructure* pml)
+	{
+		ChangeCOWFlag(virt, pml, 0);
+	}
+
 	void MarkCOW(uint64_t virt, VirtualAddressSpace* vas)
 	{
-		ChangeCOWFlag(virt, vas ? vas->PML4 : GetCurrentPML4T(), true);
+		MarkCOW(virt, vas ? vas->PML4 : GetCurrentPML4T());
 	}
 
 	void UnmarkCOW(uint64_t virt, VirtualAddressSpace* vas)
 	{
-		ChangeCOWFlag(virt, vas ? vas->PML4 : GetCurrentPML4T(), 0);
+		MarkCOW(virt, vas ? vas->PML4 : GetCurrentPML4T());
 	}
 
 
 	bool HandlePageFault(uint64_t cr2, uint64_t cr3, uint64_t errorcode)
 	{
-		Log(3, "Received page fault: cr2 %x, cr3 %x, errcode %x", cr2, cr3, errorcode);
+		(void) cr3;
+		(void) errorcode;
 
 		PageMapStructure* pdpt = 0;
 		PageMapStructure* pd = 0;
@@ -720,8 +731,6 @@ namespace Virtual
 
 		// check if cow.
 		uint64_t* value = GetPageTableEntry(cr2, Multitasking::GetCurrentProcess()->VAS->PML4, &pdpt, &pd, &pt);
-		Log("Value: %x", *value);
-
 
 		// conditions for cow:
 		// bit 11 (0x800) for COW set, bit 0 (0x1, present bit) not set.
@@ -732,21 +741,22 @@ namespace Virtual
 			// allocate a page, copy existing data, then return.
 			uint64_t np = Physical::AllocatePage();
 			uint64_t old = *value & I_AlignMask;
+			uint64_t oldflags = *value & ~I_AlignMask;
 
-			*value |= np;
-			*value |= I_ReadWrite;
-
+			*value = np;
+			*value |= (oldflags | I_ReadWrite);
 
 			// we need to copy the old bytes to the new page.
 			// _old_ should contain the virtual address of the parent
+			Virtual::MapAddress(*value, np, oldflags);
 
 			Memory::Copy((void*) (*value & I_AlignMask) , (void*) old, 0x1000);
-			Log("new: %x, old: %x", *value, old);
+
+			Log("Successfully allocated new physical page at %x for COW purposes mapped to virtual page %x", np, old);
 			return true;
 		}
-		Log("Invalid access");
 
-
+		Log("Invalid access, terminating process...");
 		return false;
 	}
 
@@ -803,14 +813,14 @@ namespace Virtual
 
 		// map 0x2000 as supervisor only, since we store sensitive stuff there
 		// namely TSS stuff.
-		Virtual::MapAddress(0x2000, 0x2000, 0x03, PML4);
+		Virtual::MapRegion(0x2000, 0x2000, 0x2, 0x03, PML4);
 
 		// todo: make it more robust, right now it's always 16mb identity mapped.
-		for(uint64_t i = 0x3000; i < 0x00400000; i += 0x1000)
-			Virtual::MapAddress(i, i, 0x03, PML4);
-
-		for(uint64_t i = 0x00400000; i < 0x01000000; i += 0x1000)
+		for(uint64_t i = 0x4000; i < 0x01000000; i += 0x1000)
+		{
 			Virtual::MapAddress(i, i, 0x07, PML4);
+			MarkCOW(i, PML4);
+		}
 
 		// Map the LFB.
 		for(uint64_t i = 0; i < Kernel::GetLFBLengthInPages(); i++)

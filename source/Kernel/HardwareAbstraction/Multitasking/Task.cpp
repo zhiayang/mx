@@ -317,7 +317,6 @@ namespace Multitasking
 			process->SignalHandlers[i] = __signal_ignore;
 
 		Virtual::SetupVAS(process->VAS);
-		// Virtual::MarkCOW(0x4000, process->VAS);
 
 		if(!FirstProc)
 		{
@@ -327,6 +326,12 @@ namespace Multitasking
 		{
 			process->Parent = 0;
 			Kernel::KernelProcess = process;
+
+			// setup the cow mapping here.
+			// 0x00 to 8mb should be cowed.
+
+			for(uint64_t v = 0; v < 0x00800000; v += 0x1000)
+				MarkCOW(v);
 		}
 
 		String::Copy(process->Name, name);

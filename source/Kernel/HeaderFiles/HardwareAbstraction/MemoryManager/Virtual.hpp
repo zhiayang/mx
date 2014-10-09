@@ -78,6 +78,9 @@ namespace Virtual
 	void MarkCOW(uint64_t VirtAddr, VirtualAddressSpace* vas = 0);
 	void UnmarkCOW(uint64_t VirtAddr, VirtualAddressSpace* vas = 0);
 
+	void MarkCOW(uint64_t VirtAddr, PageMapStructure* pml);
+	void UnmarkCOW(uint64_t VirtAddr, PageMapStructure* pml);
+
 	void CopyVAS(VirtualAddressSpace* one, VirtualAddressSpace* two);
 	bool HandlePageFault(uint64_t cr2, uint64_t cr3, uint64_t errorcode);
 
