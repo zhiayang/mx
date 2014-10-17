@@ -6,7 +6,7 @@
 #include <sys/syscall.h>
 #include <string.h>
 
-extern "C" int pthread_create(pthread_t* restrict thread, const pthread_attr_t* restrict oattr, void *(*start_routine)(void*), void *restrict arg)
+extern "C" int pthread_create(pthread_t* restrict thread, const pthread_attr_t* restrict oattr, void *(*start_routine)(void*), void* restrict arg)
 {
 	// thread creation should usually work, but we have to check the return value just in case.
 	pthread_attr_t sattr;

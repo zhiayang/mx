@@ -5,7 +5,4 @@
 #include "../include/errno.h"
 #include "../include/stdlib.h"
 
-extern "C"
-{
-	int __thread _errno = 0;
-}
+extern "C" int __thread _errno = 0;

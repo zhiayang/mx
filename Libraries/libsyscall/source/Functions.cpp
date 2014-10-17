@@ -4,6 +4,7 @@
 
 #include "../syscall.h"
 #include <errno.h>
+#include <signal.h>
 
 namespace Library {
 namespace SystemCall

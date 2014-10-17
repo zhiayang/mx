@@ -9,7 +9,7 @@
 PREFIX=`pwd`/build/toolchain
 
 # please don't change this
-SYSROOT=`pwd`/build/sysroot
+export SYSROOT=`pwd`/build/sysroot
 THREADS=4
 
 # setup colour codes
@@ -36,18 +36,18 @@ cd build
 # first, download our patched gcc and binutils.
 echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Downloading binutils and gcc for target x86_64-orionx${_NORMAL}"
 if [ ! -d binutils ]; then
-	git clone -q https://requimrar@bitbucket.org/requimrar/binutils.git > /dev/null
+	git clone https://requimrar@bitbucket.org/requimrar/binutils.git
 fi
 
 if [ ! -d gcc ]; then
-	git clone -q https://requimrar@bitbucket.org/requimrar/gcc.git > /dev/null
+	git clone https://requimrar@bitbucket.org/requimrar/gcc.git
 fi
 
 echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}Sysroot: $SYSROOT${_NORMAL}"
 echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}Prefix:  $PREFIX${_NORMAL}"
 echo ""
 
-# start building.
+# # start building.
 mkdir build-bin build-gcc
 cd build-bin
 echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Configuring binutils${_NORMAL}"
@@ -75,15 +75,33 @@ echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}Installing gcc and libgcc${_NORMAL}"
 make -j$THREADS install-gcc &> /dev/null
 make -j$THREADS install-target-libgcc &> /dev/null
 
+
+# we need to build our libc with the cross compiler.
+export CC=`pwd`/../toolchain/bin/x86_64-orionx-gcc
+export CXX=`pwd`/../toolchain/bin/x86_64-orionx-g++
+export LD=`pwd`/../toolchain/bin/x86_64-orionx-gcc
+export CPP=`pwd`/../toolchain/bin/x86_64-orionx-cpp
+export AR=`pwd`/../toolchain/bin/x86_64-orionx-ar
+export AS=`pwd`/../toolchain/bin/x86_64-orionx-as
+
 echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Building [mx] libc${_NORMAL}"
 make -C ../../Libraries/libc
 make -C ../../Libraries/libsyscall
 
+# unset those.
+unset CC
+unset CXX
+unset LD
+unset CPP
+unset AR
+unset AS
+
+
 echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Building libstdc++${_NORMAL}"
-make -j$THREADS all-target-libstdc++-v3 &> /dev/null
+make -j$THREADS all-target-libstdc++-v3
 
 echo "${_BOLD}${_GREEN}=> ${_NORMAL}${_BOLD}Installing libstdc++${_NORMAL}"
-make -j$THREADS install-target-libstdc++-v3 &> /dev/null
+make -j$THREADS install-target-libstdc++-v3
 
 cd ..
 cd ..
@@ -96,19 +114,6 @@ if [ -f build/disk.img ]; then
 fi
 
 tools/createdisk
-
-# # first check for args.
-# if [ -z "$1" ]; then
-# 	echo "Please pass the size of the OS disk image in MEGABYTES (1024 KB) to ./bootstrap."
-# 	exit
-# fi
-
-
-
-
-
-
-
 
 
 
