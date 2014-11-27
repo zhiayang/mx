@@ -34,11 +34,6 @@ extern "C" void KernelInit(uint32_t MultibootMagic, uint32_t MBTAddr)
 	KernelCore(MultibootMagic, MBTAddr);
 }
 
-void sig(int x)
-{
-	PrintFormatted("received signal %d\n", x);
-}
-
 namespace Kernel
 {
 	uint64_t K_SystemMemoryInBytes;
@@ -290,7 +285,6 @@ namespace Kernel
 			}
 		}
 
-
 		KernelRandom = new Random(new Random_PseudoRandom());
 
 		LFBAddr = VideoDevice->GetFramebufferAddress();
@@ -425,7 +419,7 @@ namespace Kernel
 
 		Log("Starting console...");
 		{
-
+			// Multitasking::ForkProcess("fork", 0x1, 0x8, void (*Function)(), uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
 		}
 
 

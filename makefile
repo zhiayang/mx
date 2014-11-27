@@ -4,16 +4,16 @@
 
 X_BUILD_FILE	= .build.h
 
-export QEMU		:= /usr/local/bin/qemu-system-x86_64
-export SYSROOT	:= $(CURDIR)/build/sysroot
+export QEMU			:= /usr/local/bin/qemu-system-x86_64
+export SYSROOT		:= $(CURDIR)/build/sysroot
 export TOOLCHAIN	:= $(CURDIR)/build/toolchain
-export CXX		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-g++
-export AS		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-as
-export LD		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-ld
-export OBJCOPY	:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-objcopy
-export READELF	:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-readelf
+export CXX			:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-g++
+export AS			:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-as
+export LD			:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-ld
+export OBJCOPY		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-objcopy
+export READELF		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-readelf
 export STRIP		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-strip
-export AR		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-ar
+export AR			:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-ar
 export RANLIB		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-ranlib
 export MOUNTPATH	:= $(shell tools/getpath.sh)
 
@@ -32,10 +32,10 @@ LDFLAGS	= --gc-sections -z max-page-size=0x1000 -T link.ld -L$(SYSROOT)/usr/lib
 MEMORY	= 1024
 
 
-SSRC		= $(shell find source -iname "*.s")
+SSRC	= $(shell find source -iname "*.s")
 CXXSRC	= $(shell find source -iname "*.cpp")
 
-SOBJ		= $(SSRC:.s=.s.o)
+SOBJ	= $(SSRC:.s=.s.o)
 CXXOBJ	= $(CXXSRC:.cpp=.cpp.o)
 
 CXXDEPS	= $(CXXOBJ:.o=.d)

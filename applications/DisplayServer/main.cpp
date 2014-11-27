@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <mqueue.h>
+#include <sys/stat.h>
 #include <sys/syscall.h>
 #include <pthread.h>
 
@@ -34,36 +35,39 @@ int main(int argc, char** argv)
 	printf("Display server online\n");
 	// auto fd = mq_open("/random/path", O_CREATE);
 
-	int c = 0;
-	puts("Enter text. Include a dot ('.') in a sentence to exit:");
-	do
-	{
-		c = getchar();
-		putchar(c);
+	// int c = 0;
+	// puts("Enter text. Include a dot ('.') in a sentence to exit:");
+	// do
+	// {
+	// 	c = getchar();
+	// 	putchar(c);
 
-	} while(c != '.');
-	printf("\ndone\n");
+	// } while(c != '.');
+	// printf("\ndone\n");
 
 
-	uint64_t* ptr = (uint64_t*) 0x00231000;
-	*ptr = 5912344;
-	printf("value = %lx\n", *ptr);
-
-	return 0;
+	// uint64_t* ptr = (uint64_t*) 0x00231000;
+	// *ptr = 5912344;
+	// printf("value = %lx\n", *ptr);
 
 
 
 
+	FILE* f = fopen("/test/Main.class", "r");
+	struct stat s;
 
+	fstat((int) f->__fd, &s);
+	printf("file is %ld bytes long\n", s.st_size);
 
+	uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
 
+	fread(x, 1, s.st_size, f);
+	fclose(f);
 
+	for (off_t i = 0; i < s.st_size; i++)
+		printf("%02x ", x[i]);
 
-
-
-
-
-
+	fflush(stdout);
 
 
 

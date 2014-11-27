@@ -292,7 +292,7 @@ namespace Multitasking
 	// the only thread shall be the current thread.
 	// child proc gets ret = 0, parent proc gets pid of child.
 	// -1 on error.
-	Process* ForkProcess(const char name[64], uint8_t Flags, uint64_t tlssize, void (*Function)(), uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
+	Process* ForkProcess(const char name[64], uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
 	{
 		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
 		using Library::LinkedList;
@@ -302,44 +302,23 @@ namespace Multitasking
 
 		PageMapStructure* PML4 = FirstProc ? (PageMapStructure*)(GetKernelCR3()) : (PageMapStructure*) Virtual::CreateVAS();
 
-		// everybody needs some tls
-		if(tlssize == 0)
-			tlssize = 8;
-
-		process->Flags					= Flags;
+		process->Parent = Multitasking::GetCurrentProcess();
+		process->Flags					= process->Parent->Flags;
 		process->ProcessID				= NumProcesses;
 		process->CR3					= (uint64_t) PML4;
 		process->VAS					= new Virtual::VirtualAddressSpace(PML4);
 		process->SignalHandlers			= (sighandler_t*) KernelHeap::AllocateChunk(sizeof(sighandler_t) * __SIGCOUNT);
 		process->iocontext				= new Filesystems::IOContext();
-		process->tlssize				= tlssize;
+		process->tlssize				= process->Parent->tlssize;
 		for(int i = 0; i < __SIGCOUNT; i++)
 			process->SignalHandlers[i] = __signal_ignore;
 
 		Virtual::SetupVAS(process->VAS);
-
-		if(!FirstProc)
-		{
-			process->Parent = Multitasking::GetCurrentProcess();
-		}
-		else
-		{
-			process->Parent = 0;
-			Kernel::KernelProcess = process;
-
-			// setup the cow mapping here.
-			// 0x00 to 8mb should be cowed.
-
-			for(uint64_t v = 0; v < 0x00800000; v += 0x1000)
-				MarkCOW(v);
-		}
-
 		String::Copy(process->Name, name);
-
 
 		NumProcesses++;
 
-		(void) CreateThread(process, Function, Priority, a1, a2, a3, a4, a5, a6);
+		(void) CreateThread(process, (void (*)()) GetCurrentThread(), Priority, a1, a2, a3, a4, a5, a6);
 
 		if(FirstProc)
 			FirstProc = false;
@@ -353,7 +332,7 @@ namespace Multitasking
 			assert(OpenFile(process->iocontext, "/dev/stdout", 0)->fd == 1);
 		}
 
-		Log("Creating new process in VAS (%s): CR3(phys): %x, PID %d", name, (uint64_t) PML4, process->ProcessID);
+		Log("Forking process from PID %d, new PID %d", process->Parent->ProcessID, process->ProcessID);
 		return process;
 	}
 }

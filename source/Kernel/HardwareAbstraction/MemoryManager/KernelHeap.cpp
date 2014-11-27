@@ -18,9 +18,9 @@ using namespace Library;
 
 #if 1
 
-#define MaximumHeapSizeInPages			0xFFFFFFFF
+#define MaximumHeapSizeInPages		0xFFFFFFFF
 #define Alignment					32
-#define MetadataSize					32
+#define MetadataSize				32
 #define Warn						0
 #define MapFlags					0x7
 

@@ -9,6 +9,8 @@
 extern "C" {
 #endif
 
+#ifndef __stat_struct
+#define __stat_struct
 struct stat
 {
 	dev_t		st_dev;		// ID of device containing file
@@ -25,6 +27,8 @@ struct stat
 	time_t		st_mtime;	// time of last modification
 	time_t		st_ctime;	// time of last status change
 };
+#endif
+
 
 int stat(const char* path, struct stat* buf);
 int fstat(int fd, struct stat* buf);

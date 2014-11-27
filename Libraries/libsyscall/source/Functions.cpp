@@ -230,7 +230,6 @@ namespace SystemCall
 
 	int Stat(uint64_t fd, struct stat* st, bool statlink)
 	{
-		// return (int) Syscall3Param(fd, offset, whence, 8009);
 		return (int) Syscall3Param(fd, (uintptr_t) st, statlink, 8010);
 	}
 

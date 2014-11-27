@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <signal.h>
 #include <pthread.h>
+#include <sys/stat.h>
 #pragma once
 
 #ifdef __cplusplus
