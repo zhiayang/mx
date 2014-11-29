@@ -36,6 +36,8 @@ extern "C" void KernelInit(uint32_t MultibootMagic, uint32_t MBTAddr)
 
 namespace Kernel
 {
+	// If you're against global variables, fuck away.
+	// Thank you!
 	uint64_t K_SystemMemoryInBytes;
 	uint64_t EndOfKernel;
 	static uint64_t LFBBufferAddr;
@@ -56,18 +58,14 @@ namespace Kernel
 	Devices::PS2Controller* KernelPS2Controller;
 	Devices::Keyboard* KernelKeyboard;
 	Random* KernelRandom;
-
-
-	bool EnableTimeService = true;
-	bool IsKernelInCentralDispatch = false;
+	Mutex* test;
 
 	static uint64_t VER_MAJOR;
 	static uint64_t VER_MINOR;
 	static uint64_t VER_REVSN;
 	static uint64_t VER_MINRV;
 
-
-
+	// memory map
 	HardwareAbstraction::MemoryManager::MemoryMap::MemoryMap_type* K_MemoryMap;
 
 	void KernelCore(uint32_t MultibootMagic, uint32_t MBTAddr)
@@ -117,8 +115,8 @@ namespace Kernel
 
 			CR3Value = newcr3;
 		}
-		Physical::Initialise();
 
+		Physical::Initialise();
 		Multitasking::Initialise();
 		Log("[mx] is initialising...");
 

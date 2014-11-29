@@ -28,11 +28,9 @@ namespace Library
 					data* object;
 			};
 
-			uint64_t length;
-			SingleNode* head;
-			SingleNode* tail;
-
-
+			uint64_t length = 0;
+			SingleNode* head = 0;
+			SingleNode* tail = 0;
 
 
 			SingleNode* Traverse(uint64_t i) const
@@ -74,6 +72,8 @@ namespace Library
 
 					delete s;
 				}
+
+				this->head = 0;
 			}
 
 

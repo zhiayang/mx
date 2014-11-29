@@ -20,6 +20,7 @@ using namespace Library;
 #define MetadataSize				32
 #define Warn						0
 #define MapFlags					0x7
+#define ClearMemory					1
 
 static uint64_t NumberOfChunksInHeap;
 static uint64_t SizeOfHeapInPages;
@@ -33,28 +34,27 @@ namespace KernelHeap
 {
 	bool DidInitialise = false;
 
-	struct Chunk_type
+	struct Block
 	{
 		uint64_t Offset;
 		uint64_t Size;
-		// uint64_t uuid;
-		// uint64_t magic;
+		uint64_t pad;
+		uint64_t magic;
+	};
 
-	} __attribute__ ((packed));
 
-
-	uint64_t GetSize(Chunk_type* c)
+	uint64_t GetSize(Block* c)
 	{
 		uint64_t f = c->Size & (uint64_t)(~0x1);
 		return f;
 	}
 
-	uint64_t addr(Chunk_type* c)
+	uint64_t addr(Block* c)
 	{
 		return (uint64_t) c;
 	}
 
-	bool IsFree(Chunk_type* c)
+	bool IsFree(Block* c)
 	{
 		return c->Size & 0x1;
 	}
@@ -68,6 +68,19 @@ namespace KernelHeap
 		SizeOfMetadataInPages++;
 	}
 
+	Block* sane(Block* c)
+	{
+		if(c && (c->Offset ^ c->Size) == c->magic)
+			return c;
+
+		else
+		{
+			Log(3, "Expected 'magic' to be %x, got %x", c->Offset ^ c->Size, c->magic);
+			HALT("");
+			return 0;
+		}
+	}
+
 	uint64_t CreateNewChunk(uint64_t offset, uint64_t size)
 	{
 		uint64_t s = KernelHeapMetadata + MetadataSize;
@@ -75,19 +88,19 @@ namespace KernelHeap
 
 		for(uint64_t m = 0; m < NumberOfChunksInHeap; m++)
 		{
-			Chunk_type* ct = (Chunk_type*) s;
+			Block* ct = (Block*) s;
 			if((ct->Offset + GetSize(ct) == offset && IsFree(ct)) || (ct->Offset == 0 && ct->Size == 0))
 			{
 				found = true;
 				break;
 			}
 
-			s += sizeof(Chunk_type);
+			s += sizeof(Block);
 		}
 
 		if(found)
 		{
-			Chunk_type* c1 = (Chunk_type*) s;
+			Block* c1 = (Block*) s;
 
 			if(c1->Offset == 0 && c1->Size == 0)
 			{
@@ -102,15 +115,16 @@ namespace KernelHeap
 				c1->Size |= 0x1;
 			}
 
-			return (uint64_t) c1;
+			c1->magic = c1->Size ^ c1->Offset;
+			return (uint64_t) sane(c1);
 		}
 
 
 
 
-		uint64_t p = MetadataSize + ((NumberOfChunksInHeap - 1) * sizeof(Chunk_type));
+		uint64_t p = MetadataSize + ((NumberOfChunksInHeap - 1) * sizeof(Block));
 
-		if(p + sizeof(Chunk_type) == SizeOfMetadataInPages * 0x1000)
+		if(p + sizeof(Block) == SizeOfMetadataInPages * 0x1000)
 		{
 			// if this is the last one before the page
 			// create a new one.
@@ -118,19 +132,20 @@ namespace KernelHeap
 		}
 
 		// create another one.
-		Chunk_type* c1 = (Chunk_type*)(KernelHeapMetadata + p + sizeof(Chunk_type));
+		Block* c1 = (Block*)(KernelHeapMetadata + p + sizeof(Block));
 		NumberOfChunksInHeap++;
 
 		c1->Offset = offset;
 		c1->Size = size | 0x1;
+		c1->magic = c1->Size ^ c1->Offset;
 
-		return (uint64_t) c1;
+		return (uint64_t) sane(c1);
 	}
 
-	Chunk_type* GetChunkAtIndex(uint64_t i)
+	Block* GetChunkAtIndex(uint64_t i)
 	{
-		uint64_t p = KernelHeapMetadata + MetadataSize + (i * sizeof(Chunk_type));
-		return (Chunk_type*) p;
+		uint64_t p = KernelHeapMetadata + MetadataSize + (i * sizeof(Block));
+		return sane((Block*) p);
 	}
 
 	uint64_t RoundSize(uint64_t s)
@@ -179,11 +194,12 @@ namespace KernelHeap
 		FirstFreeIndex = 0;
 
 
-		Chunk_type* fc = (Chunk_type*)(KernelHeapMetadata + MetadataSize);
+		Block* fc = (Block*)(KernelHeapMetadata + MetadataSize);
 		fc->Offset = 0;
 
 		// bit zero stores free/not: 1 is free, 0 is not. that means we can only do 2-byte granularity.
 		fc->Size = 0x1000 | 0x1;
+		fc->magic = fc->Size ^ fc->Offset;
 
 		DidInitialise = true;
 	}
@@ -194,16 +210,16 @@ namespace KernelHeap
 		// so fuck convention and scan from the back.
 
 		{
-			uint64_t p = KernelHeapMetadata + MetadataSize + (FirstFreeIndex * sizeof(Chunk_type));
+			uint64_t p = KernelHeapMetadata + MetadataSize + (FirstFreeIndex * sizeof(Block));
 
 			for(uint64_t k = 0; k < NumberOfChunksInHeap - FirstFreeIndex; k++)
 			{
-				Chunk_type* c = (Chunk_type*) p;
+				Block* c = sane((Block*) p);
 				if(GetSize(c) > Size && IsFree(c))
 					return p;
 
 				else
-					p += sizeof(Chunk_type);
+					p += sizeof(Block);
 			}
 
 			// because the minimum offset (from the meta address) is 8, zero will do.
@@ -212,7 +228,7 @@ namespace KernelHeap
 	}
 
 
-	void SplitChunk(Chunk_type* Header, uint64_t Size)
+	void SplitChunk(Block* Header, uint64_t Size)
 	{
 		// round up to nearest two.
 		uint64_t ns = ((Size / 2) + 1) * 2;
@@ -229,6 +245,7 @@ namespace KernelHeap
 		CreateNewChunk(Header->Offset + ns, nsonc);
 
 		Header->Size = ns | 0x1;
+		Header->magic = Header->Size ^ Header->Offset;
 	}
 
 
@@ -245,25 +262,26 @@ namespace KernelHeap
 		bool found = false;
 		for(uint64_t m = 0; m < NumberOfChunksInHeap; m++)
 		{
-			Chunk_type* ct = (Chunk_type*) p;
+			Block* ct = (Block*) p;
 			if(ct->Offset + GetSize(ct) == SizeOfHeapInPages * 0x1000 && IsFree(ct))
 			{
 				found = true;
 				break;
 			}
 
-			p += sizeof(Chunk_type);
+			p += sizeof(Block);
 		}
 
 
 		// check if the chunk before the new one is free.
 		if(found)
 		{
-			Chunk_type* c1 = (Chunk_type*) p;
+			Block* c1 = (Block*) p;
 
 			// merge with that instead.
 			c1->Size += 0x1000;
 			c1->Size |= 0x1;
+			c1->magic = c1->Offset ^ c1->Size;
 		}
 		else
 		{
@@ -306,9 +324,9 @@ namespace KernelHeap
 		{
 			// we must have found it.
 			// check that it's actually valid.
-			assert(!(in % sizeof(Chunk_type)));
+			assert(!(in % sizeof(Block)));
 
-			Chunk_type* c = (Chunk_type*) in;
+			Block* c = sane((Block*) in);
 
 			if(GetSize(c) > as)
 			{
@@ -316,6 +334,10 @@ namespace KernelHeap
 			}
 
 			c->Size &= (uint64_t) (~0x1);
+			c->magic = c->Offset ^ c->Size;
+			if(ClearMemory)
+				Memory::Set((void*) (KernelHeapAddress + c->Offset), 0, GetSize(c));
+
 			return (void*) (c->Offset + KernelHeapAddress);
 		}
 	}
@@ -325,7 +347,7 @@ namespace KernelHeap
 
 
 
-	bool TryMergeLeft(Chunk_type* c)
+	bool TryMergeLeft(Block* c)
 	{
 		// make sure that this is not the first chunk.
 		if(addr(c) == KernelHeapMetadata + MetadataSize)
@@ -336,33 +358,28 @@ namespace KernelHeap
 
 		for(uint64_t m = 0; m < NumberOfChunksInHeap && p < KernelHeapMetadata + (SizeOfMetadataInPages * 0x1000); m++)
 		{
-			Chunk_type* ct = (Chunk_type*) p;
+			Block* ct = sane((Block*) p);
 			if(ct->Offset + GetSize(ct) == c->Offset && IsFree(ct))
 			{
 				found = true;
 				break;
 			}
 
-			p += sizeof(Chunk_type);
+			p += sizeof(Block);
 		}
 
 		if(found)
 		{
-			Chunk_type* c1 = (Chunk_type*) p;
+			Block* c1 = (Block*) p;
 
 			c->Offset = c1->Offset;
 			c->Size += c1->Size;
 			c->Size |= 0x1;
+			c->magic = c->Offset ^ c->Size;
 
 			c1->Offset = 0;
 			c1->Size = 0;
-
-			// merge with that instead.
-			// c1->Size += GetSize(c);
-			// c1->Size |= 0x1;
-
-			// c->Offset = 0;
-			// c->Size = 0;
+			c1->magic = c1->Offset ^ c1->Size;
 		}
 
 		return found;
@@ -370,10 +387,10 @@ namespace KernelHeap
 
 
 
-	bool TryMergeRight(Chunk_type* c)
+	bool TryMergeRight(Block* c)
 	{
 		// make sure that this is not the last chunk.
-		if(addr(c) + sizeof(Chunk_type) >= KernelHeapMetadata + (SizeOfMetadataInPages * 0x1000))
+		if(addr(c) + sizeof(Block) >= KernelHeapMetadata + (SizeOfMetadataInPages * 0x1000))
 			return false;
 
 		uint64_t p = KernelHeapMetadata + MetadataSize;
@@ -381,26 +398,28 @@ namespace KernelHeap
 
 		for(uint64_t m = 0; m < NumberOfChunksInHeap && p < KernelHeapMetadata + (SizeOfMetadataInPages * 0x1000); m++)
 		{
-			Chunk_type* ct = (Chunk_type*) p;
+			Block* ct = (Block*) p;
 			if(c->Offset + GetSize(c) == ct->Offset && IsFree(ct))
 			{
 				found = true;
 				break;
 			}
 
-			p += sizeof(Chunk_type);
+			p += sizeof(Block);
 		}
 
 		if(found)
 		{
-			Chunk_type* c1 = (Chunk_type*) p;
+			Block* c1 = (Block*) p;
 
 			// merge with that instead.
 			c->Size += GetSize(c1);
 			c->Size |= 0x1;
+			c->magic = c->Offset ^ c->Size;
 
 			c1->Offset = 0;
 			c1->Size = 0;
+			c1->magic = c1->Offset ^ c1->Size;
 		}
 		return false;
 	}
@@ -412,11 +431,11 @@ namespace KernelHeap
 
 		// find the corresponding chunk in the mdata.
 		uint64_t p = KernelHeapMetadata + MetadataSize;
-		Chunk_type* tc = 0;
+		Block* tc = 0;
 
 		for(uint64_t k = 0; k < NumberOfChunksInHeap; k++)
 		{
-			Chunk_type* c = (Chunk_type*) p;
+			Block* c = (Block*) p;
 			if((uint64_t) Pointer - KernelHeapAddress == (uint64_t) c->Offset)
 			{
 				if(k < FirstFreeIndex)
@@ -427,7 +446,7 @@ namespace KernelHeap
 			}
 
 			else
-				p += sizeof(Chunk_type);
+				p += sizeof(Block);
 		}
 
 		if(!tc)
@@ -441,6 +460,7 @@ namespace KernelHeap
 		// else, set it to free.
 
 		tc->Size |= 0x1;
+		tc->magic = tc->Offset ^ tc->Size;
 		Memory::Set((void*)((uint64_t)(tc->Offset + KernelHeapAddress)), 0x00, GetSize(tc));
 
 		// try to merge left or right.
@@ -488,10 +508,10 @@ namespace KernelHeap
 		uint64_t p = KernelHeapMetadata + MetadataSize;
 		for(uint64_t n = 0; n < NumberOfChunksInHeap; n++)
 		{
-			Chunk_type* c = (Chunk_type*) p;
+			Block* c = (Block*) p;
 			Log("Offset: %x, Size: %x, IsFree: %b", (uint64_t) c->Offset, GetSize(c), IsFree(c));
 
-			p += sizeof(Chunk_type);
+			p += sizeof(Block);
 		}
 	}
 }
