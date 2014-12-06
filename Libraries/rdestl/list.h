@@ -1,3 +1,5 @@
+// this is a c++ comment to silence clang
+
 #ifndef RDESTL_LIST_H
 #define RDESTL_LIST_H
 
@@ -207,6 +209,32 @@ public:
 		itErase.node()->unlink();
 		destruct_node(itErase.node());
 		return it;
+	}
+	void remove(const T& value)
+	{
+		for(iterator i = this->begin(); i != this->end(); i++)
+		{
+			if(*i == value)
+			{
+				this->erase(i);
+				break;
+			}
+		}
+
+		RDE_ASSERT(false && "Not in list!");
+	}
+	bool contains(const T& value)
+	{
+		if(this->empty())
+			return false;
+
+		for(iterator i = this->begin(); i != this->end(); i++)
+		{
+			if(*i == value)
+				return true;
+		}
+
+		return false;
 	}
 	iterator erase(iterator first, iterator last)
 	{

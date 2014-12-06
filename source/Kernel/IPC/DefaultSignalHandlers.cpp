@@ -65,12 +65,12 @@ namespace IPC
 			case SIGCHLD:		return Discard;
 			case SIGTTIN:		return SuspProc;
 			case SIGTTOU:		return SuspProc;
-			case SIGIO:		return Discard;
+			case SIGIO:			return Discard;
 			case SIGXCPU:		return TermProc;
 			case SIGXFSZ:		return TermProc;
-			case SIGVTALRM:	return TermProc;
+			case SIGVTALRM:		return TermProc;
 			case SIGPROF:		return TermProc;
-			case SIGWINCH:	return Discard;
+			case SIGWINCH:		return Discard;
 			case SIGINFO:		return Discard;
 			default:			return TermProc;
 		}

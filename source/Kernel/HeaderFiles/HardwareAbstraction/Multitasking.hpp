@@ -40,8 +40,8 @@ namespace HardwareAbstraction
 			ThreadRegisterState_type* CrashState;
 			void* tlsptr;
 
-			Library::LinkedList<Thread>* watchers;
-			Library::LinkedList<Thread>* watching;
+			rde::list<Thread*> watchers;
+			rde::list<Thread*> watching;
 
 			// a bit hacky, but this stores the current thread errno.
 			int64_t currenterrno;
@@ -63,7 +63,7 @@ namespace HardwareAbstraction
 			sighandler_t* SignalHandlers;
 
 			Process* Parent;
-			Library::LinkedList<Thread>* Threads;
+			rde::list<Thread*> Threads;
 		};
 
 
@@ -79,12 +79,11 @@ namespace HardwareAbstraction
 		#define FLAG_DETACHED		0x2
 
 
-		extern Library::LinkedList<Process>* ProcessList;
-		extern Library::LinkedList<Thread>* SleepList;
-
-		extern Library::LinkedList<Thread>* ThreadList_LowPrio;
-		extern Library::LinkedList<Thread>* ThreadList_NormPrio;
-		extern Library::LinkedList<Thread>* ThreadList_HighPrio;
+		extern rde::list<Process*>* ProcessList;
+		extern rde::list<Thread*>* SleepList;
+		extern rde::list<Thread*>* ThreadList_LowPrio;
+		extern rde::list<Thread*>* ThreadList_NormPrio;
+		extern rde::list<Thread*>* ThreadList_HighPrio;
 
 		extern Mutex* listlock;
 
@@ -111,7 +110,7 @@ namespace HardwareAbstraction
 		void Sleep(int64_t Miliseconds);
 		extern "C" void YieldCPU();
 		void Block(uint8_t purpose = 0);
-		Library::LinkedList<Thread>* GetThreadList(Thread* t);
+		rde::list<Thread*>* GetThreadList(Thread* t);
 		Thread* FetchAndRemoveThread(Thread* t);
 
 		void Suspend(Thread* p);
@@ -137,10 +136,6 @@ namespace HardwareAbstraction
 
 		void WatchThread(pthread_t tid);
 		void UnwatchThread(pthread_t tid);
-
-
-		Library::LinkedList<Thread>* SearchByName(const char* n);
-		Thread* GetProcessByName(const char* n);
 
 		void AddToQueue(Process* Proc);
 		void AddToQueue(Thread* t);
