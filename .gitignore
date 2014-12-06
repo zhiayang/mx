@@ -6,3 +6,6 @@ build
 Libraries/ports
 .build.h
 *.sublime-*
+applications/ports
+commit
+a2l

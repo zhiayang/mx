@@ -4,7 +4,6 @@
 
 #pragma once
 #include <stdint.h>
-#include <List.hpp>
 #include <HardwareAbstraction/Multitasking.hpp>
 
 namespace Kernel {
@@ -52,16 +51,16 @@ namespace HardwareAbstraction
 			public:
 				IRQHandlerPlugList(uint64_t n)
 				{
-					this->HandlerList = new Library::LinkedList<IRQHandlerPlug>();
+					this->HandlerList = new rde::vector<IRQHandlerPlug*>();
 					this->IRQNum = n;
 				}
 
 				uint64_t IRQNum;
-				Library::LinkedList<IRQHandlerPlug>* HandlerList;
+				rde::vector<IRQHandlerPlug*>* HandlerList;
 		};
 
 
-		extern Library::LinkedList<IRQHandlerPlugList>* IRQHandlerList;
+		extern rde::vector<IRQHandlerPlugList*>* IRQHandlerList;
 
 		void SetGate(uint8_t num, uint64_t base, uint16_t sel, uint8_t flags);
 		void Initialise();

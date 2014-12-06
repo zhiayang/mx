@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <String.hpp>
 
 using namespace Kernel::HardwareAbstraction::Devices::Storage;
 namespace Kernel {
@@ -28,7 +29,7 @@ namespace Filesystems
 			bool ismounted;
 		};
 
-		static Library::Vector<Filesystem*>* mountedfses;
+		static rde::vector<Filesystem*>* mountedfses;
 		static rde::hash_map<id_t, vnode*>* vnodepool;
 
 		FSDriver* driver_stdin;
@@ -58,7 +59,7 @@ namespace Filesystems
 
 		void Initialise()
 		{
-			mountedfses = new Library::Vector<Filesystem*>();
+			mountedfses = new rde::vector<Filesystem*>();
 			vnodepool = new rde::hash_map<id_t, vnode*>();
 		}
 

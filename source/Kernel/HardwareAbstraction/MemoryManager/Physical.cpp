@@ -338,6 +338,7 @@ namespace Physical
 		if(OpsSinceLastCoalesce < CoalesceThreshold)
 			return;
 
+		Log("Coalesced FPLs");
 		auto mut = AutoMutex(mtx);
 		OpsSinceLastCoalesce = 0;
 

@@ -5,6 +5,7 @@
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Filesystems.hpp>
 #include <mqueue.h>
+#include <String.hpp>
 
 #define BUFSIZE	1024
 
@@ -110,7 +111,7 @@ namespace Filesystems
 		(void) st;
 	}
 
-	Library::Vector<VFS::vnode*>* FSDriverIPCMsg::ReadDir(VFS::vnode* node)
+	rde::vector<VFS::vnode*>* FSDriverIPCMsg::ReadDir(VFS::vnode* node)
 	{
 		(void) node;
 		return nullptr;

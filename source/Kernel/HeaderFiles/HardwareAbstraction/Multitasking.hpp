@@ -8,9 +8,7 @@
 #include "Filesystems.hpp"
 #include "IPC.hpp"
 #include "MemoryManager/Virtual.hpp"
-#include <List.hpp>
 #include <Synchro.hpp>
-#include <Vector.hpp>
 #include <defs/_pthreadstructs.h>
 
 #include <signal.h>
@@ -21,6 +19,7 @@ namespace HardwareAbstraction
 {
 	namespace Multitasking
 	{
+		#define NUM_PRIO	4
 		struct Process;
 
 		struct Thread
@@ -40,8 +39,8 @@ namespace HardwareAbstraction
 			ThreadRegisterState_type* CrashState;
 			void* tlsptr;
 
-			Library::LinkedList<Thread>* watchers;
-			Library::LinkedList<Thread>* watching;
+			rde::list<Thread*> watchers;
+			rde::list<Thread*> watching;
 
 			// a bit hacky, but this stores the current thread errno.
 			int64_t currenterrno;
@@ -63,7 +62,33 @@ namespace HardwareAbstraction
 			sighandler_t* SignalHandlers;
 
 			Process* Parent;
-			Library::LinkedList<Thread>* Threads;
+			rde::vector<Thread*> Threads;
+		};
+
+		void DisableScheduler();
+		void EnableScheduler();
+
+		struct RunQueue
+		{
+			RunQueue()
+			{
+				this->thelock = new Mutex();
+			}
+
+			void lock()
+			{
+				DisableScheduler();
+				LockMutex(this->thelock);
+			}
+
+			void unlock()
+			{
+				UnlockMutex(this->thelock);
+				EnableScheduler();
+			}
+
+			Mutex* thelock;
+			rde::list<Thread*>** queue;
 		};
 
 
@@ -77,22 +102,18 @@ namespace HardwareAbstraction
 
 		#define FLAG_USERSPACE		0x1
 		#define FLAG_DETACHED		0x2
+		#define FLAG_DYING			0x80
 
 
-		extern Library::LinkedList<Process>* ProcessList;
-		extern Library::LinkedList<Thread>* SleepList;
-
-		extern Library::LinkedList<Thread>* ThreadList_LowPrio;
-		extern Library::LinkedList<Thread>* ThreadList_NormPrio;
-		extern Library::LinkedList<Thread>* ThreadList_HighPrio;
-
-		extern Mutex* listlock;
+		extern rde::list<Process*>* ProcessList;
+		extern rde::list<Thread*>* SleepList;
 
 		extern uint64_t NumThreads;
 		extern uint64_t NumProcesses;
 		extern bool SchedulerEnabled;
 
 		void Initialise();
+		RunQueue* getRunQueue();
 		uint64_t GetNumberOfThreads();
 		uint64_t GetCurrentCR3();
 		Thread* GetThread(uint64_t id);
@@ -111,7 +132,7 @@ namespace HardwareAbstraction
 		void Sleep(int64_t Miliseconds);
 		extern "C" void YieldCPU();
 		void Block(uint8_t purpose = 0);
-		Library::LinkedList<Thread>* GetThreadList(Thread* t);
+		rde::list<Thread*>* GetThreadList(Thread* t);
 		Thread* FetchAndRemoveThread(Thread* t);
 
 		void Suspend(Thread* p);
@@ -132,15 +153,8 @@ namespace HardwareAbstraction
 		void Resume(const char* p);
 		void Kill(const char* p);
 
-		void DisableScheduler();
-		void EnableScheduler();
-
 		void WatchThread(pthread_t tid);
 		void UnwatchThread(pthread_t tid);
-
-
-		Library::LinkedList<Thread>* SearchByName(const char* n);
-		Thread* GetProcessByName(const char* n);
 
 		void AddToQueue(Process* Proc);
 		void AddToQueue(Thread* t);

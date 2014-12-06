@@ -7,7 +7,7 @@ all: buildprograms
 	@:
 
 buildprograms:
-	@find . -mindepth 1 -maxdepth 1 -type d -exec $(MAKE) -C {} \;
+	@find . -mindepth 1 -maxdepth 1 -type d -not -name "ports" -exec $(MAKE) -C {} \;
 
 
 

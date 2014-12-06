@@ -144,7 +144,6 @@ namespace IPC
 		}
 		else
 		{
-			using namespace Library::StandardIO;
 			// fix iret to throw us into the sighandler, then return etc.
 			// fetch our current stackpointer.
 			uint64_t stackptr = 0;
@@ -224,7 +223,7 @@ namespace IPC
 	{
 		Multitasking::Process* proc = Multitasking::GetProcess(pid);
 		assert(proc);
-		IPC_SignalThread(proc->Threads->get(0)->ThreadID, signum);
+		IPC_SignalThread(proc->Threads.front()->ThreadID, signum);
 	}
 
 	extern "C" int IPC_SendMessage(long key, void* msg, size_t size, uint64_t flags)

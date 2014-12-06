@@ -4,6 +4,7 @@
 
 #include <Kernel.hpp>
 #include <Console.hpp>
+#include <StandardIO.hpp>
 #include <stdio.h>
 
 namespace Kernel {

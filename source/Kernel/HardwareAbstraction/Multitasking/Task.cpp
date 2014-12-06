@@ -5,8 +5,7 @@
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Multitasking.hpp>
 #include <HardwareAbstraction/MemoryManager.hpp>
-#include <List.hpp>
-#include <string.h>
+#include <String.hpp>
 
 using namespace Kernel;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
@@ -33,25 +32,25 @@ namespace Multitasking
 		// kernel thread
 		*--stack = 0x10;					// SS (-8)
 		*--stack = u + DefaultRing3StackSize - 8;	// User stack pointer (-16)
-		*--stack = 0x202;				// RFLAGS (-24)
+		*--stack = 0x202;					// RFLAGS (-24)
 		*--stack = 0x08;					// CS (-32)
-		*--stack = (uint64_t) f;				// RIP (-40)
+		*--stack = (uint64_t) f;			// RIP (-40)
 
-		*--stack = 0;					// R15 (-48)
-		*--stack = 0;					// R14 (-56)
-		*--stack = 0;					// R13 (-64)
-		*--stack = 0;					// R12 (-72)
-		*--stack = 0;					// R11 (-80)
-		*--stack = 0;					// R10 (-88)
+		*--stack = 0;						// R15 (-48)
+		*--stack = 0;						// R14 (-56)
+		*--stack = 0;						// R13 (-64)
+		*--stack = 0;						// R12 (-72)
+		*--stack = 0;						// R11 (-80)
+		*--stack = 0;						// R10 (-88)
 		*--stack = (uint64_t) p6;			// R9 (-96)
 		*--stack = (uint64_t) p5;			// R8 (-104)
 
 		*--stack = (uint64_t) p3;			// RDX (-112)
 		*--stack = (uint64_t) p4;			// RCX (-120)
-		*--stack = 0;					// RBX (-128)
-		*--stack = 0;					// RAX (-136)
+		*--stack = 0;						// RBX (-128)
+		*--stack = 0;						// RAX (-136)
 
-		*--stack = 0;					// RBP (-144)
+		*--stack = 0;						// RBP (-144)
 		*--stack = (uint64_t) p2;			// RSI (-152)
 		*--stack = (uint64_t) p1;			// RDI (-160)
 
@@ -73,26 +72,26 @@ namespace Multitasking
 
 		// user thread (always)
 		*--stack = 0x23;					// SS
-		*--stack = u + (stacksize) - 8;			// User stack pointer
-		*--stack = 0x202;				// RFLAGS
+		*--stack = u + (stacksize) - 8;		// User stack pointer
+		*--stack = 0x202;					// RFLAGS
 		*--stack = 0x1B;					// CS
-		*--stack = (uint64_t) f;				// RIP (-40)
+		*--stack = (uint64_t) f;			// RIP (-40)
 
-		*--stack = 0;					// R15 (-48)
-		*--stack = 0;					// R14 (-56)
-		*--stack = 0;					// R13 (-64)
-		*--stack = 0;					// R12 (-72)
-		*--stack = 0;					// R11 (-80)
-		*--stack = 0;					// R10 (-88)
+		*--stack = 0;						// R15 (-48)
+		*--stack = 0;						// R14 (-56)
+		*--stack = 0;						// R13 (-64)
+		*--stack = 0;						// R12 (-72)
+		*--stack = 0;						// R11 (-80)
+		*--stack = 0;						// R10 (-88)
 		*--stack = (uint64_t) p5;			// R9 (-96)
 		*--stack = (uint64_t) p6;			// R8 (-104)
 
 		*--stack = (uint64_t) p3;			// RDX (-112)
 		*--stack = (uint64_t) p4;			// RCX (-120)
-		*--stack = 0;					// RBX (-128)
-		*--stack = 0;					// RAX (-136)
+		*--stack = 0;						// RBX (-128)
+		*--stack = 0;						// RAX (-136)
 
-		*--stack = 0;					// RBP (-144)
+		*--stack = 0;						// RBP (-144)
 		*--stack = (uint64_t) p2;			// RSI (-152)	(argv)
 		*--stack = (uint64_t) p1;			// RDI (-160)	(argc)
 
@@ -188,7 +187,7 @@ namespace Multitasking
 		thread->flags				= Parent->Flags;
 		thread->currenterrno			= 0;
 
-		Parent->Threads->push_front(thread);
+		Parent->Threads.push_back(thread);
 
 		SetupStackThread(thread, u, us, (uint64_t) Function, attr->a1, attr->a2, attr->a3, attr->a4, attr->a5, attr->a6);
 		NumThreads++;
@@ -230,10 +229,8 @@ namespace Multitasking
 	Process* CreateProcess(const char name[64], uint8_t Flags, uint64_t tlssize, void (*Function)(), uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
 	{
 		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
-		using Library::LinkedList;
 
 		Process* process = new Process();
-		process->Threads = new LinkedList<Thread>();
 
 		PageMapStructure* PML4 = FirstProc ? (PageMapStructure*)(GetKernelCR3()) : (PageMapStructure*) Virtual::CreateVAS();
 
@@ -267,7 +264,6 @@ namespace Multitasking
 
 
 		NumProcesses++;
-
 		(void) CreateThread(process, Function, Priority, a1, a2, a3, a4, a5, a6);
 
 		if(FirstProc)
@@ -292,54 +288,31 @@ namespace Multitasking
 	// the only thread shall be the current thread.
 	// child proc gets ret = 0, parent proc gets pid of child.
 	// -1 on error.
-	Process* ForkProcess(const char name[64], uint8_t Flags, uint64_t tlssize, void (*Function)(), uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
+	Process* ForkProcess(const char name[64], uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
 	{
 		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
-		using Library::LinkedList;
 
 		Process* process = new Process();
-		process->Threads = new LinkedList<Thread>();
 
 		PageMapStructure* PML4 = FirstProc ? (PageMapStructure*)(GetKernelCR3()) : (PageMapStructure*) Virtual::CreateVAS();
 
-		// everybody needs some tls
-		if(tlssize == 0)
-			tlssize = 8;
-
-		process->Flags					= Flags;
+		process->Parent = Multitasking::GetCurrentProcess();
+		process->Flags					= process->Parent->Flags;
 		process->ProcessID				= NumProcesses;
 		process->CR3					= (uint64_t) PML4;
 		process->VAS					= new Virtual::VirtualAddressSpace(PML4);
 		process->SignalHandlers			= (sighandler_t*) KernelHeap::AllocateChunk(sizeof(sighandler_t) * __SIGCOUNT);
 		process->iocontext				= new Filesystems::IOContext();
-		process->tlssize				= tlssize;
+		process->tlssize				= process->Parent->tlssize;
 		for(int i = 0; i < __SIGCOUNT; i++)
 			process->SignalHandlers[i] = __signal_ignore;
 
 		Virtual::SetupVAS(process->VAS);
-
-		if(!FirstProc)
-		{
-			process->Parent = Multitasking::GetCurrentProcess();
-		}
-		else
-		{
-			process->Parent = 0;
-			Kernel::KernelProcess = process;
-
-			// setup the cow mapping here.
-			// 0x00 to 8mb should be cowed.
-
-			for(uint64_t v = 0; v < 0x00800000; v += 0x1000)
-				MarkCOW(v);
-		}
-
 		String::Copy(process->Name, name);
-
 
 		NumProcesses++;
 
-		(void) CreateThread(process, Function, Priority, a1, a2, a3, a4, a5, a6);
+		(void) CreateThread(process, (void (*)()) GetCurrentThread(), Priority, a1, a2, a3, a4, a5, a6);
 
 		if(FirstProc)
 			FirstProc = false;
@@ -353,7 +326,7 @@ namespace Multitasking
 			assert(OpenFile(process->iocontext, "/dev/stdout", 0)->fd == 1);
 		}
 
-		Log("Creating new process in VAS (%s): CR3(phys): %x, PID %d", name, (uint64_t) PML4, process->ProcessID);
+		Log("Forking process from PID %d, new PID %d", process->Parent->ProcessID, process->ProcessID);
 		return process;
 	}
 }

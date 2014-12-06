@@ -7,16 +7,16 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-macros"
-#define PROT_EXEC		(1<<0)
-#define PROT_WRITE		(1<<1)
-#define PROT_READ		(1<<2)
+#define PROT_EXEC		(1 << 0)
+#define PROT_WRITE		(1 << 1)
+#define PROT_READ		(1 << 2)
 #define PROT_USER		(PROT_EXEC | PROT_WRITE | PROT_READ)
 
-#define MAP_SHARED		(1<<0)
-#define MAP_PRIVATE		(1<<1)
+#define MAP_SHARED		(1 << 0)
+#define MAP_PRIVATE		(1 << 1)
 
-#define MAP_ANONYMOUS	(1<<2)
-#define MAP_FIXED		(1<<3)
+#define MAP_ANONYMOUS	(1 << 2)
+#define MAP_FIXED		(1 << 3)
 #pragma clang diagnostic pop
 
 namespace Kernel {
@@ -27,8 +27,11 @@ namespace SystemCalls
 	{
 		UNUSED(retval);
 
+		// TODO.
 		// needs to kill the entire process chain.
-		Multitasking::Process* proc = Multitasking::GetCurrentProcess();
+		Multitasking::Process* proc = Multitasking::GetCurrentThread()->Parent;
+		assert(proc->Threads.front());
+
 		Multitasking::Kill(proc);
 	}
 

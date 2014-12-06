@@ -78,7 +78,7 @@ namespace Filesystems
 		TTY::FlushTTY(1);
 	}
 
-	Library::Vector<VFS::vnode*>* FSDriverStdout::ReadDir(VFS::vnode*)
+	rde::vector<VFS::vnode*>* FSDriverStdout::ReadDir(VFS::vnode*)
 	{
 		return nullptr;
 	}

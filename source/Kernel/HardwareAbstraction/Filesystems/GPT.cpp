@@ -19,7 +19,7 @@ namespace GPT
 	void ReadPartitions(StorageDevice* atadev)
 	{
 		// normally MBR::ReadPartitions will call this... so we can assume the list is uninitialised.
-		atadev->Partitions = new Library::LinkedList<Partition>();
+		atadev->Partitions = new rde::list<Partition*>();
 		// warning: will trash whatever the ATADevice's data buffer contains.
 
 		// read the gpt

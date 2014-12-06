@@ -5,93 +5,80 @@
 
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Devices/IOPort.hpp>
-#include <List.hpp>
 #include <String.hpp>
 #include <stdlib.h>
 
 using namespace Kernel;
 using namespace Library;
 
+
 namespace Kernel {
 namespace HardwareAbstraction {
 namespace Multitasking
 {
 	static bool IsFirst = true;
-	LinkedList<Thread>* SleepList;
-	static LinkedList<Thread>* PendingSleepList;
-
-	Mutex* listlock;
-	LinkedList<Thread>* ThreadList_LowPrio;
-	LinkedList<Thread>* ThreadList_NormPrio;
-	LinkedList<Thread>* ThreadList_HighPrio;
-
-	LinkedList<Process>* ProcessList;
-
+	static rde::list<Thread*>* PendingSleepList;
+	static RunQueue* mainRunQueue;
 	static Thread* CurrentThread = 0;
-	static uint64_t CurrentCR3;
+	static uint64_t CurrentCR3 = 0;
 	static uint64_t ScheduleCount = 0;
+
+	rde::list<Thread*>* SleepList;
+	rde::list<Process*>* ProcessList;
 
 	bool SchedulerEnabled = true;
 
 	void Initialise()
 	{
 		CurrentCR3 = GetKernelCR3();
-		SleepList = new LinkedList<Thread>();
-		ProcessList = new LinkedList<Process>();
-		PendingSleepList = new LinkedList<Thread>();
+		SleepList = new rde::list<Thread*>();
+		ProcessList = new rde::list<Process*>();
+		PendingSleepList = new rde::list<Thread*>();
 
-		ThreadList_LowPrio = new LinkedList<Thread>();
-		ThreadList_NormPrio = new LinkedList<Thread>();
-		ThreadList_HighPrio = new LinkedList<Thread>();
+		mainRunQueue = new RunQueue();
+		mainRunQueue->queue = new rde::list<Thread*>*[NUM_PRIO];
 
-		listlock = new Mutex();
+		for(int i = 0; i < NUM_PRIO; i++)
+			mainRunQueue->queue[i] = new rde::list<Thread*>();
+
 		*((int64_t*) 0x2610) = 0;
 	}
 
-	Process* GetCurrentProcess()			{ return CurrentThread ? CurrentThread->Parent : Kernel::KernelProcess;	}
-	Thread* GetCurrentThread()			{ return CurrentThread;							}
-	uint64_t GetCurrentThreadID()			{ return CurrentThread->ThreadID;					}
-	uint64_t GetCurrentProcessID()		{ return CurrentThread->Parent->ProcessID;				}
+	Process* GetCurrentProcess()		{ return CurrentThread ? CurrentThread->Parent : Kernel::KernelProcess; }
+	Thread* GetCurrentThread()			{ return CurrentThread; }
+	uint64_t GetCurrentThreadID()		{ return CurrentThread->ThreadID; }
+	uint64_t GetCurrentProcessID()		{ return CurrentThread->Parent->ProcessID; }
+	RunQueue* getRunQueue()				{ return mainRunQueue; }
 
 	// if, after N number of switches, processes in the low/norm queue don't get to run, run them all to completion.
-	#define LowStarveThreshold	1024
-	#define NormStarveThreshold	128
+	static int StarvationThresholds[NUM_PRIO] = { 1024, 128, 1, 1 };
+
 
 	Thread* GetNextThread()
 	{
+		auto theQueue = getRunQueue();
 		ScheduleCount++;
-		Thread* r = nullptr;
-
-		if(ThreadList_LowPrio->size() > 0 && (ScheduleCount % LowStarveThreshold == 0))
+		Thread* r = CurrentThread;
+		theQueue->lock();
+		for(int i = 0; i < NUM_PRIO; i++)
 		{
-			r = ThreadList_LowPrio->pop_front();
-			ThreadList_LowPrio->push_back(r);
-		}
-		else if(ThreadList_NormPrio->size() > 0 && (ScheduleCount % NormStarveThreshold == 0))
-		{
-			r = ThreadList_NormPrio->pop_front();
-			ThreadList_NormPrio->push_back(r);
-		}
-		else if(ThreadList_HighPrio->size() > 0)
-		{
-			r = ThreadList_HighPrio->pop_front();
-			ThreadList_HighPrio->push_back(r);
-		}
-		else
-		{
-			r = CurrentThread;
+			if(!theQueue->queue[i]->empty() && (ScheduleCount % StarvationThresholds[i] == 0))
+			{
+				r = theQueue->queue[i]->front();
+				theQueue->queue[i]->pop_front();
+				theQueue->queue[i]->push_back(r);
+			}
 		}
 
 		if(r == nullptr)
 		{
 			// error recovery: switch to the kernel thread
-			CurrentThread = KernelProcess->Threads->front();
+			CurrentThread = KernelProcess->Threads.front();
 			r = CurrentThread;
 			assert(r);
-
-			// HALT("wtfs");
 		}
 
+		theQueue->unlock();
 		return r;
 	}
 
@@ -103,7 +90,9 @@ namespace Multitasking
 			{
 				for(uint64_t i = 0, s = PendingSleepList->size(); i < s; i++)
 				{
-					SleepList->push_back(PendingSleepList->pop_front());
+					SleepList->push_back(PendingSleepList->front());
+					PendingSleepList->pop_front();
+
 					SleepList->back()->StackPointer = context;
 				}
 			}
@@ -133,19 +122,6 @@ namespace Multitasking
 			}
 		}
 
-		// find the current rip and store it.
-		/* context:
-
-			rdi		<-- context
-			rsi
-			...
-			r8
-			r9
-			...
-			r14
-			r15		(+120)
-			rip		<-- this.
-		*/
 
 
 		// 0x2610 stores the thread's current errno.

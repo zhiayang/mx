@@ -5,7 +5,6 @@
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Devices/StorageDevice.hpp>
 
-using namespace Library::StandardIO;
 using namespace Kernel::HardwareAbstraction::Devices::Storage;
 
 namespace Kernel {

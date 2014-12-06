@@ -6,7 +6,6 @@
 // Sets up the paging structures left by our bootstrap in (boot.s).
 
 #include <Kernel.hpp>
-#include <List.hpp>
 #include <StandardIO.hpp>
 #include <stddef.h>
 
@@ -78,7 +77,7 @@ namespace Virtual
 			{
 				if(found->start == addr && found->length == size)
 				{
-					vas->pairs->Remove(found);
+					vas->pairs->remove(found);
 					delete found;
 				}
 				else if(found->start == addr)
@@ -130,7 +129,8 @@ namespace Virtual
 		else if(pair->length == size)
 		{
 			uint64_t ret = pair->start;
-			delete vas->pairs->pop_front();
+			delete vas->pairs->front();
+			vas->pairs->pop_front();
 
 			vas->used->push_back(new ALPPair(ret, size, phys));
 			return ret;
@@ -240,6 +240,7 @@ namespace Virtual
 
 			delete pair;
 		}
+
 
 		for(AddressLengthPair* pair : *vas->pairs)
 			delete pair;
@@ -784,7 +785,6 @@ namespace Virtual
 		PageMapStructure* pt = (PageMapStructure*) pdpt->Entry[0];
 
 		// we need to throw this address (aka pointer) into the created things.
-
 		PageMapStructure* PML4 = (PageMapStructure*) Physical::AllocateFromReserved();
 		Memory::Set(PML4, 0, 0x1000);
 
@@ -797,7 +797,7 @@ namespace Virtual
 				PML4->Entry[0] = Physical::AllocateFromReserved() | I_Present | I_ReadWrite | I_UserAccess;
 
 			else
-				Log(3, "%x", PML4->Entry[0]);
+				Log(3, "what: %x", PML4->Entry[0]);
 
 			((PageMapStructure*) (PML4->Entry[0]))->Entry[0] = (uint64_t) pt;
 			// that just gives us 1gb lower, now we need 512gb upper.
@@ -808,7 +808,6 @@ namespace Virtual
 		Virtual::MapAddress((uint64_t) PML4, (uint64_t) PML4, 0x07, PML4);
 
 		// Map 16 MB, includes the kernel.
-		// start at 0x3000, since we handle 0x2000 and 0x3000 specially.
 		Virtual::MapAddress(0x1000, 0x1000, 0x03, PML4);
 
 		// map 0x2000 as supervisor only, since we store sensitive stuff there
@@ -827,6 +826,11 @@ namespace Virtual
 			Virtual::MapAddress(Kernel::GetFramebufferAddress() + (i * 0x1000), Kernel::GetFramebufferAddress() + (i * 0x1000), 0x07, PML4);
 
 		return (uint64_t) PML4;
+	}
+
+	uint64_t CopyVAS()
+	{
+		return 0;
 	}
 }
 }

@@ -8,7 +8,6 @@
 #include <HardwareAbstraction/Devices/IOPort.hpp>
 #include <StandardIO.hpp>
 #include <Utility.hpp>
-#include <List.hpp>
 #include <Memory.hpp>
 
 using namespace Kernel;
@@ -32,18 +31,18 @@ namespace Storage
 
 	ATADrive::ATADrive(uint8_t b, uint8_t d) : StorageDevice(StorageDeviceType::ATAHardDisk)
 	{
-		this->Bus = b;
-		this->Drive = d;
-		this->SectorSize = 512;				// TODO: detect sector size
-		this->BaseIO = (Bus == 0 ? PrimaryBaseIO : SecondaryBaseIO);
-		this->DriveNumber = (Bus ? 2 : 0) + (Drive ? 1 : 0);
+		this->Bus			= b;
+		this->Drive			= d;
+		this->SectorSize	= 512;				// TODO: detect sector size
+		this->BaseIO		= (Bus == 0 ? PrimaryBaseIO : SecondaryBaseIO);
+		this->DriveNumber	= (Bus ? 2 : 0) + (Drive ? 1 : 0);
 
-		PrimaryCommand	= PrimaryBaseIO + 7;
+		PrimaryCommand		= PrimaryBaseIO + 7;
 		SecondaryCommand	= SecondaryBaseIO + 7;
 	}
 
 
-	Library::LinkedList<ATADrive>* ATADrive::ATADrives;
+	rde::list<ATADrive*>* ATADrive::ATADrives;
 
 
 	bool ATADrive::GetIsGPT()			{ return this->IsGPT; }
@@ -84,10 +83,9 @@ namespace Storage
 		{
 			// At this point, PCI devices should be initialised.
 			// So let's do some proper probing.
-			using Library::LinkedList;
 			using Kernel::HardwareAbstraction::Devices::PCI::PCIDevice;
 
-			LinkedList<PCIDevice>* devlist = PCI::SearchByClassSubclass(0x1, 0x1);
+			rde::list<PCIDevice*>* devlist = PCI::SearchByClassSubclass(0x1, 0x1);
 
 			if(devlist->size() == 0)
 			{
@@ -95,8 +93,16 @@ namespace Storage
 				UHALT();
 			}
 
-			ATADrive::ATADrives = new LinkedList<ATADrive>();
+			ATADrive::ATADrives = new rde::list<ATADrive*>();
 			IdentifyAll(devlist->front());
+
+			DMA::Initialise();
+
+			for(auto p : *ATADrive::ATADrives)
+				HardwareAbstraction::Filesystems::MBR::ReadPartitions(p);
+
+			// for(uint64_t i = 0; i < ATADrive::ATADrives->size(); i++)
+			// 	HardwareAbstraction::Filesystems::MBR::ReadPartitions(ATADrive::ATADrives->get(i));
 		}
 
 
@@ -145,11 +151,6 @@ namespace Storage
 					ATADrive::ATADrives->back()->ParentPCI = controller;
 				}
 			}
-
-			DMA::Initialise();
-
-			for(uint64_t i = 0; i < ATADrive::ATADrives->size(); i++)
-				HardwareAbstraction::Filesystems::MBR::ReadPartitions(ATADrive::ATADrives->get(i));
 		}
 
 		ATADrive* IdentifyDevice(uint16_t BaseIO, bool IsMaster)

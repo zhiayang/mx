@@ -10,11 +10,9 @@
 #include <HardwareAbstraction/Devices/IOPort.hpp>
 #include <Memory.hpp>
 #include <StandardIO.hpp>
-#include <List.hpp>
 
 using namespace Kernel;
 using namespace Library;
-using Library::LinkedList;
 using namespace StandardIO;
 using namespace Kernel::HardwareAbstraction::Devices;
 
@@ -25,11 +23,7 @@ namespace Interrupts
 {
 	extern "C" void ThreadExceptionTerminate();
 
-	LinkedList<IRQHandlerPlugList>* IRQHandlerList;
-
-
-
-
+	rde::vector<IRQHandlerPlugList*>* IRQHandlerList;
 
 
 	static IRQHandlerPlugList* GetPlugList(uint64_t irq)
@@ -38,9 +32,9 @@ namespace Interrupts
 		IRQHandlerPlugList* pluglist = 0;
 		for(uint64_t i = 0; i < IRQHandlerList->size(); i++)
 		{
-			if(irq == IRQHandlerList->get(i)->IRQNum)
+			if(irq == (*IRQHandlerList)[i]->IRQNum)
 			{
-				pluglist = IRQHandlerList->get(i);
+				pluglist = (*IRQHandlerList)[i];
 				break;
 			}
 		}
@@ -70,6 +64,7 @@ namespace Interrupts
 
 	void UninstallIRQHandler(uint64_t irq)
 	{
+		HALT("Unimplemented");
 		UNUSED(irq);
 	}
 
@@ -91,19 +86,19 @@ namespace Interrupts
 		for(uint64_t i = 0; i < IRQHandlerList->size(); i++)
 		{
 			// operate with zero-based index, not absolute IDT offset.
-			if(IRQHandlerList->get(i)->IRQNum == iid - 32)
+			if((*IRQHandlerList)[i]->IRQNum == iid - 32)
 			{
-				IRQHandlerPlugList* pl = IRQHandlerList->get(i);
+				IRQHandlerPlugList* pl = (*IRQHandlerList)[i];
 
 				for(uint64_t k = 0; k < pl->HandlerList->size(); k++)
 				{
-					if(pl->HandlerList->get(k)->handleregs)
+					if((*pl->HandlerList)[k]->handleregs)
 					{
 						HALT("not supported");
 					}
 
 					else
-						pl->HandlerList->get(k)->handle();
+						(*pl->HandlerList)[k]->handle();
 				}
 
 				// send a message to central dispatch, informing of this IRQ.

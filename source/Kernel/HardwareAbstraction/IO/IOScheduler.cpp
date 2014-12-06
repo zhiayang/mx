@@ -21,18 +21,16 @@ namespace IO
 		StorageDevice* device;
 
 		// args to storagedevice.
-		uint64_t pos;
-		uint64_t out;
-		uint64_t count;
+		uint64_t pos = 0;
+		uint64_t out = 0;
+		uint64_t count = 0;
 
-		bool blockop;
-		bool writeop;
-		bool completed;
-
-		uint64_t pad;
+		bool blockop = 0;
+		bool writeop = 0;
+		bool completed = 0;
 	};
 
-	static rde::list<IOTransfer>* Transfers;
+	static rde::list<IOTransfer*>* Transfers;
 	static Mutex* listmtx;
 
 	static void Scheduler()
@@ -48,33 +46,36 @@ namespace IO
 				LOCK(listmtx);
 
 				// get the next request, then run it.
-				IOTransfer req = Transfers->front();
+				IOTransfer* req = Transfers->front();
 				Transfers->pop_front();
 
 				UNLOCK(listmtx);
 
-				assert(req.completed == false);
-				assert(req.device);
-				assert(req.owningthread);
+				assert(req->completed == false);
+				assert(req->device);
+				assert(req->owningthread);
 
 				// both operations should, at the lowest level, block until the operation is done.
 				// it doesn't matter anyway (although this does mean that we can only do ops on one device at a time)
 				// TODO.
-				if(req.writeop)
-					req.device->Write(req.pos, req.out, req.count);
+				if(req->writeop)
+					req->device->Write(req->pos, req->out, req->count);
 
 				else
-					req.device->Read(req.pos, req.out, req.count);
+					req->device->Read(req->pos, req->out, req->count);
 
 				// it's most probably done.
-				req.completed = true;
+				req->completed = true;
 
 				// wake the calling thread from its sleep.
-				if(req.blockop)
+				if(req->blockop)
 				{
-					assert(req.owningthread);
-					Multitasking::WakeForMessage(req.owningthread);
+					assert(req->owningthread);
+					Multitasking::WakeForMessage(req->owningthread);
 				}
+
+				if(req->blockop)
+					delete req;
 			}
 		}
 	}
@@ -89,7 +90,7 @@ namespace IO
 
 	void Initialise()
 	{
-		Transfers = new rde::list<IOTransfer>();
+		Transfers = new rde::list<IOTransfer*>();
 		listmtx = new Mutex();
 
 		if(!DIRECTOP)
@@ -112,21 +113,21 @@ namespace IO
 		}
 		else
 		{
-			IOTransfer req;
+			IOTransfer* req = new IOTransfer();
 
-			req.device		= dev;
-			req.pos			= pos;
-			req.out			= buf;
-			req.count		= bytes;
+			req->device			= dev;
+			req->pos			= pos;
+			req->out			= buf;
+			req->count			= bytes;
 
-			req.owningthread	= Multitasking::GetCurrentThread();
-			req.writeop 		= false;
-			req.blockop		= true;
+			req->owningthread	= Multitasking::GetCurrentThread();
+			req->writeop 		= false;
+			req->blockop		= true;
 
 
-			// LOCK(listmtx);
+			LOCK(listmtx);
 			Transfers->push_back(req);
-			// UNLOCK(listmtx);
+			UNLOCK(listmtx);
 
 			BLOCK();
 		}
@@ -145,20 +146,20 @@ namespace IO
 		}
 		else
 		{
-			IOTransfer req;
+			IOTransfer* req = new IOTransfer();
 			if(pos == 0x1D6A)
 			{
 				MemoryManager::KernelHeap::Print();
 				UHALT();
 			}
-			req.device		= dev;
-			req.pos			= pos;
-			req.out			= buf;
-			req.count		= bytes;
+			req->device			= dev;
+			req->pos			= pos;
+			req->out			= buf;
+			req->count			= bytes;
 
-			req.owningthread	= Multitasking::GetCurrentThread();
-			req.writeop 		= true;
-			req.blockop		= true;
+			req->owningthread	= Multitasking::GetCurrentThread();
+			req->writeop 		= true;
+			req->blockop		= true;
 
 			LOCK(listmtx);
 			Transfers->push_back(req);

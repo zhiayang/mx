@@ -40,7 +40,7 @@ namespace Kernel
 
 			// add ourselves to the waiting list
 			if(!sem->contestants)
-				sem->contestants = new Library::LinkedList<Thread>();
+				sem->contestants = new rde::list<Thread*>();
 
 			sem->contestants->push_back(GetCurrentThread());
 		}
