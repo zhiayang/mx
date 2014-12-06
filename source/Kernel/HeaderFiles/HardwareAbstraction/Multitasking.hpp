@@ -10,7 +10,6 @@
 #include "MemoryManager/Virtual.hpp"
 #include <List.hpp>
 #include <Synchro.hpp>
-#include <Vector.hpp>
 #include <defs/_pthreadstructs.h>
 
 #include <signal.h>
@@ -64,7 +63,7 @@ namespace HardwareAbstraction
 			sighandler_t* SignalHandlers;
 
 			Process* Parent;
-			rde::list<Thread*> Threads;
+			rde::vector<Thread*> Threads;
 		};
 
 		void DisableScheduler();
@@ -104,6 +103,7 @@ namespace HardwareAbstraction
 
 		#define FLAG_USERSPACE		0x1
 		#define FLAG_DETACHED		0x2
+		#define FLAG_DYING			0x80
 
 
 		extern rde::list<Process*>* ProcessList;

@@ -58,7 +58,6 @@ namespace Kernel
 	Devices::PS2Controller* KernelPS2Controller;
 	Devices::Keyboard* KernelKeyboard;
 	Random* KernelRandom;
-	Mutex* test;
 
 	static uint64_t VER_MAJOR;
 	static uint64_t VER_MINOR;
@@ -410,30 +409,16 @@ namespace Kernel
 		// }
 
 
-
-
-
-
-		Log("Starting console...");
-		{
-			// Multitasking::ForkProcess("fork", 0x1, 0x8, void (*Function)(), uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
-		}
-
-
-
-
 		// kernel stops here
 		// for now.
-		BLOCK();
-
-
+		while(true);
 	}
 
 	void Idle()
 	{
 		while(true)
 		{
-			// Physical::CoalesceFPLs();
+			Physical::CoalesceFPLs();
 			YieldCPU();
 		}
 	}

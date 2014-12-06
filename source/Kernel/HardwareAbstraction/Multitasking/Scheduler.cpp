@@ -19,15 +19,13 @@ namespace Multitasking
 {
 	static bool IsFirst = true;
 	static rde::list<Thread*>* PendingSleepList;
-
-	RunQueue* mainRunQueue;
+	static RunQueue* mainRunQueue;
+	static Thread* CurrentThread = 0;
+	static uint64_t CurrentCR3 = 0;
+	static uint64_t ScheduleCount = 0;
 
 	rde::list<Thread*>* SleepList;
 	rde::list<Process*>* ProcessList;
-
-	static Thread* CurrentThread = 0;
-	static uint64_t CurrentCR3;
-	static uint64_t ScheduleCount = 0;
 
 	bool SchedulerEnabled = true;
 

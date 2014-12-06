@@ -122,8 +122,9 @@ namespace Multitasking
 		// destroy its address space
 		assert(p->VAS);
 		MemoryManager::Virtual::DestroyVAS(p->VAS);
+		Log("Cleaned up process %s", p->Name);
 
-		delete p;
+		// delete p;
 	}
 
 	void SetThreadErrno(int errno)
@@ -295,7 +296,7 @@ namespace Multitasking
 
 	void Kill(Thread* p)
 	{
-		if(p && (p->State == STATE_NORMAL || p->State == STATE_SUSPEND))
+		if(p && p->State == STATE_NORMAL)
 		{
 			getRunQueue()->lock();
 			p->State = STATE_AWAITDEATH;
@@ -304,10 +305,13 @@ namespace Multitasking
 			Process* par = p->Parent;
 			par->Threads.remove(p);
 
-			GetThreadList(p)->remove(p);
+			// GetThreadList(p)->remove(p);
 			SleepList->push_front(p);
 
 			getRunQueue()->unlock();
+
+			if(!(par->Flags & FLAG_DYING) && par->Threads.empty())
+				Cleanup(par);
 
 			// wake up the watching threads.
 			for(size_t i = 0, s = p->watchers.size(); i < s; i++)
@@ -318,11 +322,17 @@ namespace Multitasking
 				w->watching.remove(p);
 				WakeForMessage(w);
 			}
-
+		}
+		else if(p && (p->State == STATE_BLOCKING || p->State == STATE_SUSPEND))
+		{
+			assert(SleepList->contains(p));
+			p->State = STATE_AWAITDEATH;
+			Process* par = p->Parent;
+			par->Threads.remove(p);
 		}
 		else
 		{
-			Log(3, "state: %d", p->State);
+			Log(3, "thread: %x, RA: %x", p, __builtin_return_address(0));
 			HALT("");
 		}
 	}
@@ -344,9 +354,15 @@ namespace Multitasking
 
 	void Kill(Process* p)
 	{
+		assert(p);
 		Log("Killing %d thread%s of process %s", p->Threads.size(), p->Threads.size() == 1 ? "" : "s", p->Name);
+
+		// in the process of dying.
+		p->Flags |= FLAG_DYING;
 		for(auto t : p->Threads)
 			Kill(t);
+
+		Cleanup(p);
 	}
 
 

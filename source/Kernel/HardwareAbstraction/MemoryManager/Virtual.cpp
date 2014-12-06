@@ -78,7 +78,7 @@ namespace Virtual
 			{
 				if(found->start == addr && found->length == size)
 				{
-					vas->pairs->Remove(found);
+					vas->pairs->remove(found);
 					delete found;
 				}
 				else if(found->start == addr)
@@ -130,7 +130,8 @@ namespace Virtual
 		else if(pair->length == size)
 		{
 			uint64_t ret = pair->start;
-			delete vas->pairs->pop_front();
+			delete vas->pairs->front();
+			vas->pairs->pop_front();
 
 			vas->used->push_back(new ALPPair(ret, size, phys));
 			return ret;
@@ -240,6 +241,7 @@ namespace Virtual
 
 			delete pair;
 		}
+
 
 		for(AddressLengthPair* pair : *vas->pairs)
 			delete pair;

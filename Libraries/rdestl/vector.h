@@ -1,3 +1,5 @@
+// c++ comment
+
 #ifndef RDESTL_VECTOR_H
 #define RDESTL_VECTOR_H
 
@@ -403,6 +405,44 @@ public:
 		if (it != itNewEnd)
 			*it = *itNewEnd;
 		pop_back();
+	}
+
+	void remove(const T& value)
+	{
+		for(iterator it = this->begin(); it != this->end(); it++)
+		{
+			if(*it == value)
+			{
+				this->erase(it);
+				break;
+			}
+		}
+	}
+
+	void remove_unordered(const T& value)
+	{
+		for(iterator it = this->begin(); it != this->end(); it++)
+		{
+			if(*it == value)
+			{
+				this->erase_unordered(it);
+				break;
+			}
+		}
+	}
+
+	bool contains(const T& value)
+	{
+		if(this->empty())
+			return false;
+
+		for(iterator it = this->begin(); it != this->end(); it++)
+		{
+			if(*it == value)
+				return true;
+		}
+
+		return false;
 	}
 
 	void resize(size_type n)

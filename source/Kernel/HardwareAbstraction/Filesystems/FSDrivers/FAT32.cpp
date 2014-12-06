@@ -125,9 +125,9 @@ namespace Filesystems
 		// return mktime(&ts);
 	}
 
-	static Vector<rde::string*>* split(rde::string& s, char delim)
+	static rde::vector<rde::string*>* split(rde::string& s, char delim)
 	{
-		auto ret = new Vector<rde::string*>();
+		auto ret = new rde::vector<rde::string*>();
 		rde::string* item = new rde::string();
 
 		for(auto c : s)

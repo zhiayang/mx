@@ -7,7 +7,6 @@
 #include <List.hpp>
 #include <CircularBuffer.hpp>
 #include "Devices/StorageDevice.hpp"
-#include <Vector.hpp>
 #include <rdestl/rdestl.h>
 #include <sys/stat.h>
 
@@ -71,10 +70,10 @@ namespace Kernel
 				{
 					FDArray()
 					{
-						this->fds = new Library::Vector<fileentry*>();
+						this->fds = new rde::vector<fileentry*>();
 					}
 
-					Library::Vector<fileentry*>* fds;
+					rde::vector<fileentry*>* fds;
 				};
 
 				extern FSDriver* driver_stdin;

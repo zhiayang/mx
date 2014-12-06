@@ -73,26 +73,26 @@ namespace Multitasking
 
 		// user thread (always)
 		*--stack = 0x23;					// SS
-		*--stack = u + (stacksize) - 8;			// User stack pointer
-		*--stack = 0x202;				// RFLAGS
+		*--stack = u + (stacksize) - 8;		// User stack pointer
+		*--stack = 0x202;					// RFLAGS
 		*--stack = 0x1B;					// CS
-		*--stack = (uint64_t) f;				// RIP (-40)
+		*--stack = (uint64_t) f;			// RIP (-40)
 
-		*--stack = 0;					// R15 (-48)
-		*--stack = 0;					// R14 (-56)
-		*--stack = 0;					// R13 (-64)
-		*--stack = 0;					// R12 (-72)
-		*--stack = 0;					// R11 (-80)
-		*--stack = 0;					// R10 (-88)
+		*--stack = 0;						// R15 (-48)
+		*--stack = 0;						// R14 (-56)
+		*--stack = 0;						// R13 (-64)
+		*--stack = 0;						// R12 (-72)
+		*--stack = 0;						// R11 (-80)
+		*--stack = 0;						// R10 (-88)
 		*--stack = (uint64_t) p5;			// R9 (-96)
 		*--stack = (uint64_t) p6;			// R8 (-104)
 
 		*--stack = (uint64_t) p3;			// RDX (-112)
 		*--stack = (uint64_t) p4;			// RCX (-120)
-		*--stack = 0;					// RBX (-128)
-		*--stack = 0;					// RAX (-136)
+		*--stack = 0;						// RBX (-128)
+		*--stack = 0;						// RAX (-136)
 
-		*--stack = 0;					// RBP (-144)
+		*--stack = 0;						// RBP (-144)
 		*--stack = (uint64_t) p2;			// RSI (-152)	(argv)
 		*--stack = (uint64_t) p1;			// RDI (-160)	(argc)
 
@@ -188,7 +188,7 @@ namespace Multitasking
 		thread->flags				= Parent->Flags;
 		thread->currenterrno			= 0;
 
-		Parent->Threads.push_front(thread);
+		Parent->Threads.push_back(thread);
 
 		SetupStackThread(thread, u, us, (uint64_t) Function, attr->a1, attr->a2, attr->a3, attr->a4, attr->a5, attr->a6);
 		NumThreads++;
@@ -266,7 +266,6 @@ namespace Multitasking
 
 
 		NumProcesses++;
-
 		(void) CreateThread(process, Function, Priority, a1, a2, a3, a4, a5, a6);
 
 		if(FirstProc)
