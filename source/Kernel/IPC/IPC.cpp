@@ -144,7 +144,6 @@ namespace IPC
 		}
 		else
 		{
-			using namespace Library::StandardIO;
 			// fix iret to throw us into the sighandler, then return etc.
 			// fetch our current stackpointer.
 			uint64_t stackptr = 0;

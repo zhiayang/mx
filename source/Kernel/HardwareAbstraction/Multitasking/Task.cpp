@@ -5,8 +5,7 @@
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Multitasking.hpp>
 #include <HardwareAbstraction/MemoryManager.hpp>
-#include <List.hpp>
-#include <string.h>
+#include <String.hpp>
 
 using namespace Kernel;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
@@ -33,25 +32,25 @@ namespace Multitasking
 		// kernel thread
 		*--stack = 0x10;					// SS (-8)
 		*--stack = u + DefaultRing3StackSize - 8;	// User stack pointer (-16)
-		*--stack = 0x202;				// RFLAGS (-24)
+		*--stack = 0x202;					// RFLAGS (-24)
 		*--stack = 0x08;					// CS (-32)
-		*--stack = (uint64_t) f;				// RIP (-40)
+		*--stack = (uint64_t) f;			// RIP (-40)
 
-		*--stack = 0;					// R15 (-48)
-		*--stack = 0;					// R14 (-56)
-		*--stack = 0;					// R13 (-64)
-		*--stack = 0;					// R12 (-72)
-		*--stack = 0;					// R11 (-80)
-		*--stack = 0;					// R10 (-88)
+		*--stack = 0;						// R15 (-48)
+		*--stack = 0;						// R14 (-56)
+		*--stack = 0;						// R13 (-64)
+		*--stack = 0;						// R12 (-72)
+		*--stack = 0;						// R11 (-80)
+		*--stack = 0;						// R10 (-88)
 		*--stack = (uint64_t) p6;			// R9 (-96)
 		*--stack = (uint64_t) p5;			// R8 (-104)
 
 		*--stack = (uint64_t) p3;			// RDX (-112)
 		*--stack = (uint64_t) p4;			// RCX (-120)
-		*--stack = 0;					// RBX (-128)
-		*--stack = 0;					// RAX (-136)
+		*--stack = 0;						// RBX (-128)
+		*--stack = 0;						// RAX (-136)
 
-		*--stack = 0;					// RBP (-144)
+		*--stack = 0;						// RBP (-144)
 		*--stack = (uint64_t) p2;			// RSI (-152)
 		*--stack = (uint64_t) p1;			// RDI (-160)
 
@@ -230,7 +229,6 @@ namespace Multitasking
 	Process* CreateProcess(const char name[64], uint8_t Flags, uint64_t tlssize, void (*Function)(), uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
 	{
 		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
-		using Library::LinkedList;
 
 		Process* process = new Process();
 
@@ -293,7 +291,6 @@ namespace Multitasking
 	Process* ForkProcess(const char name[64], uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
 	{
 		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
-		using Library::LinkedList;
 
 		Process* process = new Process();
 

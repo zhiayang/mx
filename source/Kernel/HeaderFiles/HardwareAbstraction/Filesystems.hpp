@@ -4,7 +4,6 @@
 
 #pragma once
 #include <stdint.h>
-#include <List.hpp>
 #include <CircularBuffer.hpp>
 #include "Devices/StorageDevice.hpp"
 #include <rdestl/rdestl.h>

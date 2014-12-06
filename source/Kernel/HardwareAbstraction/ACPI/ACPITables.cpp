@@ -5,7 +5,6 @@
 #include <Kernel.hpp>
 #include <StandardIO.hpp>
 #include <Memory.hpp>
-#include <List.hpp>
 
 using namespace Library;
 using namespace Library::StandardIO;
@@ -181,7 +180,7 @@ namespace ACPI
 		uint64_t* entries64 = (uint64_t*)((uint64_t) this->xsdtaddress + 36);
 
 		// add them all to list.
-		this->tables = new Library::LinkedList<SystemDescriptionTable>();
+		this->tables = new rde::vector<SystemDescriptionTable*>();
 
 		for(uint64_t k = 0; k < numentries; k++)
 		{

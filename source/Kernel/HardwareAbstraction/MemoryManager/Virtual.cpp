@@ -6,7 +6,6 @@
 // Sets up the paging structures left by our bootstrap in (boot.s).
 
 #include <Kernel.hpp>
-#include <List.hpp>
 #include <StandardIO.hpp>
 #include <stddef.h>
 

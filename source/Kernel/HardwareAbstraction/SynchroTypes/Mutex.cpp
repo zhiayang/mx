@@ -31,7 +31,7 @@ namespace Kernel
 		if(Lock->lock)
 		{
 			if(!Lock->contestants)
-				Lock->contestants = new Library::LinkedList<Thread>();
+				Lock->contestants = new rde::list<Thread*>();
 
 			Lock->contestants->push_back(GetCurrentThread());
 		}

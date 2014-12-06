@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <String.hpp>
 
 using namespace Kernel::HardwareAbstraction::Devices::Storage;
 namespace Kernel {

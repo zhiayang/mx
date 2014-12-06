@@ -5,6 +5,7 @@
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Filesystems.hpp>
 #include <mqueue.h>
+#include <String.hpp>
 
 #define BUFSIZE	1024
 

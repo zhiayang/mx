@@ -3,7 +3,7 @@
 // Licensed under Creative Commons Attribution ShareAlike 3.0 Unported.
 
 #include <stdint.h>
-#include <List.hpp>
+#include <rdestl/vector.h>
 #pragma once
 
 namespace Kernel {
@@ -44,7 +44,7 @@ namespace HardwareAbstraction
 				RootTable(uintptr_t address);
 
 				uint64_t GetNumberOfHeaders();
-				Library::LinkedList<SystemDescriptionTable>* GetDescriptionTables();
+				rde::vector<SystemDescriptionTable*>* GetDescriptionTables();
 
 				char* Signature()				{ return this->signature;				}
 				char* OemID()					{ return this->oemid;					}
@@ -66,7 +66,7 @@ namespace HardwareAbstraction
 				uint8_t extendedchecksum;
 				uint8_t reserved[3];
 
-				Library::LinkedList<SystemDescriptionTable>* tables;
+				rde::vector<SystemDescriptionTable*>* tables;
 		};
 	}
 }

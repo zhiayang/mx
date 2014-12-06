@@ -10,11 +10,9 @@
 #include <HardwareAbstraction/Devices/IOPort.hpp>
 #include <Memory.hpp>
 #include <StandardIO.hpp>
-#include <List.hpp>
 
 using namespace Kernel;
 using namespace Library;
-using Library::LinkedList;
 using namespace StandardIO;
 using namespace Kernel::HardwareAbstraction::Devices;
 
@@ -145,7 +143,7 @@ namespace Interrupts
 
 	static IDTEntry idt[256];
 	static IDTPointer idtp;
-	extern LinkedList<IRQHandlerPlugList>* IRQHandlerList;
+	extern rde::vector<IRQHandlerPlugList*>* IRQHandlerList;
 
 
 	void SetGate(uint8_t num, uint64_t base, uint16_t sel, uint8_t flags)
@@ -187,7 +185,7 @@ namespace Interrupts
 		// Points the processor's internal register to the new IDT
 		HAL_AsmLoadIDT((uint64_t)&idtp);
 
-		IRQHandlerList = new LinkedList<IRQHandlerPlugList>();
+		IRQHandlerList = new rde::vector<IRQHandlerPlugList*>();
 	}
 
 	void InstallDefaultHandlers()

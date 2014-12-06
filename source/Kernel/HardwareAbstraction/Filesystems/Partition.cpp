@@ -5,7 +5,7 @@
 #include <Kernel.hpp>
 #include <Utility.hpp>
 #include <HardwareAbstraction/Devices/StorageDevice.hpp>
-#include <string.h>
+#include <String.hpp>
 
 using namespace Kernel::HardwareAbstraction::Devices::Storage;
 

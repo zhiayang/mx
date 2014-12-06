@@ -8,7 +8,6 @@
 #include <HardwareAbstraction/Devices/IOPort.hpp>
 #include <StandardIO.hpp>
 #include <Utility.hpp>
-#include <List.hpp>
 #include <Memory.hpp>
 
 using namespace Kernel;

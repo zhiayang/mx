@@ -8,7 +8,6 @@
 
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Devices/IOPort.hpp>
-#include <List.hpp>
 #include <Utility.hpp>
 #include <StandardIO.hpp>
 

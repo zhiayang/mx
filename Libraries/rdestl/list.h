@@ -1,4 +1,13 @@
 // this is a c++ comment to silence clang
+// this file has been modified to suit our needs.
+
+/*
+	1. pop_front() and pop_back() now return the popped value.
+	2. added remove(), which is basically a value-comparison version of erase()
+	3. added contains().
+
+	Note that remove() and contains() requires that the type support == comparisons.
+*/
 
 #ifndef RDESTL_LIST_H
 #define RDESTL_LIST_H
@@ -173,12 +182,16 @@ public:
 		newNode->link_before(m_root.next);
 	}
 	// @pre: !empty()
-	inline void pop_front()
+	inline T pop_front()
 	{
+		auto ret = this->front();
+
 		RDE_ASSERT(!empty());
 		node* frontNode = upcast(m_root.next);
 		frontNode->unlink();
 		destruct_node(frontNode);
+
+		return ret;
 	}
 
 	void push_back(const T& value)
@@ -187,12 +200,16 @@ public:
 		newNode->link_before(&m_root);
 	}
 	// @pre: !empty()
-	inline void pop_back()
+	inline T pop_back()
 	{
+		auto ret = this->back();
+
 		RDE_ASSERT(!empty());
 		node* backNode = upcast(m_root.prev);
 		backNode->unlink();
 		destruct_node(backNode);
+
+		return ret;
 	}
 
 	iterator insert(iterator pos, const T& value)
