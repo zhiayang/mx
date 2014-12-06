@@ -124,11 +124,23 @@ cleandisk:
 	@find $(MOUNTPATH) -name "*.mxa" | xargs rm -f
 	@find $(MOUNTPATH) -name "*.x" | xargs rm -f
 
-clean: cleandisk
+cleanall: cleandisk clean
 	@echo "# Cleaning directory tree"
-	@find source -name "*.o" | xargs rm -f
 	@find Libraries -name "*.o" | xargs rm -f
 	@find Libraries -name "*.a" | xargs rm -f
 	@find applications -name "*.o" | xargs rm -f
+
+# haha
+clena: clean
+clean:
+	@find source -name "*.o" | xargs rm -f
 	@find source -name "*.cpp.d" | xargs rm -f
+
+
+
+
+
+
+
+
 

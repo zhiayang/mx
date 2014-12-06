@@ -76,7 +76,7 @@ namespace Filesystems
 	{
 		rde::string* name;
 		uint32_t entrycluster;
-		Vector<uint32_t>* clusters;
+		rde::vector<uint32_t>* clusters;
 		uint32_t filesize;
 
 		DirectoryEntry dirent;
@@ -397,7 +397,7 @@ namespace Filesystems
 		stat->st_ctime		= datetounix(dirent->createdate, dirent->createtime);
 	}
 
-	Vector<VFS::vnode*>* FSDriverFat32::ReadDir(VFS::vnode* node)
+	rde::vector<VFS::vnode*>* FSDriverFat32::ReadDir(VFS::vnode* node)
 	{
 		assert(node);
 		assert(node->info);
@@ -432,7 +432,7 @@ namespace Filesystems
 		}
 		buf = obuf;
 
-		auto ret = new Vector<VFS::vnode*>();
+		auto ret = new rde::vector<VFS::vnode*>();
 		auto count = 0;
 
 		for(uint64_t addr = buf; addr < buf + dirsize; )
@@ -547,7 +547,7 @@ namespace Filesystems
 
 
 
-	Vector<uint32_t>* FSDriverFat32::GetClusterChain(VFS::vnode* node, uint64_t* numclus)
+	rde::vector<uint32_t>* FSDriverFat32::GetClusterChain(VFS::vnode* node, uint64_t* numclus)
 	{
 		// read the cluster chain
 
@@ -558,7 +558,7 @@ namespace Filesystems
 
 		uint32_t Cluster = tovnd(node)->entrycluster;
 		uint32_t cchain = 0;
-		auto ret = new Vector<uint32_t>();
+		auto ret = new rde::vector<uint32_t>();
 
 		uint64_t lastsec = 0;
 		auto buf = MemoryManager::Physical::AllocateDMA(2);

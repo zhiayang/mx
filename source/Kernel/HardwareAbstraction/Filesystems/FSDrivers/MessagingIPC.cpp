@@ -110,7 +110,7 @@ namespace Filesystems
 		(void) st;
 	}
 
-	Library::Vector<VFS::vnode*>* FSDriverIPCMsg::ReadDir(VFS::vnode* node)
+	rde::vector<VFS::vnode*>* FSDriverIPCMsg::ReadDir(VFS::vnode* node)
 	{
 		(void) node;
 		return nullptr;

@@ -56,7 +56,7 @@ namespace Filesystems
 	{
 	}
 
-	Library::Vector<VFS::vnode*>* FSDriverStdin::ReadDir(VFS::vnode*)
+	rde::vector<VFS::vnode*>* FSDriverStdin::ReadDir(VFS::vnode*)
 	{
 		return nullptr;
 	}

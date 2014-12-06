@@ -337,48 +337,45 @@ namespace Kernel
 
 
 		// manual jump start.
-		// {
-		// 	using namespace Filesystems;
+		{
+			using namespace Filesystems;
 
-		// 	VFS::Initialise();
+			VFS::Initialise();
 
-		// 	// open fds for stdin, stdout and stderr.
-		// 	VFS::InitIO();
+			// open fds for stdin, stdout and stderr.
+			VFS::InitIO();
 
-		// 	// todo: detect fs type.
-		// 	Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->get(0);
-		// 	FSDriverFat32* fs = new FSDriverFat32(f1->Partitions->get(0));
+			// todo: detect fs type.
+			Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->front();
+			FSDriverFat32* fs = new FSDriverFat32(f1->Partitions->front());
 
-		// 	// mount root fs from partition 0 at /
-		// 	VFS::Mount(f1->Partitions->get(0), fs, "/");
-		// 	Log("Root FS Mounted at /");
-		// }
+			// mount root fs from partition 0 at /
+			VFS::Mount(f1->Partitions->front(), fs, "/");
+			Log("Root FS Mounted at /");
+		}
 
 		TTY::Initialise();
 		Console::ClearScreen();
 
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
-		// {
-		// 	{
-		// 		// setup args:
-		// 		// 0: prog name (duh)
-		// 		// 1: FB address
-		// 		// 2: width
-		// 		// 3: height
-		// 		// 4: bpp (32)
+		{
+			// setup args:
+			// 0: prog name (duh)
+			// 1: FB address
+			// 2: width
+			// 3: height
+			// 4: bpp (32)
 
-		// 		const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
-		// 		// const char* path = "/a.out";
-		// 		auto proc = LoadBinary::Load(path, "displayd",
-		// 			(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
-		// 			GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
+			const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
+			auto proc = LoadBinary::Load(path, "displayd",
+				(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
+				GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
 
-		// 		proc->Threads->get(0)->Priority = 2;
-		// 		Multitasking::AddToQueue(proc);
-		// 	}
-		// }
+			proc->Threads.front()->Priority = 2;
+			Multitasking::AddToQueue(proc);
+		}
 
-		PrintFormatted("Complete.");
+		PrintFormatted("[mx] has completed initialisation.\n");
 
 
 		// PrintFormatted("mutex tests\n");
@@ -430,183 +427,6 @@ namespace Kernel
 		BLOCK();
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		// // Stuff this in a small scope.
-		// // Read the configuration file.
-		// // This is mainly used for setting the resolution as well as UTC offset.
-		// uint16_t PrefResX = 0, PrefResY = 0;
-		// {
-		// 	PrintFormatted("Reading Configuration File...\n");
-		// 	Log("Reading Configuration file from /System/Library/Preferences/CorePreferences.plist");
-		// 	ConfigFile::Initialise();
-
-		// 	PrefResX = (uint16_t) ConfigFile::ReadInteger("ResolutionHorizontal");
-		// 	PrefResY = (uint16_t) ConfigFile::ReadInteger("ResolutionVertical");
-		// 	Kernel::SystemTime->UTCOffset = (int8_t) ConfigFile::ReadInteger("UTCTimezone");
-		// 	Time::PrintSeconds = ConfigFile::ReadBoolean("ClockShowSeconds");
-
-		// 	if(PrefResX == 0 || PrefResY == 0)
-		// 	{
-		// 		Log(3, "Invalid resolution -- config file may be corrupted, assuming 800x600");
-		// 		PrefResX = 800;
-		// 		PrefResY = 600;
-		// 	}
-		// }
-
-
-		// Multitasking::AddToQueue(Multitasking::CreateKernelThread(Network::DHCP::MonitorThread));
-		// Multitasking::AddToQueue(Multitasking::CreateKernelThread(Network::DNS::MonitorThread));
-		// Network::Initialise();
-		// // Symbolicate::Initialise();
-
-
-
-		// // Set video mode
-		// PrintFormatted("\nInitialising Linear Framebuffer at %x...", LFBAddr);
-		// VideoDevice->SetMode(PrefResX, PrefResY, 32);
-		// VideoOutput::LinearFramebuffer::Initialise();
-
-		// Log("Requested resolution of %dx%d, LFB at %x", PrefResX, PrefResY, LFBAddr);
-
-
-		// // scope this.
-		// {
-		// 	// Get the set resolution (may be different than our preferred)
-		// 	uint16_t ResX = VideoOutput::LinearFramebuffer::GetResX();
-		// 	uint16_t ResY = VideoOutput::LinearFramebuffer::GetResX();
-
-		// 	// Calculate how many bytes we need. (remember, 4 bytes per pixel)
-		// 	uint32_t bytes = (ResX * ResY) * 4;
-
-		// 	// Get that rounded up to the nearest page
-		// 	bytes = (bytes + (4096 - 1)) / 4096;
-		// 	LFBInPages = bytes;
-
-		// 	// map a bunch of pages for the buffer.
-		// 	for(uint64_t k = 0; k < bytes; k++)
-		// 		Virtual::MapAddress(LFBBufferAddress_INT + (k * 0x1000), Physical::AllocatePage(), 0x07);
-
-		// 	Virtual::MapRegion(LFBAddr, LFBAddr, bytes, 0x07);
-
-		// 	// LFBBufferAddr = LFBBufferAddress_INT;
-		// }
-
-		// // setup our sockets.
-		// Log("Socket subsystem online");
-		// {
-		// 	Multitasking::Process* kernel = KernelProcess;
-		// 	kernel->FileDescriptors[0].Pointer = new IPC::IPCSocketEndpoint(0);
-		// 	kernel->FileDescriptors[1].Pointer = new IPC::IPCSocketEndpoint(1);
-		// 	kernel->FileDescriptors[2].Pointer = new IPC::IPCSocketEndpoint(2);
-		// 	kernel->FileDescriptors[3].Pointer = new IPC::IPCSocketEndpoint(3);
-		// }
-
-
-		// Log("Video mode set");
-
-		// Console::Initialise();
-		// // Log("Console initialised");
-		// // {
-		// // 	uint8_t* CProg = LoadBinary::LoadFileToMemory("/System/Library/CoreServices/VTConsole.oex");
-		// // 	LoadBinary::GenericExecutable* Exec = new LoadBinary::GenericExecutable("VTConsole", CProg);
-		// // 	Exec->AutomaticLoadExecutable();
-
-		// // 	Exec->SetApplicationType(Multitasking::ThreadType::NormalApplication);
-		// // 	Exec->Execute();
-
-		// // 	delete[] CProg;
-		// // }
-
-		// IPC::CentralDispatch::InitialiseWindowDispatcher();
-		// Log("Window Dispatcher online");
-
-
-
-
-		// KernelKeyboard = new Keyboard(new PS2Keyboard());
-		// Console::ClearScreen();
-		// Bootscreen::PrintMessage("Loading [mx]\n");
-
-		// #if 0
-		// {
-		// 	// experimentation area.
-		// 	Multitasking::GetThread(1)->SignalHandlers[41] = sig;
-		// 	IPC::SendSimpleMessage(1, IPC::MessageTypes::PosixSignal, 41, 0, 0, 0);
-		// 	while(true);
-		// }
-		// #endif
-
-
-
-		// // Bootscreen::Initialise();
-
-		// string bms;
-		// PrintToString(&bms, "Version %d.%d.%d r%02d -- Build %d", VER_MAJOR, VER_MINOR, VER_REVSN, VER_MINRV, X_BUILD_NUMBER);
-		// Bootscreen::PrintMessage(bms.CString());
-
-		// if(false)
-		// {
-		// 	SLEEP(100);
-		// 	Bootscreen::StartProgressBar();
-		// 	SLEEP(500);
-		// }
-		// else
-		// {
-		// 	// SLEEP(300);
-		// }
-
-
-		// // Load the CarbonShell.oex program.
-		// {
-		// 	uint8_t* CProg = LoadBinary::LoadFileToMemory("/System/Library/CoreServices/CarbonShell.oex");
-		// 	LoadBinary::GenericExecutable* Exec = new LoadBinary::GenericExecutable("CarbonShell", CProg);
-		// 	Exec->AutomaticLoadExecutable();
-		// 	Exec->SetApplicationType(Multitasking::ThreadType::NormalApplication);
-
-		// 	IPC::CentralDispatch::AddApplicationToList(Exec->proc->Threads->front(), Exec->proc);
-		// 	Exec->Execute();
-
-		// 	delete[] CProg;
-		// }
-
-		// Log("Starting TimeService");
-		// // Multitasking::AddToQueue(Multitasking::CreateKernelThread(Kernel::Time::PrintTime));
-		// Console::ClearScreen();
-
-		// Log("Kernel entering Central Dispatch mode...");
-		// IsKernelInCentralDispatch = true;
-		// IPC::CentralDispatch::Initialise();
 	}
 
 	void Idle()

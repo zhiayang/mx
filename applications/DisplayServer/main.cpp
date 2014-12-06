@@ -30,9 +30,11 @@ int main(int argc, char** argv)
 	framebuffer	= (uint64_t) argv[1];
 	width		= (uint64_t) argv[2];
 	height		= (uint64_t) argv[3];
-	bpp		= (uint64_t) argv[4] / 4;		// kernel gives us BITS per pixel, but we really only care about BYTES per pixel.
+	bpp			= (uint64_t) argv[4] / 4;		// kernel gives us BITS per pixel, but we really only care about BYTES per pixel.
 
-	printf("Display server online\n");
+	printf("Display server online\n\n");
+
+
 	// auto fd = mq_open("/random/path", O_CREATE);
 
 	// int c = 0;
@@ -53,21 +55,21 @@ int main(int argc, char** argv)
 
 
 
-	// FILE* f = fopen("/test/Main.class", "r");
-	// struct stat s;
+	FILE* f = fopen("/test/Main.class", "r");
+	struct stat s;
 
-	// fstat((int) f->__fd, &s);
-	// printf("file is %ld bytes long\n", s.st_size);
+	fstat((int) f->__fd, &s);
+	printf("file is %ld bytes long\n", s.st_size);
 
-	// uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
+	uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
 
-	// fread(x, 1, s.st_size, f);
-	// fclose(f);
+	fread(x, 1, s.st_size, f);
+	fclose(f);
 
-	// for (off_t i = 0; i < s.st_size; i++)
-	// 	printf("%02x ", x[i]);
+	for (off_t i = 0; i < s.st_size; i++)
+		printf("%02x ", x[i]);
 
-	// fflush(stdout);
+	fflush(stdout);
 
 
 

@@ -149,7 +149,7 @@ namespace Kernel
 					virtual void Stat(VFS::vnode* node, struct stat* stat, bool statlink);
 
 					// returns a list of items inside the directory, as vnodes.
-					virtual Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node);
+					virtual rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node);
 
 					virtual dev_t GetID() final { return this->fsid; }
 					virtual FSDriverType GetType() final { return this->_type; }
@@ -175,7 +175,7 @@ namespace Kernel
 					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
 					void Flush(VFS::vnode* node);
 
-					Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+					rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 			};
 
 			class FSDriverStdin : public FSDriver
@@ -191,7 +191,7 @@ namespace Kernel
 					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
 					void Flush(VFS::vnode* node);
 
-					Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+					rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 			};
 
 			class FSDriverStdout : public FSDriver
@@ -207,7 +207,7 @@ namespace Kernel
 					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
 					void Flush(VFS::vnode* node);
 
-					Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+					rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 			};
 
 			class FSDriverIPCMsg : public FSDriver
@@ -229,7 +229,7 @@ namespace Kernel
 					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
 					void Flush(VFS::vnode* node);
 
-					Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+					rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 
 					rde::hash_map<pathid*, Library::CircularMemoryBuffer*>* messagequeue = nullptr;
 			};
@@ -251,12 +251,12 @@ namespace Kernel
 					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
 					void Flush(VFS::vnode* node);
 
-					Library::Vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+					rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
 
 				private:
 					rde::string* ReadLFN(uint64_t addr, int& nument);
 					uint64_t ClusterToLBA(uint32_t clus);
-					Library::Vector<uint32_t>* GetClusterChain(VFS::vnode* node, uint64_t* numclus);
+					rde::vector<uint32_t>* GetClusterChain(VFS::vnode* node, uint64_t* numclus);
 
 					uint16_t BytesPerSector;
 					uint8_t SectorsPerCluster;
