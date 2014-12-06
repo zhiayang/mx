@@ -177,20 +177,20 @@ namespace Multitasking
 	void WakeForMessage(Thread* thread)
 	{
 		getRunQueue()->lock();
+		assert(thread);
+
 		auto list = GetThreadList(thread);
 		if(thread->State != STATE_BLOCKING && thread->State != STATE_SUSPEND)
 		{
-			// assert(list->contains(thread));
+			assert(list->contains(thread));
 			list->push_front(FetchAndRemoveThread(thread));
 		}
 		else
 		{
-			// assert(SleepList->contains(thread));
+			assert(SleepList->contains(thread));
 			// thread is blocking, shoo it out of the blocking queue.
 
-			assert(thread);
 			SleepList->remove(thread);
-
 			thread->State = STATE_NORMAL;
 			GetThreadList(thread)->push_front(thread);
 		}
@@ -203,6 +203,7 @@ namespace Multitasking
 
 	void Block(uint8_t purpose)
 	{
+		getRunQueue()->lock();
 		if(GetCurrentThread()->State == STATE_BLOCKING)
 		{
 			Log("BLOCK (%d, %d, %x)", GetCurrentThread()->ThreadID, GetCurrentThread()->State, __builtin_return_address(0));
@@ -214,8 +215,8 @@ namespace Multitasking
 		thread->State = STATE_BLOCKING;
 		SleepList->push_back(thread);
 
-		// if(purpose == 0)
 		(void) purpose;
+		getRunQueue()->unlock();
 		YieldCPU();
 	}
 
@@ -264,6 +265,7 @@ namespace Multitasking
 	// direct
 	void Suspend(Thread* p)
 	{
+		getRunQueue()->lock();
 		if(p && p->State == STATE_NORMAL)
 		{
 			Log("Suspended thread %d, name: %s", p->ThreadID, p->Parent->Name);
@@ -275,10 +277,12 @@ namespace Multitasking
 			SleepList->push_front(p);
 			p->State = STATE_SUSPEND;
 		}
+		getRunQueue()->unlock();
 	}
 
 	void Resume(Thread* p)
 	{
+		getRunQueue()->lock();
 		if(p && p->State == STATE_SUSPEND)
 		{
 			Log("Resumed thread %d, name: %s", p->ThreadID, p->Parent->Name);
@@ -286,12 +290,14 @@ namespace Multitasking
 			p->Sleep = 0;
 			p->State = STATE_NORMAL;
 		}
+		getRunQueue()->unlock();
 	}
 
 	void Kill(Thread* p)
 	{
 		if(p && (p->State == STATE_NORMAL || p->State == STATE_SUSPEND))
 		{
+			getRunQueue()->lock();
 			p->State = STATE_AWAITDEATH;
 
 			// remove the thread from its parent process's list.
@@ -300,6 +306,8 @@ namespace Multitasking
 
 			GetThreadList(p)->remove(p);
 			SleepList->push_front(p);
+
+			getRunQueue()->unlock();
 
 			// wake up the watching threads.
 			for(size_t i = 0, s = p->watchers.size(); i < s; i++)
@@ -310,6 +318,7 @@ namespace Multitasking
 				w->watching.remove(p);
 				WakeForMessage(w);
 			}
+
 		}
 		else
 		{

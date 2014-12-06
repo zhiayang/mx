@@ -67,6 +67,9 @@ namespace HardwareAbstraction
 			rde::list<Thread*> Threads;
 		};
 
+		void DisableScheduler();
+		void EnableScheduler();
+
 		struct RunQueue
 		{
 			RunQueue()
@@ -76,12 +79,14 @@ namespace HardwareAbstraction
 
 			void lock()
 			{
+				DisableScheduler();
 				LockMutex(this->thelock);
 			}
 
 			void unlock()
 			{
 				UnlockMutex(this->thelock);
+				EnableScheduler();
 			}
 
 			Mutex* thelock;
@@ -148,9 +153,6 @@ namespace HardwareAbstraction
 		void Suspend(const char* p);
 		void Resume(const char* p);
 		void Kill(const char* p);
-
-		void DisableScheduler();
-		void EnableScheduler();
 
 		void WatchThread(pthread_t tid);
 		void UnwatchThread(pthread_t tid);
