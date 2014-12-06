@@ -157,29 +157,14 @@ namespace Multitasking
 
 	rde::list<Thread*>* GetThreadList(Thread* t)
 	{
-		return t->Priority == 0 ? ThreadList_LowPrio : (t->Priority == 1 ? ThreadList_NormPrio : ThreadList_HighPrio);
+		return getRunQueue()->queue[t->Priority];
 	}
 
 	Thread* FetchAndRemoveThread(Thread* thread)
 	{
-		// int64_t id = GetThreadList(thread)->IndexOf(thread);
-
-		// if(id < 0)
-		// {
-		// 	HALT("Thread corrupted");
-		// 	return nullptr;
-		// }
-
-		// return GetThreadList(thread)->RemoveAt((uint64_t) id);
-
 		assert(thread);
 		GetThreadList(thread)->remove(thread);
 		return thread;
-	}
-
-	uint64_t GetNumberOfThreads()
-	{
-		return ThreadList_HighPrio->size() + ThreadList_NormPrio->size() + ThreadList_LowPrio->size() + SleepList->size();
 	}
 
 	// waking for IPC will place the process in the front of the run queue of its current priority.
@@ -191,15 +176,16 @@ namespace Multitasking
 
 	void WakeForMessage(Thread* thread)
 	{
+		getRunQueue()->lock();
 		auto list = GetThreadList(thread);
 		if(thread->State != STATE_BLOCKING && thread->State != STATE_SUSPEND)
 		{
-			assert(list->contains(thread));
+			// assert(list->contains(thread));
 			list->push_front(FetchAndRemoveThread(thread));
 		}
 		else
 		{
-			assert(SleepList->contains(thread));
+			// assert(SleepList->contains(thread));
 			// thread is blocking, shoo it out of the blocking queue.
 
 			assert(thread);
@@ -209,6 +195,7 @@ namespace Multitasking
 			GetThreadList(thread)->push_front(thread);
 		}
 
+		getRunQueue()->unlock();
 		YieldCPU();
 	}
 
@@ -248,20 +235,9 @@ namespace Multitasking
 
 	void AddToQueue(Thread* t)
 	{
-		switch(t->Priority)
-		{
-			case 0:
-				ThreadList_LowPrio->push_front(t);
-				break;
-
-			case 1:
-				ThreadList_NormPrio->push_front(t);
-				break;
-
-			case 2:
-				ThreadList_HighPrio->push_front(t);
-				break;
-		}
+		getRunQueue()->lock();
+		getRunQueue()->queue[t->Priority]->push_front(t);
+		getRunQueue()->unlock();
 	}
 
 
@@ -320,17 +296,8 @@ namespace Multitasking
 
 			// remove the thread from its parent process's list.
 			Process* par = p->Parent;
-
-			// int64_t id = par->Threads->IndexOf(p);
-
-			// if(id < 0)
-			// 	HALT("Thread corrupted");
-
-			// par->Threads->RemoveAt((uint64_t) id);
-
 			par->Threads.remove(p);
 
-			// GetThreadList(p)->RemoveAt((uint64_t) GetThreadList(p)->IndexOf(p));
 			GetThreadList(p)->remove(p);
 			SleepList->push_front(p);
 
@@ -401,28 +368,28 @@ namespace Multitasking
 
 	Thread* GetThread(uint64_t tid)
 	{
-		for(auto t : *ThreadList_HighPrio)
+		auto queue = getRunQueue();
+		queue->lock();
+
+		Thread* ret = 0;
+
+		for(int i = 0; i < NUM_PRIO; i++)
 		{
-			if(t->ThreadID == tid)
-				return t;
+			for(auto t : *getRunQueue()->queue[i])
+			{
+				if(t->ThreadID == tid)
+					ret = t;
+			}
 		}
-		for(auto t : *ThreadList_NormPrio)
-		{
-			if(t->ThreadID == tid)
-				return t;
-		}
-		for(auto t : *ThreadList_LowPrio)
-		{
-			if(t->ThreadID == tid)
-				return t;
-		}
+
 		for(auto t : *SleepList)
 		{
 			if(t->ThreadID == tid)
-				return t;
+				ret = t;
 		}
 
-		return 0;
+		queue->unlock();
+		return ret;
 	}
 }
 }

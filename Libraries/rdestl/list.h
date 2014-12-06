@@ -221,7 +221,7 @@ public:
 			}
 		}
 
-		RDE_ASSERT(false && "Not in list!");
+		// RDE_ASSERT(false && "Not in list!");
 	}
 	bool contains(const T& value)
 	{

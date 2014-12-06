@@ -21,6 +21,7 @@ namespace HardwareAbstraction
 {
 	namespace Multitasking
 	{
+		#define NUM_PRIO	4
 		struct Process;
 
 		struct Thread
@@ -66,6 +67,27 @@ namespace HardwareAbstraction
 			rde::list<Thread*> Threads;
 		};
 
+		struct RunQueue
+		{
+			RunQueue()
+			{
+				this->thelock = new Mutex();
+			}
+
+			void lock()
+			{
+				LockMutex(this->thelock);
+			}
+
+			void unlock()
+			{
+				UnlockMutex(this->thelock);
+			}
+
+			Mutex* thelock;
+			rde::list<Thread*>** queue;
+		};
+
 
 		#define STATE_SUSPEND		0
 		#define STATE_NORMAL		1
@@ -81,17 +103,13 @@ namespace HardwareAbstraction
 
 		extern rde::list<Process*>* ProcessList;
 		extern rde::list<Thread*>* SleepList;
-		extern rde::list<Thread*>* ThreadList_LowPrio;
-		extern rde::list<Thread*>* ThreadList_NormPrio;
-		extern rde::list<Thread*>* ThreadList_HighPrio;
-
-		extern Mutex* listlock;
 
 		extern uint64_t NumThreads;
 		extern uint64_t NumProcesses;
 		extern bool SchedulerEnabled;
 
 		void Initialise();
+		RunQueue* getRunQueue();
 		uint64_t GetNumberOfThreads();
 		uint64_t GetCurrentCR3();
 		Thread* GetThread(uint64_t id);
