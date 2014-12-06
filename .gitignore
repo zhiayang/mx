@@ -9,3 +9,6 @@ Libraries/ports
 applications/ports
 commit
 a2l
+
+tools
+!tools/*.sh
