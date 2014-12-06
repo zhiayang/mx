@@ -62,7 +62,7 @@ namespace HardwareAbstraction
 
 				StorageDeviceType Type;
 				PartitionTableType PartitionTable;
-				Library::LinkedList<Partition>* Partitions;
+				rde::list<Partition*>* Partitions;
 		};
 
 		class Partition
@@ -158,7 +158,7 @@ namespace HardwareAbstraction
 				uint64_t PRDTable;
 				PCI::PCIDevice* ParentPCI;
 
-				static Library::LinkedList<ATADrive>* ATADrives;
+				static rde::list<ATADrive*>* ATADrives;
 
 			private:
 				uint8_t Bus;

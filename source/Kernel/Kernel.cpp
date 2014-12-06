@@ -337,46 +337,48 @@ namespace Kernel
 
 
 		// manual jump start.
-		{
-			using namespace Filesystems;
+		// {
+		// 	using namespace Filesystems;
 
-			VFS::Initialise();
+		// 	VFS::Initialise();
 
-			// open fds for stdin, stdout and stderr.
-			VFS::InitIO();
+		// 	// open fds for stdin, stdout and stderr.
+		// 	VFS::InitIO();
 
-			// todo: detect fs type.
-			Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->get(0);
-			FSDriverFat32* fs = new FSDriverFat32(f1->Partitions->get(0));
+		// 	// todo: detect fs type.
+		// 	Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->get(0);
+		// 	FSDriverFat32* fs = new FSDriverFat32(f1->Partitions->get(0));
 
-			// mount root fs from partition 0 at /
-			VFS::Mount(f1->Partitions->get(0), fs, "/");
-			Log("Root FS Mounted at /");
-		}
+		// 	// mount root fs from partition 0 at /
+		// 	VFS::Mount(f1->Partitions->get(0), fs, "/");
+		// 	Log("Root FS Mounted at /");
+		// }
 
 		TTY::Initialise();
 		Console::ClearScreen();
 
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
-		{
-			{
-				// setup args:
-				// 0: prog name (duh)
-				// 1: FB address
-				// 2: width
-				// 3: height
-				// 4: bpp (32)
+		// {
+		// 	{
+		// 		// setup args:
+		// 		// 0: prog name (duh)
+		// 		// 1: FB address
+		// 		// 2: width
+		// 		// 3: height
+		// 		// 4: bpp (32)
 
-				const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
-				// const char* path = "/a.out";
-				auto proc = LoadBinary::Load(path, "displayd",
-					(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
-					GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
+		// 		const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
+		// 		// const char* path = "/a.out";
+		// 		auto proc = LoadBinary::Load(path, "displayd",
+		// 			(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
+		// 			GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
 
-				proc->Threads->get(0)->Priority = 2;
-				Multitasking::AddToQueue(proc);
-			}
-		}
+		// 		proc->Threads->get(0)->Priority = 2;
+		// 		Multitasking::AddToQueue(proc);
+		// 	}
+		// }
+
+		PrintFormatted("Complete.");
 
 
 		// PrintFormatted("mutex tests\n");

@@ -20,7 +20,7 @@ namespace Library
 				public:
 					SingleNode(data* o = 0, SingleNode* n = 0)
 					{
-						this->object = reinterpret_cast<data*>(o);
+						this->object = (data*) o;
 						this->next = n;
 					}
 
@@ -213,9 +213,9 @@ namespace Library
 
 			int64_t IndexOf(data* p)
 			{
-				for(int64_t d = 0; static_cast<uint64_t>(d) < this->length; d++)
+				for(int64_t d = 0; (uint64_t) d < this->length; d++)
 				{
-					if(p == this->get(static_cast<uint64_t>(d)))
+					if(p == this->get((uint64_t) d))
 						return d;
 				}
 

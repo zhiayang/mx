@@ -53,21 +53,21 @@ int main(int argc, char** argv)
 
 
 
-	FILE* f = fopen("/test/Main.class", "r");
-	struct stat s;
+	// FILE* f = fopen("/test/Main.class", "r");
+	// struct stat s;
 
-	fstat((int) f->__fd, &s);
-	printf("file is %ld bytes long\n", s.st_size);
+	// fstat((int) f->__fd, &s);
+	// printf("file is %ld bytes long\n", s.st_size);
 
-	uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
+	// uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
 
-	fread(x, 1, s.st_size, f);
-	fclose(f);
+	// fread(x, 1, s.st_size, f);
+	// fclose(f);
 
-	for (off_t i = 0; i < s.st_size; i++)
-		printf("%02x ", x[i]);
+	// for (off_t i = 0; i < s.st_size; i++)
+	// 	printf("%02x ", x[i]);
 
-	fflush(stdout);
+	// fflush(stdout);
 
 
 
