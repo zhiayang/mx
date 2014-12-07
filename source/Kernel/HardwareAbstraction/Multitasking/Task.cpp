@@ -348,8 +348,9 @@ namespace Multitasking
 
 
 		// hacky? maybe.
+		// works? not really
 		newt->StackPointer = newt->TopOfStack - 160;
-		Utilities::StackDump((uint64_t*) newt->StackPointer, 20);
+		// Utilities::StackDump((uint64_t*) newt->StackPointer, 20);
 		// *((uint64_t*) (newt->StackPointer + 24)) = 0;
 
 		// setup the descriptors.
@@ -369,7 +370,7 @@ namespace Multitasking
 	extern "C" int64_t Syscall_ForkProcess()
 	{
 		Process* proc = ForkProcess("knife", 0);
-		Multitasking::AddToQueue(proc);
+		// Multitasking::AddToQueue(proc);
 
 		return proc->ProcessID;
 	}

@@ -156,6 +156,12 @@ namespace Multitasking
 			*((uint64_t*) 0x2600) = 0;
 		}
 
+		// if(CurrentThread->Parent->Name[1] == 'n')
+		// 	Log(3, "Scheduling knife");
+
+		// else if(CurrentThread->Parent->Name[1] == 'i')
+		// 	Log(3, "Scheduling displayd");
+
 		return CurrentThread->StackPointer;
 	}
 
