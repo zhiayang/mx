@@ -159,17 +159,6 @@ namespace Multitasking
 		return CurrentThread->StackPointer;
 	}
 
-
-	extern "C" void someTest()
-	{
-		if(CurrentThread->Parent->Name[1] == 'n')
-		{
-			Log("knife stack (cr3 is %x):", MemoryManager::Virtual::GetRawCR3());
-			Utilities::StackDump((uint64_t*) CurrentThread->StackPointer, 15);
-			HALT("stack dumped");
-		}
-	}
-
 	extern "C" void YieldCPU()
 	{
 		asm volatile("int $0xF7");

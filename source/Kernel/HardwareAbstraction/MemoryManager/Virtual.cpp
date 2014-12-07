@@ -83,6 +83,7 @@ namespace Virtual
 				else if(found->start == addr)
 				{
 					AddressLengthPair* np = new AddressLengthPair(end, found->length - size);
+					vas->pairs->remove(found);
 					vas->pairs->push_back(np);
 					delete found;
 				}
@@ -239,7 +240,7 @@ namespace Virtual
 		uint64_t virt = AllocateVirtual(size, addr, 0, phys);
 
 		MapRegion(virt, phys, size, flags);
-		Log("Alloc %x, mapped to %x for %d pages", virt, phys, size);
+		Log("Alloc %x, mapped to %x for %d pages, ret addr %x", virt, phys, size, __builtin_return_address(0));
 
 		return virt;
 	}
@@ -298,11 +299,16 @@ namespace Virtual
 
 		for(auto pair : *src->used)
 		{
+			// mark COW on both sides
 			dest->used->push_back(pair);
-			Virtual::MapRegion(pair->start, pair->phys, pair->length, 0x07, dest->PML4);
+			Virtual::MapRegion(pair->start, pair->phys, pair->length, I_Present | I_UserAccess | I_CopyOnWrite, dest->PML4);
 
 			for(uint64_t i = 0; i < pair->length; i++)
+			{
+				// Virtual::MarkCOW(pair->start + (i * 0x1000));
 				Virtual::MarkCOW(pair->start + (i * 0x1000), dest->PML4);
+				Log("Marked %x as COW", pair->start + (i * 0x1000));
+			}
 		}
 
 		return dest;
@@ -793,7 +799,7 @@ namespace Virtual
 		PageMapStructure* pd = 0;
 		PageMapStructure* pt = 0;
 
-		HALT("PF");
+		// HALT("PF");
 
 		// check if cow.
 		uint64_t* value = GetPageTableEntry(cr2, Multitasking::GetCurrentProcess()->VAS->PML4, &pdpt, &pd, &pt);
@@ -820,7 +826,7 @@ namespace Virtual
 			return true;
 		}
 
-		Log("Invalid access, terminating process...");
+		Log("Invalid access (%x:%x), terminating process...", value, value ? *value : 0);
 		return false;
 	}
 

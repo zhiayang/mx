@@ -34,9 +34,16 @@ int main(int argc, char** argv)
 
 	printf("Display server online\n");
 	printf("Forking process...\n");
-	Library::SystemCall::ForkProcess();
+	int64_t res = Library::SystemCall::ForkProcess();
 
-	printf("forked -- from main()\n\n");
+	if(res == 0)
+	{
+		printf("in child\n");
+	}
+	else
+	{
+		printf("parent: child proc has pid %ld\n\n", res);
+	}
 	while(1);
 
 

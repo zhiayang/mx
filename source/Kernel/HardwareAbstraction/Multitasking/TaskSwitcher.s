@@ -103,7 +103,6 @@ ChangeCR3:
 
 
 PopReg:
-	call someTest
 	pop %rdi
 	pop %rsi
 	pop %rbp

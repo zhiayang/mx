@@ -52,6 +52,7 @@ HandleSyscall:
 	push %rbp
 	mov %rsp, %rbp
 
+
 	push %r10
 	push %rdi
 	push %rsi
@@ -61,7 +62,7 @@ HandleSyscall:
 	push %r9
 
 	// push a constant, so we know where to stop on stack backtrace.
-	pushq $0xFFFFFFFFFFFFFFFF
+	pushq $0xFFFFFFFFDEADBEEF
 
 
 	// since we have syscall numbers in the range of 4000+, 8000+, we can't use a simple jump table anymore.
@@ -103,7 +104,7 @@ Page2:
 
 Page0:
 	// multiply %r10 by 8
-	// shift left by 3	(2^3 = 8)
+	// shift left by 3 (2^3 = 8)
 	salq $3, %r10
 	movq SyscallTable0(%r10), %r10
 	cmp $EndSyscallTable0, %r10
@@ -236,7 +237,7 @@ TryLockMutex:
 	jmp CleanUp
 
 ForkProcess:
-	call forkProcess
+	call Syscall_ForkProcess
 	jmp CleanUp
 
 

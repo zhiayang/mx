@@ -113,7 +113,7 @@ namespace Kernel
 	namespace Utilities
 	{
 		void DumpBytes(uint64_t address, uint64_t length);
-		void StackDump(uint64_t* ptr, int num);
+		void StackDump(uint64_t* ptr, int num, bool fromTop = false);
 	}
 }
 

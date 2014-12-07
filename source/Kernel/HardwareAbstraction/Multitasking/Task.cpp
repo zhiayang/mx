@@ -321,6 +321,7 @@ namespace Multitasking
 		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
 
 		Process* proc = new Process();
+		Thread* curthr = GetCurrentThread();
 		PageMapStructure* PML4 = (PageMapStructure*) Virtual::CreateVAS();
 
 		proc->Parent				= Multitasking::GetCurrentProcess();
@@ -341,35 +342,15 @@ namespace Multitasking
 		isfork = true;
 
 		// copy the thread.
-		Thread* newt = CloneThread(GetCurrentThread());
+		Thread* newt = CloneThread(curthr);
 		newt->Parent = proc;
 		proc->Threads.push_back(newt);
 
 
-		// copy the kernel-space stack (deep copy! unmark as COW)
-		{
-			uint64_t klow = newt->TopOfStack - newt->StackSize;
-			uint64_t len = newt->StackSize / 0x1000;
-
-			for(uint64_t i = 0; i < len; i++)
-			{
-				MarkCOW(klow + (i * 0x1000));
-				MarkCOW(klow + (i * 0x1000), proc->VAS->PML4);
-			}
-
-			Virtual::invlpg(GetCurrentPML4T());
-			Virtual::invlpg(proc->VAS->PML4);
-		}
-
-
-		uint64_t oldcr3 = Virtual::GetRawCR3();
-		Log("Dumping stack at fork point (old cr3 is %x, new cr3 is %x):", oldcr3, proc->VAS->PML4);
-
-		Utilities::StackDump((uint64_t*) GetCurrentThread()->StackPointer, 15);
-		Virtual::ChangeRawCR3((uint64_t) proc->VAS->PML4);
-		Utilities::StackDump((uint64_t*) newt->StackPointer, 15);
-		Virtual::ChangeRawCR3(oldcr3);
-
+		// hacky? maybe.
+		newt->StackPointer = newt->TopOfStack - 160;
+		Utilities::StackDump((uint64_t*) newt->StackPointer, 20);
+		// *((uint64_t*) (newt->StackPointer + 24)) = 0;
 
 		// setup the descriptors.
 		// manually.
@@ -380,89 +361,21 @@ namespace Multitasking
 		OpenFile(proc->iocontext, "/dev/stderr", 0);
 		OpenFile(proc->iocontext, "/dev/stdlog", 0);
 
-		Log("Forking process from PID %d, new PID %d", proc->Parent->ProcessID, proc->ProcessID);
+		Log("Forking process from PID %d, new PID %d, CR3 %x", proc->Parent->ProcessID, proc->ProcessID, proc->VAS->PML4);
 		EnableScheduler();
 		return proc;
 	}
 
-	extern "C" void forkProcess()
+	extern "C" int64_t Syscall_ForkProcess()
 	{
-		Multitasking::AddToQueue(ForkProcess("knife", 0));
-		while(true);
+		Process* proc = ForkProcess("knife", 0);
+		Multitasking::AddToQueue(proc);
+
+		return proc->ProcessID;
 	}
 }
 }
 }
-
-
-/*
-
-
-		// copy the kernel-space stack (deep copy! unmark as COW)
-		{
-			uint64_t klow = newt->TopOfStack - newt->StackSize;
-			uint64_t len = newt->StackSize / 0x1000;
-			uint64_t phys = Physical::AllocatePage(len);
-
-			Virtual::MapRegion(TemporaryVirtualMapping, phys, len, 0x3);
-
-			for(uint64_t i = 0; i < len; i++)
-				Virtual::UnmarkCOW(klow + (i * 0x1000), process->VAS->PML4);
-
-			Memory::Copy((void*) TemporaryVirtualMapping, (void*) klow, len * 0x1000);
-			Virtual::UnmapRegion(TemporaryVirtualMapping, len);
-
-			Virtual::MapRegion(klow, phys, len, 0x7, process->VAS->PML4);
-
-			// fuck
-			bool found = false;
-			for(ALPPair* pair : *process->VAS->used)
-			{
-				if(pair->start == klow)
-				{
-					pair->phys = phys;
-					found = true;
-					break;
-				}
-			}
-
-			assert(found);
-		}
-
-		// copy the kernel-space stack (deep copy! unmark as COW)
-		{
-			uint64_t klow = newt->TopOfStack - newt->StackSize;
-			uint64_t len = newt->StackSize / 0x1000;
-			uint64_t phys = Physical::AllocatePage(len);
-
-			Virtual::MapRegion(TemporaryVirtualMapping, phys, len, 0x3);
-
-			for(uint64_t i = 0; i < len; i++)
-				Virtual::UnmarkCOW(klow + (i * 0x1000), process->VAS->PML4);
-
-			Memory::Copy((void*) TemporaryVirtualMapping, (void*) klow, len * 0x1000);
-			Virtual::UnmapRegion(TemporaryVirtualMapping, len);
-
-			Virtual::MapRegion(klow, phys, len, 0x7, process->VAS->PML4);
-
-			// fuck
-			bool found = false;
-			for(ALPPair* pair : *process->VAS->used)
-			{
-				if(pair->start == klow)
-				{
-					pair->phys = phys;
-					found = true;
-					break;
-				}
-			}
-
-			assert(found);
-		}
-
-*/
-
-
 
 
 
