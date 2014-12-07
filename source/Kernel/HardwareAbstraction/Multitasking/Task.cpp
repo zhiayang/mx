@@ -350,7 +350,7 @@ namespace Multitasking
 		// hacky? maybe.
 		// works? not really
 		newt->StackPointer = newt->TopOfStack - 160;
-		// Utilities::StackDump((uint64_t*) newt->StackPointer, 20);
+		Utilities::StackDump((uint64_t*) newt->StackPointer, 20);
 		// *((uint64_t*) (newt->StackPointer + 24)) = 0;
 
 		// setup the descriptors.
