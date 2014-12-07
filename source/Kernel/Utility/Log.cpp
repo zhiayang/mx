@@ -47,28 +47,28 @@ namespace Kernel
 		{
 			case 0:
 			default:
-				PrintFormatted(pfso, "[ INFO ]: ");
+				PrintFormatted(pfso, "[INFO]: ");
 
 				PrintFormatted(pfso, str, args);
 				PrintString("\n", -1, pfso);
 				break;
 
 			case 1:
-				PrintFormatted(pfso, "[ WARN ]: ");
+				PrintFormatted(pfso, "[WARN]: ");
 
 				PrintFormatted(pfso, str, args);
 				PrintString("\n", -1, pfso);
 				break;
 
 			case 2:
-				PrintFormatted(pfsc, "[ SEVR ]: ");
+				PrintFormatted(pfsc, "[SEVR]: ");
 
 				PrintFormatted(pfsc, str, args);
 				PrintString("\n", -1, pfsc);
 				break;
 
 			case 3:
-				PrintFormatted(pfsc, "[ CRIT ]: ");
+				PrintFormatted(pfsc, "[CRIT]: ");
 
 				PrintFormatted(pfsc, str, args);
 				PrintString("\n", -1, pfsc);

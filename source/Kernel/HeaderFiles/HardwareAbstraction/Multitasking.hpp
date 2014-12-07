@@ -27,12 +27,13 @@ namespace HardwareAbstraction
 			uint64_t ThreadID;
 			uint64_t StackPointer;
 			uint64_t TopOfStack;
+			uint64_t StackSize;
 			uint8_t State;
 			uint32_t Sleep;
 			uint8_t Priority;
 			uint8_t flags;
 
-			rde::list<uintptr_t>* messagequeue;
+			rde::list<uintptr_t> messagequeue;
 			uint16_t ExecutionTime;
 
 			Process* Parent;
@@ -53,7 +54,6 @@ namespace HardwareAbstraction
 		{
 			uint64_t ProcessID;			// Process ID
 			uint8_t Flags;
-			uint64_t CR3;
 			char Name[64];				// Task's name
 			size_t tlssize;
 
@@ -94,7 +94,7 @@ namespace HardwareAbstraction
 
 		#define STATE_SUSPEND		0
 		#define STATE_NORMAL		1
-		#define STATE_AWAITDEATH		2
+		#define STATE_AWAITDEATH	2
 		#define STATE_BLOCKING		3
 		#define STATE_DEAD			255
 
@@ -171,14 +171,13 @@ namespace HardwareAbstraction
 
 		Thread* CreateKernelThread(void (*Function)(), uint8_t Priority = 1, void* p1 = 0, void* p2 = 0, void* p3 = 0, void* p4 = 0, void* p5 = 0, void* p6 = 0) 	__attribute__ ((warn_unused_result));
 
-		Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)())
-			__attribute__ ((warn_unused_result));
-
 		Process* CreateProcess(const char name[64], uint8_t Flags, void (*Function)(), uint8_t prio = 1, void* a1 = 0, void* a2 = 0, void* a3 = 0, void* a4 = 0, void* a5 = 0, void* a6 = 0)
 			__attribute__ ((warn_unused_result));
 
 		Process* CreateProcess(const char name[64], uint8_t Flags, size_t tlssize, void (*Function)(), uint8_t prio = 1, void* a1 = 0, void* a2 = 0, void* a3 = 0, void* a4 = 0, void* a5 = 0, void* a6 = 0)
 			__attribute__ ((warn_unused_result));
+
+		Process* ForkProcess(const char name[64], Thread_attr* attr) __attribute__ ((warn_unused_result));
 
 	}
 }

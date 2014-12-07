@@ -8,9 +8,6 @@
 .global TaskSwitcherCoOp
 .type TaskSwitcherCoOp, @function
 
-.global YieldCPU
-.type YieldCPU, @function
-
 .section .text
 .code64
 
@@ -106,6 +103,7 @@ ChangeCR3:
 
 
 PopReg:
+	call someTest
 	pop %rdi
 	pop %rsi
 	pop %rbp

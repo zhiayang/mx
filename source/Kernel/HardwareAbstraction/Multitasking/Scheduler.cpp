@@ -27,6 +27,7 @@ namespace Multitasking
 	rde::list<Process*>* ProcessList;
 
 	bool SchedulerEnabled = true;
+	extern bool isfork;
 
 	void Initialise()
 	{
@@ -64,8 +65,7 @@ namespace Multitasking
 		{
 			if(!theQueue->queue[i]->empty() && (ScheduleCount % StarvationThresholds[i] == 0))
 			{
-				r = theQueue->queue[i]->front();
-				theQueue->queue[i]->pop_front();
+				r = theQueue->queue[i]->pop_front();
 				theQueue->queue[i]->push_back(r);
 			}
 		}
@@ -90,9 +90,7 @@ namespace Multitasking
 			{
 				for(uint64_t i = 0, s = PendingSleepList->size(); i < s; i++)
 				{
-					SleepList->push_back(PendingSleepList->front());
-					PendingSleepList->pop_front();
-
+					SleepList->push_back(PendingSleepList->pop_front());
 					SleepList->back()->StackPointer = context;
 				}
 			}
@@ -136,18 +134,6 @@ namespace Multitasking
 			*((uint64_t*) 0x2608) = 0xFADE;
 		}
 
-		if(CurrentThread->Parent->CR3 != CurrentCR3)
-		{
-			// Only change the value in cr3 if we need to, to avoid trashing the TLB.
-			*((uint64_t*) 0x2600) = CurrentThread->Parent->CR3;
-
-			CurrentCR3 = CurrentThread->Parent->CR3;
-			MemoryManager::Virtual::SwitchPML4T((MemoryManager::Virtual::PageMapStructure*) CurrentCR3);
-		}
-		else
-			*((uint64_t*) 0x2600) = 0;
-
-
 
 		// set tss
 		*((uint64_t*) 0x2504) = CurrentThread->TopOfStack;
@@ -156,12 +142,33 @@ namespace Multitasking
 		uint64_t tlsptr = (uintptr_t) &CurrentThread->tlsptr;
 		SetTLS(tlsptr);
 
+
+		if((uint64_t) CurrentThread->Parent->VAS->PML4 != CurrentCR3)
+		{
+			// Only change the value in cr3 if we need to, to avoid trashing the TLB.
+			*((uint64_t*) 0x2600) = (uint64_t) CurrentThread->Parent->VAS->PML4;
+
+			CurrentCR3 = (uint64_t) CurrentThread->Parent->VAS->PML4;
+			MemoryManager::Virtual::SwitchPML4T((MemoryManager::Virtual::PageMapStructure*) CurrentCR3);
+		}
+		else
+		{
+			*((uint64_t*) 0x2600) = 0;
+		}
+
 		return CurrentThread->StackPointer;
 	}
 
 
-
-
+	extern "C" void someTest()
+	{
+		if(CurrentThread->Parent->Name[1] == 'n')
+		{
+			Log("knife stack (cr3 is %x):", MemoryManager::Virtual::GetRawCR3());
+			Utilities::StackDump((uint64_t*) CurrentThread->StackPointer, 15);
+			HALT("stack dumped");
+		}
+	}
 
 	extern "C" void YieldCPU()
 	{
@@ -192,7 +199,7 @@ namespace Multitasking
 		}
 		else
 		{
-			return CurrentThread->Parent->CR3;
+			return (uint64_t) CurrentThread->Parent->VAS->PML4;
 		}
 	}
 

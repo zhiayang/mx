@@ -17,7 +17,6 @@ export AR			:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-ar
 export RANLIB		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-ranlib
 export MOUNTPATH	:= $(shell tools/getpath.sh)
 
-
 # we use clang only for the kernel, don't pollute makefiles
 CXX_		= clang++
 GCCVERSION	= 4.9.1

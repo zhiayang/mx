@@ -28,5 +28,13 @@ namespace Kernel
 		// 	}
 		// 	Log("Dump complete");
 		// }
+
+		void StackDump(uint64_t* ptr, int num)
+		{
+			Log("Stack dump of %x:", ptr);
+
+			for(int i = 0; i < num; i++)
+				Log("%d: %x", i, *ptr++);
+		}
 	}
 }

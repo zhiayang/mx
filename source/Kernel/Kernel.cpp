@@ -423,8 +423,6 @@ namespace Kernel
 		}
 	}
 
-
-
 	void HaltSystem(const char* message, const char* filename, uint64_t line, const char* reason)
 	{
 		Log("System Halted: %s, %s:%d -- (0: %x, 1: %x, 2: %x)", message, filename, line, __builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2));

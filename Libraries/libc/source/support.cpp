@@ -22,7 +22,7 @@ namespace Heap
 extern "C" void init_libc()
 {
 	// init file descriptors
-	_stdin.__fd	= 0;
+	_stdin.__fd		= 0;
 	_stdout.__fd	= 1;
 	_stderr.__fd	= 2;
 	_stdlog.__fd	= 3;

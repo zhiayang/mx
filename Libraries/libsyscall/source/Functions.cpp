@@ -13,29 +13,30 @@ namespace SystemCall
 		// misc things, page 0+
 		.quad	ExitProc			// 0000
 		.quad	InstallIRQ			// 0001
-		.quad	InstallIRQNoRegs		// 0002
+		.quad	InstallIRQNoRegs	// 0002
 
 		// process related things, page 4000+
-		.quad	CreateThread			// 4000
-		.quad	SpawnProcess			// 4001
-		.quad	SendSignalToProcess		// 4002
-		.quad	SendSignalToThread		// 4003
+		.quad	CreateThread		// 4000
+		.quad	SpawnProcess		// 4001
+		.quad	SendSignalToProcess	// 4002
+		.quad	SendSignalToThread	// 4003
 		.quad	SendMessage			// 4004
 		.quad	ReceiveMessage		// 4005
 		.quad	Sleep				// 4006
 		.quad	Yield				// 4007
 		.quad	Block				// 4008
-		.quad	InstallSigHandler		// 4009
+		.quad	InstallSigHandler	// 4009
 		.quad	GetPID				// 4010
-		.quad	GetParentPID			// 4011
+		.quad	GetParentPID		// 4011
 		.quad	ExitThread			// 4012
 		.quad	JoinThread			// 4013
 		.quad	GetTID				// 4014
 		.quad	CreateMutex			// 4015
-		.quad	DestroyMutex			// 4016
+		.quad	DestroyMutex		// 4016
 		.quad	LockMutex			// 4017
 		.quad	UnlockMutex			// 4018
-		.quad	TryLockMutex			// 4019
+		.quad	TryLockMutex		// 4019
+		.quad	ForkProcess			// 4020
 
 
 		// file io things, page 8000+
@@ -170,6 +171,11 @@ namespace SystemCall
 	int64_t TryLockMutex(pthread_mutex_t* mtx)
 	{
 		return Syscall1Param((uintptr_t) mtx, 4019);
+	}
+
+	int64_t ForkProcess()
+	{
+		return Syscall0Param(4020);
 	}
 
 

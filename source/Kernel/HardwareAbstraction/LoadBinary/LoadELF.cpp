@@ -96,7 +96,7 @@ namespace LoadBinary
 				(*allocatedpgs)[actualvirt] = true;
 
 				uint64_t t = Physical::AllocatePage();
-				Virtual::MapAddress(actualvirt, t, 0x07, (Virtual::PageMapStructure*) proc->CR3);
+				Virtual::MapAddress(actualvirt, t, 0x07, proc->VAS->PML4);
 
 				// map it to this address space for a bit.
 				Virtual::MapAddress(TemporaryVirtualMapping + actualvirt, t, 0x03);

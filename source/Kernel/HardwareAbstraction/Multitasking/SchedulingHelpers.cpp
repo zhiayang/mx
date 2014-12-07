@@ -104,7 +104,6 @@ namespace Multitasking
 		// delete all the thread's resources.
 		assert(t);
 
-		if(t->messagequeue)		delete t->messagequeue;
 		if(t->CrashState)		delete t->CrashState;
 
 		delete t;
@@ -332,6 +331,10 @@ namespace Multitasking
 		else
 		{
 			Log(3, "thread: %x, RA: %x", p, __builtin_return_address(0));
+			if(p)
+			{
+				Log(3, "contents: parent %s:%d, tid %d, state %d", p->Parent->Name, p->Parent->ProcessID, p->ThreadID, p->State);
+			}
 			HALT("");
 		}
 	}

@@ -49,6 +49,7 @@ namespace Library
 		int64_t LockMutex(pthread_mutex_t* mtx);
 		int64_t UnlockMutex(pthread_mutex_t* mtx);
 		int64_t TryLockMutex(pthread_mutex_t* mtx);
+		int64_t ForkProcess();
 
 
 		uint64_t Open(const char* path, uint64_t flags);

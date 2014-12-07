@@ -212,42 +212,25 @@ namespace Virtual
 
 		// if we reach here, we haven't found a match.
 		vas->pairs->push_back(new AddressLengthPair(page, size));
+
+		// TODO: remove matching 'used' pair
 	}
 
-	VirtualAddressSpace* SetupVAS(VirtualAddressSpace* vas)
+	uint64_t GetVirtualPhysical(uint64_t virt, VirtualAddressSpace* v)
 	{
-		// Max 48-bit virtual address space (current implementations)
-		vas->pairs->push_back(new AddressLengthPair(0x01000000, 0xFF000));
-		vas->pairs->push_back(new AddressLengthPair(0xFFFFF00000000000, 0x100000));
-
-		return vas;
-	}
-
-	void DestroyVAS(VirtualAddressSpace* vas)
-	{
-		// free every phys page in vas->used
-		// delete pair objects from both lists
-		// delete both lists
-
+		VirtualAddressSpace* vas = v ? v : Multitasking::GetCurrentProcess()->VAS;
 		assert(vas);
-		assert(vas->used);
-		assert(vas->pairs);
 
 		for(ALPPair* pair : *vas->used)
 		{
-			if(pair->phys > 0)
-				Physical::FreePage(pair->phys, pair->length);
-
-			delete pair;
+			uint64_t end = pair->start + pair->length * 0x1000;
+			if(pair->start >= virt && virt <= end)
+			{
+				return pair->phys + (virt - pair->start);
+			}
 		}
 
-
-		for(AddressLengthPair* pair : *vas->pairs)
-			delete pair;
-
-		delete vas->pairs;
-		delete vas->used;
-		delete vas;
+		return 0;
 	}
 
 	uint64_t AllocatePage(uint64_t size, uint64_t addr, uint64_t flags)
@@ -256,6 +239,7 @@ namespace Virtual
 		uint64_t virt = AllocateVirtual(size, addr, 0, phys);
 
 		MapRegion(virt, phys, size, flags);
+		Log("Alloc %x, mapped to %x for %d pages", virt, phys, size);
 
 		return virt;
 	}
@@ -298,6 +282,58 @@ namespace Virtual
 
 
 
+	VirtualAddressSpace* SetupVAS(VirtualAddressSpace* vas)
+	{
+		// Max 48-bit virtual address space (current implementations)
+		vas->pairs->push_back(new AddressLengthPair(0x01000000, 0xFF000));
+		vas->pairs->push_back(new AddressLengthPair(0xFFFFF00000000000, 0x100000));
+
+		return vas;
+	}
+
+	VirtualAddressSpace* CopyVAS(VirtualAddressSpace* src, VirtualAddressSpace* dest)
+	{
+		for(auto pair : *src->pairs)
+			dest->pairs->push_back(pair);
+
+		for(auto pair : *src->used)
+		{
+			dest->used->push_back(pair);
+			Virtual::MapRegion(pair->start, pair->phys, pair->length, 0x07, dest->PML4);
+
+			for(uint64_t i = 0; i < pair->length; i++)
+				Virtual::MarkCOW(pair->start + (i * 0x1000), dest->PML4);
+		}
+
+		return dest;
+	}
+
+	void DestroyVAS(VirtualAddressSpace* vas)
+	{
+		// free every phys page in vas->used
+		// delete pair objects from both lists
+		// delete both lists
+
+		assert(vas);
+		assert(vas->used);
+		assert(vas->pairs);
+
+		for(ALPPair* pair : *vas->used)
+		{
+			if(pair->phys > 0)
+				Physical::FreePage(pair->phys, pair->length);
+
+			delete pair;
+		}
+
+
+		for(AddressLengthPair* pair : *vas->pairs)
+			delete pair;
+
+		delete vas->pairs;
+		delete vas->used;
+		delete vas;
+	}
 
 
 
@@ -320,8 +356,18 @@ namespace Virtual
 
 
 
+	void ChangeRawCR3(uint64_t newval)
+	{
+		asm volatile("mov %[nv], %%rax; mov %%rax, %%cr3" :: [nv]"g"(newval) : "memory", "rax");
+	}
 
+	uint64_t GetRawCR3()
+	{
+		uint64_t ret = 0;
+		asm volatile("mov %%cr3, %%rax; mov %%rax, %[r]" : [r]"=g"(ret) :: "memory", "rax");
 
+		return ret;
+	}
 
 	void SwitchPML4T(PageMapStructure* PML4T)
 	{
@@ -333,16 +379,9 @@ namespace Virtual
 		return CurrentPML4T;
 	}
 
-	static void invlpg(PageMapStructure* p)
+	void invlpg(PageMapStructure* p)
 	{
-		if(Multitasking::CurrentProcessInRing3())
-		{
-			// asm volatile("mov $0x8, %%r10; mov %[c], %%rdi; int $0xF8" :: [c]"r"((uint64_t) p) : "%r10");
-		}
-		else
-		{
-			asm volatile("invlpg (%0)" : : "a" ((uint64_t) p));
-		}
+		asm volatile("invlpg (%0)" : : "a" ((uint64_t) p));
 	}
 
 
@@ -659,8 +698,7 @@ namespace Virtual
 		PageMapStructure* pd = 0;
 		PageMapStructure* pt = 0;
 
-		uint64_t ret =  *GetPageTableEntry(VirtAddr, VAS, &pdpt, &pd, &pt);
-
+		uint64_t ret = *GetPageTableEntry(VirtAddr, VAS, &pdpt, &pd, &pt);
 
 		if(VAS != GetCurrentPML4T())
 		{
@@ -679,14 +717,39 @@ namespace Virtual
 		PageMapStructure* pd = 0;
 		PageMapStructure* pt = 0;
 
+
 		uint64_t* pg = GetPageTableEntry(virt, pml, &pdpt, &pd, &pt);
+
+		uint64_t* pdptv = (uint64_t*) pdpt;
+		uint64_t* pdv = (uint64_t*) pd;
+		uint64_t* ptv = (uint64_t*) pt;
+
+
 		if(cow)
 		{
+			*pdptv |= I_CopyOnWrite;
+			*pdptv &= ~I_ReadWrite;
+
+			*pdv |= I_CopyOnWrite;
+			*pdv &= ~I_ReadWrite;
+
+			*ptv |= I_CopyOnWrite;
+			*ptv &= ~I_ReadWrite;
+
 			*pg |= I_CopyOnWrite;
 			*pg &= ~I_ReadWrite;
 		}
 		else
 		{
+			*pdptv &= ~I_CopyOnWrite;
+			*pdptv |= I_ReadWrite;
+
+			*pdv &= ~I_CopyOnWrite;
+			*pdv |= I_ReadWrite;
+
+			*ptv &= ~I_CopyOnWrite;
+			*ptv |= I_ReadWrite;
+
 			*pg &= ~I_CopyOnWrite;
 			*pg |= I_ReadWrite;
 		}
@@ -730,22 +793,22 @@ namespace Virtual
 		PageMapStructure* pd = 0;
 		PageMapStructure* pt = 0;
 
+		HALT("PF");
+
 		// check if cow.
 		uint64_t* value = GetPageTableEntry(cr2, Multitasking::GetCurrentProcess()->VAS->PML4, &pdpt, &pd, &pt);
 
 		// conditions for cow:
 		// bit 11 (0x800) for COW set, bit 0 (0x1, present bit) not set.
-		if(*value & I_CopyOnWrite && !(*value & I_ReadWrite))
+		if(value && *value & I_CopyOnWrite && !(*value & I_ReadWrite))
 		{
-			Log("Copy-on-write page detected");
-
 			// allocate a page, copy existing data, then return.
 			uint64_t np = Physical::AllocatePage();
 			uint64_t old = *value & I_AlignMask;
 			uint64_t oldflags = *value & ~I_AlignMask;
 
 			*value = np;
-			*value |= (oldflags | I_ReadWrite);
+			*value |= (oldflags | I_ReadWrite | I_CopyOnWrite);
 
 			// we need to copy the old bytes to the new page.
 			// _old_ should contain the virtual address of the parent
@@ -818,7 +881,7 @@ namespace Virtual
 		for(uint64_t i = 0x4000; i < 0x01000000; i += 0x1000)
 		{
 			Virtual::MapAddress(i, i, 0x07, PML4);
-			MarkCOW(i, PML4);
+			// MarkCOW(i, PML4);
 		}
 
 		// Map the LFB.
@@ -826,11 +889,6 @@ namespace Virtual
 			Virtual::MapAddress(Kernel::GetFramebufferAddress() + (i * 0x1000), Kernel::GetFramebufferAddress() + (i * 0x1000), 0x07, PML4);
 
 		return (uint64_t) PML4;
-	}
-
-	uint64_t CopyVAS()
-	{
-		return 0;
 	}
 }
 }

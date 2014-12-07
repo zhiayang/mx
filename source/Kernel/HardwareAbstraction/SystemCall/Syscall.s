@@ -235,6 +235,9 @@ TryLockMutex:
 	call Syscall_TryLockMutex
 	jmp CleanUp
 
+ForkProcess:
+	call forkProcess
+	jmp CleanUp
 
 
 
@@ -305,7 +308,7 @@ SyscallTable0:
 	// misc things, page 0+
 	.quad	ExitProc			// 0000
 	.quad	InstallIRQ			// 0001
-	.quad	InstallIRQNoRegs		// 0002
+	.quad	InstallIRQNoRegs	// 0002
 
 EndSyscallTable0:
 
@@ -334,6 +337,7 @@ SyscallTable1:
 	.quad	LockMutex			// 4017
 	.quad	UnlockMutex			// 4018
 	.quad	TryLockMutex		// 4019
+	.quad	ForkProcess			// 4020
 EndSyscallTable1:
 
 

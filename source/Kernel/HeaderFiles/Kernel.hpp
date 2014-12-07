@@ -29,12 +29,12 @@
 
 
 // TSS at 0x500-0x800
-#define LFBBufferAddress_INT			0xFFFFFFFD00000000
-#define FPLAddress				0xFFFFFFFF00000000
+#define LFBBufferAddress_INT		0xFFFFFFFD00000000
+#define FPLAddress					0xFFFFFFFF00000000
 #define KernelHeapMetadata			0xFFFFFFF000000000
 #define KernelHeapAddress			0xFFFFFFFF00000000
 #define TemporaryVirtualMapping		0x00000FF00000000
-#define DefaultUserStackAddr			0xFFFFFFF0
+#define DefaultUserStackAddr		0xFFFFFFF0
 
 #define __ORIONX_KERNEL
 
@@ -47,16 +47,16 @@
 #define GlobalMilliseconds	1000
 
 // Configuration paramaters
-#define DEBUG			1
-#define SKIPREGDUMP		0
+#define DEBUG				1
+#define SKIPREGDUMP			0
 #define SERIALMIRROR		0
-#define LOGSPAM		0
-#define DMABUFFERSIZE	0x4000
-#define ENABLELOGGING	1
-#define EXTRADELAY		1
+#define LOGSPAM				0
+#define DMABUFFERSIZE		0x4000
+#define ENABLELOGGING		1
+#define EXTRADELAY			1
 
 #define SyscallNumber		0xF8
-#define IPCNumber		0xF9
+#define IPCNumber			0xF9
 #define VolumeMountPoint	"/Volumes/"
 
 
@@ -113,6 +113,7 @@ namespace Kernel
 	namespace Utilities
 	{
 		void DumpBytes(uint64_t address, uint64_t length);
+		void StackDump(uint64_t* ptr, int num);
 	}
 }
 
@@ -122,16 +123,16 @@ namespace Kernel
 // Easy, globally accessible macros for common things.
 // #define YIELD()			Yield()
 #define SLEEP(x)			Kernel::HardwareAbstraction::Multitasking::Sleep(x)
-#define BLOCK()			Kernel::HardwareAbstraction::Multitasking::Block()
+#define BLOCK()				Kernel::HardwareAbstraction::Multitasking::Block()
 
-#define LOCK(x)			Kernel::LockMutex(x);
+#define LOCK(x)				Kernel::LockMutex(x);
 #define UNLOCK(x)			Kernel::UnlockMutex(x);
 
-#define Allocate_G(x)			Kernel::HardwareAbstraction::MemoryManager::KernelHeap::AllocateChunk(x)
+#define Allocate_G(x)		Kernel::HardwareAbstraction::MemoryManager::KernelHeap::AllocateChunk(x)
 #define Free_G(x)			Kernel::HardwareAbstraction::MemoryManager::KernelHeap::FreeChunk(x)
 
-#define BOpt_Likely(x)			__builtin_expect((x), 1)
-#define BOpt_Unlikely(x)		__builtin_expect((x), 0)
+#define BOpt_Likely(x)		__builtin_expect((x), 1)
+#define BOpt_Unlikely(x)	__builtin_expect((x), 0)
 
 #define UNUSED(x)			((void) x)
 
