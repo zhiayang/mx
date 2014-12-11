@@ -107,8 +107,9 @@ namespace Kernel
 
 			// switch to that cr3.
 			Virtual::SwitchPML4T((Virtual::PageMapStructure*) newcr3);
+			Virtual::ChangeRawCR3(newcr3);
 
-			asm volatile("mov %0, %%cr3" :: "r"(newcr3));
+			// asm volatile("mov %0, %%cr3" :: "r"(newcr3));
 			asm volatile("invlpg (%0)" : : "a" (newcr3));
 			asm volatile("invlpg (%0)" : : "a" (oldcr3));
 
@@ -370,11 +371,11 @@ namespace Kernel
 				(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
 				GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
 
-			proc->Threads.front()->Priority = 2;
 			Multitasking::AddToQueue(proc);
 		}
 
 		PrintFormatted("[mx] has completed initialisation.\n");
+		Log("Kernel init complete");
 
 
 		// PrintFormatted("mutex tests\n");
@@ -418,7 +419,7 @@ namespace Kernel
 	{
 		while(true)
 		{
-			Physical::CoalesceFPLs();
+			// Physical::CoalesceFPLs();
 			YieldCPU();
 		}
 	}

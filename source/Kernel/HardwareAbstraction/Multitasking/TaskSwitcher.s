@@ -103,6 +103,7 @@ ChangeCR3:
 
 
 PopReg:
+	call VerifySchedule
 	pop %rdi
 	pop %rsi
 	pop %rbp

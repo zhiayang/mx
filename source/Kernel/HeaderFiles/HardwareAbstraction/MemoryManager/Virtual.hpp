@@ -64,6 +64,7 @@ namespace Virtual
 	void invlpg(PageMapStructure* p);
 	void Initialise();
 	void SwitchPML4T(PageMapStructure* PML4T);
+	void ChangeAddressSpace(PageMapStructure* pms);
 	PageMapStructure* GetCurrentPML4T();
 
 	VirtualAddressSpace* SetupVAS(VirtualAddressSpace* vas);

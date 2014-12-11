@@ -11,26 +11,46 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace Filesystems
 {
-	// Internal FS types.
-	/*
-		// FAT family
-		0xF1EF: exFAT
-		0xF132: FAT32
-		0xF116: FAT16
-		0xF112: FAT12
-
-		// Apple
-		0x11F5: HFS+
-		0x11F0: HFS
-
-		// Linux
-		0xEB12: ext2
-		0xEB13: ext3
-		0xEB14: ext4
-	*/
-
 	FSDriver::~FSDriver()
 	{
+	}
+
+	bool FSDriver::Create(VFS::vnode*, const char*, uint64_t, uint64_t)
+	{
+		return 0;
+	}
+
+	bool FSDriver::Delete(VFS::vnode*, const char*)
+	{
+		return 0;
+	}
+
+	bool FSDriver::Traverse(VFS::vnode*, const char*, char**)
+	{
+		return 0;
+	}
+
+	size_t FSDriver::Read(VFS::vnode*, void*, off_t, size_t)
+	{
+		return 0;
+	}
+
+	size_t FSDriver::Write(VFS::vnode*, const void*, off_t, size_t)
+	{
+		return 0;
+	}
+
+	void FSDriver::Flush(VFS::vnode*)
+	{
+	}
+
+	void FSDriver::Stat(VFS::vnode*, struct stat*, bool)
+	{
+	}
+
+	rde::vector<VFS::vnode*>* FSDriver::ReadDir(VFS::vnode*)
+	{
+		return 0;
 	}
 }
 }

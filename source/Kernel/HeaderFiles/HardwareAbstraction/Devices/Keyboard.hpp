@@ -15,7 +15,7 @@ namespace Devices
 	{
 		public:
 			Keyboard() { }
-			virtual ~Keyboard() { }
+			virtual ~Keyboard();
 
 			virtual void HandleKeypress();
 			virtual uint8_t ReadBuffer();

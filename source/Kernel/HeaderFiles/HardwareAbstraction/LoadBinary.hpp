@@ -22,7 +22,7 @@ namespace LoadBinary
 	class ExecutableFormat
 	{
 		public:
-			virtual ~ExecutableFormat() { }
+			virtual ~ExecutableFormat();
 			virtual uint64_t GetEntryPoint();
 			virtual uint64_t GetTLSSize();
 			virtual void Load(Multitasking::Process* proc);

@@ -8,7 +8,23 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace Devices
 {
+	Keyboard::~Keyboard()
+	{
+	}
 
+	void Keyboard::HandleKeypress()
+	{
+	}
+
+	uint8_t Keyboard::ReadBuffer()
+	{
+		return 0;
+	}
+
+	bool Keyboard::ItemsInBuffer()
+	{
+		return 0;
+	}
 }
 }
 }

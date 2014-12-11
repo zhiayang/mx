@@ -145,7 +145,6 @@ namespace TTY
 	uint64_t stdout_write(TTYObject* tty, uint8_t* buf, uint64_t length)
 	{
 		assert(tty);
-
 		if(tty->BufferMode & _IOLBF)
 		{
 			// todo: might want an 'in-house' buffer that handles newline flushing etc. better.

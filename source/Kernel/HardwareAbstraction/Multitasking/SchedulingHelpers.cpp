@@ -119,10 +119,11 @@ namespace Multitasking
 
 		// destroy its address space
 		assert(p->VAS);
+		// MemoryManager::Virtual::ChangeAddressSpace(p->VAS->PML4);
 		MemoryManager::Virtual::DestroyVAS(p->VAS);
 		Log("Cleaned up process %s", p->Name);
 
-		// delete p;
+		delete p;
 	}
 
 	void SetThreadErrno(int errno)
@@ -303,7 +304,7 @@ namespace Multitasking
 			Process* par = p->Parent;
 			par->Threads.remove(p);
 
-			// GetThreadList(p)->remove(p);
+			GetThreadList(p)->remove(p);
 			SleepList->push_front(p);
 
 			getRunQueue()->unlock();

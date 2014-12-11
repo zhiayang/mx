@@ -20,9 +20,8 @@ namespace Multitasking
 	#define __signal_ignore	0
 	uint64_t NumThreads = 0;
 	uint64_t NumProcesses = 0;
-	bool isfork = false;
 
-	static void SetupThreadRegs(Thread* thread, uint64_t* stack, Thread_attr* attr)
+	static uint64_t* SetupThreadRegs(Thread* thread, uint64_t* stack, Thread_attr* attr)
 	{
 		*--stack = attr->regs.r15;													// R15 (-48)
 		*--stack = attr->regs.r14;													// R14 (-56)
@@ -42,7 +41,7 @@ namespace Multitasking
 		*--stack = (uint64_t) (attr->a2 ? attr->a2 : (void*) attr->regs.rsi);		// RSI (-152)	(argv)
 		*--stack = (uint64_t) (attr->a1 ? attr->a1 : (void*) attr->regs.rdi);		// RDI (-160)	(argc)
 
-		thread->StackPointer = (uint64_t) stack;
+		return stack;
 	}
 
 	static void SetupStackThread_Kern(Thread* thread, uint64_t u, uint64_t f, Thread_attr* attr)
@@ -60,10 +59,10 @@ namespace Multitasking
 		*--stack = 0x08;															// CS (-32)
 		*--stack = (uint64_t) f;													// RIP (-40)
 
-		SetupThreadRegs(thread, stack, attr);
+		thread->StackPointer = (uint64_t) SetupThreadRegs(thread, stack, attr);
 	}
 
-	static void SetupStackThread_Proc(Thread* thread, uint64_t u, uint64_t physu, uint64_t stacksize, uint64_t f, Thread_attr* attr)
+	static void SetupStackThread_Proc(Thread* thread, uint64_t u, uint64_t physu, uint64_t physks, uint64_t stacksize, uint64_t f, Thread_attr* attr)
 	{
 		uint64_t* stack = (uint64_t*) thread->StackPointer;
 
@@ -74,6 +73,10 @@ namespace Multitasking
 		// it's kinda dangerous, because we're jumping directly to kernel code
 		uint64_t* usp = (uint64_t*) (u + stacksize - 8);
 
+		// probably not in the same address space anyway
+		uint64_t oldstack = (uint64_t) stack;
+		physks += (stacksize - 0x1000);
+
 		{
 			Virtual::MapAddress(TemporaryVirtualMapping, (physu + stacksize - 8) & I_AlignMask, 0x07);
 
@@ -82,6 +85,10 @@ namespace Multitasking
 
 			*tmpusp = (uint64_t) Multitasking::ExitThread_Userspace;
 			Virtual::UnmapAddress(TemporaryVirtualMapping);
+
+
+			Virtual::MapAddress(TemporaryVirtualMapping + oldstack - 0x1000, physks, 0x07);
+			stack = (uint64_t*) (TemporaryVirtualMapping + (uint64_t) oldstack);
 		}
 
 		{
@@ -92,17 +99,21 @@ namespace Multitasking
 			*--stack = 0x1B;															// CS
 			*--stack = (uint64_t) f;													// RIP (-40)
 
-			SetupThreadRegs(thread, stack, attr);
+			thread->StackPointer = (uint64_t) SetupThreadRegs(thread, stack, attr) - TemporaryVirtualMapping;
+			Virtual::UnmapAddress(TemporaryVirtualMapping + oldstack - 0x1000);
 		}
 	}
 
-	static void SetupStackThread(Thread* thread, uint64_t u, uint64_t physu, uint64_t us, uint64_t f, Thread_attr* attr)
+	static void SetupStackThread(Thread* thread, uint64_t u, uint64_t physu, uint64_t physks, uint64_t stacksz, uint64_t f, Thread_attr* attr)
 	{
 		if(thread->Parent == Kernel::KernelProcess)
+		{
 			SetupStackThread_Kern(thread, u, f, attr);
-
+		}
 		else
-			SetupStackThread_Proc(thread, u, physu, us, f, attr);
+		{
+			SetupStackThread_Proc(thread, u, physu, physks, stacksz, f, attr);
+		}
 	}
 
 	Thread* CreateThread(Process* Parent, void (*Function)(), uint8_t Priority, void* p1, void* p2, void* p3, void* p4, void* p5, void* p6)
@@ -131,19 +142,19 @@ namespace Multitasking
 
 		// allocate kernel stack.
 		uint64_t k = 0;
+		uint64_t physks = 0;
 		if((uint64_t) Parent->VAS->PML4 != GetKernelCR3())
 		{
 			auto pk = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
 			k = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS, pk);
 
 			Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x07, Parent->VAS->PML4);
-
-			if(Parent->VAS->PML4 != Virtual::GetCurrentPML4T())
-				Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x03);
+			physks = pk;
 		}
 		else
 		{
 			k = Virtual::AllocatePage(DefaultRing3StackSize / 0x1000);
+			physks = Virtual::GetVirtualPhysical(k);
 		}
 
 
@@ -158,25 +169,25 @@ namespace Multitasking
 
 		// allocate user stack.
 		uint64_t u = 0;
-		uint64_t us = 0;
+		uint64_t ustacksz = 0;
 		uint64_t physu = 0;
 		if(attr->stackptr == 0 || attr->stacksize == 0)
 		{
 			physu = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
 			u = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS, physu);
-			us = DefaultRing3StackSize;
+			ustacksz = DefaultRing3StackSize;
 
 			Virtual::MapRegion(u, physu, DefaultRing3StackSize / 0x1000, 0x07, Parent->VAS->PML4);
 		}
 		else
 		{
 			u = attr->stackptr;
-			us = attr->stacksize;
+			ustacksz = attr->stacksize;
 			HALT("Unsupported");
 		}
 
 		thread->StackSize			= DefaultRing3StackSize;
-		thread->TopOfStack			= k + us;
+		thread->TopOfStack			= k + ustacksz;
 		thread->StackPointer		= thread->TopOfStack;
 		thread->Thread				= Function;
 		thread->State				= STATE_NORMAL;
@@ -189,14 +200,10 @@ namespace Multitasking
 		thread->flags				= Parent->Flags;
 		thread->currenterrno		= 0;
 
+		SetupStackThread(thread, u, physu, physks, ustacksz, (uint64_t) Function, attr);
 		Parent->Threads.push_back(thread);
 
-		SetupStackThread(thread, u, physu, us, (uint64_t) Function, attr);
 		NumThreads++;
-
-		// unmap
-		if(Parent->VAS->PML4 != Virtual::GetCurrentPML4T())
-			Virtual::UnmapRegion(k, DefaultRing3StackSize / 0x1000);
 
 		if(FirstProc)
 		{
@@ -286,7 +293,6 @@ namespace Multitasking
 
 		String::Copy(process->Name, name);
 
-
 		NumProcesses++;
 		(void) CreateThread(process, Function, Priority, a1, a2, a3, a4, a5, a6);
 
@@ -339,7 +345,6 @@ namespace Multitasking
 		String::Copy(proc->Name, name);
 
 		NumProcesses++;
-		isfork = true;
 
 		// copy the thread.
 		Thread* newt = CloneThread(curthr);
@@ -361,6 +366,10 @@ namespace Multitasking
 		OpenFile(proc->iocontext, "/dev/stdlog", 0);
 
 		Log("Forking process from PID %d, new PID %d, CR3 %x", proc->Parent->ProcessID, proc->ProcessID, proc->VAS->PML4);
+
+
+		// getRunQueue()->queue[proc->Parent->Threads.front()->Priority]->remove(proc->Parent->Threads.front());
+
 		EnableScheduler();
 		return proc;
 	}
@@ -368,11 +377,11 @@ namespace Multitasking
 	extern "C" int64_t Syscall_ForkProcess()
 	{
 		Process* proc = ForkProcess("knife", 0);
-		// Multitasking::AddToQueue(proc);
+		Multitasking::AddToQueue(proc);
 
 		// fixme: some hackery here
-		Thread* t = proc->Threads.front();
-		*((uint64_t*) (t->StackPointer + 24)) = 0;
+		// Thread* t = proc->Threads.front();
+		// *((uint64_t*) (t->StackPointer + 24)) = 0;
 
 		return proc->ProcessID;
 	}

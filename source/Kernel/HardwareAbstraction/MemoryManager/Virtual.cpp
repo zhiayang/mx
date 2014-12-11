@@ -240,7 +240,6 @@ namespace Virtual
 		uint64_t virt = AllocateVirtual(size, addr, 0, phys);
 
 		MapRegion(virt, phys, size, flags);
-		Log("Alloc %x, mapped to %x for %d pages, ret addr %x", virt, phys, size, __builtin_return_address(0));
 
 		return virt;
 	}
@@ -301,11 +300,10 @@ namespace Virtual
 		{
 			// mark COW on both sides
 			dest->used->push_back(pair);
-			Virtual::MapRegion(pair->start, pair->phys, pair->length, I_Present | I_UserAccess | I_CopyOnWrite, dest->PML4);
+			Virtual::MapRegion(pair->start, pair->phys, pair->length, 0x07, dest->PML4);
 
 			for(uint64_t i = 0; i < pair->length; i++)
 			{
-				// Virtual::MarkCOW(pair->start + (i * 0x1000));
 				Virtual::MarkCOW(pair->start + (i * 0x1000), dest->PML4);
 				Log("Marked %x as COW", pair->start + (i * 0x1000));
 			}
@@ -453,15 +451,12 @@ namespace Virtual
 		}
 
 
-		// Because these are indexes into structures, we need to use MODULO '%'
-		// To change them to relative indexes, not absolute ones.
-
 		(void) DoNotUnmap;
 
 
 		PageMapStructure* PML = (PML4 == 0 ? GetCurrentPML4T() : PML4);
 		bool other = (PML != GetCurrentPML4T());
-		// bool other = false;
+
 		assert(PML);
 
 		if(other)
@@ -846,11 +841,16 @@ namespace Virtual
 			bottom 1gb is kernel owned.
 			top 1024gb is also kernel owned.
 		*/
-		PageMapStructure* kernelpml4 = (PageMapStructure*) Kernel::GetKernelCR3();
-		PageMapStructure* pdpt = (PageMapStructure*) kernelpml4->Entry[0];
-		// pdpt is guaranteed to exist.
+
+		PageMapStructure* _kernelpml4 = (PageMapStructure*) Kernel::GetKernelCR3();
+		Virtual::MapAddress(TemporaryVirtualMapping, (uint64_t) _kernelpml4, 0x07);
+		PageMapStructure* kernelpml4 = (PageMapStructure*) TemporaryVirtualMapping;
+
+		PageMapStructure* _pdpt = (PageMapStructure*) kernelpml4->Entry[0];
 
 		// bottom 1gb
+		Virtual::MapAddress(TemporaryVirtualMapping + 0x1000, (uint64_t) _pdpt, 0x07);
+		PageMapStructure* pdpt = (PageMapStructure*) (TemporaryVirtualMapping + 0x1000);
 		PageMapStructure* pt = (PageMapStructure*) pdpt->Entry[0];
 
 		// we need to throw this address (aka pointer) into the created things.
@@ -894,6 +894,9 @@ namespace Virtual
 		for(uint64_t i = 0; i < Kernel::GetLFBLengthInPages(); i++)
 			Virtual::MapAddress(Kernel::GetFramebufferAddress() + (i * 0x1000), Kernel::GetFramebufferAddress() + (i * 0x1000), 0x07, PML4);
 
+
+		Virtual::UnmapAddress(TemporaryVirtualMapping);
+		Virtual::UnmapAddress(TemporaryVirtualMapping + 0x1000);
 		return (uint64_t) PML4;
 	}
 }

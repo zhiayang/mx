@@ -52,26 +52,29 @@ namespace Multitasking
 	RunQueue* getRunQueue()				{ return mainRunQueue; }
 
 	// if, after N number of switches, processes in the low/norm queue don't get to run, run them all to completion.
-	static int StarvationThresholds[NUM_PRIO] = { 1024, 128, 1, 1 };
-
+	// todo: fix scheduler. starvation still happens (unable to prevent cross-starvation)
+	// static int StarvationThresholds[NUM_PRIO] = { 1024, 128, 1, 1 };
 
 	Thread* GetNextThread()
 	{
 		auto theQueue = getRunQueue();
-		ScheduleCount++;
 		Thread* r = CurrentThread;
 		theQueue->lock();
-		for(int i = 0; i < NUM_PRIO; i++)
+		// for(int i = 0; i < NUM_PRIO; i++)
+		for(int i = NUM_PRIO - 1; i > 0; i--)
 		{
-			if(!theQueue->queue[i]->empty() && (ScheduleCount % StarvationThresholds[i] == 0))
+			if(!theQueue->queue[i]->empty()  /* && (ScheduleCount % StarvationThresholds[i]) == 0*/)
 			{
-				r = theQueue->queue[i]->pop_front();
+				r = theQueue->queue[i]->front();
+				theQueue->queue[i]->pop_front();
 				theQueue->queue[i]->push_back(r);
+				break;
 			}
 		}
 
 		if(r == nullptr)
 		{
+			Log("ERROR");
 			// error recovery: switch to the kernel thread
 			CurrentThread = KernelProcess->Threads.front();
 			r = CurrentThread;
@@ -79,6 +82,8 @@ namespace Multitasking
 		}
 
 		theQueue->unlock();
+
+		ScheduleCount++;
 		return r;
 	}
 
@@ -156,13 +161,15 @@ namespace Multitasking
 			*((uint64_t*) 0x2600) = 0;
 		}
 
-		// if(CurrentThread->Parent->Name[1] == 'n')
-		// 	Log(3, "Scheduling knife");
-
-		// else if(CurrentThread->Parent->Name[1] == 'i')
-		// 	Log(3, "Scheduling displayd");
-
 		return CurrentThread->StackPointer;
+	}
+
+	extern "C" void VerifySchedule()
+	{
+		if(CurrentThread->Parent->Name[0] == 't')
+		{
+
+		}
 	}
 
 	extern "C" void YieldCPU()

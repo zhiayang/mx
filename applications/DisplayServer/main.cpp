@@ -30,21 +30,26 @@ int main(int argc, char** argv)
 	framebuffer	= (uint64_t) argv[1];
 	width		= (uint64_t) argv[2];
 	height		= (uint64_t) argv[3];
-	bpp			= (uint64_t) argv[4] / 4;		// kernel gives us BITS per pixel, but we really only care about BYTES per pixel.
+	bpp			= (uint64_t) argv[4] / 8;		// kernel gives us BITS per pixel, but we really only care about BYTES per pixel.
 
 	printf("Display server online\n");
 	printf("Forking process...\n");
-	int64_t res = Library::SystemCall::ForkProcess();
+	// int64_t res = Library::SystemCall::ForkProcess();
 
-	if(res == 0)
-	{
-		printf("in child\n");
-	}
-	else
-	{
-		printf("parent: child proc has pid %ld\n\n", res);
-	}
-	while(1);
+	// if(res == 0)
+	// {
+	// 	printf("in child\n");
+	// }
+	// else
+	// {
+	// 	printf("parent: child proc has pid %ld, exiting\n", res);
+	// 	exit(0);
+	// }
+
+	Library::SystemCall::SpawnProcess("/test.mxa", "test");
+
+	printf("stuff is going on\n");
+
 
 
 
@@ -64,8 +69,6 @@ int main(int argc, char** argv)
 	// 	printf("%02x ", x[i]);
 
 	// fflush(stdout);
-
-
 
 
 

@@ -113,7 +113,7 @@ if [ -f build/disk.img ]; then
 	exit
 fi
 
-tools/createdisk
+tools/createdisk.sh
 
 
 
