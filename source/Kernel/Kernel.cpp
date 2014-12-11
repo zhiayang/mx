@@ -412,7 +412,7 @@ namespace Kernel
 
 		// kernel stops here
 		// for now.
-		while(true);
+		BLOCK();
 	}
 
 	void Idle()

@@ -53,21 +53,21 @@ namespace Multitasking
 
 	// if, after N number of switches, processes in the low/norm queue don't get to run, run them all to completion.
 	// todo: fix scheduler. starvation still happens (unable to prevent cross-starvation)
-	// static int StarvationThresholds[NUM_PRIO] = { 1024, 128, 1, 1 };
+	static int StarvationThresholds[NUM_PRIO] = { 64, 16, 1, 1 };
 
 	Thread* GetNextThread()
 	{
 		auto theQueue = getRunQueue();
 		Thread* r = CurrentThread;
 		theQueue->lock();
-		// for(int i = 0; i < NUM_PRIO; i++)
-		for(int i = NUM_PRIO - 1; i > 0; i--)
+		for(int i = 0; i < NUM_PRIO; i++)
 		{
-			if(!theQueue->queue[i]->empty()  /* && (ScheduleCount % StarvationThresholds[i]) == 0*/)
+			if(!theQueue->queue[i]->empty() && (ScheduleCount % StarvationThresholds[i]) == 0)
 			{
-				r = theQueue->queue[i]->front();
-				theQueue->queue[i]->pop_front();
+				r = theQueue->queue[i]->pop_front();
 				theQueue->queue[i]->push_back(r);
+
+				Log("scheduled %d - %d", i, r->ThreadID);
 				break;
 			}
 		}
