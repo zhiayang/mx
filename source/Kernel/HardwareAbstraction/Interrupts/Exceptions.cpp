@@ -339,14 +339,16 @@ namespace Interrupts
 		uint64_t cr3;
 		asm volatile("mov %%cr2, %0" : "=r" (cr2));
 		asm volatile("mov %%cr3, %0" : "=r" (cr3));
+
+
 		Log(1, "%s Exception: RIP: %x, Error Code: %x, CR3: %x, CR2: %x, TID: %d", ExceptionMessages[r->InterruptID], r->rip, r->ErrorCode, cr3, r->cr2, Multitasking::GetCurrentThread()->ThreadID);
 
 		// check if this page fault can be handled gracefully, ie. swapping from disk, doing a cow, etc.
-		if(MemoryManager::Virtual::HandlePageFault(cr2, cr3, r->ErrorCode))
-		{
+		if(r->InterruptID == 14 && MemoryManager::Virtual::HandlePageFault(cr2, cr3, r->ErrorCode))
 			return;
-		}
-		else if(Multitasking::GetCurrentThread()->State & 0x1)
+
+
+		if(Multitasking::GetCurrentThread()->State & 0x1)
 		{
 			Log(1, "Terminated thread %d belonging to parent %s, for exception: %s", Multitasking::GetCurrentThread()->ThreadID, Multitasking::GetCurrentThread()->Parent->Name, ExceptionMessages[r->InterruptID]);
 

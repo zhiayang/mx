@@ -355,6 +355,7 @@ namespace Multitasking
 		// hacky? maybe.
 		// works? not really
 		newt->StackPointer = newt->TopOfStack - 160;
+		// *((uint64_t*) (newt->StackPointer + 24)) = 0;
 
 		// setup the descriptors.
 		// manually.
@@ -367,9 +368,6 @@ namespace Multitasking
 
 		Log("Forking process from PID %d, new PID %d, CR3 %x", proc->Parent->ProcessID, proc->ProcessID, proc->VAS->PML4);
 
-
-		// getRunQueue()->queue[proc->Parent->Threads.front()->Priority]->remove(proc->Parent->Threads.front());
-
 		EnableScheduler();
 		return proc;
 	}
@@ -380,9 +378,6 @@ namespace Multitasking
 		Multitasking::AddToQueue(proc);
 
 		// fixme: some hackery here
-		// Thread* t = proc->Threads.front();
-		// *((uint64_t*) (t->StackPointer + 24)) = 0;
-
 		return proc->ProcessID;
 	}
 }

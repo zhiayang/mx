@@ -248,8 +248,8 @@ namespace Multitasking
 		if(!p)
 			return;
 
-		Kill(p);
 		Log("Killed thread %d, name: %s", p->ThreadID, p->Parent->Name);
+		Kill(p);
 
 		(void) r;
 

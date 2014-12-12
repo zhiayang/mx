@@ -66,8 +66,6 @@ namespace Multitasking
 			{
 				r = theQueue->queue[i]->pop_front();
 				theQueue->queue[i]->push_back(r);
-
-				Log("scheduled %d - %d", i, r->ThreadID);
 				break;
 			}
 		}
@@ -166,9 +164,10 @@ namespace Multitasking
 
 	extern "C" void VerifySchedule()
 	{
-		if(CurrentThread->Parent->Name[0] == 't')
+		if(CurrentThread->Parent->Name[0] == 'k')
 		{
-
+			// Log(3, "%x", MemoryManager::Virtual::GetMapping(CurrentThread->StackPointer & I_AlignMask, CurrentThread->Parent->VAS->PML4));
+			// HALT("");
 		}
 	}
 

@@ -25,10 +25,10 @@ namespace Virtual
 
 	// Convert an address into array index of a structure
 	// E.G. int index = I_PML4_INDEX(0xFFFFFFFFFFFFFFFF); // index = 511
-	#define I_PML4_INDEX(addr)		((((uintptr_t)(addr))>>39) & 511)
-	#define I_PDPT_INDEX(addr)		((((uintptr_t)(addr))>>30) & 511)
-	#define I_PD_INDEX(addr)		((((uintptr_t)(addr))>>21) & 511)
-	#define I_PT_INDEX(addr)		((((uintptr_t)(addr))>>12) & 511)
+	#define I_PML4_INDEX(addr)		((((uintptr_t)(addr)) >> 39) & 0x1FF)
+	#define I_PDPT_INDEX(addr)		((((uintptr_t)(addr)) >> 30) & 0x1FF)
+	#define I_PD_INDEX(addr)		((((uintptr_t)(addr)) >> 21) & 0x1FF)
+	#define I_PT_INDEX(addr)		((((uintptr_t)(addr)) >> 12) & 0x1FF)
 
 
 	void Initialise()
@@ -305,7 +305,7 @@ namespace Virtual
 			for(uint64_t i = 0; i < pair->length; i++)
 			{
 				Virtual::MarkCOW(pair->start + (i * 0x1000), dest->PML4);
-				Log("Marked %x as COW", pair->start + (i * 0x1000));
+				// Log("Marked %x as COW", pair->start + (i * 0x1000));
 			}
 		}
 
@@ -800,28 +800,30 @@ namespace Virtual
 		uint64_t* value = GetPageTableEntry(cr2, Multitasking::GetCurrentProcess()->VAS->PML4, &pdpt, &pd, &pt);
 
 		// conditions for cow:
-		// bit 11 (0x800) for COW set, bit 0 (0x1, present bit) not set.
-		if(value && *value & I_CopyOnWrite && !(*value & I_ReadWrite))
+		// bit 11 (0x800) for COW set, bit 1 (0x2, R/W bit) not set.
+		if(value && (*value & I_CopyOnWrite) && !(*value & I_ReadWrite))
 		{
 			// allocate a page, copy existing data, then return.
 			uint64_t np = Physical::AllocatePage();
 			uint64_t old = *value & I_AlignMask;
 			uint64_t oldflags = *value & ~I_AlignMask;
 
-			*value = np;
-			*value |= (oldflags | I_ReadWrite | I_CopyOnWrite);
+			*value = np | (oldflags | I_ReadWrite | I_CopyOnWrite);
 
 			// we need to copy the old bytes to the new page.
 			// _old_ should contain the virtual address of the parent
-			Virtual::MapAddress(*value, np, oldflags);
+			Virtual::MapAddress(cr2 & I_AlignMask, np, 0x807);
+			Virtual::MapAddress(TemporaryVirtualMapping, old, 0x07);
 
-			Memory::Copy((void*) (*value & I_AlignMask) , (void*) old, 0x1000);
+			Log("Copying 0x1000 bytes from %x to %x (error: %x)", old, cr2 & I_AlignMask, errorcode);
+			Memory::CopyOverlap((void*) (cr2 & I_AlignMask) , (void*) TemporaryVirtualMapping, 0x1000);
+			Virtual::UnmapAddress(TemporaryVirtualMapping);
 
-			Log("Successfully allocated new physical page at %x for COW purposes mapped to virtual page %x", np, old);
+			Log("Successfully allocated new physical page at %x for COW purposes mapped to virtual page %x", np, cr2 & I_AlignMask);
 			return true;
 		}
 
-		Log("Invalid access (%x:%x), terminating process...", value, value ? *value : 0);
+		Log("Invalid access (%x:%x)", value, value ? *value : 0);
 		return false;
 	}
 

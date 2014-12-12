@@ -92,7 +92,6 @@ namespace SystemCalls
 		auto proc = LoadBinary::Load(ExecutableFilename, ProcessName);
 
 		assert(proc);
-		proc->Threads.front()->Priority = 2;
 		Multitasking::AddToQueue(proc);
 	}
 

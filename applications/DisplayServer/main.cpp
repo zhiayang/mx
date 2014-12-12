@@ -34,19 +34,19 @@ int main(int argc, char** argv)
 
 	printf("Display server online\n");
 	printf("Forking process...\n");
-	// int64_t res = Library::SystemCall::ForkProcess();
+	int64_t res = Library::SystemCall::ForkProcess();
 
-	// if(res == 0)
-	// {
-	// 	printf("in child\n");
-	// }
-	// else
-	// {
-	// 	printf("parent: child proc has pid %ld, exiting\n", res);
-	// 	exit(0);
-	// }
+	if(res == 0)
+	{
+		printf("in child\n");
+	}
+	else
+	{
+		printf("parent: child proc has pid %ld, exiting\n", res);
+		exit(0);
+	}
 
-	Library::SystemCall::SpawnProcess("/test.mxa", "test");
+	// Library::SystemCall::SpawnProcess("/test.mxa", "test");
 
 	printf("stuff is going on\n");
 
