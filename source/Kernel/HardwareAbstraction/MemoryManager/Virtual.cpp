@@ -293,20 +293,34 @@ namespace Virtual
 
 	VirtualAddressSpace* CopyVAS(VirtualAddressSpace* src, VirtualAddressSpace* dest)
 	{
-		for(auto pair : *src->pairs)
-			dest->pairs->push_back(pair);
+		for(auto p : *src->pairs)
+			dest->pairs->push_back(new AddressLengthPair(*p));
 
-		for(auto pair : *src->used)
+		for(auto _pair : *src->used)
 		{
-			// mark COW on both sides
+			ALPPair* pair = new ALPPair(*_pair);
 			dest->used->push_back(pair);
-			Virtual::MapRegion(pair->start, pair->phys, pair->length, 0x07, dest->PML4);
+			uint64_t p = Physical::AllocatePage(pair->length);
+			Virtual::MapRegion(pair->start, /*pair->phys*/ p, pair->length, 0x07, dest->PML4);
+			Virtual::MapRegion(TemporaryVirtualMapping, p, pair->length, 0x07);
 
-			for(uint64_t i = 0; i < pair->length; i++)
+			// Log("Copying %x bytes from %p to %p", pair->length * 0x1000, pair->start, TemporaryVirtualMapping);
+			Memory::CopyOverlap((void*) TemporaryVirtualMapping, (void*) pair->start, pair->length * 0x1000);
+
+			// for(uint64_t i = 0; i < pair->length; i++)
+			// {
+			// 	// Virtual::MarkCOW(pair->start + (i * 0x1000), dest->PML4);
+			// 	// Log("Marked %x as COW", pair->start + (i * 0x1000));
+			// }
+
+			if(pair->length == 4)
 			{
-				Virtual::MarkCOW(pair->start + (i * 0x1000), dest->PML4);
-				// Log("Marked %x as COW", pair->start + (i * 0x1000));
+				// Utilities::StackDump((uint64_t*) (TemporaryVirtualMapping + 0x4000), 20, true);
 			}
+
+
+			Virtual::UnmapRegion(TemporaryVirtualMapping, pair->length);
+			pair->phys = p;
 		}
 
 		return dest;

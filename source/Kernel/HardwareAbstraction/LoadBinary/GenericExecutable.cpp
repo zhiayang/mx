@@ -4,6 +4,7 @@
 
 #include <Kernel.hpp>
 #include <string.h>
+#include <errno.h>
 #include <HardwareAbstraction/LoadBinary.hpp>
 #include <HardwareAbstraction/BinaryFormats/ELF.hpp>
 
@@ -22,7 +23,10 @@ namespace LoadBinary
 		using namespace Filesystems;
 		auto fd = OpenFile(path, 0);
 		if(fd < 0)
-			HALT("file not found");
+		{
+			Multitasking::SetThreadErrno(EINVAL);
+			return 0;
+		}
 
 		struct stat st;
 		Stat(fd, &st);

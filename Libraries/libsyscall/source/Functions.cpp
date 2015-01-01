@@ -77,9 +77,9 @@ namespace SystemCall
 		return Syscall2Param((uintptr_t) thr, (uintptr_t) attr, 4000);
 	}
 
-	void SpawnProcess(const char* path, const char* name)
+	pid_t SpawnProcess(const char* path, const char* name)
 	{
-		Syscall2Param((uint64_t) path, (uint64_t) name, 4001);
+		return Syscall2Param((uint64_t) path, (uint64_t) name, 4001);
 	}
 
 	void SignalProcess(pid_t pid, int signum)

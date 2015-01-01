@@ -490,7 +490,11 @@ namespace StandardIO
 
 					case 'X':
 					case 'x':
+					case 'p':
 						x = va_arg(args, uint64_t);
+
+						if(c == 'p')
+							Precision = 16;
 
 						// now handle the padding rubbish.
 						// check if we need to align left.

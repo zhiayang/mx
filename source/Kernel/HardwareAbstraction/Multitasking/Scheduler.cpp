@@ -27,7 +27,7 @@ namespace Multitasking
 	rde::list<Process*>* ProcessList;
 
 	bool SchedulerEnabled = true;
-	extern bool isfork;
+	bool isfork = false;
 
 	void Initialise()
 	{
@@ -130,6 +130,14 @@ namespace Multitasking
 		CurrentThread->currenterrno = *((int64_t*) 0x2610);
 		CurrentThread = GetNextThread();
 
+		if(isfork)
+		{
+			while(CurrentThread->Parent->Name[0] == 'a')
+			{
+				CurrentThread = GetNextThread();
+				// Log(3, "A");
+			}
+		}
 
 		if(CurrentThread->Parent->Flags & 0x1)
 		{
@@ -164,9 +172,9 @@ namespace Multitasking
 
 	extern "C" void VerifySchedule()
 	{
-		if(CurrentThread->Parent->Name[0] == 'k')
+		if(CurrentThread->Parent->Name[0] == 'b')
 		{
-			// Log(3, "%x", MemoryManager::Virtual::GetMapping(CurrentThread->StackPointer & I_AlignMask, CurrentThread->Parent->VAS->PML4));
+			Utilities::StackDump((uint64_t*) CurrentThread->StackPointer, 20);
 			// HALT("");
 		}
 	}

@@ -321,6 +321,7 @@ namespace Multitasking
 	// the only thread shall be the current thread.
 	// child proc gets ret = 0, parent proc gets pid of child.
 	// -1 on error.
+	extern bool isfork;
 	Process* ForkProcess(const char name[64], Thread_attr* attr)
 	{
 		DisableScheduler();
@@ -354,8 +355,6 @@ namespace Multitasking
 
 		// hacky? maybe.
 		// works? not really
-		newt->StackPointer = newt->TopOfStack - 160;
-		// *((uint64_t*) (newt->StackPointer + 24)) = 0;
 
 		// setup the descriptors.
 		// manually.
@@ -366,19 +365,29 @@ namespace Multitasking
 		OpenFile(proc->iocontext, "/dev/stderr", 0);
 		OpenFile(proc->iocontext, "/dev/stdlog", 0);
 
-		Log("Forking process from PID %d, new PID %d, CR3 %x", proc->Parent->ProcessID, proc->ProcessID, proc->VAS->PML4);
-
 		EnableScheduler();
 		return proc;
 	}
 
 	extern "C" int64_t Syscall_ForkProcess()
 	{
-		Process* proc = ForkProcess("knife", 0);
+		Process* proc = ForkProcess("b", 0);
 		Multitasking::AddToQueue(proc);
 
-		// fixme: some hackery here
-		return proc->ProcessID;
+		Log("Forking process from PID %d, new PID %d, CR3 %x", proc->Parent->ProcessID, proc->ProcessID, proc->VAS->PML4);
+		isfork = true;
+
+
+		// fuck around with the stack of the child process
+		// check if we are *not* the child process.
+		// if(proc->ProcessID != GetCurrentProcess()->ProcessID)
+		// {
+			return proc->ProcessID;
+		// }
+		// else
+		{
+			// return 0;
+		}
 	}
 }
 }

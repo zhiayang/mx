@@ -29,7 +29,7 @@ namespace Library
 		void InstallIRQHandler(uint64_t irq, uint64_t handleraddr);
 		void InstallIRQHandlerWithRegs(uint64_t irq, uint64_t handleraddr);
 		pthread_t CreateThread(pthread_attr_t* attribs, void (*thr)());
-		void SpawnProcess(const char* path, const char* name);
+		pid_t SpawnProcess(const char* path, const char* name);
 		void SignalProcess(pid_t pid, int signum);
 		void SignalThread(pid_t tid, int signum);
 		int SendMessage(const char* path, void* msg, size_t size, uint64_t flags);
