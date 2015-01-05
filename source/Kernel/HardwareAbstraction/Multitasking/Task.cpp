@@ -350,6 +350,7 @@ namespace Multitasking
 		// copy the thread.
 		Thread* newt = CloneThread(curthr);
 		newt->Parent = proc;
+		newt->StackPointer = newt->TopOfStack - 160;
 		proc->Threads.push_back(newt);
 
 
@@ -365,6 +366,10 @@ namespace Multitasking
 		OpenFile(proc->iocontext, "/dev/stderr", 0);
 		OpenFile(proc->iocontext, "/dev/stdlog", 0);
 
+		Log("Forking process from PID %d, new PID %d, CR3 %x", proc->Parent->ProcessID, proc->ProcessID, proc->VAS->PML4);
+		Log("Stack pointer for new process's thread: %x", proc->Threads.front()->StackPointer);
+
+		isfork = true;
 		EnableScheduler();
 		return proc;
 	}
@@ -374,19 +379,16 @@ namespace Multitasking
 		Process* proc = ForkProcess("b", 0);
 		Multitasking::AddToQueue(proc);
 
-		Log("Forking process from PID %d, new PID %d, CR3 %x", proc->Parent->ProcessID, proc->ProcessID, proc->VAS->PML4);
-		isfork = true;
-
 
 		// fuck around with the stack of the child process
 		// check if we are *not* the child process.
-		// if(proc->ProcessID != GetCurrentProcess()->ProcessID)
-		// {
-			return proc->ProcessID;
-		// }
-		// else
+		if(proc->ProcessID != GetCurrentProcess()->ProcessID)
 		{
-			// return 0;
+			return proc->ProcessID;
+		}
+		else
+		{
+			return 0;
 		}
 	}
 }

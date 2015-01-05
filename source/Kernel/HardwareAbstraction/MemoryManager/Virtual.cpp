@@ -315,7 +315,7 @@ namespace Virtual
 
 			if(pair->length == 4)
 			{
-				// Utilities::StackDump((uint64_t*) (TemporaryVirtualMapping + 0x4000), 20, true);
+				Utilities::StackDump((uint64_t*) (pair->start + 0x4000), 20, true);
 			}
 
 

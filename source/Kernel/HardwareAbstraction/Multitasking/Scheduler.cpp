@@ -37,10 +37,10 @@ namespace Multitasking
 		PendingSleepList = new rde::list<Thread*>();
 
 		mainRunQueue = new RunQueue();
-		mainRunQueue->queue = new rde::list<Thread*>*[NUM_PRIO];
+		mainRunQueue->queue = new rde::vector<Thread*>*[NUM_PRIO];
 
 		for(int i = 0; i < NUM_PRIO; i++)
-			mainRunQueue->queue[i] = new rde::list<Thread*>();
+			mainRunQueue->queue[i] = new rde::vector<Thread*>();
 
 		*((int64_t*) 0x2610) = 0;
 	}
@@ -64,7 +64,8 @@ namespace Multitasking
 		{
 			if(!theQueue->queue[i]->empty() && (ScheduleCount % StarvationThresholds[i]) == 0)
 			{
-				r = theQueue->queue[i]->pop_front();
+				r = theQueue->queue[i]->front();
+				theQueue->queue[i]->erase(theQueue->queue[i]->begin());
 				theQueue->queue[i]->push_back(r);
 				break;
 			}
@@ -72,7 +73,7 @@ namespace Multitasking
 
 		if(r == nullptr)
 		{
-			Log("ERROR");
+			Log(3, "FATAL: Thread was null!");
 			// error recovery: switch to the kernel thread
 			CurrentThread = KernelProcess->Threads.front();
 			r = CurrentThread;
@@ -130,14 +131,14 @@ namespace Multitasking
 		CurrentThread->currenterrno = *((int64_t*) 0x2610);
 		CurrentThread = GetNextThread();
 
-		if(isfork)
-		{
-			while(CurrentThread->Parent->Name[0] == 'a')
-			{
-				CurrentThread = GetNextThread();
-				// Log(3, "A");
-			}
-		}
+		// if(isfork)
+		// {
+		// 	while(CurrentThread->Parent->Name[0] == 'a')
+		// 	{
+		// 		CurrentThread = GetNextThread();
+		// 		// Log(3, "A");
+		// 	}
+		// }
 
 		if(CurrentThread->Parent->Flags & 0x1)
 		{
@@ -174,7 +175,7 @@ namespace Multitasking
 	{
 		if(CurrentThread->Parent->Name[0] == 'b')
 		{
-			Utilities::StackDump((uint64_t*) CurrentThread->StackPointer, 20);
+			// Utilities::StackDump((uint64_t*) CurrentThread->StackPointer, 20);
 			// HALT("");
 		}
 	}

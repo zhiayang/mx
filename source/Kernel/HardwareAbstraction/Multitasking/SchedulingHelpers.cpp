@@ -155,7 +155,7 @@ namespace Multitasking
 			:: [lo]"g"(low), [hi]"g"(high) : "memory", "rax", "rbx", "rcx", "rdx");
 	}
 
-	rde::list<Thread*>* GetThreadList(Thread* t)
+	rde::vector<Thread*>* GetThreadList(Thread* t)
 	{
 		return getRunQueue()->queue[t->Priority];
 	}
@@ -183,7 +183,8 @@ namespace Multitasking
 		if(thread->State != STATE_BLOCKING && thread->State != STATE_SUSPEND)
 		{
 			assert(list->contains(thread));
-			list->push_front(FetchAndRemoveThread(thread));
+			// list->insert(list->begin(), FetchAndRemoveThread(thread));
+			list->push_back(FetchAndRemoveThread(thread));
 		}
 		else
 		{
@@ -192,7 +193,8 @@ namespace Multitasking
 
 			SleepList->remove(thread);
 			thread->State = STATE_NORMAL;
-			GetThreadList(thread)->push_front(thread);
+			// GetThreadList(thread)->insert(GetThreadList(thread)->begin(), thread);
+			GetThreadList(thread)->push_back(thread);
 		}
 
 		getRunQueue()->unlock();
@@ -237,7 +239,8 @@ namespace Multitasking
 	void AddToQueue(Thread* t)
 	{
 		getRunQueue()->lock();
-		getRunQueue()->queue[t->Priority]->push_front(t);
+		// getRunQueue()->queue[t->Priority]->insert(getRunQueue()->queue[t->Priority]->begin(), t);
+		getRunQueue()->queue[t->Priority]->push_back(t);
 		getRunQueue()->unlock();
 	}
 

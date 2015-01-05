@@ -88,7 +88,7 @@ namespace HardwareAbstraction
 			}
 
 			Mutex* thelock;
-			rde::list<Thread*>** queue;
+			rde::vector<Thread*>** queue;
 		};
 
 
@@ -132,7 +132,7 @@ namespace HardwareAbstraction
 		void Sleep(int64_t Miliseconds);
 		extern "C" void YieldCPU();
 		void Block(uint8_t purpose = 0);
-		rde::list<Thread*>* GetThreadList(Thread* t);
+		rde::vector<Thread*>* GetThreadList(Thread* t);
 		Thread* FetchAndRemoveThread(Thread* t);
 
 		void Suspend(Thread* p);
