@@ -75,9 +75,6 @@ namespace Kernel
 					rde::vector<fileentry*>* fds;
 				};
 
-				extern FSDriver* driver_stdin;
-				extern FSDriver* driver_stdout;
-				extern FSDriver* driver_ipcmsg;
 
 				void Initialise();
 				void InitIO();

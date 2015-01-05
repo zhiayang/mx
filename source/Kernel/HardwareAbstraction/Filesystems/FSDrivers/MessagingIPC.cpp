@@ -7,7 +7,6 @@
 #include <mqueue.h>
 #include <String.hpp>
 
-#define BUFSIZE	1024
 
 namespace Kernel {
 namespace HardwareAbstraction {

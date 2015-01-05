@@ -100,7 +100,7 @@ $(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) buildus
 	@printf "\r                                               \r$(words $(DONEFILES)) / $(NUMFILES) ($(notdir $<))"
 
 builduserspace:
-	@echo "# Building userspace applications"
+	@printf "\n# Building userspace applications"
 	@$(MAKE) -C applications/
 
 copyheader:

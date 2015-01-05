@@ -32,10 +32,10 @@ namespace Filesystems
 		static rde::vector<Filesystem*>* mountedfses;
 		static rde::hash_map<id_t, vnode*>* vnodepool;
 
-		FSDriver* driver_stdin;
-		FSDriver* driver_stdout;
-		FSDriver* driver_stdlog;
-		FSDriver* driver_ipcmsg;
+		static FSDriver* driver_stdin;
+		static FSDriver* driver_stdout;
+		static FSDriver* driver_stdlog;
+		static FSDriver* driver_ipcmsg;
 
 		static IOContext* getctx()
 		{

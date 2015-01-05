@@ -27,7 +27,6 @@ namespace Multitasking
 	rde::list<Process*>* ProcessList;
 
 	bool SchedulerEnabled = true;
-	bool isfork = false;
 
 	void Initialise()
 	{

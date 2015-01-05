@@ -23,6 +23,8 @@ namespace Multitasking
 
 	static uint64_t* SetupThreadRegs(Thread* thread, uint64_t* stack, Thread_attr* attr)
 	{
+		(void) thread;
+
 		*--stack = attr->regs.r15;													// R15 (-48)
 		*--stack = attr->regs.r14;													// R14 (-56)
 		*--stack = attr->regs.r13;													// R13 (-64)
@@ -321,9 +323,10 @@ namespace Multitasking
 	// the only thread shall be the current thread.
 	// child proc gets ret = 0, parent proc gets pid of child.
 	// -1 on error.
-	extern bool isfork;
 	Process* ForkProcess(const char name[64], Thread_attr* attr)
 	{
+		(void) attr;
+
 		DisableScheduler();
 		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
 
@@ -369,7 +372,6 @@ namespace Multitasking
 		Log("Forking process from PID %d, new PID %d, CR3 %x", proc->Parent->ProcessID, proc->ProcessID, proc->VAS->PML4);
 		Log("Stack pointer for new process's thread: %x", proc->Threads.front()->StackPointer);
 
-		isfork = true;
 		EnableScheduler();
 		return proc;
 	}
