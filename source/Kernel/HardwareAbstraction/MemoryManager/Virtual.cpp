@@ -301,26 +301,26 @@ namespace Virtual
 			ALPPair* pair = new ALPPair(*_pair);
 			dest->used->push_back(pair);
 			uint64_t p = Physical::AllocatePage(pair->length);
+
 			Virtual::MapRegion(pair->start, /*pair->phys*/ p, pair->length, 0x07, dest->PML4);
 			Virtual::MapRegion(TemporaryVirtualMapping, p, pair->length, 0x07);
-
-			// Log("Copying %x bytes from %p to %p", pair->length * 0x1000, pair->start, TemporaryVirtualMapping);
 			Memory::CopyOverlap((void*) TemporaryVirtualMapping, (void*) pair->start, pair->length * 0x1000);
-
-			// for(uint64_t i = 0; i < pair->length; i++)
-			// {
-			// 	// Virtual::MarkCOW(pair->start + (i * 0x1000), dest->PML4);
-			// 	// Log("Marked %x as COW", pair->start + (i * 0x1000));
-			// }
-
-			if(pair->length == 4)
-			{
-				Utilities::StackDump((uint64_t*) (pair->start + 0x4000), 20, true);
-			}
 
 
 			Virtual::UnmapRegion(TemporaryVirtualMapping, pair->length);
 			pair->phys = p;
+
+
+
+
+			#if 0
+				Virtual::MapRegion(pair->start, pair->phys, pair->length, 0x07, dest->PML4);
+				for(uint64_t i = 0; i < pair->length; i++)
+				{
+					Log("Marking %x as COW", pair->start + (i * 0x1000));
+					Virtual::MarkCOW(pair->start + (i * 0x1000), dest);
+				}
+			#endif
 		}
 
 		return dest;
@@ -448,10 +448,10 @@ namespace Virtual
 
 	void MapAddress(uint64_t VirtAddr, uint64_t PhysAddr, uint64_t Flags, PageMapStructure* PML4, bool DoNotUnmap)
 	{
-		uint64_t PageTableIndex			= I_PT_INDEX(VirtAddr);
-		uint64_t PageDirectoryIndex			= I_PD_INDEX(VirtAddr);
+		uint64_t PageTableIndex					= I_PT_INDEX(VirtAddr);
+		uint64_t PageDirectoryIndex				= I_PD_INDEX(VirtAddr);
 		uint64_t PageDirectoryPointerTableIndex	= I_PDPT_INDEX(VirtAddr);
-		uint64_t PML4TIndex				= I_PML4_INDEX(VirtAddr);
+		uint64_t PML4TIndex						= I_PML4_INDEX(VirtAddr);
 
 		assert(PageTableIndex < 512);
 		assert(PageDirectoryIndex < 512);
@@ -483,7 +483,7 @@ namespace Virtual
 			PML->Entry[PML4TIndex] = Physical::AllocateFromReserved() | (Flags | 0x1);
 			invlpg(PML);
 		}
-		PageMapStructure* PDPT = (PageMapStructure*)(PML->Entry[PML4TIndex] & I_AlignMask);
+		PageMapStructure* PDPT = (PageMapStructure*) (PML->Entry[PML4TIndex] & I_AlignMask);
 		if(other)
 			Virtual::MapAddress((uint64_t) PDPT, (uint64_t) PDPT, 0x7);
 
@@ -495,7 +495,7 @@ namespace Virtual
 			invlpg(PML);
 			invlpg(PDPT);
 		}
-		PageMapStructure* PageDirectory = (PageMapStructure*)(PDPT->Entry[PageDirectoryPointerTableIndex] & I_AlignMask);
+		PageMapStructure* PageDirectory = (PageMapStructure*) (PDPT->Entry[PageDirectoryPointerTableIndex] & I_AlignMask);
 		if(other)
 			Virtual::MapAddress((uint64_t) PageDirectory, (uint64_t) PageDirectory, 0x7);
 
@@ -508,7 +508,7 @@ namespace Virtual
 			invlpg(PDPT);
 			invlpg(PageDirectory);
 		}
-		PageMapStructure* PageTable = (PageMapStructure*)(PageDirectory->Entry[PageDirectoryIndex] & I_AlignMask);
+		PageMapStructure* PageTable = (PageMapStructure*) (PageDirectory->Entry[PageDirectoryIndex] & I_AlignMask);
 		if(other)
 			Virtual::MapAddress((uint64_t) PageTable, (uint64_t) PageTable, 0x7);
 
@@ -541,28 +541,10 @@ namespace Virtual
 			MapAddress((uint64_t) PML4, (uint64_t) PML4, 0x03);
 		}
 
-
-		// First, find out which page we will need.
-		uint64_t PageTableIndex = VirtAddr / 0x1000;
-
-		// Next, which Page Table does that page reside in?
-		// Let's find out:
-		uint64_t PageDirectoryIndex = PageTableIndex / 512;
-
-		// Page Directory:
-		uint64_t PageDirectoryPointerTableIndex = PageDirectoryIndex / 512;
-
-		// Finally, which PDPT is it in?
-		uint64_t PML4TIndex = PageDirectoryPointerTableIndex / 512;
-
-
-
-		// Because these are indexes into structures, we need to use MODULO '%'
-		// To change them to relative indexes, not absolute ones.
-
-		PageTableIndex %= 512;
-		PageDirectoryIndex %= 512;
-		PageDirectoryPointerTableIndex %= 512;
+		uint64_t PageTableIndex					= I_PT_INDEX(VirtAddr);
+		uint64_t PageDirectoryIndex				= I_PD_INDEX(VirtAddr);
+		uint64_t PageDirectoryPointerTableIndex	= I_PDPT_INDEX(VirtAddr);
+		uint64_t PML4TIndex						= I_PML4_INDEX(VirtAddr);
 
 
 		PageMapStructure* PML = (PageMapStructure*)(((PageMapStructure*) PML4)->Entry[I_RECURSIVE_SLOT] & I_AlignMask);
@@ -610,56 +592,42 @@ namespace Virtual
 
 	static uint64_t* GetPageTableEntry(uint64_t VirtAddr, PageMapStructure* VAS, PageMapStructure** pdpt, PageMapStructure** pd, PageMapStructure** pt)
 	{
-		// First, find out which page we will need.
-		uint64_t PageTableIndex = VirtAddr / 0x1000;
 
-		// Next, which Page Table does that page reside in?
-		// Let's find out:
-		uint64_t PageDirectoryIndex = PageTableIndex / 512;
-
-		// Page Directory:
-		uint64_t PageDirectoryPointerTableIndex = PageDirectoryIndex / 512;
-
-		// Finally, which PDPT is it in?
-		uint64_t PML4TIndex = PageDirectoryPointerTableIndex / 512;
+		uint64_t PageTableIndex					= I_PT_INDEX(VirtAddr);
+		uint64_t PageDirectoryIndex				= I_PD_INDEX(VirtAddr);
+		uint64_t PageDirectoryPointerTableIndex	= I_PDPT_INDEX(VirtAddr);
+		uint64_t PML4TIndex						= I_PML4_INDEX(VirtAddr);
 
 
 
-		// Because these are indexes into structures, we need to use MODULO '%'
-		// To change them to relative indexes, not absolute ones.
+		// Log("virt: %x, indices: pt %d, pd %d, pdpt %d, pml4 %d", VirtAddr, PageTableIndex, PageDirectoryIndex, PageDirectoryPointerTableIndex, PML4TIndex);
 
-
-
-		PML4TIndex %= 512;
-		PageTableIndex %= 512;
-		PageDirectoryIndex %= 512;
-		PageDirectoryPointerTableIndex %= 512;
 
 		PageMapStructure* PML = (VAS == 0 ? GetCurrentPML4T() : VAS);
 		bool other = (PML != GetCurrentPML4T());
 
-		if(PML)
+		assert(PML);
 		{
 			if(other)
 				Virtual::MapAddress((uint64_t) PML, (uint64_t) PML, 0x7);
 
-			PageMapStructure* PDPT = (PageMapStructure*)(PML->Entry[PML4TIndex] & I_AlignMask);
+			PageMapStructure* PDPT = (PageMapStructure*) (PML->Entry[PML4TIndex] & I_AlignMask);
 
-			if(PDPT)
+			assert(PDPT);
 			{
 				if(other)
 					Virtual::MapAddress((uint64_t) PDPT, (uint64_t) PDPT, 0x7);
 
-				PageMapStructure* PageDirectory = (PageMapStructure*)(PDPT->Entry[PageDirectoryPointerTableIndex] & I_AlignMask);
+				PageMapStructure* PageDirectory = (PageMapStructure*) (PDPT->Entry[PageDirectoryPointerTableIndex] & I_AlignMask);
 
-				if(PageDirectory)
+				assert(PageDirectory);
 				{
 					if(other)
 						Virtual::MapAddress((uint64_t) PageDirectory, (uint64_t) PageDirectory, 0x7);
 
-					PageMapStructure* PageTable = (PageMapStructure*)(PageDirectory->Entry[PageDirectoryIndex] & I_AlignMask);
+					PageMapStructure* PageTable = (PageMapStructure*) (PageDirectory->Entry[PageDirectoryIndex] & I_AlignMask);
 
-					if(PageTable)
+					assert(PageTable);
 					{
 						if(other)
 							Virtual::MapAddress((uint64_t) PageTable, (uint64_t) PageTable, 0x7);
@@ -668,42 +636,54 @@ namespace Virtual
 						*pd = PageDirectory;
 						*pt = PageTable;
 
-						return &PageTable->Entry[PageTableIndex];
+						uint64_t* ret = &PageTable->Entry[PageTableIndex];
+
+						// if(other)
+						// {
+						// 	Virtual::UnmapAddress((uint64_t) PageDirectory);
+						// 	Virtual::UnmapAddress((uint64_t) PDPT);
+						// 	Virtual::UnmapAddress((uint64_t) PML);
+						// }
+
+						return ret;
 					}
-					else
-					{
-						if(other)
-						{
-							Virtual::UnmapAddress((uint64_t) PageDirectory);
-							Virtual::UnmapAddress((uint64_t) PDPT);
-							Virtual::UnmapAddress((uint64_t) PML);
-						}
-						return 0;
-					}
-				}
-				else
-				{
-					if(other)
-					{
-						Virtual::UnmapAddress((uint64_t) PDPT);
-						Virtual::UnmapAddress((uint64_t) PML);
-					}
-					return 0;
 				}
 			}
-			else
-			{
-				if(other)
-				{
-					Virtual::UnmapAddress((uint64_t) PML);
-				}
-				return 0;
-			}
 		}
-		else
-		{
-			return 0;
-		}
+					// else
+					// {
+					// 	if(other)
+					// 	{
+					// 		Virtual::UnmapAddress((uint64_t) PageDirectory);
+					// 		Virtual::UnmapAddress((uint64_t) PDPT);
+					// 		Virtual::UnmapAddress((uint64_t) PML);
+					// 	}
+					// 	return 0;
+					// }
+		// 		}
+		// 		else
+		// 		{
+		// 			if(other)
+		// 			{
+		// 				Virtual::UnmapAddress((uint64_t) PDPT);
+		// 				Virtual::UnmapAddress((uint64_t) PML);
+		// 			}
+		// 			return 0;
+		// 		}
+		// 	}
+		// 	else
+		// 	{
+		// 		if(other)
+		// 		{
+		// 			Virtual::UnmapAddress((uint64_t) PML);
+		// 		}
+		// 		return 0;
+		// 	}
+		// }
+		// else
+		// {
+		// 	return 0;
+		// }
 	}
 
 
@@ -739,6 +719,8 @@ namespace Virtual
 		uint64_t* pdv = (uint64_t*) pd;
 		uint64_t* ptv = (uint64_t*) pt;
 
+		// Log("virt: %x, pdpt: %x, pd: %x, pt: %x, pg: %x", virt, pdptv, pdv, ptv, pg);
+		// UHALT();
 
 		if(cow)
 		{
@@ -826,10 +808,10 @@ namespace Virtual
 
 			// we need to copy the old bytes to the new page.
 			// _old_ should contain the virtual address of the parent
-			Virtual::MapAddress(cr2 & I_AlignMask, np, 0x807);
+			Virtual::MapAddress(cr2 & I_AlignMask, np, 0x07);
 			Virtual::MapAddress(TemporaryVirtualMapping, old, 0x07);
 
-			Log("Copying 0x1000 bytes from %x to %x (error: %x)", old, cr2 & I_AlignMask, errorcode);
+			Log(3, "Copying 0x1000 bytes from phys %x to %x (error: %x)", old, cr2 & I_AlignMask, errorcode);
 			Memory::CopyOverlap((void*) (cr2 & I_AlignMask) , (void*) TemporaryVirtualMapping, 0x1000);
 			Virtual::UnmapAddress(TemporaryVirtualMapping);
 

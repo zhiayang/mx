@@ -370,7 +370,6 @@ namespace Multitasking
 		OpenFile(proc->iocontext, "/dev/stdlog", 0);
 
 		Log("Forking process from PID %d, new PID %d, CR3 %x", proc->Parent->ProcessID, proc->ProcessID, proc->VAS->PML4);
-		Log("Stack pointer for new process's thread: %x", proc->Threads.front()->StackPointer);
 
 		EnableScheduler();
 		return proc;

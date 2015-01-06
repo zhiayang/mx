@@ -375,8 +375,6 @@ namespace StandardIO
 		bool DisplaySign = false;
 		bool OmitZeroX = false;
 		bool IsParsingPrecision = false;
-		bool IsParsingWidth = false;
-		// bool ReverseHexEndianness = false;
 		bool LeftAlign = false;
 		bool PadZeroes = false;
 		bool PadSignedSpace = false;
@@ -587,7 +585,6 @@ namespace StandardIO
 						continue;
 
 					case '^':
-						// ReverseHexEndianness = true;
 						IsFormat = true;
 						continue;
 
@@ -602,26 +599,12 @@ namespace StandardIO
 						continue;
 
 
-
-
 					// Width/precision
 					case '.':
 						IsParsingPrecision = true;
 						IsFormat = true;
 						continue;
 
-					case '1':
-					case '2':
-					case '3':
-					case '4':
-					case '5':
-					case '6':
-					case '7':
-					case '8':
-					case '9':
-						IsParsingWidth = true;
-						IsFormat = true;
-						continue;
 
 					default:
 						if(IsParsingPrecision)
@@ -647,7 +630,7 @@ namespace StandardIO
 
 							continue;
 						}
-						else if(IsParsingWidth)
+						else
 						{
 							int z1 = 0;
 							uint64_t f1 = i;
@@ -672,7 +655,6 @@ namespace StandardIO
 							IsFormat = true;
 
 							Memory::Set(widthbuf, 0, 8);
-							IsParsingWidth = false;
 							continue;
 						}
 						break;
@@ -683,7 +665,6 @@ namespace StandardIO
 				Precision = -1;
 				Width = -1;
 				IsParsingPrecision = false;
-				IsParsingWidth = false;
 			}
 			else
 			{
