@@ -4,7 +4,6 @@
 
 #include "HeaderFiles/StandardIO.hpp"
 #include <string.h>
-#include <math.h>
 #include "HeaderFiles/Memory.hpp"
 #include "HeaderFiles/Utility.hpp"
 #include <stdlib.h>
@@ -243,6 +242,10 @@ namespace StandardIO
 		return r;
 	}
 
+	#define truncate(x)			((double) ((int64_t) (x)))
+	#define round(x)			(((x) < 0) ? ((double) ((int64_t) ((x) - 0.5))) : ((double) ((int64_t) ((x) + 0.5))))
+
+
 
 
 	static uint8_t PrintFloat(double fl, int8_t precision = 15, void (*pf)(uint8_t) = 0)
@@ -253,10 +256,10 @@ namespace StandardIO
 		}
 
 		// Put integer part first
-		PrintInteger_Signed((int64_t) trunc(fl), -1, pf);
+		PrintInteger_Signed((int64_t) truncate(fl), -1, pf);
 		PrintChar('.', pf);
 
-		if(trunc(fl) == fl)
+		if(truncate(fl) == fl)
 		{
 			return (uint8_t) precision;
 		}
@@ -267,7 +270,7 @@ namespace StandardIO
 		}
 
 		// Get decimal part
-		fl -= trunc(fl);
+		fl -= truncate(fl);
 
 		uint32_t digit = 0;
 		while(fl > 0 && precision > 0)
