@@ -96,10 +96,11 @@ namespace LoadBinary
 				(*allocatedpgs)[actualvirt] = true;
 
 				uint64_t t = Physical::AllocatePage();
-				Virtual::MapAddress(actualvirt, t, 0x07, (Virtual::PageMapStructure*) proc->CR3);
+				assert(Virtual::AllocateVirtual(1, actualvirt, proc->VAS, t) == actualvirt);
+				Virtual::MapAddress(actualvirt, t, 0x07, proc->VAS->PML4);
 
 				// map it to this address space for a bit.
-				Virtual::MapAddress(TemporaryVirtualMapping + actualvirt, t, 0x03);
+				Virtual::MapAddress(TemporaryVirtualMapping + actualvirt, t, 0x07);
 			}
 
 			if(ProgramHeader->ProgramMemorySize > ProgramHeader->ProgramFileSize)
@@ -109,15 +110,11 @@ namespace LoadBinary
 			}
 
 			Memory::Copy((void*) (TemporaryVirtualMapping + ProgramHeader->ProgramVirtualAddress), (void*) (this->buffer + ProgramHeader->ProgramOffset), ProgramHeader->ProgramFileSize);
+		}
 
-
-			for(uint64_t m = 0; m < (ProgramHeader->ProgramMemorySize + 0x1000) / 0x1000; m++)
-			{
-				uint64_t actualvirt = (ProgramHeader->ProgramVirtualAddress + (m * 0x1000)) & ~0xFFF;
-
-				// unmap what we did just now.
-				Virtual::UnmapAddress(TemporaryVirtualMapping + actualvirt);
-			}
+		for(auto pair : *allocatedpgs)
+		{
+			Virtual::UnmapAddress(TemporaryVirtualMapping + pair.first);
 		}
 
 		delete allocatedpgs;

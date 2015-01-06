@@ -87,10 +87,16 @@ namespace SystemCalls
 		return thr->ThreadID;
 	}
 
-	extern "C" void Syscall_SpawnProcess(const char* ExecutableFilename, const char* ProcessName)
+	extern "C" pid_t Syscall_SpawnProcess(const char* ExecutableFilename, const char* ProcessName)
 	{
 		auto proc = LoadBinary::Load(ExecutableFilename, ProcessName);
+		if(!proc)
+			return 0;
+
+		assert(proc);
 		Multitasking::AddToQueue(proc);
+
+		return proc->ProcessID;
 	}
 
 	extern "C" uint64_t Syscall_GetPID()

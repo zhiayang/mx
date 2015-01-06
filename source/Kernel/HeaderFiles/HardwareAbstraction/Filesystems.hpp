@@ -75,9 +75,6 @@ namespace Kernel
 					rde::vector<fileentry*>* fds;
 				};
 
-				extern FSDriver* driver_stdin;
-				extern FSDriver* driver_stdout;
-				extern FSDriver* driver_ipcmsg;
 
 				void Initialise();
 				void InitIO();
@@ -197,6 +194,22 @@ namespace Kernel
 				public:
 					FSDriverStdout();
 					~FSDriverStdout() override;
+					bool Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms) override;
+					bool Delete(VFS::vnode* node, const char* path) override;
+					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
+					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
+					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
+					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
+					void Flush(VFS::vnode* node);
+
+					rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+			};
+
+			class FSDriverStdlog : public FSDriver
+			{
+				public:
+					FSDriverStdlog();
+					~FSDriverStdlog() override;
 					bool Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms) override;
 					bool Delete(VFS::vnode* node, const char* path) override;
 					bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;

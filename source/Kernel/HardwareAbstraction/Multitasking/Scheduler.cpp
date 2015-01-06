@@ -36,10 +36,10 @@ namespace Multitasking
 		PendingSleepList = new rde::list<Thread*>();
 
 		mainRunQueue = new RunQueue();
-		mainRunQueue->queue = new rde::list<Thread*>*[NUM_PRIO];
+		mainRunQueue->queue = new rde::vector<Thread*>*[NUM_PRIO];
 
 		for(int i = 0; i < NUM_PRIO; i++)
-			mainRunQueue->queue[i] = new rde::list<Thread*>();
+			mainRunQueue->queue[i] = new rde::vector<Thread*>();
 
 		*((int64_t*) 0x2610) = 0;
 	}
@@ -51,27 +51,28 @@ namespace Multitasking
 	RunQueue* getRunQueue()				{ return mainRunQueue; }
 
 	// if, after N number of switches, processes in the low/norm queue don't get to run, run them all to completion.
-	static int StarvationThresholds[NUM_PRIO] = { 1024, 128, 1, 1 };
-
+	// todo: fix scheduler. starvation still happens (unable to prevent cross-starvation)
+	static int StarvationThresholds[NUM_PRIO] = { 64, 16, 1, 1 };
 
 	Thread* GetNextThread()
 	{
 		auto theQueue = getRunQueue();
-		ScheduleCount++;
 		Thread* r = CurrentThread;
 		theQueue->lock();
 		for(int i = 0; i < NUM_PRIO; i++)
 		{
-			if(!theQueue->queue[i]->empty() && (ScheduleCount % StarvationThresholds[i] == 0))
+			if(!theQueue->queue[i]->empty() && (ScheduleCount % StarvationThresholds[i]) == 0)
 			{
 				r = theQueue->queue[i]->front();
-				theQueue->queue[i]->pop_front();
+				theQueue->queue[i]->erase(theQueue->queue[i]->begin());
 				theQueue->queue[i]->push_back(r);
+				break;
 			}
 		}
 
 		if(r == nullptr)
 		{
+			Log(3, "FATAL: Thread was null!");
 			// error recovery: switch to the kernel thread
 			CurrentThread = KernelProcess->Threads.front();
 			r = CurrentThread;
@@ -79,6 +80,8 @@ namespace Multitasking
 		}
 
 		theQueue->unlock();
+
+		ScheduleCount++;
 		return r;
 	}
 
@@ -90,9 +93,7 @@ namespace Multitasking
 			{
 				for(uint64_t i = 0, s = PendingSleepList->size(); i < s; i++)
 				{
-					SleepList->push_back(PendingSleepList->front());
-					PendingSleepList->pop_front();
-
+					SleepList->push_back(PendingSleepList->pop_front());
 					SleepList->back()->StackPointer = context;
 				}
 			}
@@ -129,24 +130,20 @@ namespace Multitasking
 		CurrentThread->currenterrno = *((int64_t*) 0x2610);
 		CurrentThread = GetNextThread();
 
+		// if(isfork)
+		// {
+		// 	while(CurrentThread->Parent->Name[0] == 'a')
+		// 	{
+		// 		CurrentThread = GetNextThread();
+		// 		// Log(3, "A");
+		// 	}
+		// }
 
 		if(CurrentThread->Parent->Flags & 0x1)
 		{
 			// this tells switch.s (on return) that we need to return to user-mode.
 			*((uint64_t*) 0x2608) = 0xFADE;
 		}
-
-		if(CurrentThread->Parent->CR3 != CurrentCR3)
-		{
-			// Only change the value in cr3 if we need to, to avoid trashing the TLB.
-			*((uint64_t*) 0x2600) = CurrentThread->Parent->CR3;
-
-			CurrentCR3 = CurrentThread->Parent->CR3;
-			MemoryManager::Virtual::SwitchPML4T((MemoryManager::Virtual::PageMapStructure*) CurrentCR3);
-		}
-		else
-			*((uint64_t*) 0x2600) = 0;
-
 
 
 		// set tss
@@ -156,12 +153,31 @@ namespace Multitasking
 		uint64_t tlsptr = (uintptr_t) &CurrentThread->tlsptr;
 		SetTLS(tlsptr);
 
+
+		if((uint64_t) CurrentThread->Parent->VAS->PML4 != CurrentCR3)
+		{
+			// Only change the value in cr3 if we need to, to avoid trashing the TLB.
+			*((uint64_t*) 0x2600) = (uint64_t) CurrentThread->Parent->VAS->PML4;
+
+			CurrentCR3 = (uint64_t) CurrentThread->Parent->VAS->PML4;
+			MemoryManager::Virtual::SwitchPML4T((MemoryManager::Virtual::PageMapStructure*) CurrentCR3);
+		}
+		else
+		{
+			*((uint64_t*) 0x2600) = 0;
+		}
+
 		return CurrentThread->StackPointer;
 	}
 
-
-
-
+	extern "C" void VerifySchedule()
+	{
+		if(CurrentThread->Parent->Name[0] == 'b')
+		{
+			// Utilities::StackDump((uint64_t*) CurrentThread->StackPointer, 20);
+			// HALT("");
+		}
+	}
 
 	extern "C" void YieldCPU()
 	{
@@ -192,7 +208,7 @@ namespace Multitasking
 		}
 		else
 		{
-			return CurrentThread->Parent->CR3;
+			return (uint64_t) CurrentThread->Parent->VAS->PML4;
 		}
 	}
 

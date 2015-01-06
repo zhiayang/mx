@@ -32,9 +32,10 @@ namespace Filesystems
 		static rde::vector<Filesystem*>* mountedfses;
 		static rde::hash_map<id_t, vnode*>* vnodepool;
 
-		FSDriver* driver_stdin;
-		FSDriver* driver_stdout;
-		FSDriver* driver_ipcmsg;
+		static FSDriver* driver_stdin;
+		static FSDriver* driver_stdout;
+		static FSDriver* driver_stdlog;
+		static FSDriver* driver_ipcmsg;
 
 		static IOContext* getctx()
 		{
@@ -68,16 +69,20 @@ namespace Filesystems
 			auto ConsoleFSD = new FSDriverConsole();
 			driver_stdin = new FSDriverStdin();
 			driver_stdout = new FSDriverStdout();
+			driver_stdlog = new FSDriverStdlog();
 			driver_ipcmsg = new FSDriverIPCMsg();
 
 			Mount(nullptr, ConsoleFSD, "/dev/console");
 			Mount(nullptr, driver_stdin, "/dev/stdin");
 			Mount(nullptr, driver_stdout, "/dev/stdout");
+			Mount(nullptr, driver_stdout, "/dev/stdlog");
 			Mount(nullptr, driver_ipcmsg, "/dev/_mq");
 
 			auto ctx = getctx();
 			OpenFile(ctx, "/dev/stdin", 0);
 			OpenFile(ctx, "/dev/stdout", 0);
+			OpenFile(ctx, "/dev/stdlog", 0);
+			OpenFile(ctx, "/dev/stdlog", 0);
 		}
 
 		// this fetches from the pool. used mainly by fsdrivers to avoid creating duplicate vnodes.

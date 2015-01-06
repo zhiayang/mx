@@ -75,9 +75,9 @@ namespace KernelHeap
 
 		else
 		{
-			Log(3, "Expected 'magic' to be %x, got %x", c->Offset ^ c->Size, c->magic);
+			Log(1, "Expected 'magic' to be %x, got %x", c->Offset ^ c->Size, c->magic);
 			HALT("");
-			return 0;
+			return c;
 		}
 	}
 

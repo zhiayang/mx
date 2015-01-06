@@ -5,7 +5,9 @@
 
 #include "stdint.h"
 #include "signal.h"
-#pragma once
+
+#ifndef __pthread_h
+#define __pthread_h
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,4 +58,6 @@ int setjmp(jmp_buf buf);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

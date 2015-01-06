@@ -21,7 +21,32 @@ namespace Multitasking
 	uint64_t NumThreads = 0;
 	uint64_t NumProcesses = 0;
 
-	static void SetupStackThread_Kern(Thread* thread, uint64_t u, uint64_t f, void* p1, void* p2, void* p3, void* p4, void* p5, void* p6)
+	static uint64_t* SetupThreadRegs(Thread* thread, uint64_t* stack, Thread_attr* attr)
+	{
+		(void) thread;
+
+		*--stack = attr->regs.r15;													// R15 (-48)
+		*--stack = attr->regs.r14;													// R14 (-56)
+		*--stack = attr->regs.r13;													// R13 (-64)
+		*--stack = attr->regs.r12;													// R12 (-72)
+		*--stack = attr->regs.r11;													// R11 (-80)
+		*--stack = attr->regs.r10;													// R10 (-88)
+		*--stack = (uint64_t) (attr->a6 ? attr->a6 : (void*) attr->regs.r9);		// R9 (-96)
+		*--stack = (uint64_t) (attr->a5 ? attr->a5 : (void*) attr->regs.r8);		// R8 (-104)
+
+		*--stack = (uint64_t) (attr->a3 ? attr->a3 : (void*) attr->regs.rdx);		// RDX (-112)
+		*--stack = (uint64_t) (attr->a4 ? attr->a4 : (void*) attr->regs.rcx);		// RCX (-120)
+		*--stack = attr->regs.rbx;													// RBX (-128)
+		*--stack = attr->regs.rax;													// RAX (-136)
+
+		*--stack = attr->regs.rbp;													// RBP (-144)
+		*--stack = (uint64_t) (attr->a2 ? attr->a2 : (void*) attr->regs.rsi);		// RSI (-152)	(argv)
+		*--stack = (uint64_t) (attr->a1 ? attr->a1 : (void*) attr->regs.rdi);		// RDI (-160)	(argc)
+
+		return stack;
+	}
+
+	static void SetupStackThread_Kern(Thread* thread, uint64_t u, uint64_t f, Thread_attr* attr)
 	{
 		uint64_t* stack = (uint64_t*) thread->StackPointer;
 
@@ -30,37 +55,18 @@ namespace Multitasking
 		*usp = (uint64_t) Multitasking::ExitThread;
 
 		// kernel thread
-		*--stack = 0x10;					// SS (-8)
-		*--stack = u + DefaultRing3StackSize - 8;	// User stack pointer (-16)
-		*--stack = 0x202;					// RFLAGS (-24)
-		*--stack = 0x08;					// CS (-32)
-		*--stack = (uint64_t) f;			// RIP (-40)
+		*--stack = 0x10;															// SS (-8)
+		*--stack = u + DefaultRing3StackSize - 8;									// User stack pointer (-16)
+		*--stack = 0x202;															// RFLAGS (-24)
+		*--stack = 0x08;															// CS (-32)
+		*--stack = (uint64_t) f;													// RIP (-40)
 
-		*--stack = 0;						// R15 (-48)
-		*--stack = 0;						// R14 (-56)
-		*--stack = 0;						// R13 (-64)
-		*--stack = 0;						// R12 (-72)
-		*--stack = 0;						// R11 (-80)
-		*--stack = 0;						// R10 (-88)
-		*--stack = (uint64_t) p6;			// R9 (-96)
-		*--stack = (uint64_t) p5;			// R8 (-104)
-
-		*--stack = (uint64_t) p3;			// RDX (-112)
-		*--stack = (uint64_t) p4;			// RCX (-120)
-		*--stack = 0;						// RBX (-128)
-		*--stack = 0;						// RAX (-136)
-
-		*--stack = 0;						// RBP (-144)
-		*--stack = (uint64_t) p2;			// RSI (-152)
-		*--stack = (uint64_t) p1;			// RDI (-160)
-
-		thread->StackPointer = (uint64_t) stack;
+		thread->StackPointer = (uint64_t) SetupThreadRegs(thread, stack, attr);
 	}
 
-	static void SetupStackThread_Proc(Thread* thread, uint64_t u, uint64_t stacksize, uint64_t f, void* p1, void* p2, void* p3, void* p4, void* p5, void* p6)
+	static void SetupStackThread_Proc(Thread* thread, uint64_t u, uint64_t physu, uint64_t physks, uint64_t stacksize, uint64_t f, Thread_attr* attr)
 	{
 		uint64_t* stack = (uint64_t*) thread->StackPointer;
-		// put argv* and envp* on stack.
 
 		if(stacksize == 0)
 			stacksize = DefaultRing3StackSize;
@@ -68,43 +74,48 @@ namespace Multitasking
 		// need to insert a return statement here that will call the killthread function.
 		// it's kinda dangerous, because we're jumping directly to kernel code
 		uint64_t* usp = (uint64_t*) (u + stacksize - 8);
-		*usp = (uint64_t) Multitasking::ExitThread_Userspace;
 
-		// user thread (always)
-		*--stack = 0x23;					// SS
-		*--stack = u + (stacksize) - 8;		// User stack pointer
-		*--stack = 0x202;					// RFLAGS
-		*--stack = 0x1B;					// CS
-		*--stack = (uint64_t) f;			// RIP (-40)
+		// probably not in the same address space anyway
+		uint64_t oldstack = (uint64_t) stack;
+		physks += (stacksize - 0x1000);
 
-		*--stack = 0;						// R15 (-48)
-		*--stack = 0;						// R14 (-56)
-		*--stack = 0;						// R13 (-64)
-		*--stack = 0;						// R12 (-72)
-		*--stack = 0;						// R11 (-80)
-		*--stack = 0;						// R10 (-88)
-		*--stack = (uint64_t) p5;			// R9 (-96)
-		*--stack = (uint64_t) p6;			// R8 (-104)
+		{
+			Virtual::MapAddress(TemporaryVirtualMapping, (physu + stacksize - 8) & I_AlignMask, 0x07);
 
-		*--stack = (uint64_t) p3;			// RDX (-112)
-		*--stack = (uint64_t) p4;			// RCX (-120)
-		*--stack = 0;						// RBX (-128)
-		*--stack = 0;						// RAX (-136)
+			uint64_t uspv = (uint64_t) usp;
+			uint64_t* tmpusp = (uint64_t*) (TemporaryVirtualMapping + (uspv - (uspv & I_AlignMask)));
 
-		*--stack = 0;						// RBP (-144)
-		*--stack = (uint64_t) p2;			// RSI (-152)	(argv)
-		*--stack = (uint64_t) p1;			// RDI (-160)	(argc)
+			*tmpusp = (uint64_t) Multitasking::ExitThread_Userspace;
+			Virtual::UnmapAddress(TemporaryVirtualMapping);
 
-		thread->StackPointer = (uint64_t) stack;
+
+			Virtual::MapAddress(TemporaryVirtualMapping + oldstack - 0x1000, physks, 0x07);
+			stack = (uint64_t*) (TemporaryVirtualMapping + (uint64_t) oldstack);
+		}
+
+		{
+			// user thread (always)
+			*--stack = 0x23;															// SS
+			*--stack = u + stacksize - 8;												// User stack pointer
+			*--stack = 0x202;															// RFLAGS
+			*--stack = 0x1B;															// CS
+			*--stack = (uint64_t) f;													// RIP (-40)
+
+			thread->StackPointer = (uint64_t) SetupThreadRegs(thread, stack, attr) - TemporaryVirtualMapping;
+			Virtual::UnmapAddress(TemporaryVirtualMapping + oldstack - 0x1000);
+		}
 	}
 
-	static void SetupStackThread(Thread* thread, uint64_t u, uint64_t us, uint64_t f, void* p1, void* p2, void* p3, void* p4, void* p5, void* p6)
+	static void SetupStackThread(Thread* thread, uint64_t u, uint64_t physu, uint64_t physks, uint64_t stacksz, uint64_t f, Thread_attr* attr)
 	{
 		if(thread->Parent == Kernel::KernelProcess)
-			SetupStackThread_Kern(thread, u, f, p1, p2, p3, p4, p5, p6);
-
+		{
+			SetupStackThread_Kern(thread, u, f, attr);
+		}
 		else
-			SetupStackThread_Proc(thread, u, us, f, p1, p2, p3, p4, p5, p6);
+		{
+			SetupStackThread_Proc(thread, u, physu, physks, stacksz, f, attr);
+		}
 	}
 
 	Thread* CreateThread(Process* Parent, void (*Function)(), uint8_t Priority, void* p1, void* p2, void* p3, void* p4, void* p5, void* p6)
@@ -127,25 +138,27 @@ namespace Multitasking
 
 	Thread* CreateThread(Process* Parent, void (*Function)(), Thread_attr* oattr)
 	{
+		DisableScheduler();
 		Thread* thread = new Thread();
 		Thread_attr* attr = 0;
 
-		// allocate user stack.
+		// allocate kernel stack.
 		uint64_t k = 0;
-		if(Parent->CR3 != GetKernelCR3())
+		uint64_t physks = 0;
+		if((uint64_t) Parent->VAS->PML4 != GetKernelCR3())
 		{
 			auto pk = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
 			k = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS, pk);
 
 			Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x07, Parent->VAS->PML4);
-
-			if(Parent->VAS->PML4 != Virtual::GetCurrentPML4T())
-				Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x03);
+			physks = pk;
 		}
 		else
 		{
 			k = Virtual::AllocatePage(DefaultRing3StackSize / 0x1000);
+			physks = Virtual::GetVirtualPhysical(k);
 		}
+
 
 		// check.
 		if(oattr == nullptr)
@@ -158,43 +171,41 @@ namespace Multitasking
 
 		// allocate user stack.
 		uint64_t u = 0;
-		uint64_t us = 0;
+		uint64_t ustacksz = 0;
+		uint64_t physu = 0;
 		if(attr->stackptr == 0 || attr->stacksize == 0)
 		{
-			uint64_t pu = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
-			u = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS, pu);
-			us = DefaultRing3StackSize;
+			physu = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
+			u = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS, physu);
+			ustacksz = DefaultRing3StackSize;
 
-			Virtual::MapRegion(u, pu, DefaultRing3StackSize / 0x1000, 0x07, (Virtual::PageMapStructure*) Parent->CR3);
+			Virtual::MapRegion(u, physu, DefaultRing3StackSize / 0x1000, 0x07, Parent->VAS->PML4);
 		}
 		else
 		{
 			u = attr->stackptr;
-			us = attr->stacksize;
+			ustacksz = attr->stacksize;
+			HALT("Unsupported");
 		}
 
-		thread->TopOfStack			= k + us;
-		thread->StackPointer			= thread->TopOfStack;
+		thread->StackSize			= DefaultRing3StackSize;
+		thread->TopOfStack			= k + ustacksz;
+		thread->StackPointer		= thread->TopOfStack;
 		thread->Thread				= Function;
 		thread->State				= STATE_NORMAL;
 		thread->ThreadID			= NumThreads;
 		thread->Parent				= Parent;
-		thread->messagequeue			= new rde::list<uintptr_t>();
-		thread->Priority				= attr->priority;
-		thread->ExecutionTime			= 0;
+		thread->Priority			= attr->priority;
+		thread->ExecutionTime		= 0;
 		thread->tlsptr				= new uint8_t[Parent->tlssize];
 		thread->CrashState			= new ThreadRegisterState_type;
 		thread->flags				= Parent->Flags;
-		thread->currenterrno			= 0;
+		thread->currenterrno		= 0;
 
+		SetupStackThread(thread, u, physu, physks, ustacksz, (uint64_t) Function, attr);
 		Parent->Threads.push_back(thread);
 
-		SetupStackThread(thread, u, us, (uint64_t) Function, attr->a1, attr->a2, attr->a3, attr->a4, attr->a5, attr->a6);
 		NumThreads++;
-
-		// unmap
-		if(Parent->CR3 != (uint64_t) Virtual::GetCurrentPML4T())
-			Virtual::UnmapRegion(k, DefaultRing3StackSize / 0x1000);
 
 		if(FirstProc)
 		{
@@ -206,7 +217,30 @@ namespace Multitasking
 		if(oattr == nullptr)
 			delete attr;
 
+		EnableScheduler();
 		return thread;
+	}
+
+	Thread* CloneThread(Thread* orig)
+	{
+		Thread* ret = new Thread();
+		ret->ThreadID		= NumThreads, NumThreads++;
+		ret->StackPointer	= orig->StackPointer;
+		ret->TopOfStack		= orig->TopOfStack;
+		ret->StackSize		= orig->StackSize;
+		ret->State			= orig->State;
+		ret->Sleep			= orig->Sleep;
+		ret->Priority		= orig->Priority;
+		ret->flags			= orig->flags;
+		ret->ExecutionTime	= orig->ExecutionTime;
+		ret->Parent			= orig->Parent;
+		ret->currenterrno	= orig->currenterrno;
+		ret->returnval		= orig->returnval;
+		ret->Thread			= orig->Thread;
+		ret->CrashState		= new ThreadRegisterState_type;
+		ret->tlsptr			= new uint8_t[orig->Parent->tlssize];
+
+		return ret;
 	}
 
 
@@ -229,7 +263,7 @@ namespace Multitasking
 	Process* CreateProcess(const char name[64], uint8_t Flags, uint64_t tlssize, void (*Function)(), uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
 	{
 		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
-
+		DisableScheduler();
 		Process* process = new Process();
 
 		PageMapStructure* PML4 = FirstProc ? (PageMapStructure*)(GetKernelCR3()) : (PageMapStructure*) Virtual::CreateVAS();
@@ -240,7 +274,6 @@ namespace Multitasking
 
 		process->Flags					= Flags;
 		process->ProcessID				= NumProcesses;
-		process->CR3					= (uint64_t) PML4;
 		process->VAS					= new Virtual::VirtualAddressSpace(PML4);
 		process->SignalHandlers			= (sighandler_t*) KernelHeap::AllocateChunk(sizeof(sighandler_t) * __SIGCOUNT);
 		process->iocontext				= new Filesystems::IOContext();
@@ -262,7 +295,6 @@ namespace Multitasking
 
 		String::Copy(process->Name, name);
 
-
 		NumProcesses++;
 		(void) CreateThread(process, Function, Priority, a1, a2, a3, a4, a5, a6);
 
@@ -274,11 +306,14 @@ namespace Multitasking
 			// setup the descriptors.
 			// manually.
 			using namespace Filesystems::VFS;
-			assert(OpenFile(process->iocontext, "/dev/stdin", 0)->fd == 0);
-			assert(OpenFile(process->iocontext, "/dev/stdout", 0)->fd == 1);
+			OpenFile(process->iocontext, "/dev/stdin", 0);
+			OpenFile(process->iocontext, "/dev/stdout", 0);
+			OpenFile(process->iocontext, "/dev/stderr", 0);
+			OpenFile(process->iocontext, "/dev/stdlog", 0);
 		}
 
 		Log("Creating new process in VAS (%s): CR3(phys): %x, PID %d", name, (uint64_t) PML4, process->ProcessID);
+		EnableScheduler();
 		return process;
 	}
 
@@ -288,55 +323,79 @@ namespace Multitasking
 	// the only thread shall be the current thread.
 	// child proc gets ret = 0, parent proc gets pid of child.
 	// -1 on error.
-	Process* ForkProcess(const char name[64], uint8_t Priority, void* a1, void* a2, void* a3, void* a4, void* a5, void* a6)
+	Process* ForkProcess(const char name[64], Thread_attr* attr)
 	{
+		(void) attr;
+
+		DisableScheduler();
 		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
 
-		Process* process = new Process();
+		Process* proc = new Process();
+		Thread* curthr = GetCurrentThread();
+		PageMapStructure* PML4 = (PageMapStructure*) Virtual::CreateVAS();
 
-		PageMapStructure* PML4 = FirstProc ? (PageMapStructure*)(GetKernelCR3()) : (PageMapStructure*) Virtual::CreateVAS();
+		proc->Parent				= Multitasking::GetCurrentProcess();
+		proc->Flags					= proc->Parent->Flags;
+		proc->ProcessID				= NumProcesses;
+		proc->VAS					= new Virtual::VirtualAddressSpace(PML4);
+		proc->SignalHandlers		= (sighandler_t*) KernelHeap::AllocateChunk(sizeof(sighandler_t) * __SIGCOUNT);
+		proc->iocontext				= new Filesystems::IOContext();
+		proc->tlssize				= proc->Parent->tlssize;
 
-		process->Parent = Multitasking::GetCurrentProcess();
-		process->Flags					= process->Parent->Flags;
-		process->ProcessID				= NumProcesses;
-		process->CR3					= (uint64_t) PML4;
-		process->VAS					= new Virtual::VirtualAddressSpace(PML4);
-		process->SignalHandlers			= (sighandler_t*) KernelHeap::AllocateChunk(sizeof(sighandler_t) * __SIGCOUNT);
-		process->iocontext				= new Filesystems::IOContext();
-		process->tlssize				= process->Parent->tlssize;
 		for(int i = 0; i < __SIGCOUNT; i++)
-			process->SignalHandlers[i] = __signal_ignore;
+			proc->SignalHandlers[i] = __signal_ignore;
 
-		Virtual::SetupVAS(process->VAS);
-		String::Copy(process->Name, name);
+		Virtual::CopyVAS(proc->Parent->VAS, proc->VAS);
+		String::Copy(proc->Name, name);
 
 		NumProcesses++;
 
-		(void) CreateThread(process, (void (*)()) GetCurrentThread(), Priority, a1, a2, a3, a4, a5, a6);
+		// copy the thread.
+		Thread* newt = CloneThread(curthr);
+		newt->Parent = proc;
+		newt->StackPointer = newt->TopOfStack - 160;
+		proc->Threads.push_back(newt);
 
-		if(FirstProc)
-			FirstProc = false;
 
+		// hacky? maybe.
+		// works? not really
+
+		// setup the descriptors.
+		// manually.
+		// sorry.
+		using namespace Filesystems::VFS;
+		OpenFile(proc->iocontext, "/dev/stdin", 0);
+		OpenFile(proc->iocontext, "/dev/stdout", 0);
+		OpenFile(proc->iocontext, "/dev/stderr", 0);
+		OpenFile(proc->iocontext, "/dev/stdlog", 0);
+
+		Log("Forking process from PID %d, new PID %d, CR3 %x", proc->Parent->ProcessID, proc->ProcessID, proc->VAS->PML4);
+		Log("Stack pointer for new process's thread: %x", proc->Threads.front()->StackPointer);
+
+		EnableScheduler();
+		return proc;
+	}
+
+	extern "C" int64_t Syscall_ForkProcess()
+	{
+		Process* proc = ForkProcess("b", 0);
+		Multitasking::AddToQueue(proc);
+
+
+		// fuck around with the stack of the child process
+		// check if we are *not* the child process.
+		if(proc->ProcessID != GetCurrentProcess()->ProcessID)
+		{
+			return proc->ProcessID;
+		}
 		else
 		{
-			// setup the descriptors.
-			// manually.
-			using namespace Filesystems::VFS;
-			assert(OpenFile(process->iocontext, "/dev/stdin", 0)->fd == 0);
-			assert(OpenFile(process->iocontext, "/dev/stdout", 0)->fd == 1);
+			return 0;
 		}
-
-		Log("Forking process from PID %d, new PID %d", process->Parent->ProcessID, process->ProcessID);
-		return process;
 	}
 }
 }
 }
-
-
-
-
-
 
 
 

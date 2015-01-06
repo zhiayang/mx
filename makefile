@@ -17,37 +17,39 @@ export AR			:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-ar
 export RANLIB		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-ranlib
 export MOUNTPATH	:= $(shell tools/getpath.sh)
 
-
 # we use clang only for the kernel, don't pollute makefiles
-CXX_		= clang++
-GCCVERSION	= 4.9.1
+CXX_				= clang++
+GCCVERSION			= 4.9.1
 
-WARNINGS	= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-align -Wno-unreachable-code -Wno-gnu -Wno-missing-prototypes -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-sign-conversion -Wno-old-style-cast
+WARNINGS			= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-align -Wno-unreachable-code -Wno-gnu -Wno-missing-prototypes -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-sign-conversion -Wno-old-style-cast
 
-CXXFLAGS	= -m64 -Weverything -msse3 -g -integrated-as -O2 -fPIC -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -c
+CXXFLAGS			= -m64 -Weverything -msse3 -g -integrated-as -O2 -fPIC -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -c
 
-LDFLAGS	= --gc-sections -z max-page-size=0x1000 -T link.ld -L$(SYSROOT)/usr/lib
-
-
-MEMORY	= 1024
+LDFLAGS				= --gc-sections -z max-page-size=0x1000 -T link.ld -L$(SYSROOT)/usr/lib
 
 
-SSRC	= $(shell find source -iname "*.s")
-CXXSRC	= $(shell find source -iname "*.cpp")
+MEMORY				= 1024
 
-SOBJ	= $(SSRC:.s=.s.o)
-CXXOBJ	= $(CXXSRC:.cpp=.cpp.o)
 
-CXXDEPS	= $(CXXOBJ:.o=.d)
+SSRC				= $(shell find source -iname "*.s")
+CXXSRC				= $(shell find source -iname "*.cpp")
+
+SOBJ				= $(SSRC:.s=.s.o)
+CXXOBJ				= $(CXXSRC:.cpp=.cpp.o)
+
+CXXDEPS				= $(CXXOBJ:.o=.d)
 
 .DEFAULT_GOAL = all
 -include $(CXXDEPS)
 
 
 
+NUMFILES			= $$(($(words $(CXXSRC)) + $(words $(SSRC))))
 
-LIBRARIES         = -liris -lm -lsupc++ -lgcc -lrdestl
-OUTPUT            = build/kernel.mxa
+
+
+LIBRARIES			= -liris -lsupc++ -lgcc -lrdestl
+OUTPUT				= build/kernel.mxa
 
 
 .PHONY: builduserspace buildlib mountdisk clean all cleandisk copyheader
@@ -82,19 +84,23 @@ $(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) buildus
 	@if [ ! -a build.dmf ]; then tools/updatebuild.sh; fi;
 	@touch build/.dmf
 
-	@echo $(notdir $<)
 	@$(AS) $< -o $@
+
+	@$(eval DONEFILES += "S")
+	@printf "\r                                               \r$(words $(DONEFILES)) / $(NUMFILES) ($(notdir $<))"
 
 
 %.cpp.o: %.cpp
 	@if [ ! -a build.dmf ]; then tools/updatebuild.sh; fi;
 	@touch build/.dmf
 
-	@echo $(notdir $<)
 	@$(CXX_) $(CXXFLAGS) $(WARNINGS) -MMD -MP -o $@ $<
 
+	@$(eval DONEFILES += "CPP")
+	@printf "\r                                               \r$(words $(DONEFILES)) / $(NUMFILES) ($(notdir $<))"
+
 builduserspace:
-	@echo "# Building userspace applications"
+	@printf "\n# Building userspace applications"
 	@$(MAKE) -C applications/
 
 copyheader:

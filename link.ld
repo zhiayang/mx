@@ -6,11 +6,11 @@ SECTIONS
 	. = 0x00200000;
 	.text : ALIGN(0x1000)
 	{
-		*(.text)
+		*(.text*)
 		*(.gnu.linkonce.t*)
-	}
-	.rodata : ALIGN(0x1000)
-	{
+		*(.rodata*)
+		*(.gnu.linkonce.r*)
+
 		StartConstructors = .;
 		*(SORT(.Constructors*))
 		EndConstructors = .;
@@ -20,13 +20,11 @@ SECTIONS
 		*(SORT(.Destructors))
 		EndDestructors = .;
 
-		*(.rodata*)
-		*(.gnu.linkonce.r*)
 	}
 
 	.data : ALIGN(0x1000)
 	{
-		*(.data)
+		*(.data*)
 		*(.gnu.linkonce.d*)
 	}
 
@@ -34,7 +32,7 @@ SECTIONS
 	{
 		StartBSS = .;
 		*(COMMON)
-		*(.bss)
+		*(.bss*)
 		*(.gnu.linkonce.b*)
 		EndBSS = .;
 	}

@@ -4,7 +4,7 @@
 
 
 
-CXXFLAGS	= -g -Wall -O3 -fPIC -std=gnu++11 -mno-red-zone -fno-exceptions -fno-rtti -c
+CXXFLAGS	= -g -Wall -O2 -fPIC -std=gnu++11 -mno-red-zone -fno-exceptions -fno-rtti -c
 
 CXXSRC	= $(shell find . -name "*.cpp")
 CXXOBJ	:= $(CXXSRC:.cpp=.o)

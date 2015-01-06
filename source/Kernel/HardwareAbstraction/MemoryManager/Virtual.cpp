@@ -25,10 +25,10 @@ namespace Virtual
 
 	// Convert an address into array index of a structure
 	// E.G. int index = I_PML4_INDEX(0xFFFFFFFFFFFFFFFF); // index = 511
-	#define I_PML4_INDEX(addr)		((((uintptr_t)(addr))>>39) & 511)
-	#define I_PDPT_INDEX(addr)		((((uintptr_t)(addr))>>30) & 511)
-	#define I_PD_INDEX(addr)		((((uintptr_t)(addr))>>21) & 511)
-	#define I_PT_INDEX(addr)		((((uintptr_t)(addr))>>12) & 511)
+	#define I_PML4_INDEX(addr)		((((uintptr_t)(addr)) >> 39) & 0x1FF)
+	#define I_PDPT_INDEX(addr)		((((uintptr_t)(addr)) >> 30) & 0x1FF)
+	#define I_PD_INDEX(addr)		((((uintptr_t)(addr)) >> 21) & 0x1FF)
+	#define I_PT_INDEX(addr)		((((uintptr_t)(addr)) >> 12) & 0x1FF)
 
 
 	void Initialise()
@@ -83,6 +83,7 @@ namespace Virtual
 				else if(found->start == addr)
 				{
 					AddressLengthPair* np = new AddressLengthPair(end, found->length - size);
+					vas->pairs->remove(found);
 					vas->pairs->push_back(np);
 					delete found;
 				}
@@ -212,42 +213,25 @@ namespace Virtual
 
 		// if we reach here, we haven't found a match.
 		vas->pairs->push_back(new AddressLengthPair(page, size));
+
+		// TODO: remove matching 'used' pair
 	}
 
-	VirtualAddressSpace* SetupVAS(VirtualAddressSpace* vas)
+	uint64_t GetVirtualPhysical(uint64_t virt, VirtualAddressSpace* v)
 	{
-		// Max 48-bit virtual address space (current implementations)
-		vas->pairs->push_back(new AddressLengthPair(0x01000000, 0xFF000));
-		vas->pairs->push_back(new AddressLengthPair(0xFFFFF00000000000, 0x100000));
-
-		return vas;
-	}
-
-	void DestroyVAS(VirtualAddressSpace* vas)
-	{
-		// free every phys page in vas->used
-		// delete pair objects from both lists
-		// delete both lists
-
+		VirtualAddressSpace* vas = v ? v : Multitasking::GetCurrentProcess()->VAS;
 		assert(vas);
-		assert(vas->used);
-		assert(vas->pairs);
 
 		for(ALPPair* pair : *vas->used)
 		{
-			if(pair->phys > 0)
-				Physical::FreePage(pair->phys, pair->length);
-
-			delete pair;
+			uint64_t end = pair->start + pair->length * 0x1000;
+			if(pair->start >= virt && virt <= end)
+			{
+				return pair->phys + (virt - pair->start);
+			}
 		}
 
-
-		for(AddressLengthPair* pair : *vas->pairs)
-			delete pair;
-
-		delete vas->pairs;
-		delete vas->used;
-		delete vas;
+		return 0;
 	}
 
 	uint64_t AllocatePage(uint64_t size, uint64_t addr, uint64_t flags)
@@ -298,6 +282,76 @@ namespace Virtual
 
 
 
+	VirtualAddressSpace* SetupVAS(VirtualAddressSpace* vas)
+	{
+		// Max 48-bit virtual address space (current implementations)
+		vas->pairs->push_back(new AddressLengthPair(0x01000000, 0xFF000));
+		vas->pairs->push_back(new AddressLengthPair(0xFFFFF00000000000, 0x100000));
+
+		return vas;
+	}
+
+	VirtualAddressSpace* CopyVAS(VirtualAddressSpace* src, VirtualAddressSpace* dest)
+	{
+		for(auto p : *src->pairs)
+			dest->pairs->push_back(new AddressLengthPair(*p));
+
+		for(auto _pair : *src->used)
+		{
+			ALPPair* pair = new ALPPair(*_pair);
+			dest->used->push_back(pair);
+			uint64_t p = Physical::AllocatePage(pair->length);
+			Virtual::MapRegion(pair->start, /*pair->phys*/ p, pair->length, 0x07, dest->PML4);
+			Virtual::MapRegion(TemporaryVirtualMapping, p, pair->length, 0x07);
+
+			// Log("Copying %x bytes from %p to %p", pair->length * 0x1000, pair->start, TemporaryVirtualMapping);
+			Memory::CopyOverlap((void*) TemporaryVirtualMapping, (void*) pair->start, pair->length * 0x1000);
+
+			// for(uint64_t i = 0; i < pair->length; i++)
+			// {
+			// 	// Virtual::MarkCOW(pair->start + (i * 0x1000), dest->PML4);
+			// 	// Log("Marked %x as COW", pair->start + (i * 0x1000));
+			// }
+
+			if(pair->length == 4)
+			{
+				Utilities::StackDump((uint64_t*) (pair->start + 0x4000), 20, true);
+			}
+
+
+			Virtual::UnmapRegion(TemporaryVirtualMapping, pair->length);
+			pair->phys = p;
+		}
+
+		return dest;
+	}
+
+	void DestroyVAS(VirtualAddressSpace* vas)
+	{
+		// free every phys page in vas->used
+		// delete pair objects from both lists
+		// delete both lists
+
+		assert(vas);
+		assert(vas->used);
+		assert(vas->pairs);
+
+		for(ALPPair* pair : *vas->used)
+		{
+			if(pair->phys > 0)
+				Physical::FreePage(pair->phys, pair->length);
+
+			delete pair;
+		}
+
+
+		for(AddressLengthPair* pair : *vas->pairs)
+			delete pair;
+
+		delete vas->pairs;
+		delete vas->used;
+		delete vas;
+	}
 
 
 
@@ -320,8 +374,18 @@ namespace Virtual
 
 
 
+	void ChangeRawCR3(uint64_t newval)
+	{
+		asm volatile("mov %[nv], %%rax; mov %%rax, %%cr3" :: [nv]"g"(newval) : "memory", "rax");
+	}
 
+	uint64_t GetRawCR3()
+	{
+		uint64_t ret = 0;
+		asm volatile("mov %%cr3, %%rax; mov %%rax, %[r]" : [r]"=g"(ret) :: "memory", "rax");
 
+		return ret;
+	}
 
 	void SwitchPML4T(PageMapStructure* PML4T)
 	{
@@ -333,16 +397,9 @@ namespace Virtual
 		return CurrentPML4T;
 	}
 
-	static void invlpg(PageMapStructure* p)
+	void invlpg(PageMapStructure* p)
 	{
-		if(Multitasking::CurrentProcessInRing3())
-		{
-			// asm volatile("mov $0x8, %%r10; mov %[c], %%rdi; int $0xF8" :: [c]"r"((uint64_t) p) : "%r10");
-		}
-		else
-		{
-			asm volatile("invlpg (%0)" : : "a" ((uint64_t) p));
-		}
+		asm volatile("invlpg (%0)" : : "a" ((uint64_t) p));
 	}
 
 
@@ -408,15 +465,12 @@ namespace Virtual
 		}
 
 
-		// Because these are indexes into structures, we need to use MODULO '%'
-		// To change them to relative indexes, not absolute ones.
-
 		(void) DoNotUnmap;
 
 
 		PageMapStructure* PML = (PML4 == 0 ? GetCurrentPML4T() : PML4);
 		bool other = (PML != GetCurrentPML4T());
-		// bool other = false;
+
 		assert(PML);
 
 		if(other)
@@ -659,8 +713,7 @@ namespace Virtual
 		PageMapStructure* pd = 0;
 		PageMapStructure* pt = 0;
 
-		uint64_t ret =  *GetPageTableEntry(VirtAddr, VAS, &pdpt, &pd, &pt);
-
+		uint64_t ret = *GetPageTableEntry(VirtAddr, VAS, &pdpt, &pd, &pt);
 
 		if(VAS != GetCurrentPML4T())
 		{
@@ -679,14 +732,39 @@ namespace Virtual
 		PageMapStructure* pd = 0;
 		PageMapStructure* pt = 0;
 
+
 		uint64_t* pg = GetPageTableEntry(virt, pml, &pdpt, &pd, &pt);
+
+		uint64_t* pdptv = (uint64_t*) pdpt;
+		uint64_t* pdv = (uint64_t*) pd;
+		uint64_t* ptv = (uint64_t*) pt;
+
+
 		if(cow)
 		{
+			*pdptv |= I_CopyOnWrite;
+			*pdptv &= ~I_ReadWrite;
+
+			*pdv |= I_CopyOnWrite;
+			*pdv &= ~I_ReadWrite;
+
+			*ptv |= I_CopyOnWrite;
+			*ptv &= ~I_ReadWrite;
+
 			*pg |= I_CopyOnWrite;
 			*pg &= ~I_ReadWrite;
 		}
 		else
 		{
+			*pdptv &= ~I_CopyOnWrite;
+			*pdptv |= I_ReadWrite;
+
+			*pdv &= ~I_CopyOnWrite;
+			*pdv |= I_ReadWrite;
+
+			*ptv &= ~I_CopyOnWrite;
+			*ptv |= I_ReadWrite;
+
 			*pg &= ~I_CopyOnWrite;
 			*pg |= I_ReadWrite;
 		}
@@ -730,34 +808,36 @@ namespace Virtual
 		PageMapStructure* pd = 0;
 		PageMapStructure* pt = 0;
 
+		// HALT("PF");
+
 		// check if cow.
 		uint64_t* value = GetPageTableEntry(cr2, Multitasking::GetCurrentProcess()->VAS->PML4, &pdpt, &pd, &pt);
 
 		// conditions for cow:
-		// bit 11 (0x800) for COW set, bit 0 (0x1, present bit) not set.
-		if(*value & I_CopyOnWrite && !(*value & I_ReadWrite))
+		// bit 11 (0x800) for COW set, bit 1 (0x2, R/W bit) not set.
+		if(value && (*value & I_CopyOnWrite) && !(*value & I_ReadWrite))
 		{
-			Log("Copy-on-write page detected");
-
 			// allocate a page, copy existing data, then return.
 			uint64_t np = Physical::AllocatePage();
 			uint64_t old = *value & I_AlignMask;
 			uint64_t oldflags = *value & ~I_AlignMask;
 
-			*value = np;
-			*value |= (oldflags | I_ReadWrite);
+			*value = np | (oldflags | I_ReadWrite | I_CopyOnWrite);
 
 			// we need to copy the old bytes to the new page.
 			// _old_ should contain the virtual address of the parent
-			Virtual::MapAddress(*value, np, oldflags);
+			Virtual::MapAddress(cr2 & I_AlignMask, np, 0x807);
+			Virtual::MapAddress(TemporaryVirtualMapping, old, 0x07);
 
-			Memory::Copy((void*) (*value & I_AlignMask) , (void*) old, 0x1000);
+			Log("Copying 0x1000 bytes from %x to %x (error: %x)", old, cr2 & I_AlignMask, errorcode);
+			Memory::CopyOverlap((void*) (cr2 & I_AlignMask) , (void*) TemporaryVirtualMapping, 0x1000);
+			Virtual::UnmapAddress(TemporaryVirtualMapping);
 
-			Log("Successfully allocated new physical page at %x for COW purposes mapped to virtual page %x", np, old);
+			Log("Successfully allocated new physical page at %x for COW purposes mapped to virtual page %x", np, cr2 & I_AlignMask);
 			return true;
 		}
 
-		Log("Invalid access, terminating process...");
+		Log("Invalid access (%x:%x)", value, value ? *value : 0);
 		return false;
 	}
 
@@ -777,11 +857,16 @@ namespace Virtual
 			bottom 1gb is kernel owned.
 			top 1024gb is also kernel owned.
 		*/
-		PageMapStructure* kernelpml4 = (PageMapStructure*) Kernel::GetKernelCR3();
-		PageMapStructure* pdpt = (PageMapStructure*) kernelpml4->Entry[0];
-		// pdpt is guaranteed to exist.
+
+		PageMapStructure* _kernelpml4 = (PageMapStructure*) Kernel::GetKernelCR3();
+		Virtual::MapAddress(TemporaryVirtualMapping, (uint64_t) _kernelpml4, 0x07);
+		PageMapStructure* kernelpml4 = (PageMapStructure*) TemporaryVirtualMapping;
+
+		PageMapStructure* _pdpt = (PageMapStructure*) kernelpml4->Entry[0];
 
 		// bottom 1gb
+		Virtual::MapAddress(TemporaryVirtualMapping + 0x1000, (uint64_t) _pdpt, 0x07);
+		PageMapStructure* pdpt = (PageMapStructure*) (TemporaryVirtualMapping + 0x1000);
 		PageMapStructure* pt = (PageMapStructure*) pdpt->Entry[0];
 
 		// we need to throw this address (aka pointer) into the created things.
@@ -818,19 +903,17 @@ namespace Virtual
 		for(uint64_t i = 0x4000; i < 0x01000000; i += 0x1000)
 		{
 			Virtual::MapAddress(i, i, 0x07, PML4);
-			MarkCOW(i, PML4);
+			// MarkCOW(i, PML4);
 		}
 
 		// Map the LFB.
 		for(uint64_t i = 0; i < Kernel::GetLFBLengthInPages(); i++)
 			Virtual::MapAddress(Kernel::GetFramebufferAddress() + (i * 0x1000), Kernel::GetFramebufferAddress() + (i * 0x1000), 0x07, PML4);
 
-		return (uint64_t) PML4;
-	}
 
-	uint64_t CopyVAS()
-	{
-		return 0;
+		Virtual::UnmapAddress(TemporaryVirtualMapping);
+		Virtual::UnmapAddress(TemporaryVirtualMapping + 0x1000);
+		return (uint64_t) PML4;
 	}
 }
 }

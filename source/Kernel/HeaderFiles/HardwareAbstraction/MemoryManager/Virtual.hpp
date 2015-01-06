@@ -51,7 +51,7 @@ namespace Virtual
 
 	#define I_Present		0x01
 	#define I_ReadWrite		0x02
-	#define I_UserAccess		0x04
+	#define I_UserAccess	0x04
 	#define I_AlignMask		0xFFFFFFFFFFFFF000
 	#define I_NoExecute		0
 	#define I_CopyOnWrite	0x800	// bit 11
@@ -59,17 +59,21 @@ namespace Virtual
 
 
 
-
+	uint64_t GetRawCR3();
+	void ChangeRawCR3(uint64_t newval);
+	void invlpg(PageMapStructure* p);
 	void Initialise();
 	void SwitchPML4T(PageMapStructure* PML4T);
+	void ChangeAddressSpace(PageMapStructure* pms);
 	PageMapStructure* GetCurrentPML4T();
 
 	VirtualAddressSpace* SetupVAS(VirtualAddressSpace* vas);
 	void DestroyVAS(VirtualAddressSpace* vas);
 	uint64_t AllocateVirtual(uint64_t size = 1, uint64_t addr = 0, VirtualAddressSpace* vas = 0, uint64_t phys = 0);
 	void FreeVirtual(uint64_t addr, uint64_t size = 1, VirtualAddressSpace* vas = 0);
+	uint64_t GetVirtualPhysical(uint64_t virt, VirtualAddressSpace* vas = 0);
 
-	uint64_t AllocatePage(uint64_t size = 1, uint64_t addr = 0, uint64_t flags = 0x3);
+	uint64_t AllocatePage(uint64_t size = 1, uint64_t addr = 0, uint64_t flags = 0x7);
 	void FreePage(uint64_t addr, uint64_t size = 1);
 
 
@@ -79,7 +83,7 @@ namespace Virtual
 	void MarkCOW(uint64_t VirtAddr, PageMapStructure* pml);
 	void UnmarkCOW(uint64_t VirtAddr, PageMapStructure* pml);
 
-	void CopyVAS(VirtualAddressSpace* one, VirtualAddressSpace* two);
+	VirtualAddressSpace* CopyVAS(VirtualAddressSpace* src, VirtualAddressSpace* dest);
 	bool HandlePageFault(uint64_t cr2, uint64_t cr3, uint64_t errorcode);
 
 

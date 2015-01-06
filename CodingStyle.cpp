@@ -48,17 +48,19 @@ namespace IsIndentedProperly
 	{
 		// ALWAYS ALWAYS ALWAYS USE TABS.
 		// Spaces WILL BE SHOT.
-		// Braces are ALWAYS on a newline, except under two circumstances:
+		// Braces are ALWAYS on a newline, UNLESS:
 		// 1. namespace declarations (see above)
 		// 2. Single line functions, like so:
 		// void Function() { DoSomething(); }
 
-		// Function names are SHOULD be in ProperCamelCase, UNLESS the name is a single word, in which case
+		// Function names SHOULD be in ProperCamelCase, UNLESS the name is a single word, in which case
 		// names like 'something()' are allowed.
+		// The above clause is no longer strictly enforced.
 
 		// Member variable names CAN be either lowercase or CamelCase.
 		// They can NEVER be halfAssedCamelCase, or stupid_underscore_naming.
 		// variable names CAN be completelylowercase, although this SHOULD be avoided in new code.
+		// The above clause is no longer strictly enforced as well.
 
 		// Unused parameters MUST be silenced, either using
 		UNUSED(Argument1);
@@ -75,6 +77,9 @@ namespace IsIndentedProperly
 		// Dereferencing and/or taking the address places the asterisk or ampersand directly next to the variable name.
 		uint64_t* Pointer = &Argument2;
 		*Pointer = 41;
+
+		// Doing something such as uint64_t *Ptr, or (uint8_t *) Ptr
+		// Will result in termination without prejudice.
 
 		// Variable names in a small scope (function, loop etc) can use non-verbose names:
 		// However, variable names in global scope must be verbose and in CamelCase.
@@ -94,6 +99,9 @@ namespace IsIndentedProperly
 		// However, omitting braces and indenting is allowed.
 		else
 			SomethingElse();
+
+		// For single-statement If/Else if/Else clauses, no line break may be necessary.
+
 
 		// However, if two or more consecutive if statements without braces are needed,
 		// All the if blocks MUST have braces except the inner one, like so:
@@ -143,7 +151,7 @@ namespace IsIndentedProperly
 		// Code SHOULD NOT produce ANY warnings, even on -Weverything mode.
 		// If that warning is legit, but code cannot silence it, place the warning in the makefile.
 
-		// As part of a new rule, code SHOULD NOT #include <Global.hpp>.
+		// As part of a new rule, code SHOULD NOT #include <Kernel.hpp>.
 		// Instead, code SHOULD include specific files, organised by namespace under source/Kernel/HeaderFiles.
 
 		// colons after anything should have spaces on both sides.
@@ -187,6 +195,7 @@ namespace IsIndentedProperly
 		value--;
 
 		// They can NEVER be prefixed; if such an effect is desired, increment before using.
+		// To increase/maintain code legibility, NEVER use (++) or (--) as an expression, only as a statement.
 	}
 }
 }

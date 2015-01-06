@@ -30,48 +30,45 @@ int main(int argc, char** argv)
 	framebuffer	= (uint64_t) argv[1];
 	width		= (uint64_t) argv[2];
 	height		= (uint64_t) argv[3];
-	bpp			= (uint64_t) argv[4] / 4;		// kernel gives us BITS per pixel, but we really only care about BYTES per pixel.
+	bpp			= (uint64_t) argv[4] / 8;		// kernel gives us BITS per pixel, but we really only care about BYTES per pixel.
 
-	printf("Display server online\n\n");
+	printf("Display server online\n");
+	printf("Forking process...\n");
+	int64_t res = Library::SystemCall::ForkProcess();
 
+	if(res == 0)
+	{
+		printf("in child\n");
+	}
+	else
+	{
+		printf("parent: child proc has pid %ld, exiting\n", res);
+		exit(0);
+	}
 
-	// auto fd = mq_open("/random/path", O_CREATE);
+	// Library::SystemCall::SpawnProcess("/test.mxa", "test");
 
-	// int c = 0;
-	// puts("Enter text. Include a dot ('.') in a sentence to exit:");
-	// do
-	// {
-	// 	c = getchar();
-	// 	putchar(c);
-
-	// } while(c != '.');
-	// printf("\ndone\n");
-
-
-	// uint64_t* ptr = (uint64_t*) 0x00231000;
-	// *ptr = 5912344;
-	// printf("value = %lx\n", *ptr);
+	printf("stuff is going on\n");
 
 
 
 
-	FILE* f = fopen("/test/Main.class", "r");
-	struct stat s;
 
-	fstat((int) f->__fd, &s);
-	printf("file is %ld bytes long\n", s.st_size);
+	// FILE* f = fopen("/test/Main.class", "r");
+	// struct stat s;
 
-	uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
+	// fstat((int) f->__fd, &s);
+	// printf("file is %ld bytes long\n", s.st_size);
 
-	fread(x, 1, s.st_size, f);
-	fclose(f);
+	// uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
 
-	for (off_t i = 0; i < s.st_size; i++)
-		printf("%02x ", x[i]);
+	// fread(x, 1, s.st_size, f);
+	// fclose(f);
 
-	fflush(stdout);
+	// for (off_t i = 0; i < s.st_size; i++)
+	// 	printf("%02x ", x[i]);
 
-
+	// fflush(stdout);
 
 
 

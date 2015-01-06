@@ -104,7 +104,6 @@ namespace Multitasking
 		// delete all the thread's resources.
 		assert(t);
 
-		if(t->messagequeue)		delete t->messagequeue;
 		if(t->CrashState)		delete t->CrashState;
 
 		delete t;
@@ -120,10 +119,11 @@ namespace Multitasking
 
 		// destroy its address space
 		assert(p->VAS);
+		// MemoryManager::Virtual::ChangeAddressSpace(p->VAS->PML4);
 		MemoryManager::Virtual::DestroyVAS(p->VAS);
 		Log("Cleaned up process %s", p->Name);
 
-		// delete p;
+		delete p;
 	}
 
 	void SetThreadErrno(int errno)
@@ -155,7 +155,7 @@ namespace Multitasking
 			:: [lo]"g"(low), [hi]"g"(high) : "memory", "rax", "rbx", "rcx", "rdx");
 	}
 
-	rde::list<Thread*>* GetThreadList(Thread* t)
+	rde::vector<Thread*>* GetThreadList(Thread* t)
 	{
 		return getRunQueue()->queue[t->Priority];
 	}
@@ -183,7 +183,8 @@ namespace Multitasking
 		if(thread->State != STATE_BLOCKING && thread->State != STATE_SUSPEND)
 		{
 			assert(list->contains(thread));
-			list->push_front(FetchAndRemoveThread(thread));
+			// list->insert(list->begin(), FetchAndRemoveThread(thread));
+			list->push_back(FetchAndRemoveThread(thread));
 		}
 		else
 		{
@@ -192,7 +193,8 @@ namespace Multitasking
 
 			SleepList->remove(thread);
 			thread->State = STATE_NORMAL;
-			GetThreadList(thread)->push_front(thread);
+			// GetThreadList(thread)->insert(GetThreadList(thread)->begin(), thread);
+			GetThreadList(thread)->push_back(thread);
 		}
 
 		getRunQueue()->unlock();
@@ -237,7 +239,8 @@ namespace Multitasking
 	void AddToQueue(Thread* t)
 	{
 		getRunQueue()->lock();
-		getRunQueue()->queue[t->Priority]->push_front(t);
+		// getRunQueue()->queue[t->Priority]->insert(getRunQueue()->queue[t->Priority]->begin(), t);
+		getRunQueue()->queue[t->Priority]->push_back(t);
 		getRunQueue()->unlock();
 	}
 
@@ -248,8 +251,8 @@ namespace Multitasking
 		if(!p)
 			return;
 
-		Kill(p);
 		Log("Killed thread %d, name: %s", p->ThreadID, p->Parent->Name);
+		Kill(p);
 
 		(void) r;
 
@@ -304,7 +307,7 @@ namespace Multitasking
 			Process* par = p->Parent;
 			par->Threads.remove(p);
 
-			// GetThreadList(p)->remove(p);
+			GetThreadList(p)->remove(p);
 			SleepList->push_front(p);
 
 			getRunQueue()->unlock();
@@ -332,6 +335,10 @@ namespace Multitasking
 		else
 		{
 			Log(3, "thread: %x, RA: %x", p, __builtin_return_address(0));
+			if(p)
+			{
+				Log(3, "contents: parent %s:%d, tid %d, state %d", p->Parent->Name, p->Parent->ProcessID, p->ThreadID, p->State);
+			}
 			HALT("");
 		}
 	}

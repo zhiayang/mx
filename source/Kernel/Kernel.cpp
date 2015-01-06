@@ -107,8 +107,9 @@ namespace Kernel
 
 			// switch to that cr3.
 			Virtual::SwitchPML4T((Virtual::PageMapStructure*) newcr3);
+			Virtual::ChangeRawCR3(newcr3);
 
-			asm volatile("mov %0, %%cr3" :: "r"(newcr3));
+			// asm volatile("mov %0, %%cr3" :: "r"(newcr3));
 			asm volatile("invlpg (%0)" : : "a" (newcr3));
 			asm volatile("invlpg (%0)" : : "a" (oldcr3));
 
@@ -366,15 +367,15 @@ namespace Kernel
 			// 4: bpp (32)
 
 			const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
-			auto proc = LoadBinary::Load(path, "displayd",
+			auto proc = LoadBinary::Load(path, "a",
 				(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
 				GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
 
-			proc->Threads.front()->Priority = 2;
 			Multitasking::AddToQueue(proc);
 		}
 
 		PrintFormatted("[mx] has completed initialisation.\n");
+		Log("Kernel init complete");
 
 
 		// PrintFormatted("mutex tests\n");
@@ -411,24 +412,24 @@ namespace Kernel
 
 		// kernel stops here
 		// for now.
-		while(true);
+		BLOCK();
 	}
 
 	void Idle()
 	{
 		while(true)
 		{
-			Physical::CoalesceFPLs();
+			// Physical::CoalesceFPLs();
 			YieldCPU();
 		}
 	}
 
-
-
 	void HaltSystem(const char* message, const char* filename, uint64_t line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%d -- (0: %x, 1: %x, 2: %x)", message, filename, line, __builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2));
-		PrintFormatted("\n\nERROR: %s\nReason: %s\n%s -- Line %d, Return Addr (0: %x, 1: %x, 2: %x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2));
+		Log("System Halted: %s, %s:%d -- (0: %x, 1: %x, 2: %x, 3: %x, 4: %x)", message, filename, line, __builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2), __builtin_return_address(3), __builtin_return_address(4));
+
+
+		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d, Return Addr (0: %x, 1: %x, 2: %x, 3: %x, 4: %x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2), __builtin_return_address(3), __builtin_return_address(4));
 
 
 		UHALT();
@@ -437,7 +438,7 @@ namespace Kernel
 	void HaltSystem(const char* message, const char* filename, const char* line, const char* reason)
 	{
 		Log("System Halted: %s, %s:%s", message, filename, line);
-		PrintFormatted("\n\nERROR: %s\nReason: %s\n%s -- Line %s\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line);
+		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %s\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line);
 
 		UHALT();
 	}

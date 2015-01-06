@@ -7,9 +7,9 @@
 
 #define TermProc	TerminateProcess
 #define SuspProc	SuspendProcess
-#define ResmProc	ResumeProcess
 #define DumpProc	CoreDump
 #define Discard	((sighandler_t) 1)
+// #define ResmProc	ResumeProcess		// silence an unused macro warning.
 
 namespace Kernel {
 namespace IPC

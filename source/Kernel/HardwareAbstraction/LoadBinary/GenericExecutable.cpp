@@ -4,6 +4,7 @@
 
 #include <Kernel.hpp>
 #include <string.h>
+#include <errno.h>
 #include <HardwareAbstraction/LoadBinary.hpp>
 #include <HardwareAbstraction/BinaryFormats/ELF.hpp>
 
@@ -22,7 +23,10 @@ namespace LoadBinary
 		using namespace Filesystems;
 		auto fd = OpenFile(path, 0);
 		if(fd < 0)
-			HALT("file not found");
+		{
+			Multitasking::SetThreadErrno(EINVAL);
+			return 0;
+		}
 
 		struct stat st;
 		Stat(fd, &st);
@@ -39,6 +43,7 @@ namespace LoadBinary
 		{
 			ELFExecutable* elf = new ELFExecutable(buf);
 			proc = Multitasking::CreateProcess(procname, FLAG_USERSPACE, elf->GetTLSSize(), (void(*)()) elf->GetEntryPoint(), 1, a1, a2, a3, a4, a5, a6);
+
 			elf->Load(proc);
 			delete elf;
 		}
