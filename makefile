@@ -48,7 +48,7 @@ NUMFILES			= $$(($(words $(CXXSRC)) + $(words $(SSRC))))
 
 
 
-LIBRARIES			= -liris -lm -lsupc++ -lgcc -lrdestl
+LIBRARIES			= -liris -lsupc++ -lgcc -lrdestl
 OUTPUT				= build/kernel.mxa
 
 
