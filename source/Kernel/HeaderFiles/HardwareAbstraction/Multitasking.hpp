@@ -52,13 +52,15 @@ namespace HardwareAbstraction
 
 		struct Process
 		{
+			Process(MemoryManager::Virtual::PageMapStructure* pml) : VAS(pml) { }
+
 			uint64_t ProcessID;			// Process ID
 			uint8_t Flags;
 			char Name[64];				// Task's name
 			size_t tlssize;
 
-			Filesystems::IOContext* iocontext;
-			MemoryManager::Virtual::VirtualAddressSpace* VAS;
+			Filesystems::IOContext iocontext;
+			MemoryManager::Virtual::VirtualAddressSpace VAS;
 			sighandler_t* SignalHandlers;
 
 			Process* Parent;

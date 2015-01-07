@@ -41,9 +41,9 @@ namespace Filesystems
 		{
 			auto proc = Multitasking::GetCurrentProcess();
 			assert(proc);
-			assert(proc->iocontext);
+			// assert(proc->iocontext);
 
-			return proc->iocontext;
+			return &proc->iocontext;
 		}
 
 		static Filesystem* getfs(rde::string& path)
@@ -98,10 +98,10 @@ namespace Filesystems
 		fileentry* FileEntryFromFD(IOContext* ioctx, fd_t fd)
 		{
 			assert(ioctx);
-			assert(ioctx->fdarray);
-			assert(ioctx->fdarray->fds);
+			// assert(ioctx->fdarray);
+			// assert(ioctx->fdarray->fds);
 
-			for(auto v : *ioctx->fdarray->fds)
+			for(auto v : ioctx->fdarray.fds)
 			{
 				if(v->fd == fd)
 					return v;
@@ -195,18 +195,18 @@ namespace Filesystems
 		fileentry* Open(IOContext* ioctx, vnode* node, int flags)
 		{
 			assert(ioctx);
-			assert(ioctx->fdarray);
-			assert(ioctx->fdarray->fds);
+			// assert(ioctx->fdarray);
+			// assert(ioctx->fdarray->fds);
 			assert(node);
 
 			auto fe		= new fileentry;
 			fe->node	= node;
 			fe->offset	= 0;
 			fe->flags	= flags;
-			fe->fd		= FirstFreeFD + ioctx->fdarray->fds->size();
+			fe->fd		= FirstFreeFD + ioctx->fdarray.fds.size();
 			fe->id		= curfeid++;
 
-			ioctx->fdarray->fds->push_back(fe);
+			ioctx->fdarray.fds.push_back(fe);
 
 			return fe;
 		}
@@ -335,10 +335,10 @@ namespace Filesystems
 			fe->node	= old->node;
 			fe->offset	= 0;
 			fe->flags	= old->flags;
-			fe->fd		= FirstFreeFD + ctx->fdarray->fds->size();
+			fe->fd		= FirstFreeFD + ctx->fdarray.fds.size();
 			fe->id		= curfeid++;
 
-			ctx->fdarray->fds->push_back(fe);
+			ctx->fdarray.fds.push_back(fe);
 			return fe;
 		}
 	}

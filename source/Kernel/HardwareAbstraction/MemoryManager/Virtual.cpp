@@ -48,10 +48,10 @@ namespace Virtual
 		Multitasking::Process* proc = Multitasking::GetCurrentProcess();
 		assert(proc);
 
-		VirtualAddressSpace* vas = v ? v : proc->VAS;
+		VirtualAddressSpace* vas = v ? v : &proc->VAS;
 		assert(vas);
 
-		if(vas->pairs->size() == 0)
+		if(vas->pairs.size() == 0)
 		{
 			Log(3, "Virtual address space exhausted, WTF are you doing?!");
 			Multitasking::Kill(proc);
@@ -64,7 +64,7 @@ namespace Virtual
 		{
 			uint64_t end = addr + (size * 0x1000);
 			AddressLengthPair* found = 0;
-			for(auto pair : *vas->pairs)
+			for(auto pair : vas->pairs)
 			{
 				if(pair->start <= addr && pair->start + (pair->length * 0x1000) >= end)
 				{
@@ -77,27 +77,27 @@ namespace Virtual
 			{
 				if(found->start == addr && found->length == size)
 				{
-					vas->pairs->remove(found);
+					vas->pairs.remove(found);
 					delete found;
 				}
 				else if(found->start == addr)
 				{
 					AddressLengthPair* np = new AddressLengthPair(end, found->length - size);
-					vas->pairs->remove(found);
-					vas->pairs->push_back(np);
+					vas->pairs.remove(found);
+					vas->pairs.push_back(np);
 					delete found;
 				}
 				else
 				{
 					// make a new pair.
 					AddressLengthPair* np = new AddressLengthPair(found->start, (addr - found->start) / 0x1000);
-					vas->pairs->push_back(np);
+					vas->pairs.push_back(np);
 
 					found->start = end;
 					found->length = found->length - size;
 				}
 
-				vas->used->push_back(new ALPPair(addr, size, phys));
+				vas->used.push_back(new ALPPair(addr, size, phys));
 				return addr;
 			}
 
@@ -118,29 +118,29 @@ namespace Virtual
 
 
 
-		AddressLengthPair* pair = vas->pairs->front();
+		AddressLengthPair* pair = vas->pairs.front();
 		if(pair->length > size)
 		{
 			uint64_t ret = pair->start;
 			pair->start += (size * 0x1000);
 			pair->length -= size;
-			vas->used->push_back(new ALPPair(ret, size, phys));
+			vas->used.push_back(new ALPPair(ret, size, phys));
 			return ret;
 		}
 		else if(pair->length == size)
 		{
 			uint64_t ret = pair->start;
-			delete vas->pairs->front();
-			vas->pairs->pop_front();
+			delete vas->pairs.front();
+			vas->pairs.erase(vas->pairs.begin());
 
-			vas->used->push_back(new ALPPair(ret, size, phys));
+			vas->used.push_back(new ALPPair(ret, size, phys));
 			return ret;
 		}
 		else
 		{
 			// we need to use the next pair.
 			AddressLengthPair* found = 0;
-			for(AddressLengthPair* p : *vas->pairs)
+			for(AddressLengthPair* p : vas->pairs)
 			{
 				if(p->length >= size)
 				{
@@ -163,7 +163,7 @@ namespace Virtual
 					found->length -= size;
 					found->start += (size * 0x1000);
 
-					vas->used->push_back(new ALPPair(ret, size, phys));
+					vas->used.push_back(new ALPPair(ret, size, phys));
 					return ret;
 				}
 				else
@@ -171,7 +171,7 @@ namespace Virtual
 					uint64_t ret = found->start;
 					delete found;
 
-					vas->used->push_back(new ALPPair(ret, size, phys));
+					vas->used.push_back(new ALPPair(ret, size, phys));
 					return ret;
 				}
 			}
@@ -186,12 +186,12 @@ namespace Virtual
 		Multitasking::Process* proc = Multitasking::GetCurrentProcess();
 		assert(proc);
 
-		VirtualAddressSpace* vas = v ? v : proc->VAS;
+		VirtualAddressSpace* vas = v ? v : &proc->VAS;
 		assert(vas);
 
 		uint64_t end = page + (size * 0x1000);
 
-		for(AddressLengthPair* pair : *vas->pairs)
+		for(AddressLengthPair* pair : vas->pairs)
 		{
 			// 3 basic conditions
 			// 1. we find a match below a pair's baseaddr
@@ -212,17 +212,17 @@ namespace Virtual
 		}
 
 		// if we reach here, we haven't found a match.
-		vas->pairs->push_back(new AddressLengthPair(page, size));
+		vas->pairs.push_back(new AddressLengthPair(page, size));
 
 		// TODO: remove matching 'used' pair
 	}
 
 	uint64_t GetVirtualPhysical(uint64_t virt, VirtualAddressSpace* v)
 	{
-		VirtualAddressSpace* vas = v ? v : Multitasking::GetCurrentProcess()->VAS;
+		VirtualAddressSpace* vas = v ? v : &Multitasking::GetCurrentProcess()->VAS;
 		assert(vas);
 
-		for(ALPPair* pair : *vas->used)
+		for(ALPPair* pair : vas->used)
 		{
 			uint64_t end = pair->start + pair->length * 0x1000;
 			if(pair->start >= virt && virt <= end)
@@ -254,10 +254,10 @@ namespace Virtual
 		Multitasking::Process* proc = Multitasking::GetCurrentProcess();
 		assert(proc);
 
-		VirtualAddressSpace* vas = proc->VAS;
+		VirtualAddressSpace* vas = &proc->VAS;
 		assert(vas);
 
-		for(ALPPair* p : *vas->used)
+		for(ALPPair* p : vas->used)
 		{
 			if(p->start == addr && p->length == size)
 			{
@@ -285,21 +285,21 @@ namespace Virtual
 	VirtualAddressSpace* SetupVAS(VirtualAddressSpace* vas)
 	{
 		// Max 48-bit virtual address space (current implementations)
-		vas->pairs->push_back(new AddressLengthPair(0x01000000, 0xFF000));
-		vas->pairs->push_back(new AddressLengthPair(0xFFFFF00000000000, 0x100000));
+		vas->pairs.push_back(new AddressLengthPair(0x01000000, 0xFF000));
+		vas->pairs.push_back(new AddressLengthPair(0xFFFFF00000000000, 0x100000));
 
 		return vas;
 	}
 
 	VirtualAddressSpace* CopyVAS(VirtualAddressSpace* src, VirtualAddressSpace* dest)
 	{
-		for(auto p : *src->pairs)
-			dest->pairs->push_back(new AddressLengthPair(*p));
+		for(auto p : src->pairs)
+			dest->pairs.push_back(new AddressLengthPair(*p));
 
-		for(auto _pair : *src->used)
+		for(auto _pair : src->used)
 		{
 			ALPPair* pair = new ALPPair(*_pair);
-			dest->used->push_back(pair);
+			dest->used.push_back(pair);
 			uint64_t p = Physical::AllocatePage(pair->length);
 
 			Virtual::MapRegion(pair->start, /*pair->phys*/ p, pair->length, 0x07, dest->PML4);
@@ -333,10 +333,10 @@ namespace Virtual
 		// delete both lists
 
 		assert(vas);
-		assert(vas->used);
-		assert(vas->pairs);
+		// assert(vas->used);
+		// assert(vas->pairs);
 
-		for(ALPPair* pair : *vas->used)
+		for(ALPPair* pair : vas->used)
 		{
 			if(pair->phys > 0)
 				Physical::FreePage(pair->phys, pair->length);
@@ -345,11 +345,11 @@ namespace Virtual
 		}
 
 
-		for(AddressLengthPair* pair : *vas->pairs)
+		for(AddressLengthPair* pair : vas->pairs)
 			delete pair;
 
-		delete vas->pairs;
-		delete vas->used;
+		// delete vas->pairs;
+		// delete vas->used;
 		delete vas;
 	}
 
@@ -793,7 +793,7 @@ namespace Virtual
 		// HALT("PF");
 
 		// check if cow.
-		uint64_t* value = GetPageTableEntry(cr2, Multitasking::GetCurrentProcess()->VAS->PML4, &pdpt, &pd, &pt);
+		uint64_t* value = GetPageTableEntry(cr2, Multitasking::GetCurrentProcess()->VAS.PML4, &pdpt, &pd, &pt);
 
 		// conditions for cow:
 		// bit 11 (0x800) for COW set, bit 1 (0x2, R/W bit) not set.

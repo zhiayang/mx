@@ -118,9 +118,9 @@ namespace Multitasking
 		assert(p->Threads.size() == 0);
 
 		// destroy its address space
-		assert(p->VAS);
+		// assert(p->VAS);
 		// MemoryManager::Virtual::ChangeAddressSpace(p->VAS->PML4);
-		MemoryManager::Virtual::DestroyVAS(p->VAS);
+		MemoryManager::Virtual::DestroyVAS(&p->VAS);
 		Log("Cleaned up process %s", p->Name);
 
 		delete p;
