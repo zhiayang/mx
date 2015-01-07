@@ -143,6 +143,11 @@ namespace Kernel
 			PrintFormatted("[mx] requires your CPU to support SSE3 instructions.\n");
 			UHALT();
 		}
+		if(!KernelCPUID->OnboardAPIC())
+		{
+			PrintFormatted("[mx] requires your CPU to have an APIC chip.");
+			UHALT();
+		}
 
 		// check if we have enough memory.
 		if(K_SystemMemoryInBytes < 0x02000000)

@@ -39,10 +39,7 @@ namespace Kernel
 			// queue up for the toilet.
 
 			// add ourselves to the waiting list
-			if(!sem->contestants)
-				sem->contestants = new rde::list<Thread*>();
-
-			sem->contestants->push_back(GetCurrentThread());
+			sem->contestants.push_back(GetCurrentThread());
 		}
 
 		while(sem->value <= 0)
@@ -55,8 +52,12 @@ namespace Kernel
 		assert(sem);
 
 		__sync_add_and_fetch(&sem->value, 1);
-		if(sem->value < 0 && sem->contestants && sem->contestants->size() > 0)
-			WakeForMessage(sem->contestants->pop_front());
+		if(sem->value < 0 && sem->contestants.size() > 0)
+		{
+			auto front = sem->contestants.front();
+			sem->contestants.erase(sem->contestants.begin());
+			WakeForMessage(front);
+		}
 	}
 
 	bool TrySemaphore(Semaphore* sem)

@@ -30,10 +30,7 @@ namespace Kernel
 
 		if(Lock->lock)
 		{
-			if(!Lock->contestants)
-				Lock->contestants = new rde::list<Thread*>();
-
-			Lock->contestants->push_back(GetCurrentThread());
+			Lock->contestants.push_back(GetCurrentThread());
 		}
 
 		while(__sync_lock_test_and_set(&Lock->lock, 1))
@@ -65,13 +62,18 @@ namespace Kernel
 		Lock->recursion = 0;
 		__sync_lock_release(&Lock->lock);
 
-		if(Lock->contestants && Lock->contestants->size() > 0)
+		if(Lock->contestants.size() > 0)
 		{
-			if(Lock->contestants->front() != o)
-				WakeForMessage(Lock->contestants->pop_front());
-
+			if(Lock->contestants.front() != o)
+			{
+				auto front = Lock->contestants.front();
+				Lock->contestants.erase(Lock->contestants.begin());
+				WakeForMessage(front);
+			}
 			else
-				Lock->contestants->pop_front();
+			{
+				Lock->contestants.erase(Lock->contestants.begin());
+			}
 		}
 	}
 
@@ -134,7 +136,7 @@ namespace Kernel
 		Mutex* m = (*mtxmap)[id];
 		assert(m);
 
-		if(m->lock || (m->contestants && m->contestants->size() > 0))
+		if(m->lock || m->contestants.size() > 0)
 		{
 			SetThreadErrno(EBUSY);
 			return;

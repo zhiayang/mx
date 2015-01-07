@@ -40,8 +40,8 @@ namespace HardwareAbstraction
 			ThreadRegisterState_type* CrashState;
 			void* tlsptr;
 
-			rde::list<Thread*> watchers;
-			rde::list<Thread*> watching;
+			rde::vector<Thread*> watchers;
+			rde::vector<Thread*> watching;
 
 			// a bit hacky, but this stores the current thread errno.
 			int64_t currenterrno;
@@ -107,8 +107,8 @@ namespace HardwareAbstraction
 		#define FLAG_DYING			0x80
 
 
-		extern rde::list<Process*>* ProcessList;
-		extern rde::list<Thread*>* SleepList;
+		extern rde::vector<Process*>* ProcessList;
+		extern rde::vector<Thread*>* SleepList;
 
 		extern uint64_t NumThreads;
 		extern uint64_t NumProcesses;

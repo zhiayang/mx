@@ -17,23 +17,23 @@ namespace HardwareAbstraction {
 namespace Multitasking
 {
 	static bool IsFirst = true;
-	static rde::list<Thread*>* PendingSleepList;
+	static rde::vector<Thread*>* PendingSleepList;
 	static RunQueue* mainRunQueue;
 	static Thread* CurrentThread = 0;
 	static uint64_t CurrentCR3 = 0;
 	static uint64_t ScheduleCount = 0;
 
-	rde::list<Thread*>* SleepList;
-	rde::list<Process*>* ProcessList;
+	rde::vector<Thread*>* SleepList;
+	rde::vector<Process*>* ProcessList;
 
 	bool SchedulerEnabled = true;
 
 	void Initialise()
 	{
 		CurrentCR3 = GetKernelCR3();
-		SleepList = new rde::list<Thread*>();
-		ProcessList = new rde::list<Process*>();
-		PendingSleepList = new rde::list<Thread*>();
+		SleepList = new rde::vector<Thread*>();
+		ProcessList = new rde::vector<Process*>();
+		PendingSleepList = new rde::vector<Thread*>();
 
 		mainRunQueue = new RunQueue();
 		mainRunQueue->queue = new rde::vector<Thread*>*[NUM_PRIO];
@@ -93,7 +93,10 @@ namespace Multitasking
 			{
 				for(uint64_t i = 0, s = PendingSleepList->size(); i < s; i++)
 				{
-					SleepList->push_back(PendingSleepList->pop_front());
+					auto front = PendingSleepList->front();
+					PendingSleepList->erase_unordered(PendingSleepList->begin());
+					SleepList->push_back(front);
+
 					SleepList->back()->StackPointer = context;
 				}
 			}

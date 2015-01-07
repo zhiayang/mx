@@ -15,38 +15,38 @@ namespace CPUID
 		public:
 			const char* VendorID()				{ return this->_VendorID; }
 			const char* BrandString()			{ return this->_BrandString; }
-			uint32_t Family()				{ return this->_Family; }
-			uint32_t Model()				{ return this->_Model; }
-			uint32_t Stepping()				{ return this->_Stepping; }
+			uint32_t Family()					{ return this->_Family; }
+			uint32_t Model()					{ return this->_Model; }
+			uint32_t Stepping()					{ return this->_Stepping; }
 
 			// behold: functions.
 
 			// EDX flags, EAX = 1
 			bool Onboardx87FPU()				{ return this->_Features_EDX & (1 <<  0); }
-			bool Virtual8086()				{ return this->_Features_EDX & (1 <<  1); }
-			bool DebugExtensions()			{ return this->_Features_EDX & (1 <<  2); }
+			bool Virtual8086()					{ return this->_Features_EDX & (1 <<  1); }
+			bool DebugExtensions()				{ return this->_Features_EDX & (1 <<  2); }
 			bool PageSizeExtension()			{ return this->_Features_EDX & (1 <<  3); }
-			bool TimeStampCounter()			{ return this->_Features_EDX & (1 <<  4); }
-			bool ModelSpecificRegisters()			{ return this->_Features_EDX & (1 <<  5); }
-			bool PhysicalAddressExtensions()		{ return this->_Features_EDX & (1 <<  6); }
-			bool MachineCheckException()			{ return this->_Features_EDX & (1 <<  7); }
-			bool CompareAndSwap()			{ return this->_Features_EDX & (1 <<  8); }
-			bool OnboardAPIC()				{ return this->_Features_EDX & (1 <<  9); }
+			bool TimeStampCounter()				{ return this->_Features_EDX & (1 <<  4); }
+			bool ModelSpecificRegisters()		{ return this->_Features_EDX & (1 <<  5); }
+			bool PhysicalAddressExtensions()	{ return this->_Features_EDX & (1 <<  6); }
+			bool MachineCheckException()		{ return this->_Features_EDX & (1 <<  7); }
+			bool CompareAndSwap()				{ return this->_Features_EDX & (1 <<  8); }
+			bool OnboardAPIC()					{ return this->_Features_EDX & (1 <<  9); }
 			// 10 is reserved.
 			bool SysenterAndSysexit()			{ return this->_Features_EDX & (1 << 11); }
-			bool MemoryTypeRange()			{ return this->_Features_EDX & (1 << 12); }
+			bool MemoryTypeRange()				{ return this->_Features_EDX & (1 << 12); }
 			bool PageGlobalBit()				{ return this->_Features_EDX & (1 << 13); }
 			bool MachineCheckArchitecture()		{ return this->_Features_EDX & (1 << 14); }
 			bool ConditionalMove()				{ return this->_Features_EDX & (1 << 15); }
 			bool PageAttributeTable()			{ return this->_Features_EDX & (1 << 16); }
-			bool PSE36Bit()					{ return this->_Features_EDX & (1 << 17); }
-			bool ProcessorSerialNumber()			{ return this->_Features_EDX & (1 << 18); }
-			bool CLFlush()					{ return this->_Features_EDX & (1 << 19); }
+			bool PSE36Bit()						{ return this->_Features_EDX & (1 << 17); }
+			bool ProcessorSerialNumber()		{ return this->_Features_EDX & (1 << 18); }
+			bool CLFlush()						{ return this->_Features_EDX & (1 << 19); }
 			// 20 is reserved.
-			bool DebugStore()				{ return this->_Features_EDX & (1 << 21); }
-			bool OnboardThermalControl()			{ return this->_Features_EDX & (1 << 22); }
-			bool MMXInstructions()			{ return this->_Features_EDX & (1 << 23); }
-			bool FXStateSave()				{ return this->_Features_EDX & (1 << 24); }
+			bool DebugStore()					{ return this->_Features_EDX & (1 << 21); }
+			bool OnboardThermalControl()		{ return this->_Features_EDX & (1 << 22); }
+			bool MMXInstructions()				{ return this->_Features_EDX & (1 << 23); }
+			bool FXStateSave()					{ return this->_Features_EDX & (1 << 24); }
 			bool SSEInstructions()				{ return this->_Features_EDX & (1 << 25); }
 			bool SSE2Instructions()				{ return this->_Features_EDX & (1 << 26); }
 			bool CacheSelfSnoop()				{ return this->_Features_EDX & (1 << 27); }
@@ -59,35 +59,35 @@ namespace CPUID
 
 			// ECX flags, EAX = 1
 			bool SSE3Instructions()				{ return this->_Features_ECX & (1 <<  0); }
-			bool PCLMULQDQ()				{ return this->_Features_ECX & (1 <<  1); }
-			bool DebugStore64Bit()			{ return this->_Features_ECX & (1 <<  2); }
+			bool PCLMULQDQ()					{ return this->_Features_ECX & (1 <<  1); }
+			bool DebugStore64Bit()				{ return this->_Features_ECX & (1 <<  2); }
 			bool MonitorMwaitInstructions()		{ return this->_Features_ECX & (1 <<  3); }
 			bool CPLDebugStore()				{ return this->_Features_ECX & (1 <<  4); }
 			bool VirtualMachineExtensions()		{ return this->_Features_ECX & (1 <<  5); }
-			bool SaferMode()				{ return this->_Features_ECX & (1 <<  6); }
+			bool SaferMode()					{ return this->_Features_ECX & (1 <<  6); }
 			bool EnhancedSpeedStep()			{ return this->_Features_ECX & (1 <<  7); }
-			bool ThermalMonitor2()			{ return this->_Features_ECX & (1 <<  8); }
-			bool SupplementalSSE3Instructions()		{ return this->_Features_ECX & (1 <<  9); }
-			bool L1ContextID()				{ return this->_Features_ECX & (1 << 10); }
+			bool ThermalMonitor2()				{ return this->_Features_ECX & (1 <<  8); }
+			bool SupplementalSSE3Instructions()	{ return this->_Features_ECX & (1 <<  9); }
+			bool L1ContextID()					{ return this->_Features_ECX & (1 << 10); }
 			// 11 is reserved
-			bool FusedMultiplyAdd()			{ return this->_Features_ECX & (1 << 12); }
+			bool FusedMultiplyAdd()				{ return this->_Features_ECX & (1 << 12); }
 			bool CompareExchange16Bit()			{ return this->_Features_ECX & (1 << 13); }
-			bool DisableTaskPriorityMessages()		{ return this->_Features_ECX & (1 << 14); }
-			bool PerformanceMonitorAndDebug()		{ return this->_Features_ECX & (1 << 15); }
+			bool DisableTaskPriorityMessages()	{ return this->_Features_ECX & (1 << 14); }
+			bool PerformanceMonitorAndDebug()	{ return this->_Features_ECX & (1 << 15); }
 			// 16 is reserved
-			bool ProcessContextID()			{ return this->_Features_ECX & (1 << 17); }
-			bool DMADirectCache()			{ return this->_Features_ECX & (1 << 18); }
-			bool SSE4Point1Instructions()			{ return this->_Features_ECX & (1 << 19); }
-			bool SSE4Point2Instructions()			{ return this->_Features_ECX & (1 << 20); }
-			bool x2APIC()					{ return this->_Features_ECX & (1 << 21); }
+			bool ProcessContextID()				{ return this->_Features_ECX & (1 << 17); }
+			bool DMADirectCache()				{ return this->_Features_ECX & (1 << 18); }
+			bool SSE4Point1Instructions()		{ return this->_Features_ECX & (1 << 19); }
+			bool SSE4Point2Instructions()		{ return this->_Features_ECX & (1 << 20); }
+			bool x2APIC()						{ return this->_Features_ECX & (1 << 21); }
 			bool BigEndianMove()				{ return this->_Features_ECX & (1 << 22); }
 			bool PopCountInstruction()			{ return this->_Features_ECX & (1 << 23); }
-			bool APICOneShot()				{ return this->_Features_ECX & (1 << 24); }
+			bool APICOneShot()					{ return this->_Features_ECX & (1 << 24); }
 			bool AESInstructions()				{ return this->_Features_ECX & (1 << 25); }
-			bool XStateSave()				{ return this->_Features_ECX & (1 << 26); }
+			bool XStateSave()					{ return this->_Features_ECX & (1 << 26); }
 			bool XStateSaveEnabled()			{ return this->_Features_ECX & (1 << 27); }
 			bool AVXInstructions()				{ return this->_Features_ECX & (1 << 28); }
-			bool HalfPrecisionFloatingPoint()		{ return this->_Features_ECX & (1 << 29); }
+			bool HalfPrecisionFloatingPoint()	{ return this->_Features_ECX & (1 << 29); }
 			bool HardwareRandomGenerator()		{ return this->_Features_ECX & (1 << 30); }
 			bool IsInsideHypervisor()			{ return this->_Features_ECX & 0x80000000; } // same.
 
@@ -113,27 +113,27 @@ namespace CPUID
 			// PageAttributeTable
 			// PSE36Bit
 			// 18 is reserved
-			bool MultiprocessorCabable()			{ return this->_Extended_EDX & (1 << 19); }
-			bool NoExecute()				{ return this->_Extended_EDX & (1 << 20); }
+			bool MultiprocessorCabable()		{ return this->_Extended_EDX & (1 << 19); }
+			bool NoExecute()					{ return this->_Extended_EDX & (1 << 20); }
 			// 21 is reserved.
 			bool ExtendedMMXInstructions()		{ return this->_Extended_EDX & (1 << 22); }
 			// MMXInstructions
 			// FXStateSave
 			bool FXStateSaveOptimisations()		{ return this->_Extended_EDX & (1 << 25); }
-			bool GigabytePageSize()			{ return this->_Extended_EDX & (1 << 26); }
-			bool RDTSCP()					{ return this->_Extended_EDX & (1 << 27); }
+			bool GigabytePageSize()				{ return this->_Extended_EDX & (1 << 26); }
+			bool RDTSCP()						{ return this->_Extended_EDX & (1 << 27); }
 			// 28 is reserved
-			bool LongMode()				{ return this->_Extended_EDX & (1 << 29); }
+			bool LongMode()						{ return this->_Extended_EDX & (1 << 29); }
 			bool Extended3DNow()				{ return this->_Extended_EDX & (1 << 30); }
-			bool ThreeDeeNow()				{ return this->_Extended_EDX & 0x80000000; } // same
+			bool ThreeDeeNow()					{ return this->_Extended_EDX & 0x80000000; } // same
 
 
 
 			// ECX Flags, EAX = 0x80000001
-			bool LAHFAndSAHF()				{ return this->_Extended_ECX & (1 <<  0); }
-			bool NoHyperThreading()			{ return this->_Extended_ECX & (1 <<  1); }
+			bool LAHFAndSAHF()					{ return this->_Extended_ECX & (1 <<  0); }
+			bool NoHyperThreading()				{ return this->_Extended_ECX & (1 <<  1); }
 			bool SecureVirtualMachine()			{ return this->_Extended_ECX & (1 <<  2); }
-			bool ExtendedAPIC()				{ return this->_Extended_ECX & (1 <<  3); }
+			bool ExtendedAPIC()					{ return this->_Extended_ECX & (1 <<  3); }
 			bool CR8In32BitMode()				{ return this->_Extended_ECX & (1 <<  4); }
 			bool AdvancedBitManipulation()		{ return this->_Extended_ECX & (1 <<  5); }
 			bool SSE4aInstructions()			{ return this->_Extended_ECX & (1 <<  6); }
@@ -147,17 +147,17 @@ namespace CPUID
 			// 14 is reserved
 			bool LightWeightProfiling()			{ return this->_Extended_ECX & (1 << 15); }
 			bool FourOpsFusedMulAdd()			{ return this->_Extended_ECX & (1 << 16); }
-			bool TranslationCacheExtension()		{ return this->_Extended_ECX & (1 << 17); }
+			bool TranslationCacheExtension()	{ return this->_Extended_ECX & (1 << 17); }
 			// 18 is reserved
-			bool NodeIDModelSpecifcRegister()		{ return this->_Extended_ECX & (1 << 19); }
+			bool NodeIDModelSpecifcRegister()	{ return this->_Extended_ECX & (1 << 19); }
 			// 20 is reserved
-			bool TrailingBitManipulation()			{ return this->_Extended_ECX & (1 << 21); }
+			bool TrailingBitManipulation()		{ return this->_Extended_ECX & (1 << 21); }
 			bool TopologyExtensions()			{ return this->_Extended_ECX & (1 << 22); }
-			bool CorePerformanceExtensions()		{ return this->_Extended_ECX & (1 << 23); }
+			bool CorePerformanceExtensions()	{ return this->_Extended_ECX & (1 << 23); }
 			bool NBPerformanceExtensions()		{ return this->_Extended_ECX & (1 << 24); }
 			// 25 is reserved
 			bool DataBreakpointExtensions()		{ return this->_Extended_ECX & (1 << 26); }
-			bool PerformanceTimeStampCounter()		{ return this->_Extended_ECX & (1 << 27); }
+			bool PerformanceTimeStampCounter()	{ return this->_Extended_ECX & (1 << 27); }
 			bool L2iPerformanceExtensions()		{ return this->_Extended_ECX & (1 << 28); }
 			// 29 - 31 are reserved.
 
