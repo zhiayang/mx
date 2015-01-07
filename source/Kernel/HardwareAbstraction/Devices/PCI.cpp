@@ -191,8 +191,6 @@ namespace PCI
 					Log("=> /dev/pci%d > %d:%d, v:%#04x, d:%#04x, c:%#02x:%#02x h:%#02x",
 						bus * 32 + slot, bus, slot, vendor, devid, cl, sb, headertype);
 
-		// MemoryManager::KernelHeap::Print();
-
 					if((headertype) & (1 << 7))
 					{
 						for(uint8_t func = 1; func < 8; func++)
@@ -229,18 +227,18 @@ namespace PCI
 	{
 		this->Bus		= b;
 		this->Slot		= s;
-		this->Function		= f;
+		this->Function	= f;
 
-		this->Address		= MakeAddr(this->Bus, this->Slot, this->Function);
+		this->Address	= MakeAddr(this->Bus, this->Slot, this->Function);
 
-		this->VendorID		= ReadConfig16(this->Address, 0x00);
-		this->DeviceID		= (uint16_t)(ReadConfig32(this->Address, 0x00) >> 16);
+		this->VendorID	= ReadConfig16(this->Address, 0x00);
+		this->DeviceID	= (uint16_t)(ReadConfig32(this->Address, 0x00) >> 16);
 
 
 		this->Class		= (uint8_t)(ReadConfig32(this->Address, 0x08) >> 24);
-		this->Subclass		= (uint8_t)(ReadConfig32(this->Address, 0x08) >> 16);
+		this->Subclass	= (uint8_t)(ReadConfig32(this->Address, 0x08) >> 16);
 
-		this->ProgIF		= (uint8_t)(ReadConfig32(this->Address, 0x08) >> 8);
+		this->ProgIF	= (uint8_t)(ReadConfig32(this->Address, 0x08) >> 8);
 
 
 		this->InterruptLine	= (uint8_t)(ReadConfig8(this->Address, 0x3C));

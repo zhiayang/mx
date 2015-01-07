@@ -375,7 +375,7 @@ namespace Kernel
 		}
 
 		PrintFormatted("[mx] has completed initialisation.\n");
-		Log("Kernel init complete");
+		Log("Kernel init complete\n--------------------------------------------------------\n");
 
 
 		// PrintFormatted("mutex tests\n");
