@@ -367,7 +367,7 @@ namespace Kernel
 			// 4: bpp (32)
 
 			const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
-			auto proc = LoadBinary::Load(path, "a",
+			auto proc = LoadBinary::Load(path, "displayd",
 				(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
 				GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
 

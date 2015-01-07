@@ -45,6 +45,8 @@ namespace Console
 		VT_DidInit = true;
 
 		mtx = new Mutex();
+
+		Log("Console Initialised");
 	}
 
 	bool IsInitialised()

@@ -145,12 +145,12 @@ namespace Multitasking
 		// allocate kernel stack.
 		uint64_t k = 0;
 		uint64_t physks = 0;
-		if((uint64_t) Parent->VAS->PML4 != GetKernelCR3())
+		if((uint64_t) Parent->VAS.PML4 != GetKernelCR3())
 		{
 			auto pk = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
-			k = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS, pk);
+			k = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, &Parent->VAS, pk);
 
-			Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x07, Parent->VAS->PML4);
+			Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x07, Parent->VAS.PML4);
 			physks = pk;
 		}
 		else
@@ -176,10 +176,10 @@ namespace Multitasking
 		if(attr->stackptr == 0 || attr->stacksize == 0)
 		{
 			physu = Physical::AllocatePage(DefaultRing3StackSize / 0x1000);
-			u = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, Parent->VAS, physu);
+			u = Virtual::AllocateVirtual(DefaultRing3StackSize / 0x1000, 0, &Parent->VAS, physu);
 			ustacksz = DefaultRing3StackSize;
 
-			Virtual::MapRegion(u, physu, DefaultRing3StackSize / 0x1000, 0x07, Parent->VAS->PML4);
+			Virtual::MapRegion(u, physu, DefaultRing3StackSize / 0x1000, 0x07, Parent->VAS.PML4);
 		}
 		else
 		{
@@ -264,9 +264,9 @@ namespace Multitasking
 	{
 		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
 		DisableScheduler();
-		Process* process = new Process();
 
 		PageMapStructure* PML4 = FirstProc ? (PageMapStructure*)(GetKernelCR3()) : (PageMapStructure*) Virtual::CreateVAS();
+		Process* process = new Process(PML4);
 
 		// everybody needs some tls
 		if(tlssize == 0)
@@ -274,14 +274,14 @@ namespace Multitasking
 
 		process->Flags					= Flags;
 		process->ProcessID				= NumProcesses;
-		process->VAS					= new Virtual::VirtualAddressSpace(PML4);
+		process->VAS					= Virtual::VirtualAddressSpace(PML4);
 		process->SignalHandlers			= (sighandler_t*) KernelHeap::AllocateChunk(sizeof(sighandler_t) * __SIGCOUNT);
-		process->iocontext				= new Filesystems::IOContext();
+		// process->iocontext				= Filesystems::IOContext();
 		process->tlssize				= tlssize;
 		for(int i = 0; i < __SIGCOUNT; i++)
 			process->SignalHandlers[i] = __signal_ignore;
 
-		Virtual::SetupVAS(process->VAS);
+		Virtual::SetupVAS(&process->VAS);
 
 		if(!FirstProc)
 		{
@@ -306,10 +306,10 @@ namespace Multitasking
 			// setup the descriptors.
 			// manually.
 			using namespace Filesystems::VFS;
-			OpenFile(process->iocontext, "/dev/stdin", 0);
-			OpenFile(process->iocontext, "/dev/stdout", 0);
-			OpenFile(process->iocontext, "/dev/stderr", 0);
-			OpenFile(process->iocontext, "/dev/stdlog", 0);
+			OpenFile(&process->iocontext, "/dev/stdin", 0);
+			OpenFile(&process->iocontext, "/dev/stdout", 0);
+			OpenFile(&process->iocontext, "/dev/stderr", 0);
+			OpenFile(&process->iocontext, "/dev/stdlog", 0);
 		}
 
 		Log("Creating new process in VAS (%s): CR3(phys): %x, PID %d", name, (uint64_t) PML4, process->ProcessID);
@@ -330,22 +330,21 @@ namespace Multitasking
 		DisableScheduler();
 		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
 
-		Process* proc = new Process();
 		Thread* curthr = GetCurrentThread();
 		PageMapStructure* PML4 = (PageMapStructure*) Virtual::CreateVAS();
+		Process* proc = new Process(PML4);
 
 		proc->Parent				= Multitasking::GetCurrentProcess();
 		proc->Flags					= proc->Parent->Flags;
 		proc->ProcessID				= NumProcesses;
-		proc->VAS					= new Virtual::VirtualAddressSpace(PML4);
+		proc->VAS					= Virtual::VirtualAddressSpace(PML4);
 		proc->SignalHandlers		= (sighandler_t*) KernelHeap::AllocateChunk(sizeof(sighandler_t) * __SIGCOUNT);
-		proc->iocontext				= new Filesystems::IOContext();
 		proc->tlssize				= proc->Parent->tlssize;
 
 		for(int i = 0; i < __SIGCOUNT; i++)
 			proc->SignalHandlers[i] = __signal_ignore;
 
-		Virtual::CopyVAS(proc->Parent->VAS, proc->VAS);
+		Virtual::CopyVAS(&proc->Parent->VAS, &proc->VAS);
 		String::Copy(proc->Name, name);
 
 		NumProcesses++;
@@ -364,12 +363,12 @@ namespace Multitasking
 		// manually.
 		// sorry.
 		using namespace Filesystems::VFS;
-		OpenFile(proc->iocontext, "/dev/stdin", 0);
-		OpenFile(proc->iocontext, "/dev/stdout", 0);
-		OpenFile(proc->iocontext, "/dev/stderr", 0);
-		OpenFile(proc->iocontext, "/dev/stdlog", 0);
+		OpenFile(&proc->iocontext, "/dev/stdin", 0);
+		OpenFile(&proc->iocontext, "/dev/stdout", 0);
+		OpenFile(&proc->iocontext, "/dev/stderr", 0);
+		OpenFile(&proc->iocontext, "/dev/stdlog", 0);
 
-		Log("Forking process from PID %d, new PID %d, CR3 %x", proc->Parent->ProcessID, proc->ProcessID, proc->VAS->PML4);
+		Log("Forking process from PID %d, new PID %d, CR3 %x", proc->Parent->ProcessID, proc->ProcessID, proc->VAS.PML4);
 
 		EnableScheduler();
 		return proc;
@@ -377,7 +376,7 @@ namespace Multitasking
 
 	extern "C" int64_t Syscall_ForkProcess()
 	{
-		Process* proc = ForkProcess("b", 0);
+		Process* proc = ForkProcess(GetCurrentProcess()->Name, 0);
 		Multitasking::AddToQueue(proc);
 
 
