@@ -23,8 +23,8 @@ namespace TTY
 
 	TTYObject::TTYObject(uint8_t bufmode, uint64_t (*read)(TTYObject*, uint8_t*, uint64_t), uint64_t (*write)(TTYObject*, uint8_t*, uint64_t), void (*flsh)(TTYObject*))
 	{
-		this->buffer = new rde::vector<uint8_t>();
-		this->internalbuffer = new rde::vector<uint8_t>();
+		// this->buffer = new rde::vector<uint8_t>();
+		// this->internalbuffer = new rde::vector<uint8_t>();
 		this->BufferMode = bufmode;
 		this->in = read;
 		this->out = write;
@@ -60,15 +60,15 @@ namespace TTY
 		do
 		{
 			asm volatile("pause");
-			if(tty->buffer->size() == 0)
+			if(tty->buffer.size() == 0)
 				continue;
 
-			Memory::Copy(buf, tty->buffer->data(), __min(tty->buffer->size(), length));
+			Memory::Copy(buf, tty->buffer.data(), __min(tty->buffer.size(), length));
 
-			tty->buffer->erase(tty->buffer->begin(), tty->buffer->begin() + __min(tty->buffer->size(), length));
-			return __min(tty->buffer->size(), length);
+			tty->buffer.erase(tty->buffer.begin(), tty->buffer.begin() + __min(tty->buffer.size(), length));
+			return __min(tty->buffer.size(), length);
 
-		} while(tty->buffer->size() == 0 && tty->BufferMode & BLOCKING_READ);
+		} while(tty->buffer.size() == 0 && tty->BufferMode & BLOCKING_READ);
 
 		return 0;
 	}
@@ -80,9 +80,9 @@ namespace TTY
 
 		if(tty->BufferMode & _IOLBF)
 		{
-			uint64_t oldsize = tty->internalbuffer->size();
+			uint64_t oldsize = tty->internalbuffer.size();
 			for(uint64_t i = 0; i < length; i++)
-				tty->internalbuffer->push_back(buf[i]);
+				tty->internalbuffer.push_back(buf[i]);
 
 			uint64_t i = 0;
 			for(i = 0; i < length; i++)
@@ -96,40 +96,40 @@ namespace TTY
 				assert(buf[i] == '\n');
 
 				// this '\n' should be at buffer->oldsize + i.
-				assert((*tty->internalbuffer)[oldsize + i] == '\n');
+				assert(tty->internalbuffer[oldsize + i] == '\n');
 
 				uint64_t j = 0;
 				for(j = 0; j < oldsize + i; j++)
-					tty->buffer->push_back((*tty->internalbuffer)[j]);
+					tty->buffer.push_back(tty->internalbuffer[j]);
 
-				tty->internalbuffer->erase(tty->internalbuffer->begin(), tty->internalbuffer->begin() + j);
+				tty->internalbuffer.erase(tty->internalbuffer.begin(), tty->internalbuffer.begin() + j);
 			}
-			else if(tty->internalbuffer->size() >= tty->buffersize)
+			else if(tty->internalbuffer.size() >= tty->buffersize)
 			{
-				for(auto d : *tty->internalbuffer)
-					tty->buffer->push_back(d);
+				for(auto d : tty->internalbuffer)
+					tty->buffer.push_back(d);
 
-				tty->internalbuffer->clear();
+				tty->internalbuffer.clear();
 			}
 		}
 		else if(tty->BufferMode & _IOFBF)
 		{
 			// fully buffered. write everything to the internal buffer, unless it's full.
 			for(uint64_t i = 0; i < length; i++)
-				tty->internalbuffer->push_back(buf[i]);
+				tty->internalbuffer.push_back(buf[i]);
 
-			if(tty->buffer->size() >= tty->buffersize)
+			if(tty->buffer.size() >= tty->buffersize)
 			{
-				for(auto d : *tty->internalbuffer)
-					tty->buffer->push_back(d);
+				for(auto d : tty->internalbuffer)
+					tty->buffer.push_back(d);
 
-				tty->internalbuffer->clear();
+				tty->internalbuffer.clear();
 			}
 		}
 		else
 		{
 			for(uint64_t i = 0; i < length; i++)
-				tty->buffer->push_back(buf[i]);
+				tty->buffer.push_back(buf[i]);
 		}
 
 		if(tty->echomode)
@@ -155,10 +155,10 @@ namespace TTY
 				if(*tmp == '\n')
 				{
 					// flush
-					uint64_t bc = tty->buffer->size();
+					size_t bc = tty->buffer.size();
 					uint8_t* tempout = new uint8_t[bc];
-					Memory::Copy(tempout, tty->buffer->data(), bc);
-					tty->buffer->clear();
+					Memory::Copy(tempout, tty->buffer.data(), bc);
+					tty->buffer.clear();
 
 					total += Library::StandardIO::PrintString((const char*) tempout, bc);
 					total += Library::StandardIO::PrintString("\n", 1);
@@ -167,7 +167,7 @@ namespace TTY
 				}
 				else
 				{
-					tty->buffer->push_back(*tmp);
+					tty->buffer.push_back(*tmp);
 					total++;
 				}
 				tmp++;
@@ -176,12 +176,12 @@ namespace TTY
 		else if(tty->BufferMode & _IOFBF)
 		{
 			for(uint64_t i = 0; i < length; i++)
-				tty->buffer->push_back(buf[i]);
+				tty->buffer.push_back(buf[i]);
 
-			if(tty->buffer->size() >= tty->buffersize)
+			if(tty->buffer.size() >= tty->buffersize)
 			{
-				Library::StandardIO::PrintString((const char*) tty->buffer->data(), tty->buffer->size());
-				tty->buffer->clear();
+				Library::StandardIO::PrintString((const char*) tty->buffer.data(), tty->buffer.size());
+				tty->buffer.clear();
 			}
 		}
 		else
@@ -196,10 +196,10 @@ namespace TTY
 	{
 		assert(tty);
 
-		uint64_t bc = tty->buffer->size();
+		uint64_t bc = tty->buffer.size();
 		uint8_t* tempout = new uint8_t[bc];
-		Memory::Copy(tempout, tty->buffer->data(), bc);
-		tty->buffer->clear();
+		Memory::Copy(tempout, tty->buffer.data(), bc);
+		tty->buffer.clear();
 
 		Library::StandardIO::PrintString((const char*) tempout, bc);
 		delete[] tempout;
@@ -210,10 +210,10 @@ namespace TTY
 		assert(tty);
 
 		// flush the internal buffer to the read buffer.
-		for(auto d : *tty->internalbuffer)
-			tty->buffer->push_back(d);
+		for(auto d : tty->internalbuffer)
+			tty->buffer.push_back(d);
 
-		tty->internalbuffer->clear();
+		tty->internalbuffer.clear();
 	}
 
 	void noop_flush(TTYObject*)
