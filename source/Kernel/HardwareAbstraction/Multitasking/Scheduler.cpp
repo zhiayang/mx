@@ -154,12 +154,12 @@ namespace Multitasking
 		SetTLS(tlsptr);
 
 
-		if((uint64_t) CurrentThread->Parent->VAS->PML4 != CurrentCR3)
+		if((uint64_t) CurrentThread->Parent->VAS.PML4 != CurrentCR3)
 		{
 			// Only change the value in cr3 if we need to, to avoid trashing the TLB.
-			*((uint64_t*) 0x2600) = (uint64_t) CurrentThread->Parent->VAS->PML4;
+			*((uint64_t*) 0x2600) = (uint64_t) CurrentThread->Parent->VAS.PML4;
 
-			CurrentCR3 = (uint64_t) CurrentThread->Parent->VAS->PML4;
+			CurrentCR3 = (uint64_t) CurrentThread->Parent->VAS.PML4;
 			MemoryManager::Virtual::SwitchPML4T((MemoryManager::Virtual::PageMapStructure*) CurrentCR3);
 		}
 		else
@@ -208,7 +208,7 @@ namespace Multitasking
 		}
 		else
 		{
-			return (uint64_t) CurrentThread->Parent->VAS->PML4;
+			return (uint64_t) CurrentThread->Parent->VAS.PML4;
 		}
 	}
 

@@ -36,13 +36,11 @@ namespace Virtual
 		VirtualAddressSpace(PageMapStructure* pml4)
 		{
 			this->PML4 = pml4;
-			this->pairs = new rde::list<AddressLengthPair*>();
-			this->used = new rde::list<ALPPair*>();
 		}
 
 		// book-keeping for allocations.
-		rde::list<AddressLengthPair*>* pairs;
-		rde::list<ALPPair*>* used;
+		rde::vector<AddressLengthPair*> pairs;
+		rde::vector<ALPPair*> used;
 
 		// store the actual address of the pml4.
 		PageMapStructure* PML4;

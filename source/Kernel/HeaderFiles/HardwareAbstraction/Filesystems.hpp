@@ -67,12 +67,12 @@ namespace Kernel
 
 				struct FDArray
 				{
-					FDArray()
-					{
-						this->fds = new rde::vector<fileentry*>();
-					}
+					// FDArray()
+					// {
+					// 	this->fds = new rde::vector<fileentry*>();
+					// }
 
-					rde::vector<fileentry*>* fds;
+					rde::vector<fileentry*> fds;
 				};
 
 
@@ -122,12 +122,12 @@ namespace Kernel
 
 			struct IOContext
 			{
-				IOContext()
-				{
-					this->fdarray = new VFS::FDArray();
-				}
+				// IOContext()
+				// {
+				// 	this->fdarray = new VFS::FDArray();
+				// }
 
-				VFS::FDArray* fdarray;
+				VFS::FDArray fdarray;
 			};
 
 			class FSDriver

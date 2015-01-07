@@ -41,8 +41,8 @@ namespace Kernel
 				bool echomode;
 				uint8_t BufferMode;
 				size_t buffersize;
-				rde::vector<uint8_t>* buffer;
-				rde::vector<uint8_t>* internalbuffer;
+				rde::vector<uint8_t> buffer;
+				rde::vector<uint8_t> internalbuffer;
 		};
 
 		void Initialise();

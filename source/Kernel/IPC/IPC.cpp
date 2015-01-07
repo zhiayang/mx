@@ -93,7 +93,7 @@ namespace IPC
 				uint64_t s = thread->StackPointer;
 				uint64_t diff = s - (s & ~0xFFF);
 
-				uint64_t p1 = Virtual::GetMapping(s & ~0xFFF, thread->Parent->VAS->PML4);
+				uint64_t p1 = Virtual::GetMapping(s & ~0xFFF, thread->Parent->VAS.PML4);
 				ptr = Virtual::AllocateVirtual();
 				Virtual::MapAddress(ptr, p1, 0x7);
 
@@ -106,7 +106,7 @@ namespace IPC
 				uint64_t s = *((uint64_t*) (ptr + 144));
 				uint64_t diff = s - (s & ~0xFFF);
 
-				uint64_t p1 = Virtual::GetMapping(s & ~0xFFF, thread->Parent->VAS->PML4);
+				uint64_t p1 = Virtual::GetMapping(s & ~0xFFF, thread->Parent->VAS.PML4);
 				ustack = Virtual::AllocateVirtual();
 				Virtual::MapAddress(ustack, p1, 0x7);
 
