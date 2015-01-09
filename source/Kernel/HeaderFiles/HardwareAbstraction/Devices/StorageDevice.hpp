@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 #include "PCI.hpp"
+#include <HardwareAbstraction/DeviceManager.hpp>
 
 #pragma once
 
@@ -51,7 +52,7 @@ namespace HardwareAbstraction
 		};
 
 		class Partition;
-		class StorageDevice
+		class StorageDevice : public DeviceManager::Device
 		{
 			public:
 				StorageDevice(StorageDeviceType tp) : Type(tp) { }

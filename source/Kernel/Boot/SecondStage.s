@@ -148,6 +148,13 @@ halt:
 .section .data
 .align 16
 
+// some C++ destructor shit
+.global __dso_handle
+__dso_handle:
+		.quad	0
+
+
+
 // 64-bit GDT
 .global GDT64Pointer
 

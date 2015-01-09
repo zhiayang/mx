@@ -1,26 +1,24 @@
-// Device.cpp
+// APIC.hpp
 // Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
+#pragma once
 #include <Kernel.hpp>
+#include <HardwareAbstraction/ACPI.hpp>
+#include <HardwareAbstraction/DeviceManager.hpp>
 
 namespace Kernel {
 namespace HardwareAbstraction {
 namespace Devices
 {
-	static dev_t curid = 0;
-
-	dev_t GetDevID()
+	class APIC : public DeviceManager::Device
 	{
-		// skips 0, but who gives a shit
-		curid++;
-		return curid;
-	}
+		public:
+			APIC(ACPI::APICTable* table);
 
-	void FreeDevID(dev_t id)
-	{
-		(void) id;
-	}
+
+		private:
+	};
 }
 }
 }

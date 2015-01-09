@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 #include <HardwareAbstraction/Devices/PCI.hpp>
+#include <HardwareAbstraction/DeviceManager.hpp>
 #pragma once
 
 namespace Kernel {
@@ -18,7 +19,7 @@ namespace VideoOutput
 		_GenericVESA			= 0x03
 	};
 
-	class GenericVideoDevice
+	class GenericVideoDevice : public Devices::DeviceManager::Device
 	{
 		public:
 			GenericVideoDevice(GenericVideoDevice* dev);

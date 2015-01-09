@@ -20,8 +20,8 @@ namespace Devices
 	{
 		extern uint8_t Device1Buffer;
 		extern uint8_t Device2Buffer;
-		const uint8_t DataPort = 0x60;
-		const uint8_t CommandPort = 0x64;
+		extern const uint8_t DataPort;
+		extern const uint8_t CommandPort;
 
 		void Initialise();
 	}

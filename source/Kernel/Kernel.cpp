@@ -296,7 +296,7 @@ namespace Kernel
 		Log("Compatible video card located");
 
 		PrintFormatted("Initialising RTC...\n");
-		Devices::RTC::Initialise(0);
+		// Devices::RTC::Initialise(0);
 		Log("RTC Initialised");
 
 		KernelKeyboard = new PS2Keyboard();

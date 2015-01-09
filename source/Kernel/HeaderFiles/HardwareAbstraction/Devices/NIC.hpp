@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include "PCI.hpp"
 #include <Synchro.hpp>
+#include <HardwareAbstraction/DeviceManager.hpp>
 #pragma once
 
 namespace Kernel {
@@ -13,7 +14,7 @@ namespace HardwareAbstraction {
 namespace Devices {
 namespace NIC
 {
-	class GenericNIC
+	class GenericNIC : public DeviceManager::Device
 	{
 		public:
 			GenericNIC(GenericNIC* dev);

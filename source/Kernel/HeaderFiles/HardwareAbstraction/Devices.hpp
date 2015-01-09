@@ -15,19 +15,21 @@
 #include "Devices/IOPort.hpp"
 #include "Devices/PIT.hpp"
 #include "Devices/NIC.hpp"
+#include "Devices/HPET.hpp"
 
-namespace Kernel {
-namespace HardwareAbstraction {
-namespace Devices
-{
-	class Device
-	{
-		protected:
-			dev_t devid;
-	};
 
-	dev_t GetDevID();
-	void FreeDevID(dev_t id);
-}
-}
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

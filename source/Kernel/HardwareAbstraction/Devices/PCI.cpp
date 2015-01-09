@@ -191,6 +191,9 @@ namespace PCI
 					Log("=> /dev/pci%d > %d:%d, v:%#04x, d:%#04x, c:%#02x:%#02x h:%#02x",
 						bus * 32 + slot, bus, slot, vendor, devid, cl, sb, headertype);
 
+
+
+
 					if((headertype) & (1 << 7))
 					{
 						for(uint8_t func = 1; func < 8; func++)
