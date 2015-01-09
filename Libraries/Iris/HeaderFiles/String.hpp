@@ -9,6 +9,6 @@ namespace String
 {
 	uint64_t Length(const char* str);
 	char* Copy(char* destination, const char* source);
-	int Compare(const char* str1, const char* str2, unsigned long length = 0);
+	int Compare(const char* str1, const char* str2);
 	char* TrimWhitespace(char *str);
 }

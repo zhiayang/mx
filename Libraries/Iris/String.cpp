@@ -23,12 +23,12 @@ namespace String
 		return (char*) Memory::Copy(destination, source, String::Length(source) + 1);
 	}
 
-	int Compare(const char* str1, const char* str2, unsigned long length)
+	int Compare(const char* str1, const char* str2)
 	{
 		size_t len1 = String::Length(str1);
 		size_t len2 = String::Length(str2);
 
-		int cmpResult = Memory::Compare(str1, str2, length != -1 ? ((len1 < len2) ? len1 : len2) : length);
+		int cmpResult = Memory::Compare(str1, str2, (len1 < len2) ? len1 : len2);
 		if(cmpResult != 0)
 			return cmpResult;
 
