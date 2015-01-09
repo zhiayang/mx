@@ -65,8 +65,8 @@
 
 namespace Kernel
 {
-	void Log(uint8_t level, const char* str, ...);
-	void Log(const char* str, ...);
+	void Log(uint8_t level, const char* str, ...) __attribute__((format(printf, 2, 3)));  // 2 = format 3 = params
+	void Log(const char* str, ...) __attribute__((format(printf, 1, 2)));  // 2 = format 3 = params
 
 	extern const char* K_BinaryUnits[];
 

@@ -80,9 +80,10 @@ namespace Devices
 
 namespace ACPI
 {
-	HPETTable::HPETTable(uint64_t address)
+	HPETTable::HPETTable(uint64_t address, SystemDescriptionTable* sdtable)
 	{
 		HPETTable* hpet = (HPETTable*) address;
+		(void) sdtable;
 
 		this->hardwareRevisionID	= hpet->hardwareRevisionID;
 		this->compCount				= hpet->compCount;

@@ -1,677 +1,553 @@
-// userspace/StandardIO.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// StandardIO.cpp
+// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
-#include "HeaderFiles/StandardIO.hpp"
-#include <string.h>
-#include "HeaderFiles/Memory.hpp"
-#include "HeaderFiles/Utility.hpp"
-#include <stdlib.h>
+#if 0
+
+#include <stdint.h>
+#include <stddef.h>
+#include <stdarg.h>
+#include <limits.h>
+
+#include <String.hpp>
+
+
+size_t convert_integer(char* destination, uint64_t value, uint64_t base, const char* digits)
+{
+	size_t result = 1;
+	uint64_t copy = value;
+	while(base <= copy)
+	{
+		copy /= base;
+		result++;
+	}
+
+	for(size_t i = result; i != 0; i--)
+	{
+		destination[i - 1] = digits[value % base];
+		value /= base;
+	}
+
+	return result;
+}
+
+static size_t noop_callback(void*, const char*, size_t amount)
+{
+	return amount;
+}
+
+static size_t callback_character(size_t (*callback)(void*, const char*, size_t), void* user, char c)
+{
+	return callback(user, &c, 1);
+}
+
+size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t), void* user, const char* format, va_list parameters)
+{
+	if(!callback)
+		callback = noop_callback;
+
+	size_t written = 0;
+	bool rejected_bad_specifier = false;
+
+	while(*format != '\0')
+	{
+		if(*format != '%')
+		{
+			print_c:
+
+			size_t amount = 1;
+			while(format[amount] && format[amount] != '%')
+				amount++;
+
+			if(callback(user, format, amount) != amount)
+				return LONG_MAX;
+
+			format += amount;
+			written += amount;
+			continue;
+		}
+
+		const char* format_begun_at = format;
+
+		if(*(++format) == '%')
+			goto print_c;
+
+		if(rejected_bad_specifier)
+		{
+			incomprehensible_conversion:
+			rejected_bad_specifier = true;
+
+			unsupported_conversion:
+			format = format_begun_at;
+			goto print_c;
+		}
+
+		bool alternate = false;
+		bool zero_pad = false;
+		bool field_width_is_negative = false;
+		bool prepend_blank_if_positive = false;
+		bool prepend_plus_if_positive = false;
+		bool group_thousands = false;
+		bool alternate_output_digits = false;
+
+		(void) group_thousands;
+		(void) alternate_output_digits;
+
+		while(true)
+		{
+			switch(*format++)
+			{
+				case '#': alternate = true; continue;
+				case '0': zero_pad = true; continue;
+				case '-': field_width_is_negative = true; continue;
+				case ' ': prepend_blank_if_positive = true; continue;
+				case '+': prepend_plus_if_positive = true; continue;
+				case '\'': group_thousands = true; continue;
+				case 'I': alternate_output_digits = true; continue;
+				default: format--; break;
+			}
+			break;
+		}
+
+		int field_width = 0;
+		if(*format == '*' && (format++, true))
+			field_width = va_arg(parameters, int);
+
+		else while('0' <= *format && *format <= '9')
+			field_width = 10 * field_width + *format++ - '0';
+
+		if(field_width_is_negative)
+			field_width = -field_width;
+
+		size_t abs_field_width = (size_t) (field_width < 0 ? -field_width : field_width);
+
+		size_t precision = LONG_MAX;
+		if(*format == '.' && (format++, true))
+		{
+			precision = 0;
+			if(*format == '*' && (format++, true))
+			{
+				int int_precision = va_arg(parameters, int);
+				precision = 0 <= int_precision ? (size_t) int_precision : 0;
+			}
+			else
+			{
+				if(*format == '-' && (format++, true))
+					while('0' <= *format && *format <= '9')
+						format++;
+				else
+					while('0' <= *format && *format <= '9')
+						precision = 10 * precision + *format++ - '0';
+			}
+		}
+
+		enum length
+		{
+			LENGTH_SHORT_SHORT,
+			LENGTH_SHORT,
+			LENGTH_DEFAULT,
+			LENGTH_LONG,
+			LENGTH_LONG_LONG,
+			LENGTH_LONG_DOUBLE,
+			LENGTH_INTMAX_T,
+			LENGTH_SIZE_T,
+			LENGTH_PTRDIFF_T,
+		};
+
+		struct length_modifer
+		{
+			const char* name;
+			enum length length;
+		};
+
+		struct length_modifer length_modifiers[] =
+		{
+			{ "hh", LENGTH_SHORT_SHORT },
+			{ "h", LENGTH_SHORT },
+			{ "", LENGTH_DEFAULT },
+			{ "l", LENGTH_LONG },
+			{ "ll", LENGTH_LONG_LONG },
+			{ "L", LENGTH_LONG_DOUBLE },
+			{ "j", LENGTH_INTMAX_T },
+			{ "z", LENGTH_SIZE_T },
+			{ "t", LENGTH_PTRDIFF_T },
+		};
+
+		enum length length = LENGTH_DEFAULT;
+		size_t length_length = 0;
+		for(size_t i = 0; i < sizeof(length_modifiers) / sizeof(length_modifiers[0]); i++)
+		{
+			size_t name_length = String::Length(length_modifiers[i].name);
+			if(name_length < length_length)
+				continue;
+
+			if(String::Compare(format, length_modifiers[i].name, name_length) != 0)
+				continue;
+
+			length = length_modifiers[i].length;
+			length_length = name_length;
+		}
+
+		format += length_length;
+
+		if(*format == 'd' || *format == 'i' || *format == 'o' || *format == 'u' || *format == 'x' || *format == 'X' || *format == 'p')
+		{
+			char conversion = *format++;
+
+			bool negative_value = false;
+			uint64_t value;
+			if(conversion == 'p')
+			{
+				value = (uint64_t) va_arg(parameters, void*);
+				conversion = 'x';
+				alternate = !alternate;
+				prepend_blank_if_positive = false;
+				prepend_plus_if_positive = false;
+			}
+			else if(conversion == 'i' || conversion == 'd')
+			{
+				intmax_t signed_value;
+				if(length == LENGTH_SHORT_SHORT)
+					signed_value = va_arg(parameters, int);
+
+				else if(length == LENGTH_SHORT)
+					signed_value = va_arg(parameters, int);
+
+				else if(length == LENGTH_DEFAULT)
+					signed_value = va_arg(parameters, int);
+
+				else if(length == LENGTH_LONG)
+					signed_value = va_arg(parameters, long);
+
+				else if(length == LENGTH_LONG_LONG)
+					signed_value = va_arg(parameters, long long);
+
+				else if(length == LENGTH_INTMAX_T)
+					signed_value = va_arg(parameters, intmax_t);
+
+				else if(length == LENGTH_SIZE_T)
+					signed_value = va_arg(parameters, size_t);
+
+				else if(length == LENGTH_PTRDIFF_T)
+					signed_value = va_arg(parameters, ptrdiff_t);
+
+				else
+					goto incomprehensible_conversion;
+
+				value = (negative_value = signed_value < 0) ? -(uint64_t) signed_value : (uint64_t) signed_value;
+			}
+			else
+			{
+				if(length == LENGTH_SHORT_SHORT)
+					value = va_arg(parameters, unsigned int);
+
+				else if(length == LENGTH_SHORT)
+					value = va_arg(parameters, unsigned int);
+
+				else if(length == LENGTH_DEFAULT)
+					value = va_arg(parameters, unsigned int);
+
+				else if(length == LENGTH_LONG)
+					value = va_arg(parameters, unsigned long);
+
+				else if(length == LENGTH_LONG_LONG)
+					value = va_arg(parameters, unsigned long long);
+
+				else if(length == LENGTH_INTMAX_T)
+					value = va_arg(parameters, uint64_t);
+
+				else if(length == LENGTH_SIZE_T)
+					value = va_arg(parameters, size_t);
+
+				else if(length == LENGTH_PTRDIFF_T)
+					value = (uint64_t) va_arg(parameters, ptrdiff_t);
+
+				else
+					goto incomprehensible_conversion;
+
+				prepend_blank_if_positive = false;
+				prepend_plus_if_positive = false;
+			}
+
+			const char* digits = conversion == 'X' ? "0123456789ABCDEF" : "0123456789abcdef";
+
+			uint64_t base = (conversion == 'x' || conversion == 'X') ? 16 : conversion == 'o' ? 8 : 10;
+			char prefix[3];
+			size_t prefix_length = 0;
+			size_t prefix_digits_length = 0;
+
+			if(negative_value)
+				prefix[prefix_length++] = '-';
+			else if(prepend_plus_if_positive)
+				prefix[prefix_length++] = '+';
+			else if(prepend_blank_if_positive)
+				prefix[prefix_length++] = ' ';
+			if(alternate && (conversion == 'x' || conversion == 'X') && value != 0)
+			{
+				prefix[prefix_digits_length++, prefix_length++] = '0';
+				prefix[prefix_digits_length++, prefix_length++] = conversion;
+			}
+			if(alternate && conversion == 'o' && value != 0)
+				prefix[prefix_digits_length++, prefix_length++] = '0';
+
+			char output[sizeof(uint64_t) * 3];
+			size_t output_length = convert_integer(output, value, base, digits);
+			if(!precision && output_length == 1 && output[0] == '0')
+			{
+				output_length = 0;
+				output[0] = '\0';
+			}
+
+			size_t output_length_with_precision = precision != LONG_MAX && output_length < precision ? precision : output_length;
+
+			size_t digits_length = prefix_digits_length + output_length;
+			size_t normal_length = prefix_length + output_length;
+			size_t length_with_precision = prefix_length + output_length_with_precision;
+
+			bool use_precision = precision != LONG_MAX;
+			bool use_zero_pad = zero_pad && 0 <= field_width && !use_precision;
+			bool use_left_pad = !use_zero_pad && 0 <= field_width;
+			bool use_right_pad = !use_zero_pad && field_width < 0;
+
+			if(use_left_pad)
+			{
+				for(size_t i = length_with_precision; i < abs_field_width; i++)
+				{
+					if(callback_character(callback, user, ' ') != 1)
+						return LONG_MAX;
+					else
+						written++;
+				}
+			}
+			if(callback(user, prefix, prefix_length) != prefix_length)
+				return LONG_MAX;
+
+			written += prefix_length;
+			if(use_zero_pad)
+			{
+				for(size_t i = normal_length; i < abs_field_width; i++)
+				{
+					if(callback_character(callback, user, '0') != 1)
+						return LONG_MAX;
+					else
+						written++;
+				}
+			}
+
+			if(use_precision)
+			{
+				for(size_t i = digits_length; i < precision; i++)
+				{
+					if(callback_character(callback, user, '0') != 1)
+						return LONG_MAX;
+					else
+						written++;
+				}
+			}
+
+			if(callback(user, output, output_length) != output_length)
+				return LONG_MAX;
+			written += output_length;
+			if(use_right_pad)
+			{
+				for(size_t i = length_with_precision; i < abs_field_width; i++)
+				{
+					if(callback_character(callback, user, ' ') != 1)
+						return LONG_MAX;
+					else
+						written++;
+				}
+			}
+		}
+
+		else if(*format == 'e' || *format == 'E' || *format == 'f' || *format == 'F' || *format == 'g' || *format == 'G' || *format == 'a' || *format == 'A')
+		{
+			char conversion = *format++;
+
+			long double value;
+			if(length == LENGTH_DEFAULT)
+				value = va_arg(parameters, double);
+
+			else if(length == LENGTH_LONG_DOUBLE)
+				value = va_arg(parameters, long double);
+
+			else
+				goto incomprehensible_conversion;
+
+			// TODO: Implement floating-point printing.
+			(void) conversion;
+			(void) value;
+
+			goto unsupported_conversion;
+		}
+
+		else if(*format == 'c' && (format++, true))
+		{
+			char c;
+			if(length == LENGTH_DEFAULT)
+				c = (char) va_arg(parameters, int);
+
+			// else if(length == LENGTH_LONG)
+			// {
+			// 	// TODO: Implement wide character printing.
+			// 	(void) va_arg(parameters, wint_t);
+			// 	goto unsupported_conversion;
+			// }
+			else
+				goto incomprehensible_conversion;
+
+			if(!field_width_is_negative && 1 < abs_field_width)
+			{
+				for(size_t i = 1; i < abs_field_width; i++)
+				{
+					if(callback_character(callback, user, ' ') != 1)
+						return LONG_MAX;
+					else
+						written++;
+				}
+			}
+
+			if(callback(user, &c, 1) != 1)
+				return LONG_MAX;
+
+			written++;
+
+			if(field_width_is_negative && 1 < abs_field_width)
+			{
+				for(size_t i = 1; i < abs_field_width; i++)
+				{
+					if(callback_character(callback, user, ' ') != 1)
+						return LONG_MAX;
+					else
+						written++;
+				}
+			}
+		}
+		else if(*format == 'm' || *format == 's')
+		{
+			char conversion = *format++;
+
+			const char* string;
+			// if(conversion == 'm')
+			// 	string = strerror(errno), conversion = 's';
+
+			if(length == LENGTH_DEFAULT)
+				string = va_arg(parameters, const char*);
+
+			// else if(length == LENGTH_LONG)
+			// {
+			// 	// TODO: Implement wide character string printing.
+			// 	(void) va_arg(parameters, const wchar_t*);
+			// 	goto unsupported_conversion;
+			// }
+			else
+				goto incomprehensible_conversion;
+
+			if(conversion == 's' && !string)
+				string = "(null)";
+
+			size_t string_length = 0;
+			for(size_t i = 0; i < precision && string[i]; i++)
+				string_length++;
+
+			if(!field_width_is_negative && string_length < abs_field_width)
+			{
+				for(size_t i = string_length; i < abs_field_width; i++)
+				{
+					if(callback_character(callback, user, ' ') != 1)
+						return LONG_MAX;
+					else
+						written++;
+				}
+			}
+
+			if(callback(user, string, string_length) != string_length)
+				return LONG_MAX;
+
+			written += string_length;
+
+			if(field_width_is_negative && string_length < abs_field_width)
+			{
+				for(size_t i = string_length; i < abs_field_width; i++)
+				{
+					if(callback_character(callback, user, ' ') != 1)
+						return LONG_MAX;
+					else
+						written++;
+				}
+			}
+		}
+		else if(*format == 'n' && (format++, true))
+		{
+			if(length == LENGTH_SHORT_SHORT)
+				*va_arg(parameters, signed char*) = (signed char) written;
+
+			else if(length == LENGTH_SHORT)
+				*va_arg(parameters, short*) = (short) written;
+
+			else if(length == LENGTH_DEFAULT)
+				*va_arg(parameters, int*) = (int) written;
+
+			else if(length == LENGTH_LONG)
+				*va_arg(parameters, long*) = (long) written;
+
+			else if(length == LENGTH_LONG_LONG)
+				*va_arg(parameters, long long*) = (long long) written;
+
+			else if(length == LENGTH_INTMAX_T)
+				*va_arg(parameters, uint64_t*) = (uint64_t) written;
+
+			else if(length == LENGTH_SIZE_T)
+				*va_arg(parameters, size_t*) = (size_t) written;
+
+			else if(length == LENGTH_PTRDIFF_T)
+				*va_arg(parameters, ptrdiff_t*) = (ptrdiff_t) written;
+
+			else
+				goto incomprehensible_conversion;
+		}
+		else
+			goto incomprehensible_conversion;
+	}
+
+	return written;
+}
+
+
+
 
 namespace Kernel
 {
 	namespace Console
 	{
 		void PrintChar(uint8_t c);
-		void SetColour(uint32_t Colour);
 	}
 }
 
 namespace Library {
 namespace StandardIO
 {
-	static void PrintChar(uint8_t c, void (*pf)(uint8_t))
+	static size_t PrintString(const char* string, size_t stringlen)
 	{
-		if(pf)
-			pf(c);
+		for(size_t i = 0; i < stringlen; i++)
+			Kernel::Console::PrintChar(string[i]);
 
-		else
-			Kernel::Console::PrintChar(c);
-	}
-
-	static void SwallowChar(uint8_t)
-	{
-	}
-
-	uint64_t PrintString(const char* string, int64_t length, void (*pf)(uint8_t))
-	{
-		uint64_t ret = 0;
-		for(uint64_t i = 0; i < (length < 0 ? strlen(string) : (uint64_t) length); i++)
-		{
-			PrintChar((uint8_t) string[i], pf);
-			ret++;
-		}
-
-		return ret;
-	}
-
-
-	static uint64_t PrintHex_NoPrefix(uint64_t n, bool ReverseEndianness = false, bool lowercase = false, void (*pf)(uint8_t) = 0)
-	{
-		int64_t tmp = 0;
-		int64_t i = 0;
-		uint64_t ret = 0;
-
-
-		// Mask bits of variables to determine size, and therefore how many digits to print.
-
-		if((n & 0xF000000000000000) == 0)
-			if((n & 0xFF00000000000000) == 0)
-				if((n & 0xFFF0000000000000) == 0)
-					if((n & 0xFFFF000000000000) == 0)
-						if((n & 0xFFFFF00000000000) == 0)
-							if((n & 0xFFFFFF0000000000) == 0)
-								if((n & 0xFFFFFFF000000000) == 0)
-									if((n & 0xFFFFFFFF00000000) == 0)
-										if((n & 0xFFFFFFFFF0000000) == 0)
-											if((n & 0xFFFFFFFFFF000000) == 0)
-												if((n & 0xFFFFFFFFFFF00000) == 0)
-													if((n & 0xFFFFFFFFFFFF0000) == 0)
-														if((n & 0xFFFFFFFFFFFFF000) == 0)
-															if((n & 0xFFFFFFFFFFFFFF00) == 0)
-																if((n & 0xFFFFFFFFFFFFFFF0) == 0)
-																	i = 0;
-																else
-																	i = 4;
-															else
-																i = 8;
-														else
-															i = 12;
-													else
-														i = 16;
-												else
-													i = 20;
-											else
-												i = 24;
-										else
-											i = 28;
-									else
-										i = 32;
-								else
-									i = 36;
-							else
-								i = 40;
-						else
-							i = 44;
-					else
-						i = 48;
-				else
-					i = 52;
-			else
-				i = 56;
-		else
-			i = 60;
-
-
-		if(!ReverseEndianness)
-		{
-			for(; i >= 0; i -= 4)
-			{
-				tmp = (n >> i) & 0xF;
-
-
-				if(tmp >= 0xA)
-					PrintChar((uint8_t)(tmp - 0xA + (lowercase ? 'a' : 'A')), pf);
-
-				else
-					PrintChar((uint8_t)(tmp + '0'), pf);
-
-				ret++;
-			}
-		}
-		else
-		{
-			for(int z = 0; z <= i; z += 8)
-			{
-				tmp = (n >> z) & 0xFF;
-				return PrintHex_NoPrefix((uint8_t) tmp, ReverseEndianness, lowercase, pf);
-			}
-		}
-
-		return ret;
-	}
-
-	static uint64_t PrintHex_Precision_NoPrefix(uint64_t n, int8_t leadingzeroes, bool ReverseEndianness, bool lowercase,
-		bool padzeroes, int8_t prec, bool ppf, void (*pf)(uint8_t) = 0)
-	{
-		(void) padzeroes;
-		if(prec < 0)
-		{
-			if(ppf)
-				PrintString("0x", -1, pf);
-
-			return PrintHex_NoPrefix(n, ReverseEndianness, lowercase, pf) + 2;
-		}
-
-		int64_t tmp;
-		int64_t i = (prec * 4) - 4;
-		uint64_t ret = 0;
-
-		if(ppf)
-			PrintString("0x", -1, pf);
-
-		if(n == 0)
-		{
-			for(int8_t d = 0; d < leadingzeroes; d++)
-				PrintString("0", -1, pf);
-
-			return leadingzeroes;
-		}
-
-
-		if(!ReverseEndianness)
-		{
-			for(; i >= 0; i -= 4)
-			{
-				tmp = (n >> i) & 0xF;
-
-
-				if(tmp >= 0xA)
-					PrintChar((uint8_t) tmp - 0xA + (lowercase ? 'a' : 'A'), pf);
-
-				else
-					PrintChar((uint8_t)(tmp + '0'), pf);
-
-				ret++;
-			}
-		}
-		else
-		{
-			for(int z = 0; z <= i; z += 8)
-			{
-				tmp = (n >> z) & 0xFF;
-				return PrintHex_NoPrefix((uint8_t) tmp, ReverseEndianness, lowercase, pf);
-			}
-		}
-
-		return ret;
-	}
-
-
-
-
-
-
-
-
-	static uint64_t PrintInteger_Signed(int64_t num, int8_t Width = -1, void (*pf)(uint8_t) = 0)
-	{
-		uint64_t ret = 0;
-
-		if(num == 0)
-		{
-			if(Width != -1)
-			{
-				for(int g = 0; g < Width; g++)
-				{
-					PrintChar('0', pf);
-					ret++;
-				}
-			}
-			else
-			{
-				PrintChar('0', pf);
-				ret++;
-			}
-
-			return ret;
-		}
-
-		if(num < 0){ PrintChar('-', pf); ret++; }
-		if(Width != -1)
-		{
-			uint64_t n = (uint64_t) __abs(num);
-			uint8_t k = 0;
-			while(n > 0)
-			{
-				n /= 10;
-				k++;
-			}
-
-			while(Width > k)
-			{
-				PrintChar('0', pf);
-				k++;
-				ret++;
-			}
-		}
-		char out[32] = { 0 };
-		char* k = Utility::ConvertToString(num, out);
-		auto r = PrintString(k, -1, pf) + ret;
-
-		return r;
-	}
-
-	#define truncate(x)			((double) ((int64_t) (x)))
-	#define round(x)			(((x) < 0) ? ((double) ((int64_t) ((x) - 0.5))) : ((double) ((int64_t) ((x) + 0.5))))
-
-
-
-
-	static uint8_t PrintFloat(double fl, int8_t precision = 15, void (*pf)(uint8_t) = 0)
-	{
-		if(precision < 0)
-		{
-			precision = 15;
-		}
-
-		// Put integer part first
-		PrintInteger_Signed((int64_t) truncate(fl), -1, pf);
-		PrintChar('.', pf);
-
-		if(truncate(fl) == fl)
-		{
-			return (uint8_t) precision;
-		}
-
-		if(fl < 0)
-		{
-			fl  = -fl;
-		}
-
-		// Get decimal part
-		fl -= truncate(fl);
-
-		uint32_t digit = 0;
-		while(fl > 0 && precision > 0)
-		{
-			fl *= 10;
-
-			if(precision == 1)
-				digit = (uint32_t) round(fl);
-
-			else
-				digit = (uint32_t) fl;
-
-			if(!(digit + '0' >= '0' && digit + '0' <= '9'))
-			{
-				PrintChar('0', pf);
-				return 0;
-			}
-
-			PrintChar((uint8_t) digit + '0', pf);
-			precision--;
-			fl -= digit;
-		}
-		// Return the remaining number -- handle in printk() to print trailing zeroes
-		return (uint8_t) precision;
-	}
-
-
-
-
-
-	void PrintFormatted(void (*pf)(uint8_t), const char* str, ...)
-	{
-		va_list args;
-		va_start(args, str);
-		PrintFormatted(pf, str, args);
-		va_end(args);
-	}
-
-	void PrintFormatted(const char* str, ...)
-	{
-		va_list args;
-		va_start(args, str);
-		PrintFormatted(0, str, args);
-		va_end(args);
-	}
-
-	void printf(const char* str, ...)
-	{
-		va_list args;
-		va_start(args, str);
-		PrintFormatted(0, str, args);
-		va_end(args);
-	}
-
-	void PrintFormatted(const char* str, va_list args)
-	{
-		PrintFormatted(0, str, args);
-	}
-
-
-	void PrintFormatted(void (*pf)(uint8_t), const char* string, va_list args)
-	{
-		// Note:
-		/*
-			This is totally non-standard printf.
-			A number of custom formatters are available:
-			%r resets to white. (no arguments)
-
-			The behaviour of hex printing is quite different:
-			%x prints in uppercase.
-			%X prints in lowercase.
-
-			%x prints /with/ the leading '0x'
-			%#x prints without.
-
-			%[width]d now uses spaces for padding by default, while %0[width]d uses zeroes, as per printf-standard.
-
-			We now 'almost' follow the printf standard of  %[parameter][flags][width][.precision][length]type
-			/almost/.
-
-			'Parameter' is not supported. It might be, when a valid use case is encountered.
-			'Flags' in this case is either '0', '#', '+', '^' (custom) or ' '.
-			'Width' is fully supported.
-			'Precision' is also fully supported.
-
-			'Length' is only partially supported -- they will only be taken into account for floating point numbers,
-			because for other types we accept the largest type by default.
-			Additionally, we always accept at least a 'double' for those -- therefore 'L' and 'l' function the same way,
-			in that we instead look for a long double.
-
-
-
-			However, because front-padding (align right) for hex numbers is handled in the PrintHex_Precision_ functions,
-			the Precision formatter is used to control how many zeroes to print when the input number is zero.
-
-			For example: %16x will print [width] zeroes by default if the input is zero.
-			However, %16.3x will print up to 3 zeroes, padding the rest with spaces.
-		*/
-
-
-		bool IsFormat = false;
-		bool DisplaySign = false;
-		bool OmitZeroX = false;
-		bool IsParsingPrecision = false;
-		bool LeftAlign = false;
-		bool PadZeroes = false;
-		bool PadSignedSpace = false;
-
-		// we don't support ints smaller than 64bit.
-		// 1 is long double.
-		int8_t ArgSize = -1;
-		int8_t Precision = -1;
-		int8_t Width = -1;
-
-		uint64_t PrintedChars = 0;
-
-		char c = 0;
-		int32_t z = 0;
-		uint64_t x = 0;
-		double f = 0.00;
-		char* s = 0;
-		char ch = 0;
-		bool b = false;
-
-		uint64_t length = strlen(string);
-
-		// char* widthbuf = char[8];
-		// char* precsbuf = char[8];
-
-		char widthbuf[8] = { 0 };
-		char precsbuf[8] = { 0 };
-
-		// %[parameter][flags][width][.precision][length]type
-
-		for(uint64_t i = 0; i < length; i++)
-		{
-			c = string[i];
-
-			if(!IsFormat && c == '%')
-			{
-				IsFormat = true;
-				continue;
-			}
-			if(IsFormat)
-			{
-				switch(c)
-				{
-					case '%':
-						PrintChar('%', pf);
-						break;
-
-					// Standard, parameter types
-
-					case 'd':
-					case 'i':
-					case 'u':
-						z = va_arg(args, int32_t);
-						if(DisplaySign)
-						{
-							if(z > 0)
-								PrintChar('+', pf);
-
-							DisplaySign = false;
-						}
-
-						if(PadSignedSpace)
-						{
-							PadSignedSpace = false;
-							if(z < 0)
-								PrintChar(' ', pf);
-						}
-
-						PrintedChars = PrintInteger_Signed(z, !LeftAlign && PadZeroes ? Width : -1, SwallowChar);
-
-						// check if we need to align left.
-						if(LeftAlign && Width > 0)
-						{
-							PrintInteger_Signed(z, !LeftAlign && PadZeroes ? Width : -1, pf);
-							LeftAlign = false;
-							for(uint64_t tps = 0; tps < (uint8_t) Width - PrintedChars; tps++)
-							{
-								PrintChar(' ', pf);
-							}
-						}
-
-						else if(Width > 0 && !LeftAlign && !PadZeroes)
-						{
-							for(uint64_t tps = 0; tps < (uint8_t) Width - PrintedChars; tps++)
-							{
-								PrintChar(' ', pf);
-							}
-
-							PrintInteger_Signed(z, -1, pf);
-						}
-
-						else
-						{
-							PrintInteger_Signed(z, Width, pf);
-						}
-
-						PadZeroes = false;
-						break;
-
-					case 's':
-						s = va_arg(args, char*);
-
-						// check to pad with spaces.
-						if(Width > 0)
-						{
-							int64_t wd = Width;
-							for(int64_t m = 0; m < wd; m++)
-								PrintChar(' ', pf);
-						}
-
-						PrintString(s, Precision, pf);
-						break;
-
-
-					case 'X':
-					case 'x':
-					case 'p':
-						x = va_arg(args, uint64_t);
-
-						if(c == 'p')
-							Precision = 16;
-
-						// now handle the padding rubbish.
-						// check if we need to align left.
-						if(LeftAlign && Width > 0)
-						{
-							PrintedChars = PrintHex_Precision_NoPrefix(x, -1, false, c == 'X', PadZeroes, Precision, !OmitZeroX, pf);
-
-							LeftAlign = false;
-							for(uint64_t tps = 0; tps < (uint8_t) Width - PrintedChars; tps++)
-							{
-								PrintChar(' ', pf);
-							}
-						}
-						else
-						{
-							// handle cases where we use width instead.
-							if(Width > 0)
-								Precision = Width;
-
-							PrintHex_Precision_NoPrefix(x, Width > 0 ? Width : 1, false, c == 'X', PadZeroes, Precision, !OmitZeroX, pf);
-						}
-
-						PadZeroes = false;
-						OmitZeroX = false;
-						break;
-
-					case 'c':
-						ch = (char) va_arg(args, int);
-						PrintChar((uint8_t) ch, pf);
-						break;
-
-
-					case 'f':
-					case 'F':
-						if(ArgSize == 1)
-							f = va_arg(args, double);
-
-						else if(ArgSize == 0)
-							f = va_arg(args, double);
-
-						else
-							f = va_arg(args, double);
-
-						if(Precision > 0)
-						{
-							uint8_t remaining = PrintFloat(f, Precision, pf);
-							for(; remaining > 0; remaining--)
-								PrintChar('0', pf);
-						}
-						else
-						{
-							PrintFloat(f, Precision, pf);
-						}
-						break;
-
-					case 'b':
-						b = va_arg(args, int);
-						PrintString(b ? "true" : "false", -1, pf);
-						break;
-
-
-					case 'z':
-					case 'j':
-					case 't':
-					case 'h':
-						continue;
-
-
-
-					// Argument sizes
-					case 'l':
-					case 'L':
-						ArgSize = 1;
-						continue;
-
-
-					// Flags
-					case '+':
-						DisplaySign = true;
-						IsFormat = true;
-						continue;
-
-					// Note this is the reverse of standard behaviour; we'll print '0x' every time unless # is specified.
-					case '#':
-						OmitZeroX = true;
-						IsFormat = true;
-						continue;
-
-					case '^':
-						IsFormat = true;
-						continue;
-
-					case '-':
-						LeftAlign = true;
-						IsFormat = true;
-						continue;
-
-					case ' ':
-						PadSignedSpace = true;
-						IsFormat = true;
-						continue;
-
-
-					// Width/precision
-					case '.':
-						IsParsingPrecision = true;
-						IsFormat = true;
-						continue;
-
-
-					default:
-						if(IsParsingPrecision)
-						{
-							int z1 = 0;
-							uint64_t f1 = i;
-							for(z1 = 0, f1 = i; ((string[f1] >= '0') && (string[f1] <= '9')) || string[f1] == '*'; z1++, f1++)
-							{
-								precsbuf[z1] = string[f1];
-							}
-							if(precsbuf[0] == '*')
-								Precision = (int8_t) va_arg(args, uint64_t);
-
-							else
-								Precision = (int8_t) Utility::ConvertToInt(precsbuf, 10);
-
-							// -1 because continue; increments i
-							i = f1 - 1;
-							IsFormat = true;
-
-							Memory::Set(precsbuf, 0, 8);
-							IsParsingPrecision = false;
-
-							continue;
-						}
-						else
-						{
-							int z1 = 0;
-							uint64_t f1 = i;
-							for(z1 = 0, f1 = i; ((string[f1] >= '0') && (string[f1] <= '9')) || string[f1] == '*'; z1++, f1++)
-							{
-								widthbuf[z1] = string[f1];
-							}
-
-							if(widthbuf[0] == '0')
-								PadZeroes = true;
-
-							if(widthbuf[0] == '*')
-								Width = (int8_t) va_arg(args, uint64_t);
-
-							else
-								Width = (int8_t) Utility::ConvertToInt(widthbuf, 10);
-
-
-
-							// -1 because continue; increments i
-							i = f1 - 1;
-							IsFormat = true;
-
-							Memory::Set(widthbuf, 0, 8);
-							continue;
-						}
-						break;
-				}
-				IsFormat = false;
-				DisplaySign = false;
-
-				Precision = -1;
-				Width = -1;
-				IsParsingPrecision = false;
-			}
-			else
-			{
-				PrintChar((uint8_t) c, pf);
-			}
-		}
+		return stringlen;
 	}
 }
 }
+
+
+
+
+
+
+
+
+
+#endif
+
+
+
+
 

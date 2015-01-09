@@ -54,6 +54,7 @@ namespace HardwareAbstraction
 			char		signature[4];
 			uint32_t	length;
 			uint8_t		revision;
+			uint8_t		checksum;
 			char		oemid[6];
 			char		oemtableid[8];
 			uint32_t	oemrevision;
@@ -79,7 +80,7 @@ namespace HardwareAbstraction
 
 		struct HPETTable : SDTable
 		{
-			HPETTable(uint64_t address);
+			HPETTable(uint64_t address, SystemDescriptionTable* sdtable);
 
 			uint8_t		hardwareRevisionID;
 			uint8_t		compCount		: 5;
@@ -92,16 +93,6 @@ namespace HardwareAbstraction
 			uint16_t	minTick;
 			uint8_t		pageProt;
 		} __attribute__ ((packed));
-
-		struct APICTable : SDTable
-		{
-			APICTable(uint64_t address);
-
-			uint32_t	physLocalControllerAddr;
-			uint32_t	flags;
-
-			// fuck all
-		};
 
 		namespace APICStructs
 		{
@@ -144,6 +135,17 @@ namespace HardwareAbstraction
 				uint32_t	IOAPICInterruptStart;
 			};
 		}
+
+		struct APICTable : SDTable
+		{
+			APICTable(uint64_t address, SystemDescriptionTable* sdtable);
+
+			uint32_t	physLocalControllerAddr;
+			uint32_t	flags;
+
+			// fuck all
+			rde::vector<APICStructs::APICStruct*> structs;
+		};
 	}
 }
 }

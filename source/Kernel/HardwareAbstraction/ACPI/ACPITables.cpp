@@ -281,12 +281,13 @@ namespace ACPI
 					+ sizeof(SystemDescriptionTable)			// since the HPET table doesn't contain our fields
 					- sizeof(SDTable*)							// compensate for the extra SDTable* pointer
 					- sizeof(uint64_t);							// compensate for the extra 'address' field in our struct
+
 			if(s0 == 'H' && s1 == 'P' && s2 == 'E' && s3 == 'T')
 			{
 				using namespace Kernel::HardwareAbstraction::Devices;
 
 				// HPET, create that shit
-				this->table = new HPETTable(tableAddress);
+				this->table = new HPETTable(tableAddress, this);
 				DeviceManager::AddDevice(new Devices::HPET((HPETTable*) this->table), DeviceType::HighPrecisionTimer);
 			}
 			else if(s0 == 'A' && s1 == 'P' && s2 == 'I' && s3 == 'C')
@@ -294,7 +295,7 @@ namespace ACPI
 				using namespace Kernel::HardwareAbstraction::Devices;
 
 				// MADT (multiple APIC desc. table)
-				this->table = new APICTable(tableAddress);
+				this->table = new APICTable(tableAddress, this);
 				DeviceManager::AddDevice(new Devices::APIC((APICTable*) this->table), DeviceType::AdvancedPIC);
 			}
 		}

@@ -16,8 +16,8 @@ namespace Library
 		void PrintGUID(uint64_t High64, uint64_t Low64);
 
 
-		void PrintFormatted(void (*pf)(uint8_t), const char* str, ...);
-		void PrintFormatted(const char* string, ...);
+		void PrintFormatted(void (*pf)(uint8_t), const char* str, ...) __attribute__((format(printf, 2, 3)));  // 2 = format 3 = params
+		void PrintFormatted(const char* string, ...) __attribute__((format(printf, 1, 2)));  // 2 = format 3 = params
 
 		void PrintFormatted(void (*pf)(uint8_t), const char* str, va_list);
 		void PrintFormatted(const char* string, va_list);
