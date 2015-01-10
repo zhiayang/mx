@@ -14,6 +14,22 @@ The fifth rewrite of what never was, OrionOS.
 - Somewhat complete libc written
 
 
+## TODO List ##
+#### High Priority ####
+- execve() and family
+- Stabilty fixes here and there -- it's gotten much better now
+- HPET Support
+
+#### Low Priority ####
+- APIC Stuff, including IOAPIC/LAPIC
+- Startup an AP CPU for fun?
+- Put back the network code from Orion-X4 (and modify to use VFS)
+- Fix the StandardIO implementation in Iris -- it's fugly (and broken)
+- Finish pthreads beyond basic stuff
+
+
+
+
 ## Trying out [mx] ##
 #### Required Software ####
 - QEMU
