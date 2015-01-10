@@ -146,6 +146,7 @@ namespace Filesystems
 		void DeleteNode(vnode* node)
 		{
 			(void) node;
+			delete node;
 		}
 
 		vnode* Reference(vnode* node)
@@ -209,6 +210,31 @@ namespace Filesystems
 			ioctx->fdarray.fds.push_back(fe);
 
 			return fe;
+		}
+
+		err_t Close(IOContext* ioctx, fileentry* fe)
+		{
+			assert(ioctx);
+			assert(fe);
+
+			ioctx->fdarray.fds.remove(fe);
+			Dereference(fe->node);
+			delete fe;
+
+			return 0;
+		}
+
+		void CloseAll(IOContext* ioctx)
+		{
+			assert(ioctx);
+
+			for(fileentry* fe : ioctx->fdarray.fds)
+			{
+				Dereference(fe->node);
+				delete fe;
+			}
+
+			ioctx->fdarray.fds.clear();
 		}
 
 		fileentry* OpenFile(IOContext* ioctx, const char* path, int flags)
@@ -353,6 +379,28 @@ namespace Filesystems
 
 		auto fe = VFS::OpenFile(ctx, path, flags);
 		return fe ? fe->fd : -1;
+	}
+
+	err_t Close(fd_t fd)
+	{
+		auto ctx = getctx();
+		if(fd < 0)
+			return -1;
+
+		auto fe = VFS::FileEntryFromFD(ctx, fd);
+		if(fe == nullptr)
+			return 0;
+
+		return VFS::Close(ctx, fe);
+		return 0;
+	}
+
+	void CloseAll(Multitasking::Process* p)
+	{
+		auto ctx = &p->iocontext;
+		assert(ctx);
+
+		VFS::CloseAll(ctx);
 	}
 
 	size_t Read(fd_t fd, void* buf, size_t len)

@@ -117,6 +117,11 @@ namespace Multitasking
 		assert(p);
 		assert(p->Threads.size() == 0);
 
+
+		// close all files
+		Filesystems::CloseAll(p);
+
+
 		// destroy its address space
 		// assert(p->VAS);
 		// MemoryManager::Virtual::ChangeAddressSpace(p->VAS->PML4);
