@@ -23,7 +23,7 @@ GCCVERSION			= 4.9.1
 
 WARNINGS			= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-align -Wno-unreachable-code -Wno-gnu -Wno-missing-prototypes -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-sign-conversion -Wno-old-style-cast -Wno-exit-time-destructors
 
-CXXFLAGS			= -m64 -Weverything -msse3 -g -integrated-as -O2 -fPIC -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -c
+CXXFLAGS			= -m64 -Weverything -msse3 -g -integrated-as -O2 -fPIC -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -c
 
 LDFLAGS				= --gc-sections -z max-page-size=0x1000 -T link.ld -L$(SYSROOT)/usr/lib
 
@@ -73,7 +73,7 @@ build: $(OUTPUT)
 
 $(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) builduserspace
 	@echo "\n# Linking object files"
-	@$(LD) $(LDFLAGS) -o build/kernel64.elf source/Kernel/Boot/Start.s.o $(shell find source -name "*.o" ! -name "Start.s.o") $(LIBRARIES)
+	@$(LD) $(LDFLAGS) -o build/kernel64.elf source/Boot/Start.s.o $(shell find source -name "*.o" ! -name "Start.s.o") $(LIBRARIES)
 
 	@echo "# Performing objcopy"
 	@$(OBJCOPY) -g -O elf32-i386 build/kernel64.elf build/kernel.mxa

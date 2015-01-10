@@ -42,6 +42,9 @@ off_t tell(int filedes);
 
 int usleep(useconds_t usec);
 
+
+pid_t fork();
+
 #ifdef __cplusplus
 }
 #endif
