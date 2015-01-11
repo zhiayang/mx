@@ -207,7 +207,6 @@ namespace Multitasking
 	}
 
 
-
 	void Block(uint8_t purpose)
 	{
 		getRunQueue()->lock();
@@ -224,7 +223,6 @@ namespace Multitasking
 
 		(void) purpose;
 		getRunQueue()->unlock();
-		HALT("");
 		YieldCPU();
 	}
 

@@ -122,7 +122,6 @@ PopReg:
 	iretq
 
 
-
 DoRing3:
 	// Load the user data segment
 	mov $0x23, %rbp

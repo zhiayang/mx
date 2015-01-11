@@ -82,10 +82,12 @@ namespace DMA
 		*((uint16_t*)((uintptr_t) prd + 6)) = 0x8000;
 
 		// write the bytes of address into register
-		IOPort::Write32((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 4), (uint32_t)((uint64_t) prd));
+		IOPort::Write32((uint16_t) (mmio + (dev->GetBus() ? 8 : 0) + 4), (uint32_t) ((uint64_t) prd));
+
+		Log(3, "Loading DMA Read: LBA %d, %d bytes, output buffer %x", Sector, Bytes, Buffer);
 
 		PreviousDevice = dev;
-		PIO::SendCommandData(dev, Sector, (uint8_t)(Bytes / dev->GetSectorSize()));
+		PIO::SendCommandData(dev, Sector, (uint8_t) (Bytes / dev->GetSectorSize()));
 
 		IOPort::WriteByte(dev->GetBaseIO() + 7, Sector > 0x0FFFFFFF ? ATA_ReadSectors48DMA : ATA_ReadSectors28DMA);
 		IOPort::WriteByte((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 0), DMA::DMACommandRead | DMA::DMACommandStart);
@@ -94,9 +96,11 @@ namespace DMA
 		_WaitingDMA15 = dev->GetBus();
 
 		// uint64_t no = Time::Now();
-		uint64_t t1 = 100000000;
+		// uint64_t t1 = 100000000;
+		UHALT();
 		while((_WaitingDMA14 || _WaitingDMA15)/* && Time::Now() < no + 100 && t1 > 0*/)
-			t1--;
+			;
+			// t1--;
 
 		_WaitingDMA14 = false;
 		_WaitingDMA15 = false;

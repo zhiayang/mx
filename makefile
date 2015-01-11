@@ -23,7 +23,7 @@ GCCVERSION			= 4.9.1
 
 WARNINGS			= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-align -Wno-unreachable-code -Wno-gnu -Wno-missing-prototypes -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-sign-conversion -Wno-old-style-cast -Wno-exit-time-destructors
 
-CXXFLAGS			= -m64 -Weverything -msse3 -g -integrated-as -O2 -fPIC -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -c
+CXXFLAGS			= -m64 -g -Weverything -msse3 -integrated-as -O2 -fPIC -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -c
 
 LDFLAGS				= --gc-sections -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib
 
@@ -48,13 +48,13 @@ NUMFILES			= $$(($(words $(CXXSRC)) + $(words $(SSRC))))
 
 
 
-LIBRARIES			= -liris -lsupc++ -lgcc -lrdestl
+LIBRARIES			= -liris -lgcc -lrdestl
 OUTPUT				= build/kernel64.elf
 
 
 .PHONY: builduserspace buildlib mountdisk clean all cleandisk copyheader
 
-run:
+run: build
 	@$(QEMU) -s -vga std -serial file:"build/serialout.log" -no-reboot -m $(MEMORY) -hda build/disk.img -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap -monitor stdio
 
 all: $(OUTPUT)
@@ -82,7 +82,7 @@ $(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) buildus
 	@$(OBJCOPY) -g -O elf32-i386 build/fxloader64.elf build/fxloader.mxa
 	@cp build/fxloader.mxa $(shell tools/getpath.sh)/boot/fxloader.mxa
 
-	@cp $(OUTPUT) $(shell tools/getpath.sh)/System/Library/CoreServices/kernel64
+	@$(OBJCOPY) -g $(OUTPUT) $(shell tools/getpath.sh)/System/Library/CoreServices/kernel64
 
 
 %.s.o: %.s

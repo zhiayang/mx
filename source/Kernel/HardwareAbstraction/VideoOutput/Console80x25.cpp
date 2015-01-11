@@ -13,7 +13,7 @@ namespace HardwareAbstraction {
 namespace VideoOutput {
 namespace Console80x25
 {
-	static uint8_t CursorX, CursorY;
+	static uint8_t CursorX = 0, CursorY = 0;
 	const uint32_t Space = ((uint16_t)(' ') | (0x0F << 8) | (((uint32_t)(uint16_t)(' ') | (0x0F << 8)) << 16));
 	const uint8_t TabWidth = 4;
 
@@ -97,7 +97,7 @@ namespace Console80x25
 
 		else if(Char >= ' ')
 		{
-			Location = (uint16_t*)0xB8000 + (CursorY * 80 + CursorX);
+			Location = (uint16_t*) 0xB8000 + (CursorY * 80 + CursorX);
 			*Location = (uint16_t)(Char | (Colour << 8));
 			CursorX++;
 		}
@@ -115,8 +115,8 @@ namespace Console80x25
 	{
 		if(CursorY >= 25)
 		{
-			Memory::Copy((uint16_t*)0xB8000, (uint16_t*)0xB8000 + (CursorY - 24) * 80, (49 - CursorY) * 80 * 2);
-			memset32((uint16_t*)0xB8000 + (49 - CursorY) * 80, Space, 40);
+			Memory::Copy((uint16_t*) 0xB8000, (uint16_t*) 0xB8000 + (CursorY - 24) * 80, (49 - CursorY) * 80 * 2);
+			memset32((uint16_t*) 0xB8000 + (49 - CursorY) * 80, Space, 40);
 			CursorY = 24;
 		}
 	}

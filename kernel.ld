@@ -6,7 +6,7 @@ SECTIONS
 	Kernel_VMA = 0xFFFFFFFF80000000;
 	. = Kernel_VMA;
 
-	.text : ALIGN(0x1000)
+	.text ALIGN(0x1000) : AT(ADDR(.text) - Kernel_VMA)
 	{
 		*(.text*)
 		*(.gnu.linkonce.t*)
@@ -21,16 +21,15 @@ SECTIONS
 		StartDestructors = .;
 		*(SORT(.Destructors))
 		EndDestructors = .;
-
 	}
 
-	.data : ALIGN(0x1000)
+	.data ALIGN(0x1000) : AT(ADDR(.data) - Kernel_VMA)
 	{
 		*(.data*)
 		*(.gnu.linkonce.d*)
 	}
 
-	.bss : ALIGN(0x1000)
+	.bss ALIGN(0x1000) : AT(ADDR(.bss) - Kernel_VMA)
 	{
 		StartBSS = .;
 		*(COMMON)
