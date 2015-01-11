@@ -82,10 +82,10 @@ namespace Physical
 
 	uint64_t AllocatePage(uint64_t size)
 	{
-		auto mut = AutoMutex(mtx);
 		if(!DidInit)
 			return AllocateFromReserved();
 
+		auto mut = AutoMutex(mtx);
 		OpsSinceLastCoalesce++;
 		size_t trycount = 0;
 		auto len = PageList->size();
@@ -191,7 +191,7 @@ namespace Physical
 
 		uint64_t ret = ReservedRegionForVMM + ReservedRegionIndex;
 		ReservedRegionIndex += 0x1000;
-		Memory::Set((void*) ret, 0x00, 0x1000);
+		// Memory::Set((void*) ret, 0x00, 0x1000);
 		return ret;
 	}
 

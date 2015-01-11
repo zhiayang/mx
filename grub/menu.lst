@@ -4,5 +4,6 @@ timeout 0
 #title Boot from hard disk
 
 title [mx]
-kernel /boot/kernel.mxa
+kernel /boot/fxloader.mxa
+module /System/Library/CoreServices/kernel64
 boot

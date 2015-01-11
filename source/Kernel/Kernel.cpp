@@ -211,7 +211,6 @@ namespace Kernel
 			Multitasking::AddToQueue(Multitasking::CreateKernelThread(Idle, 0));
 			Multitasking::AddToQueue(KernelProcess);
 
-
 			asm volatile("sti");
 		}
 
@@ -342,8 +341,8 @@ namespace Kernel
 				LFBInPages = bytes;
 
 				// map a bunch of pages for the buffer.
-				for(uint64_t k = 0; k < bytes; k++)
-					Virtual::MapAddress(LFBBufferAddress_INT + (k * 0x1000), Physical::AllocatePage(), 0x07);
+				// for(uint64_t k = 0; k < bytes; k++)
+				// 	Virtual::MapAddress(LFBBufferAddress_INT + (k * 0x1000), Physical::AllocatePage(), 0x07);
 
 				Virtual::MapRegion(LFBAddr, LFBAddr, bytes, 0x07);
 				// LFBBufferAddr = LFBBufferAddress_INT;

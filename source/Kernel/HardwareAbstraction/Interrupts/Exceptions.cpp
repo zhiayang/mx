@@ -121,7 +121,7 @@ namespace Interrupts
 	extern "C" void HAL_AsmLoadIDT(uint64_t);
 	extern "C" void ThreadExceptionTerminate();
 
-	struct __attribute__((packed)) IDTEntry
+	struct IDTEntry
 	{
 		uint16_t base_lo;
 		uint16_t sel;
@@ -130,13 +130,13 @@ namespace Interrupts
 		uint16_t base_mid;
 		uint32_t base_hi;
 		uint32_t always0_1;
-	};
+	} __attribute__((packed));
 
-	struct __attribute__((packed)) IDTPointer
+	struct IDTPointer
 	{
 		uint16_t limit;
 		uint64_t base;
-	};
+	} __attribute__((packed));
 
 
 
@@ -183,7 +183,7 @@ namespace Interrupts
 
 
 		// Points the processor's internal register to the new IDT
-		HAL_AsmLoadIDT((uint64_t)&idtp);
+		HAL_AsmLoadIDT((uint64_t) &idtp);
 
 		IRQHandlerList = new rde::vector<IRQHandlerPlugList*>();
 	}

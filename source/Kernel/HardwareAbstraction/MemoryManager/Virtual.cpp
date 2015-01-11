@@ -3,8 +3,6 @@
 // Licensed under the Apache License Version 2.0.
 
 
-// Sets up the paging structures left by our bootstrap in (boot.s).
-
 #include <Kernel.hpp>
 #include <StandardIO.hpp>
 #include <stddef.h>
@@ -21,7 +19,7 @@ namespace Virtual
 	static PageMapStructure* CurrentPML4T;
 	static bool IsPaging;
 
-	#define I_RECURSIVE_SLOT	510
+	#define I_RECURSIVE_SLOT	509
 
 	// Convert an address into array index of a structure
 	// E.G. int index = I_PML4_INDEX(0xFFFFFFFFFFFFFFFF); // index = 511
@@ -500,7 +498,6 @@ namespace Virtual
 			Virtual::MapAddress((uint64_t) PageDirectory, (uint64_t) PageDirectory, 0x7);
 
 
-
 		if(!(PageDirectory->Entry[PageDirectoryIndex] & I_Present))
 		{
 			PageDirectory->Entry[PageDirectoryIndex] = Physical::AllocateFromReserved() | (Flags | 0x1);
@@ -508,6 +505,7 @@ namespace Virtual
 			invlpg(PDPT);
 			invlpg(PageDirectory);
 		}
+
 		PageMapStructure* PageTable = (PageMapStructure*) (PageDirectory->Entry[PageDirectoryIndex] & I_AlignMask);
 		if(other)
 			Virtual::MapAddress((uint64_t) PageTable, (uint64_t) PageTable, 0x7);

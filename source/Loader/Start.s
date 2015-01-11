@@ -3,13 +3,7 @@
 // With reference to Sortix: (c) Jonas 'Sortie' Termansen 2011.
 // Licensed under the Apache License Version 2.0.
 
-
-
 // Sets up Long Mode, Paging and GDT.
-// Calls KernelBootStrap (kbootstrap.s)
-
-// Referenced Files:
-// src/loader/kbootstrap.s
 
 
 
@@ -69,6 +63,12 @@ Prep64:
 	mov $0x500, %ecx
 	rep movsb
 
+	// we expect only one module, so copy its struct to 0x40100 (16 bytes)
+	mov 24(%ebx), %esi
+	mov $0x40100, %edi
+	mov $0x10, %ecx
+	rep movsb
+
 
 
 
@@ -78,7 +78,7 @@ Prep64:
 
 
 
-	// Clear 0xC000 bytes after 0x3000
+	// Clear 0xF000 bytes after 0x3000
 	movl $0x3000, %edi
 	mov %edi, %cr3
 	xorl %eax, %eax
@@ -97,20 +97,20 @@ Prep64:
 	// OR with 0x3 (R/W, Present)
 	// Point the first entry in the PML4T to the first PDPT.
 
-	movl $0x4003, (%edi)		// Make put the address + flags of the PDPT into 0x1000.
+	movl $0x4003, (%edi)	// Make put the address + flags of the PDPT into 0x1000.
 	addl $0x1000, %edi		// We only want 1 PDPT, so we add 0x1000 to make it point to the PDPT entries.
 
 
 	// Point the first PDPT entry to the first PD.
 
-	movl $0x5003, (%edi)		// Same deal, point PDPT entry number one to the PD we create below.
+	movl $0x5003, (%edi)	// Same deal, point PDPT entry number one to the PD we create below.
 	addl $0x1000, %edi		// Point to the PD now.
 
 
 	// PD
 
-	movl $0x6003, (%edi)		// Exactly the same as above. Except:
-	movl $0x7003, 8(%edi)		// There's a page table at 0x6000, 0x1000 long. There's another one at 0x5000. We address 4MB this way.
+	movl $0x6003, (%edi)	// Exactly the same as above. Except:
+	movl $0x7003, 8(%edi)	// There's a page table at 0x6000, 0x1000 long. There's another one at 0x5000. We address 4MB this way.
 	movl $0x8003, 16(%edi)	// 6 MB
 	movl $0x9003, 24(%edi)	// 8 MB
 	movl $0xA003, 32(%edi)	// 10 MB
@@ -122,10 +122,10 @@ Prep64:
 
 	// PT
 	movl $0x03, %ebx		// Set our flags.
-	movl $4096, %ecx		// Since the page tables are contiguous, we can simply loop 4096 times (512 x 8).
+	movl $4096, %ecx		// Since the page tables are contiguous, we can simply loop 2048 times (512 x 4).
 
 
-	// Memory Map 4MB
+	// Memory Map 8MB
 SetPTEntry:
 	mov %ebx, (%edi)
 	add $0x1000, %ebx
@@ -177,22 +177,35 @@ Realm64:
 	mov %ax, %es
 	mov %ax, %gs
 
-	mov $0x2B, %ax
-	mov %ax, %fs
+
+	// in here we memcpy()'d the boot struct to 0x40000 to avoid trashing it
+	mov $0x40000, %ebx
+	mov 0x0500, %eax		// magic number
+
+	movl $0x40200, 48(%ebx)
 
 
-	mov $0x30, %ax
-	ltr %ax
+
+	movl $0x40100, 24(%ebx)
+
+
+
+
+	// Push MBT struct pointer
+	mov %rbx, %rsi
+
+	// Push Magic value (0x2BADB002)
+	mov %rax, %rdi
+
+	movq $StackEnd, %rsp
+	movq $0x0, %rbp
+
 
 	// Jump to kernel bootstrap!
-	jmp Main
+	call LoaderBootstrap
 
+	jmp *%rax
 
-
-
-
-Main:
-	jmp KernelBootStrap					// SecondStage.s
 	cli
 	hlt
 
@@ -201,9 +214,44 @@ Main:
 
 
 
+// a bit of a hack -- we duplicate our kernel GDT here
+
+.section .data
+.align 16
+
+Stack:
+	.space 0x10000, 0xAF
+StackEnd:
 
 
+GDT64:
+	GDTNull:
+		.word 0			// Limit (low)
+		.word 0			// Base (low)
+		.byte 0			// Base (middle)
+		.byte 0			// Access
+		.byte 0			// Granularity / Limit (high)
+		.byte 0			// Base (high)
+	GDTCode:
+		.word 0xFFFF	// Limit (low)
+		.word 0			// Base (low)
+		.byte 0			// Base (middle)
+		.byte 0x9A		// Access
+		.byte 0xAF		// Granularity / Limit (high)
+		.byte 0			// Base (high)
+	GDTData:
+		.word 0xFFFF	// Limit (low)
+		.word 0			// Base (low)
+		.byte 0			// Base (middle)
+		.byte 0x92		// Access
+		.byte 0xAF		// Granularity / Limit (high)
+		.byte 0			// Base (high)
 
+
+		// Pointer
+	GDT64Pointer:
+		.word GDT64Pointer - GDT64 - 1	// Limit
+		.quad GDT64				// Base
 
 
 

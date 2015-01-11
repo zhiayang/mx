@@ -97,10 +97,9 @@ namespace MemoryMap
 
 			switch(K_MemoryMap->Entries[K_MemoryMap->NumberOfEntries].MemoryType)
 			{
-				case 1:
-				case 3:
-				K_SystemMemoryInBytes += (K_MemoryMap->Entries[K_MemoryMap->NumberOfEntries].Length);
-				break;
+				case G_MemoryTypeAvailable:
+					K_SystemMemoryInBytes += (K_MemoryMap->Entries[K_MemoryMap->NumberOfEntries].Length);
+					break;
 			}
 
 

@@ -20,14 +20,23 @@ extern "C" void* memmove(void* d, void* s, unsigned long l)
 
 namespace Memory
 {
-	void* Set(void* destptr, uint8_t value, uint64_t length)
+	void* Set(void* ptr, uint8_t value, uint64_t num)
 	{
-		uint8_t* dest = (uint8_t*) destptr;
+		// 'stosl' will use the value in eax but we only want the value in al
+		// so we make eax = al << 24 | al << 16 | al << 8 | al
+		if((value & 0xff) == 0)
+			// this is a little optimization because memset is most often called with value = 0
+			value = 0;
 
-		for(uint64_t i = 0; i < length; i++)
-			dest[i] = value;
+		else
+		{
+			value = (value & 0xff) | ((value & 0xff) << 8);
+			value = (value & 0xffff) | ((value & 0xffff) << 16);
+		}
 
-		return destptr;
+		void* temporaryPtr = ptr;
+		asm volatile("rep stosl ; mov %3, %2 ; rep stosb" : "+D"(temporaryPtr) : "a"(value), "c"(num / 4), "r"(num % 4) : "cc", "memory");
+		return ptr;
 	}
 
 	void* Copy(void* dest, const void* src, uint64_t len)

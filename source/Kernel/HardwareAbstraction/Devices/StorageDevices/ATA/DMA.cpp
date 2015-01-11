@@ -93,9 +93,9 @@ namespace DMA
 		_WaitingDMA14 = !dev->GetBus();
 		_WaitingDMA15 = dev->GetBus();
 
-		uint64_t no = Time::Now();
-		uint64_t t1 = 100000;
-		while((_WaitingDMA14 || _WaitingDMA15) && Time::Now() < no + 100 && t1 > 0)
+		// uint64_t no = Time::Now();
+		uint64_t t1 = 100000000;
+		while((_WaitingDMA14 || _WaitingDMA15)/* && Time::Now() < no + 100 && t1 > 0*/)
 			t1--;
 
 		_WaitingDMA14 = false;
@@ -135,7 +135,7 @@ namespace DMA
 		_WaitingDMA15 = dev->GetBus();
 
 		uint64_t no = Time::Now();
-		uint64_t t1 = 100000;
+		uint64_t t1 = 100000000;
 		while((_WaitingDMA14 || _WaitingDMA15) && Time::Now() < no + 100 && t1 > 0)
 			t1--;
 

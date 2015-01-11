@@ -224,6 +224,7 @@ namespace Multitasking
 
 		(void) purpose;
 		getRunQueue()->unlock();
+		HALT("");
 		YieldCPU();
 	}
 
