@@ -392,7 +392,6 @@ namespace Filesystems
 			return 0;
 
 		return VFS::Close(ctx, fe);
-		return 0;
 	}
 
 	void CloseAll(Multitasking::Process* p)

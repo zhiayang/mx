@@ -25,6 +25,8 @@ using namespace Library::StandardIO;
 
 
 extern "C" uint64_t KernelEnd;
+extern "C" uint64_t StartBSS;
+extern "C" uint64_t EndBSS;
 
 extern "C" void TaskSwitcherCoOp();
 extern "C" void ProcessTimerInterrupt();
@@ -40,6 +42,8 @@ namespace Kernel
 	// Thank you!
 	uint64_t K_SystemMemoryInBytes;
 	uint64_t EndOfKernel;
+
+
 	static uint64_t LFBBufferAddr;
 	static uint64_t LFBAddr;
 	static uint64_t LFBInPages;
@@ -71,7 +75,17 @@ namespace Kernel
 	{
 		using namespace Kernel::HardwareAbstraction::Devices;
 		using namespace Kernel::HardwareAbstraction::VideoOutput;
-		EndOfKernel = (uint64_t)&KernelEnd;
+		EndOfKernel = (uint64_t) &KernelEnd;
+
+		// clear the BSS
+		{
+			uint64_t start = (uint64_t) &StartBSS;
+			uint64_t end = (uint64_t) &EndBSS;
+			uint64_t length = end - start;
+
+			Memory::Set((void*) start, 0, length);
+		}
+
 
 		// check.
 		assert(MultibootMagic == 0x2BADB002);
