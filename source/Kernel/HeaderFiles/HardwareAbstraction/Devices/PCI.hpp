@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 #include <rdestl/list.h>
+#include <HardwareAbstraction/DeviceManager.hpp>
 #pragma once
 
 namespace Kernel {
@@ -13,7 +14,7 @@ namespace Devices
 {
 	namespace PCI
 	{
-		class PCIDevice
+		class PCIDevice : public DeviceManager::Device
 		{
 
 		public:

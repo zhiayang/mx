@@ -35,7 +35,7 @@ namespace Physical
 
 	static bool DidInit = false;
 	// static LinkedList<Pair>* PageList;
-	static rde::list<Pair*>* PageList;
+	static rde::vector<Pair*>* PageList;
 
 	// Define a region of memory in which the VMM gets it's memory from, to create page strucures.
 	uint64_t ReservedRegionForVMM = 0;
@@ -73,7 +73,7 @@ namespace Physical
 		// FPL system.
 		mtx = new Mutex();
 		// PageList = new LinkedList<Pair>();
-		PageList = new rde::list<Pair*>();
+		PageList = new rde::vector<Pair*>();
 
 		InitialiseFPLs(Kernel::K_MemoryMap);
 		DidInit = true;
@@ -82,10 +82,10 @@ namespace Physical
 
 	uint64_t AllocatePage(uint64_t size)
 	{
-		auto mut = AutoMutex(mtx);
 		if(!DidInit)
 			return AllocateFromReserved();
 
+		auto mut = AutoMutex(mtx);
 		OpsSinceLastCoalesce++;
 		size_t trycount = 0;
 		auto len = PageList->size();
@@ -109,7 +109,7 @@ namespace Physical
 		else if(p->LengthInPages == size)
 		{
 			auto raddr = p->BaseAddr;
-			PageList->pop_front();
+			PageList->erase_unordered(PageList->begin());
 
 			delete p;
 
@@ -121,7 +121,7 @@ namespace Physical
 			{
 				// PageList->push_back(PageList->pop_front());
 				auto fr = PageList->front();
-				PageList->pop_front();
+				PageList->erase_unordered(PageList->begin());
 				PageList->push_back(fr);
 
 				trycount++;
@@ -147,7 +147,7 @@ namespace Physical
 		{
 			// Pair* pair = PageList->pop_front();
 			Pair* pair = PageList->front();
-			PageList->pop_front();
+			PageList->erase_unordered(PageList->begin());
 
 			// 3 basic conditions
 			// 1. we find a match below a pair's baseaddr
@@ -212,7 +212,7 @@ namespace Physical
 		{
 			// Pair* pair = &PageList->pop_front();
 			Pair* pair = PageList->front();
-			PageList->pop_front();
+			PageList->erase_unordered(PageList->begin());
 
 			if(pair->BaseAddr + (size * 0x1000) < 0xFFFFFFFF && pair->LengthInPages >= size)
 			{
@@ -226,11 +226,11 @@ namespace Physical
 
 				else
 					PageList->push_back(pair);
-					// PageList->push_back(pair);
+
 
 				return ret;
 			}
-			// PageList->push_back(pair);
+
 			PageList->push_back(pair);
 		}
 
@@ -353,7 +353,7 @@ namespace Physical
 			bool delp = false;
 			// Pair* p = PageList->pop_front();
 			auto p = PageList->front();
-			PageList->pop_front();
+			PageList->erase_unordered(PageList->begin());
 
 			uint64_t base = p->BaseAddr;
 			uint64_t end = p->BaseAddr + (p->LengthInPages * 0x1000);
@@ -362,7 +362,7 @@ namespace Physical
 			{
 				// Pair* other = PageList->pop_front();
 				auto other = PageList->front();
-				PageList->pop_front();
+				PageList->erase_unordered(PageList->begin());
 
 				if(other->BaseAddr == end)
 				{

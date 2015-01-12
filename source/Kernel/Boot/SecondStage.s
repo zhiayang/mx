@@ -3,32 +3,19 @@
 // Licensed under the Apache License Version 2.0.
 
 
-
-// Sets up stack, pushes MBT info to KernelMain
-// Calls KernelMain (kernel.c)
-
-// Referenced From:
-// src/loader/boot.s
-
-// Referenced Files:
-// src/kernel/kernel.c
-
-
 .section .text
 
-.global KernelBootStrap
+.global KernelBootstrap
 .global GetReturnAddress
 
-.type KernelBootStrap, @function
+.type KernelBootstrap, @function
 .type GetReturnAddress, @function
 
 .code64
 
 
 
-KernelBootStrap:
-
-	// Push stack pointer
+KernelBootstrap:
 	movq $0x60000, %rsp
 
 
@@ -65,10 +52,9 @@ KernelBootStrap:
 
 
 	// Setup SSE
-
 	mov %cr0, %rax
-	and $0xFFFB, %ax		// clear coprocessor emulation CR0.EM
-	or $0x02, %ax			// set coprocessor monitoring  CR0.MP
+	and $0xFFFB, %ax			// clear coprocessor emulation CR0.EM
+	or $0x02, %ax				// set coprocessor monitoring  CR0.MP
 	mov %rax, %cr0
 	mov %cr4, %rax
 	// orq $0x10600, %rax		// set CR4.OSFXSR, CR4.OSXMMEXCPT and CR4.FSGSBASE at the same time
@@ -107,6 +93,23 @@ KernelBootStrap:
 	xor %eax, %eax
 	wrmsr
 
+
+	mov GDT64Pointer, %rax
+	lgdtq GDT64Pointer
+
+
+	// Set up segments (again)
+	mov $0x10, %ax
+	mov %ax, %ds
+	mov %ax, %es
+	mov %ax, %gs
+
+	mov $0x2B, %ax
+	mov %ax, %fs
+
+
+	mov $0x30, %ax
+	ltr %ax
 
 
 
@@ -147,6 +150,13 @@ halt:
 
 .section .data
 .align 16
+
+// some C++ destructor shit
+.global __dso_handle
+__dso_handle:
+		.quad	0
+
+
 
 // 64-bit GDT
 .global GDT64Pointer

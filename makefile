@@ -21,11 +21,11 @@ export MOUNTPATH	:= $(shell tools/getpath.sh)
 CXX_				= clang++
 GCCVERSION			= 4.9.1
 
-WARNINGS			= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-align -Wno-unreachable-code -Wno-gnu -Wno-missing-prototypes -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-sign-conversion -Wno-old-style-cast
+WARNINGS			= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-align -Wno-unreachable-code -Wno-gnu -Wno-missing-prototypes -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-sign-conversion -Wno-old-style-cast -Wno-exit-time-destructors
 
-CXXFLAGS			= -m64 -Weverything -msse3 -g -integrated-as -O2 -fPIC -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -c
+CXXFLAGS			= -m64 -g -Weverything -msse3 -integrated-as -O2 -fPIC -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -c
 
-LDFLAGS				= --gc-sections -z max-page-size=0x1000 -T link.ld -L$(SYSROOT)/usr/lib
+LDFLAGS				= --gc-sections -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib
 
 
 MEMORY				= 1024
@@ -48,14 +48,14 @@ NUMFILES			= $$(($(words $(CXXSRC)) + $(words $(SSRC))))
 
 
 
-LIBRARIES			= -liris -lsupc++ -lgcc -lrdestl
-OUTPUT				= build/kernel.mxa
+LIBRARIES			= -liris -lgcc -lrdestl
+OUTPUT				= build/kernel64.elf
 
 
 .PHONY: builduserspace buildlib mountdisk clean all cleandisk copyheader
 
-run:
-	@$(QEMU) -s -vga std -serial stdio -no-reboot -m $(MEMORY) -hda build/disk.img -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap -monitor stdio
+run: build
+	@$(QEMU) -s -vga std -serial file:"build/serialout.log" -no-reboot -m $(MEMORY) -hda build/disk.img -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap -monitor stdio
 
 all: $(OUTPUT)
 	@# unmount??
@@ -72,12 +72,18 @@ build: $(OUTPUT)
 	# built
 
 $(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) builduserspace
-	@echo "# Linking object files"
-	@$(LD) $(LDFLAGS) -o build/kernel64.elf source/Kernel/Boot/Start.s.o $(shell find source -name "*.o" ! -name "Start.s.o") $(LIBRARIES)
+	@echo "\n# Linking [mx] object files"
+	@$(LD) $(LDFLAGS) -T kernel.ld -o build/kernel64.elf $(shell find source/Kernel -name "*.o") $(LIBRARIES)
+
+	@echo "# Building [fx] loader"
+	@$(LD) $(LDFLAGS) -T loader.ld -o build/fxloader64.elf source/Loader/Start.s.o $(shell find source/Loader -name "*.o" ! -name "Start.s.o")
 
 	@echo "# Performing objcopy"
-	@$(OBJCOPY) -g -O elf32-i386 build/kernel64.elf build/kernel.mxa
-	@cp $(OUTPUT) $(shell tools/getpath.sh)/boot/kernel.mxa
+	@$(OBJCOPY) -g -O elf32-i386 build/fxloader64.elf build/fxloader.mxa
+	@cp build/fxloader.mxa $(shell tools/getpath.sh)/boot/fxloader.mxa
+
+	@# use objcopy to strip debug symbols from the final executable -- saves about 1.3mb
+	@$(OBJCOPY) -g $(OUTPUT) $(shell tools/getpath.sh)/System/Library/CoreServices/kernel64
 
 
 %.s.o: %.s

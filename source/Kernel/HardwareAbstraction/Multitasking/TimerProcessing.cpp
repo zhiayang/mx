@@ -29,7 +29,7 @@ namespace Multitasking
 		for(uint64_t l = SleepList->size(), g = 0; g < l; g++)
 		{
 			Thread* m = SleepList->front();
-			SleepList->pop_front();
+			SleepList->erase(SleepList->begin());
 
 			if(m->State == STATE_SUSPEND || m->State == STATE_BLOCKING)
 			{

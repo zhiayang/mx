@@ -4,7 +4,7 @@
 
 #pragma once
 #include <stdint.h>
-#include <rdestl/list.h>
+#include <rdestl/vector.h>
 
 namespace Kernel
 {
@@ -18,7 +18,7 @@ namespace Kernel
 	class Mutex
 	{
 		public:
-			rde::list<HardwareAbstraction::Multitasking::Thread*>* contestants = 0;
+			rde::vector<HardwareAbstraction::Multitasking::Thread*> contestants;
 			HardwareAbstraction::Multitasking::Thread* owner = 0;
 			uint64_t recursion = 0;
 			uint64_t lock = false;
@@ -46,7 +46,7 @@ namespace Kernel
 	{
 		public:
 			Semaphore(uint64_t maxval) : value(maxval) { }
-			rde::list<HardwareAbstraction::Multitasking::Thread*>* contestants = 0;
+			rde::vector<HardwareAbstraction::Multitasking::Thread*> contestants;
 			int64_t value = 0;
 	};
 

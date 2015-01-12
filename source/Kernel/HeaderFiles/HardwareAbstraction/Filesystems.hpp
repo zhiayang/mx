@@ -96,14 +96,19 @@ namespace Kernel
 				fileentry* Open(IOContext* ioctx, vnode* node, int flags);
 				fileentry* OpenFile(IOContext* ioctx, const char* path, int flags);
 
+
 				size_t Read(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len);
 				size_t Write(IOContext* ioctx, vnode* node, void* buf, off_t off, size_t len);
 				err_t Stat(IOContext* ioctx, vnode* node, struct stat* st, bool statlink);
 				err_t Seek(fileentry* fe, off_t offset, int origin);
 				err_t Flush(IOContext* ioctx, vnode* node);
+				err_t Close(IOContext* ioctx, fileentry* node);
+				void CloseAll(IOContext* ioctx);
 			}
 
 			fd_t OpenFile(const char* path, int flags);
+			err_t Close(fd_t fd);
+			void CloseAll(Multitasking::Process* p);
 			size_t Read(fd_t fd, void* buf, size_t len);
 			size_t Write(fd_t fd, void* buf, size_t len);
 

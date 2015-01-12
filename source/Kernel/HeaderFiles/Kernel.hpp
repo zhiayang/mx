@@ -29,11 +29,10 @@
 
 
 // TSS at 0x500-0x800
-#define LFBBufferAddress_INT		0xFFFFFFFD00000000
-#define FPLAddress					0xFFFFFFFF00000000
-#define KernelHeapMetadata			0xFFFFFFF000000000
-#define KernelHeapAddress			0xFFFFFFFF00000000
-#define TemporaryVirtualMapping		0x00000FF00000000
+#define FPLAddress					0xFFFFFF0000000000
+#define KernelHeapMetadata			0xFFFFFF1000000000
+#define KernelHeapAddress			0xFFFFFF2000000000
+#define TemporaryVirtualMapping		0x000000FF00000000
 #define DefaultUserStackAddr		0xFFFFFFF0
 
 #define __ORIONX_KERNEL
@@ -43,7 +42,7 @@
 #define DefaultRing3StackSize	0x4000
 
 // Global IRQ0 tickrate.
-#define GlobalTickRate		1000
+#define GlobalTickRate		50
 #define GlobalMilliseconds	1000
 
 // Configuration paramaters

@@ -1,47 +1,133 @@
-// userspace/StandardIO.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Console.cpp
+// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
-#include "HeaderFiles/StandardIO.hpp"
-#include <string.h>
-#include "HeaderFiles/Memory.hpp"
-#include "HeaderFiles/Utility.hpp"
-#include <stdlib.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include "FxLoader.hpp"
 
-
-#if 1
-
-namespace Kernel
+namespace Console
 {
-	namespace Console
-	{
-		void PrintChar(uint8_t c);
-		void SetColour(uint32_t Colour);
-	}
-}
+	static uint8_t CursorX = 0, CursorY = 0;
+	const uint32_t Space = ((uint16_t)(' ') | (0x0F << 8) | (((uint32_t)(uint16_t)(' ') | (0x0F << 8)) << 16));
+	const uint8_t TabWidth = 4;
 
-namespace Library {
-namespace StandardIO
-{
-	static void PrintChar(uint8_t c, void (*pf)(uint8_t))
-	{
-		if(pf)
-			pf(c);
 
-		else
-			Kernel::Console::PrintChar(c);
+	void Initialise()
+	{
+		// Hide the stupid cursor
+		IOPort::Write16(0x3D4, 0x200A);
+		IOPort::Write16(0x3D4, 0xB);
+
+		ClearScreen(0x00);
 	}
 
-	static void SwallowChar(uint8_t)
+	static void* memset32(void* dst, uint32_t val, uint64_t len)
 	{
+		uintptr_t d0 = 0;
+		uint64_t uval = ((uint64_t) val << 32) + val;
+		asm volatile(
+			"rep stosq"
+			:"=&D" (d0), "+&c" (len)
+			:"0" (dst), "a" (uval)
+			:"memory");
+
+		return dst;
 	}
 
-	uint64_t PrintString(const char* string, int64_t length, void (*pf)(uint8_t))
+	void ClearScreen(uint8_t Colour)
+	{
+		uint32_t s = (uint16_t)((' ') | (Colour << 8));
+
+		for(int i = 0; i < 25; i++)
+			memset32((uint16_t*)0xB8000 + i * 80, s, 80);
+
+		CursorX = 0;
+		CursorY = 0;
+	}
+
+	static void PrintChar(uint8_t Char, uint32_t Colour)
+	{
+		uint16_t* Location;
+
+		if(Char == '\b')
+		{
+			if(CursorX != 0)
+			{
+				CursorX--;
+				PrintChar(' ', Colour);
+				CursorX--;
+			}
+			else if(CursorY > 0)
+			{
+				CursorX = 79;
+				PrintChar(' ', Colour);
+				CursorX = 79;
+			}
+		}
+
+		else if(Char == '\t')
+		{
+			CursorX = (CursorX + TabWidth) & ~(TabWidth - 1);
+		}
+
+		else if(Char == '\r')
+		{
+			CursorX = 0;
+		}
+
+		else if(Char == '\n')
+		{
+			CursorX = 0;
+			CursorY++;
+		}
+
+		else if(Char >= ' ')
+		{
+			Location = (uint16_t*)0xB8000 + (CursorY * 80 + CursorX);
+			*Location = (uint16_t)(Char | (Colour << 8));
+			CursorX++;
+		}
+
+		if(CursorX >= 80)
+		{
+			CursorX = 0;
+			CursorY++;
+		}
+
+		ScrollUp();
+	}
+
+
+	static void PrintChar(uint8_t Char)
+	{
+		PrintChar(Char, 0x0F);
+	}
+
+	void ScrollUp()
+	{
+		if(CursorY >= 25)
+		{
+			memcpy((uint16_t*) 0xB8000, (uint16_t*) 0xB8000 + (CursorY - 24) * 80, (49 - CursorY) * 80 * 2);
+			memset32((uint16_t*) 0xB8000 + (49 - CursorY) * 80, Space, 40);
+			CursorY = 24;
+		}
+	}
+
+
+
+
+
+
+
+
+
+	uint64_t PrintString(const char* string, int64_t length)
 	{
 		uint64_t ret = 0;
 		for(uint64_t i = 0; i < (length < 0 ? strlen(string) : (uint64_t) length); i++)
 		{
-			PrintChar((uint8_t) string[i], pf);
+			PrintChar((uint8_t) string[i]);
 			ret++;
 		}
 
@@ -49,7 +135,7 @@ namespace StandardIO
 	}
 
 
-	static uint64_t PrintHex_NoPrefix(uint64_t n, bool ReverseEndianness = false, bool lowercase = false, void (*pf)(uint8_t) = 0)
+	static uint64_t PrintHex_NoPrefix(uint64_t n)
 	{
 		int64_t tmp = 0;
 		int64_t i = 0;
@@ -106,44 +192,32 @@ namespace StandardIO
 			i = 60;
 
 
-		if(!ReverseEndianness)
+		for(; i >= 0; i -= 4)
 		{
-			for(; i >= 0; i -= 4)
-			{
-				tmp = (n >> i) & 0xF;
+			tmp = (n >> i) & 0xF;
 
 
-				if(tmp >= 0xA)
-					PrintChar((uint8_t)(tmp - 0xA + (lowercase ? 'a' : 'A')), pf);
+			if(tmp >= 0xA)
+				PrintChar((uint8_t) (tmp - 0xA + 'A'));
 
-				else
-					PrintChar((uint8_t)(tmp + '0'), pf);
+			else
+				PrintChar((uint8_t) (tmp + '0'));
 
-				ret++;
-			}
-		}
-		else
-		{
-			for(int z = 0; z <= i; z += 8)
-			{
-				tmp = (n >> z) & 0xFF;
-				return PrintHex_NoPrefix((uint8_t) tmp, ReverseEndianness, lowercase, pf);
-			}
+			ret++;
 		}
 
 		return ret;
 	}
 
-	static uint64_t PrintHex_Precision_NoPrefix(uint64_t n, int8_t leadingzeroes, bool ReverseEndianness, bool lowercase,
-		bool padzeroes, int8_t prec, bool ppf, void (*pf)(uint8_t) = 0)
+	static uint64_t PrintHex_Precision_NoPrefix(uint64_t n, int8_t leadingzeroes, bool padzeroes, int8_t prec, bool ppf)
 	{
 		(void) padzeroes;
 		if(prec < 0)
 		{
 			if(ppf)
-				PrintString("0x", -1, pf);
+				PrintString("0x", -1);
 
-			return PrintHex_NoPrefix(n, ReverseEndianness, lowercase, pf) + 2;
+			return PrintHex_NoPrefix(n) + 2;
 		}
 
 		int64_t tmp;
@@ -151,53 +225,40 @@ namespace StandardIO
 		uint64_t ret = 0;
 
 		if(ppf)
-			PrintString("0x", -1, pf);
+			PrintString("0x", -1);
 
 		if(n == 0)
 		{
 			for(int8_t d = 0; d < leadingzeroes; d++)
-				PrintString("0", -1, pf);
+				PrintString("0", -1);
 
 			return leadingzeroes;
 		}
 
 
-		if(!ReverseEndianness)
+
+		for(; i >= 0; i -= 4)
 		{
-			for(; i >= 0; i -= 4)
-			{
-				tmp = (n >> i) & 0xF;
+			tmp = (n >> i) & 0xF;
 
 
-				if(tmp >= 0xA)
-					PrintChar((uint8_t) tmp - 0xA + (lowercase ? 'a' : 'A'), pf);
+			if(tmp >= 0xA)
+				PrintChar((uint8_t) (tmp - 0xA + 'A'));
 
-				else
-					PrintChar((uint8_t)(tmp + '0'), pf);
+			else
+				PrintChar((uint8_t) (tmp + '0'));
 
-				ret++;
-			}
-		}
-		else
-		{
-			for(int z = 0; z <= i; z += 8)
-			{
-				tmp = (n >> z) & 0xFF;
-				return PrintHex_NoPrefix((uint8_t) tmp, ReverseEndianness, lowercase, pf);
-			}
+			ret++;
 		}
 
 		return ret;
 	}
 
 
+	#define abs(x)			((x) < 0 ? (-(x)) : (x))
 
 
-
-
-
-
-	static uint64_t PrintInteger_Signed(int64_t num, int8_t Width = -1, void (*pf)(uint8_t) = 0)
+	static uint64_t PrintInteger_Signed(int64_t num, int8_t Width = -1)
 	{
 		uint64_t ret = 0;
 
@@ -207,23 +268,23 @@ namespace StandardIO
 			{
 				for(int g = 0; g < Width; g++)
 				{
-					PrintChar('0', pf);
+					PrintChar('0');
 					ret++;
 				}
 			}
 			else
 			{
-				PrintChar('0', pf);
+				PrintChar('0');
 				ret++;
 			}
 
 			return ret;
 		}
 
-		if(num < 0){ PrintChar('-', pf); ret++; }
+		if(num < 0){ PrintChar('-'); ret++; }
 		if(Width != -1)
 		{
-			uint64_t n = (uint64_t) __abs(num);
+			uint64_t n = (uint64_t) abs(num);
 			uint8_t k = 0;
 			while(n > 0)
 			{
@@ -233,108 +294,29 @@ namespace StandardIO
 
 			while(Width > k)
 			{
-				PrintChar('0', pf);
+				PrintChar('0');
 				k++;
 				ret++;
 			}
 		}
-		char out[32] = { 0 };
-		char* k = Utility::ConvertToString(num, out);
-		auto r = PrintString(k, -1, pf) + ret;
+
+		char out[12] = { 0 };
+		char* k = Util::ConvertToString(num, out);
+		auto r = PrintString(k, -1) + ret;
 
 		return r;
 	}
 
-	#define truncate(x)			((double) ((int64_t) (x)))
-	#define round(x)			(((x) < 0) ? ((double) ((int64_t) ((x) - 0.5))) : ((double) ((int64_t) ((x) + 0.5))))
 
-
-
-
-	static uint8_t PrintFloat(double fl, int8_t precision = 15, void (*pf)(uint8_t) = 0)
-	{
-		if(precision < 0)
-		{
-			precision = 15;
-		}
-
-		// Put integer part first
-		PrintInteger_Signed((int64_t) truncate(fl), -1, pf);
-		PrintChar('.', pf);
-
-		if(truncate(fl) == fl)
-		{
-			return (uint8_t) precision;
-		}
-
-		if(fl < 0)
-		{
-			fl  = -fl;
-		}
-
-		// Get decimal part
-		fl -= truncate(fl);
-
-		uint32_t digit = 0;
-		while(fl > 0 && precision > 0)
-		{
-			fl *= 10;
-
-			if(precision == 1)
-				digit = (uint32_t) round(fl);
-
-			else
-				digit = (uint32_t) fl;
-
-			if(!(digit + '0' >= '0' && digit + '0' <= '9'))
-			{
-				PrintChar('0', pf);
-				return 0;
-			}
-
-			PrintChar((uint8_t) digit + '0', pf);
-			precision--;
-			fl -= digit;
-		}
-		// Return the remaining number -- handle in printk() to print trailing zeroes
-		return (uint8_t) precision;
-	}
-
-
-
-
-
-	void PrintFormatted(void (*pf)(uint8_t), const char* str, ...)
+	void Print(const char* str, ...)
 	{
 		va_list args;
 		va_start(args, str);
-		PrintFormatted(pf, str, args);
+		Print(str, args);
 		va_end(args);
 	}
 
-	void PrintFormatted(const char* str, ...)
-	{
-		va_list args;
-		va_start(args, str);
-		PrintFormatted(0, str, args);
-		va_end(args);
-	}
-
-	void printf(const char* str, ...)
-	{
-		va_list args;
-		va_start(args, str);
-		PrintFormatted(0, str, args);
-		va_end(args);
-	}
-
-	void PrintFormatted(const char* str, va_list args)
-	{
-		PrintFormatted(0, str, args);
-	}
-
-
-	void PrintFormatted(void (*pf)(uint8_t), const char* string, va_list args)
+	void Print(const char* string, va_list args)
 	{
 		// Note:
 		/*
@@ -384,7 +366,6 @@ namespace StandardIO
 
 		// we don't support ints smaller than 64bit.
 		// 1 is long double.
-		int8_t ArgSize = -1;
 		int8_t Precision = -1;
 		int8_t Width = -1;
 
@@ -393,15 +374,10 @@ namespace StandardIO
 		char c = 0;
 		int32_t z = 0;
 		uint64_t x = 0;
-		double f = 0.00;
 		char* s = 0;
 		char ch = 0;
-		bool b = false;
 
 		uint64_t length = strlen(string);
-
-		// char* widthbuf = char[8];
-		// char* precsbuf = char[8];
 
 		char widthbuf[8] = { 0 };
 		char precsbuf[8] = { 0 };
@@ -422,7 +398,7 @@ namespace StandardIO
 				switch(c)
 				{
 					case '%':
-						PrintChar('%', pf);
+						PrintChar('%');
 						break;
 
 					// Standard, parameter types
@@ -430,11 +406,11 @@ namespace StandardIO
 					case 'd':
 					case 'i':
 					case 'u':
-						z = va_arg(args, int32_t);
+						z = va_arg(args, int64_t);
 						if(DisplaySign)
 						{
 							if(z > 0)
-								PrintChar('+', pf);
+								PrintChar('+');
 
 							DisplaySign = false;
 						}
@@ -443,36 +419,10 @@ namespace StandardIO
 						{
 							PadSignedSpace = false;
 							if(z < 0)
-								PrintChar(' ', pf);
+								PrintChar(' ');
 						}
 
-						PrintedChars = PrintInteger_Signed(z, !LeftAlign && PadZeroes ? Width : -1, SwallowChar);
-
-						// check if we need to align left.
-						if(LeftAlign && Width > 0)
-						{
-							PrintInteger_Signed(z, !LeftAlign && PadZeroes ? Width : -1, pf);
-							LeftAlign = false;
-							for(uint64_t tps = 0; tps < (uint8_t) Width - PrintedChars; tps++)
-							{
-								PrintChar(' ', pf);
-							}
-						}
-
-						else if(Width > 0 && !LeftAlign && !PadZeroes)
-						{
-							for(uint64_t tps = 0; tps < (uint8_t) Width - PrintedChars; tps++)
-							{
-								PrintChar(' ', pf);
-							}
-
-							PrintInteger_Signed(z, -1, pf);
-						}
-
-						else
-						{
-							PrintInteger_Signed(z, Width, pf);
-						}
+						PrintedChars = PrintInteger_Signed(z, Width);
 
 						PadZeroes = false;
 						break;
@@ -485,10 +435,10 @@ namespace StandardIO
 						{
 							int64_t wd = Width;
 							for(int64_t m = 0; m < wd; m++)
-								PrintChar(' ', pf);
+								PrintChar(' ');
 						}
 
-						PrintString(s, Precision, pf);
+						PrintString(s, Precision);
 						break;
 
 
@@ -504,12 +454,12 @@ namespace StandardIO
 						// check if we need to align left.
 						if(LeftAlign && Width > 0)
 						{
-							PrintedChars = PrintHex_Precision_NoPrefix(x, -1, false, c == 'X', PadZeroes, Precision, !OmitZeroX, pf);
+							PrintedChars = PrintHex_Precision_NoPrefix(x, -1, PadZeroes, Precision, !OmitZeroX);
 
 							LeftAlign = false;
 							for(uint64_t tps = 0; tps < (uint8_t) Width - PrintedChars; tps++)
 							{
-								PrintChar(' ', pf);
+								PrintChar(' ');
 							}
 						}
 						else
@@ -518,7 +468,7 @@ namespace StandardIO
 							if(Width > 0)
 								Precision = Width;
 
-							PrintHex_Precision_NoPrefix(x, Width > 0 ? Width : 1, false, c == 'X', PadZeroes, Precision, !OmitZeroX, pf);
+							PrintHex_Precision_NoPrefix(x, Width > 0 ? Width : 1, PadZeroes, Precision, !OmitZeroX);
 						}
 
 						PadZeroes = false;
@@ -527,52 +477,8 @@ namespace StandardIO
 
 					case 'c':
 						ch = (char) va_arg(args, int);
-						PrintChar((uint8_t) ch, pf);
+						PrintChar((uint8_t) ch);
 						break;
-
-
-					case 'f':
-					case 'F':
-						if(ArgSize == 1)
-							f = va_arg(args, double);
-
-						else if(ArgSize == 0)
-							f = va_arg(args, double);
-
-						else
-							f = va_arg(args, double);
-
-						if(Precision > 0)
-						{
-							uint8_t remaining = PrintFloat(f, Precision, pf);
-							for(; remaining > 0; remaining--)
-								PrintChar('0', pf);
-						}
-						else
-						{
-							PrintFloat(f, Precision, pf);
-						}
-						break;
-
-					case 'b':
-						b = va_arg(args, int);
-						PrintString(b ? "true" : "false", -1, pf);
-						break;
-
-
-					case 'z':
-					case 'j':
-					case 't':
-					case 'h':
-						continue;
-
-
-
-					// Argument sizes
-					case 'l':
-					case 'L':
-						ArgSize = 1;
-						continue;
 
 
 					// Flags
@@ -622,13 +528,13 @@ namespace StandardIO
 								Precision = (int8_t) va_arg(args, uint64_t);
 
 							else
-								Precision = (int8_t) Utility::ConvertToInt(precsbuf, 10);
+								Precision = (int8_t) Util::ConvertToInt(precsbuf, 10);
 
 							// -1 because continue; increments i
 							i = f1 - 1;
 							IsFormat = true;
 
-							Memory::Set(precsbuf, 0, 8);
+							memset(precsbuf, 0, 8);
 							IsParsingPrecision = false;
 
 							continue;
@@ -649,7 +555,7 @@ namespace StandardIO
 								Width = (int8_t) va_arg(args, uint64_t);
 
 							else
-								Width = (int8_t) Utility::ConvertToInt(widthbuf, 10);
+								Width = (int8_t) Util::ConvertToInt(widthbuf, 10);
 
 
 
@@ -657,10 +563,9 @@ namespace StandardIO
 							i = f1 - 1;
 							IsFormat = true;
 
-							Memory::Set(widthbuf, 0, 8);
+							memset(widthbuf, 0, 8);
 							continue;
 						}
-						break;
 				}
 				IsFormat = false;
 				DisplaySign = false;
@@ -671,12 +576,15 @@ namespace StandardIO
 			}
 			else
 			{
-				PrintChar((uint8_t) c, pf);
+				PrintChar(c);
 			}
 		}
 	}
 }
-}
 
-#endif
+
+
+
+
+
 

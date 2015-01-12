@@ -2,12 +2,8 @@
 // Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
-#include <Kernel.hpp>
+#include <stdint.h>
 
-
-namespace Kernel {
-namespace HardwareAbstraction {
-namespace Devices {
 namespace IOPort
 {
 	uint8_t ReadByte(uint16_t Port)
@@ -58,8 +54,4 @@ namespace IOPort
 	{
 		asm volatile("wrmsr" : : "a"(val & 0xFFFFFFFF), "d"((val & 0xFFFFFFFF00000000) >> 32), "c"(msr));
 	}
-}
-
-}
-}
 }

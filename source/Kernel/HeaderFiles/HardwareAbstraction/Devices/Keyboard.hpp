@@ -5,13 +5,15 @@
 
 #include <stdint.h>
 #include <CircularBuffer.hpp>
+#include <HardwareAbstraction/DeviceManager.hpp>
+
 #pragma once
 
 namespace Kernel {
 namespace HardwareAbstraction {
 namespace Devices
 {
-	class Keyboard
+	class Keyboard : public DeviceManager::Device
 	{
 		public:
 			Keyboard() { }

@@ -8,10 +8,28 @@ The fifth rewrite of what never was, OrionOS.
 
 - Pretty bare now, features will get ported over from Orion-X4 as I get to it.
 - Long mode (x86-64)
-- BGA Support, works in QEMU, VirtualBox and Bochs.		-> note that you can't actually run the OS in bochs.
+- BGA Support, works in QEMU, VirtualBox and Bochs.
 - Working IPC system									-> rewrite in progress
 - Basic networking support (DHCP, DNS, IPv4, TCP/UDP)	-> porting still in progress.
 - Somewhat complete libc written
+- New in 0.8.2: [fx] loader! Now loads the [mx] kernel (as a GRUB module)... it's basically a stripped down version of Orion-X3/4 TBH.
+- Also new in 0.8.2: [mx] runs in Bochs!
+
+
+## TODO List ##
+#### High Priority ####
+- execve() and family
+- Stabilty fixes here and there -- it's gotten much better now
+- HPET Support
+
+#### Low Priority ####
+- APIC Stuff, including IOAPIC/LAPIC
+- Startup an AP CPU for fun?
+- Put back the network code from Orion-X4 (and modify to use VFS)
+- Fix the StandardIO implementation in Iris -- it's fugly (and broken)
+- Finish pthreads beyond basic stuff
+
+
 
 
 ## Trying out [mx] ##

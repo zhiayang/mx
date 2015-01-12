@@ -35,7 +35,23 @@ namespace DMA
 
 	static ATADrive* PreviousDevice = 0;
 
-	static __attribute__((aligned(8))) uint8_t PRDT[8][256] = { { 0 } };
+	struct PRDEntry
+	{
+		uint32_t bufferPhysAddr;
+		uint16_t byteCount;
+		uint16_t lastEntry;
+
+	} __attribute__((packed));
+
+	struct PRDTableCache
+	{
+		uint64_t address;
+		uint32_t length;
+		uint32_t used;
+	};
+
+	#define MaxCachedTables 2
+	static rde::vector<PRDTableCache>* cachedPRDTables;
 
 	void Initialise()
 	{
@@ -52,14 +68,18 @@ namespace DMA
 		assert(ide->IsBARIOPort(4));
 		Log("Initialised Busmastering DMA with BaseIO %x", mmio);
 
-		uint64_t i = 0;
 
-		for(auto d : *ATADrive::ATADrives)
-			d->PRDTable = (uint64_t) (PRDT[i]), i++;
+		cachedPRDTables = new rde::vector<PRDTableCache>();
+		for(int i = 0; i < MaxCachedTables; i++)
+		{
+			// precreate these
+			PRDTableCache tcache;
+			tcache.address = Physical::AllocateDMA(1);
+			tcache.length = 0x1000;
+			tcache.used = 0;
 
-
-		// for(uint64_t i = 0; i < ATADrive::ATADrives->size(); i++)
-		// 	ATADrive::ATADrives->get(i)->PRDTable = (uint64_t)(PRDT[i]);
+			cachedPRDTables->push_back(tcache);
+		}
 
 		IOPort::WriteByte((uint16_t) mmio + 2, 0x4);
 		IOPort::WriteByte((uint16_t) mmio + 10, 0x4);
@@ -72,20 +92,41 @@ namespace DMA
 	{
 		uint32_t mmio = (uint32_t) dev->ParentPCI->GetBAR(4);
 
-		// create a prd
-		uintptr_t* prd = (uintptr_t*) dev->PRDTable;
-		uint32_t b = (uint32_t) Buffer;
+		// get a prd
+		bool found = false;
+		PRDTableCache prdCache;
+		for(PRDTableCache& cache : *cachedPRDTables)
+		{
+			if(!cache.used)
+			{
+				prdCache = cache;
+				cache.used = true;
+				found = 1;
+				break;
+			}
+		}
+
+		if(!found)
+		{
+			prdCache.address = Physical::AllocateDMA(1);
+			prdCache.length = 0x1000;
+			prdCache.used = 1;
+
+			cachedPRDTables->push_back(prdCache);
+		}
+
+		PRDEntry* prd = (PRDEntry*) prdCache.address;
 
 
-		*((uint32_t*) prd) = b;
-		*((uint16_t*)((uintptr_t) prd + 4)) = (uint16_t) Bytes;
-		*((uint16_t*)((uintptr_t) prd + 6)) = 0x8000;
+		prd->bufferPhysAddr = (uint32_t) Buffer;
+		prd->byteCount = (uint16_t) Bytes;
+		prd->lastEntry = 0x8000;
 
 		// write the bytes of address into register
-		IOPort::Write32((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 4), (uint32_t)((uint64_t) prd));
+		IOPort::Write32((uint16_t) (mmio + (dev->GetBus() ? 8 : 0) + 4), (uint32_t) ((uint64_t) prd));
 
 		PreviousDevice = dev;
-		PIO::SendCommandData(dev, Sector, (uint8_t)(Bytes / dev->GetSectorSize()));
+		PIO::SendCommandData(dev, Sector, (uint8_t) (Bytes / dev->GetSectorSize()));
 
 		IOPort::WriteByte(dev->GetBaseIO() + 7, Sector > 0x0FFFFFFF ? ATA_ReadSectors48DMA : ATA_ReadSectors28DMA);
 		IOPort::WriteByte((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 0), DMA::DMACommandRead | DMA::DMACommandStart);
@@ -94,7 +135,7 @@ namespace DMA
 		_WaitingDMA15 = dev->GetBus();
 
 		uint64_t no = Time::Now();
-		uint64_t t1 = 100000;
+		uint64_t t1 = 100000000;
 		while((_WaitingDMA14 || _WaitingDMA15) && Time::Now() < no + 100 && t1 > 0)
 			t1--;
 
@@ -114,13 +155,35 @@ namespace DMA
 	{
 		uint32_t mmio = (uint32_t) dev->ParentPCI->GetBAR(4);
 
-		// create a prd
-		uintptr_t* prd = (uintptr_t*) dev->PRDTable;
-		uint32_t b = (uint32_t) Buffer;
+		// get a prd
+		bool found = false;
+		PRDTableCache prdCache;
+		for(PRDTableCache& cache : *cachedPRDTables)
+		{
+			if(!cache.used)
+			{
+				prdCache = cache;
+				cache.used = true;
+				found = 1;
+				break;
+			}
+		}
 
-		*((uint32_t*) prd) = b;
-		*((uint16_t*)((uintptr_t) prd + 4)) = (uint16_t) Bytes;
-		*((uint16_t*)((uintptr_t) prd + 6)) = 0x8000;
+		if(!found)
+		{
+			prdCache.address = Physical::AllocateDMA(1);
+			prdCache.length = 0x1000;
+			prdCache.used = 1;
+
+			cachedPRDTables->push_back(prdCache);
+		}
+
+		PRDEntry* prd = (PRDEntry*) prdCache.address;
+
+
+		prd->bufferPhysAddr = (uint32_t) Buffer;
+		prd->byteCount = (uint16_t) Bytes;
+		prd->lastEntry = 0x8000;
 
 		// write the bytes of address into register
 		IOPort::Write32((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 4), (uint32_t)((uint64_t) prd));
@@ -135,7 +198,7 @@ namespace DMA
 		_WaitingDMA15 = dev->GetBus();
 
 		uint64_t no = Time::Now();
-		uint64_t t1 = 100000;
+		uint64_t t1 = 100000000;
 		while((_WaitingDMA14 || _WaitingDMA15) && Time::Now() < no + 100 && t1 > 0)
 			t1--;
 

@@ -117,6 +117,11 @@ namespace Multitasking
 		assert(p);
 		assert(p->Threads.size() == 0);
 
+
+		// close all files
+		Filesystems::CloseAll(p);
+
+
 		// destroy its address space
 		// assert(p->VAS);
 		// MemoryManager::Virtual::ChangeAddressSpace(p->VAS->PML4);
@@ -202,7 +207,6 @@ namespace Multitasking
 	}
 
 
-
 	void Block(uint8_t purpose)
 	{
 		getRunQueue()->lock();
@@ -231,7 +235,7 @@ namespace Multitasking
 
 	void AddToQueue(Process* Proc)
 	{
-		ProcessList->push_front(Proc);
+		ProcessList->push_back(Proc);
 		for(auto t : Proc->Threads)
 			AddToQueue(t);
 	}
@@ -277,7 +281,7 @@ namespace Multitasking
 
 			assert(p);
 			GetThreadList(p)->remove(p);
-			SleepList->push_front(p);
+			SleepList->push_back(p);
 			p->State = STATE_SUSPEND;
 		}
 		getRunQueue()->unlock();
@@ -308,7 +312,7 @@ namespace Multitasking
 			par->Threads.remove(p);
 
 			GetThreadList(p)->remove(p);
-			SleepList->push_front(p);
+			SleepList->push_back(p);
 
 			getRunQueue()->unlock();
 
@@ -319,7 +323,7 @@ namespace Multitasking
 			for(size_t i = 0, s = p->watchers.size(); i < s; i++)
 			{
 				Thread* w = p->watchers.front();
-				p->watchers.pop_front();
+				p->watchers.erase(p->watchers.begin());
 
 				w->watching.remove(p);
 				WakeForMessage(w);

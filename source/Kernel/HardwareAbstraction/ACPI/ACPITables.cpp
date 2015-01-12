@@ -5,6 +5,9 @@
 #include <Kernel.hpp>
 #include <StandardIO.hpp>
 #include <Memory.hpp>
+#include <HardwareAbstraction/DeviceManager.hpp>
+#include <HardwareAbstraction/Devices/HPET.hpp>
+#include <HardwareAbstraction/Devices/APIC.hpp>
 
 using namespace Library;
 using namespace Library::StandardIO;
@@ -66,7 +69,6 @@ namespace ACPI
 			return;
 		}
 
-		PrintFormatted("RSDP found at %x\n", addr);
 		Log("RSDP found at %x", addr);
 
 
@@ -180,8 +182,6 @@ namespace ACPI
 		uint64_t* entries64 = (uint64_t*)((uint64_t) this->xsdtaddress + 36);
 
 		// add them all to list.
-		this->tables = new rde::vector<SystemDescriptionTable*>();
-
 		for(uint64_t k = 0; k < numentries; k++)
 		{
 			uint64_t ad = this->revision > 0 ? (*((uint64_t*)((uint64_t) entries64 + (k * (this->revision > 0 ? 8 : 4))))) : ((uint64_t)*((uint32_t*)((uint64_t) entries + (k * 4))));
@@ -194,7 +194,7 @@ namespace ACPI
 				continue;
 			}
 
-			this->tables->push_back(sdt);
+			this->tables.push_back(sdt);
 		}
 	}
 
@@ -227,7 +227,7 @@ namespace ACPI
 		// map the first page first.
 		MemoryManager::Virtual::MapAddress(a, a, 0x03);
 
-		uint32_t Length = *((uint32_t*)(this->address + 4));
+		uint32_t Length = *((uint32_t*) (this->address + 4));
 		for(uint64_t i = 1; i < (Length + 0xFFF) / 0x1000; i++)
 		{
 			MemoryManager::Virtual::MapAddress(a + (i * 0x1000), a + (i * 0x1000), 0x03);
@@ -239,7 +239,7 @@ namespace ACPI
 		uint8_t cs = 0;
 		for(uint64_t cc = 0; cc < Length; cc++)
 		{
-			cs += *((uint8_t*)(uint64_t) this->address + cc);
+			cs += *((uint8_t*) (uint64_t) this->address + cc);
 		}
 
 		if(cs != 0)
@@ -253,18 +253,52 @@ namespace ACPI
 
 		// init the fields
 		Memory::Copy((void*) this->signature, (void*) this->address, 4);
-		this->length = *((uint32_t*)(this->address + 4));
-		this->revision = *((uint8_t*)(this->address + 8));
+		this->length = *((uint32_t*) (this->address + 4));
+		this->revision = *((uint8_t*) (this->address + 8));
 		Memory::Copy((void*) this->oemid, (void*)(this->address + 10), 6);
 		Memory::Copy((void*) this->oemtableid, (void*)(this->address + 16), 8);
 
-		this->oemrevision = *((uint32_t*)(this->address + 24));
-		this->creatorid = *((uint32_t*)(this->address + 28));
-		this->creatorrevision = *((uint32_t*)(this->address + 32));
+		this->oemrevision = *((uint32_t*) (this->address + 24));
+		this->creatorid = *((uint32_t*) (this->address + 28));
+		this->creatorrevision = *((uint32_t*) (this->address + 32));
 
 
 		// print names
 		Log("SDT: %c%c%c%c", this->signature[0], this->signature[1], this->signature[2], this->signature[3]);
+
+
+
+
+
+		// can't switch-case this shit
+		{
+			char s0 = this->signature[0];
+			char s1 = this->signature[1];
+			char s2 = this->signature[2];
+			char s3 = this->signature[3];
+
+			uint64_t tableAddress = this->address
+					+ sizeof(SystemDescriptionTable)			// since the HPET table doesn't contain our fields
+					- sizeof(SDTable*)							// compensate for the extra SDTable* pointer
+					- sizeof(uint64_t);							// compensate for the extra 'address' field in our struct
+
+			if(s0 == 'H' && s1 == 'P' && s2 == 'E' && s3 == 'T')
+			{
+				using namespace Kernel::HardwareAbstraction::Devices;
+
+				// HPET, create that shit
+				this->table = new HPETTable(tableAddress, this);
+				DeviceManager::AddDevice(new Devices::HPET((HPETTable*) this->table), DeviceType::HighPrecisionTimer);
+			}
+			else if(s0 == 'A' && s1 == 'P' && s2 == 'I' && s3 == 'C')
+			{
+				using namespace Kernel::HardwareAbstraction::Devices;
+
+				// MADT (multiple APIC desc. table)
+				this->table = new APICTable(tableAddress, this);
+				DeviceManager::AddDevice(new Devices::APIC((APICTable*) this->table), DeviceType::AdvancedPIC);
+			}
+		}
 	}
 }
 }

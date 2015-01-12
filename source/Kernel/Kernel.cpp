@@ -25,6 +25,8 @@ using namespace Library::StandardIO;
 
 
 extern "C" uint64_t KernelEnd;
+extern "C" uint64_t StartBSS;
+extern "C" uint64_t EndBSS;
 
 extern "C" void TaskSwitcherCoOp();
 extern "C" void ProcessTimerInterrupt();
@@ -40,6 +42,8 @@ namespace Kernel
 	// Thank you!
 	uint64_t K_SystemMemoryInBytes;
 	uint64_t EndOfKernel;
+
+
 	static uint64_t LFBBufferAddr;
 	static uint64_t LFBAddr;
 	static uint64_t LFBInPages;
@@ -71,7 +75,17 @@ namespace Kernel
 	{
 		using namespace Kernel::HardwareAbstraction::Devices;
 		using namespace Kernel::HardwareAbstraction::VideoOutput;
-		EndOfKernel = (uint64_t)&KernelEnd;
+		EndOfKernel = (uint64_t) &KernelEnd;
+
+		// clear the BSS
+		{
+			uint64_t start = (uint64_t) &StartBSS;
+			uint64_t end = (uint64_t) &EndBSS;
+			uint64_t length = end - start;
+
+			Memory::Set((void*) start, 0, length);
+		}
+
 
 		// check.
 		assert(MultibootMagic == 0x2BADB002);
@@ -101,7 +115,7 @@ namespace Kernel
 
 		// copy kernel CR3 to somewhere sane-r
 		{
-			uint64_t oldcr3 = 0x3000;
+			uint64_t oldcr3 = Virtual::GetRawCR3();
 			uint64_t newcr3 = Physical::AllocateDMA(0x20, false);
 			Memory::Copy((void*) newcr3, (void*) 0x3000, 0xF000);
 
@@ -143,11 +157,16 @@ namespace Kernel
 			PrintFormatted("[mx] requires your CPU to support SSE3 instructions.\n");
 			UHALT();
 		}
+		if(!KernelCPUID->OnboardAPIC())
+		{
+			PrintFormatted("[mx] requires your CPU to have an APIC chip.");
+			UHALT();
+		}
 
 		// check if we have enough memory.
 		if(K_SystemMemoryInBytes < 0x02000000)
 		{
-			PrintFormatted("[mx] requires at least 32 Megabytes (33554432 bytes) of memory to operate.\n");
+			PrintFormatted("[mx] requires at least 64 Megabytes (67 108 864 bytes) of memory to operate.\n");
 			PrintFormatted("Only %d bytes of memory detected.\n", K_SystemMemoryInBytes);
 			PrintFormatted("Install more RAM, or increase the amount of memory in your Virtual Machine.");
 			UHALT();
@@ -158,7 +177,7 @@ namespace Kernel
 		{
 			uint64_t a = (uint64_t) K_MemoryMap;
 			uint32_t s = K_MemoryMap->SizeOfThisStructure;
-			K_MemoryMap = (MemoryMap::MemoryMap_type*) Allocate_G(K_MemoryMap->SizeOfThisStructure + sizeof(uint64_t));
+			K_MemoryMap = (MemoryMap::MemoryMap_type*) new uint8_t[K_MemoryMap->SizeOfThisStructure + sizeof(uint64_t)];
 			Memory::CopyOverlap((void*) K_MemoryMap, (void*) a, s);
 			Log("Memory map relocation complete");
 		}
@@ -191,7 +210,6 @@ namespace Kernel
 			KernelProcess = Multitasking::CreateProcess("Kernel", 0x0, KernelCoreThread, 2);
 			Multitasking::AddToQueue(Multitasking::CreateKernelThread(Idle, 0));
 			Multitasking::AddToQueue(KernelProcess);
-
 
 			asm volatile("sti");
 		}
@@ -291,7 +309,7 @@ namespace Kernel
 		Log("Compatible video card located");
 
 		PrintFormatted("Initialising RTC...\n");
-		Devices::RTC::Initialise(0);
+		// Devices::RTC::Initialise(0);
 		Log("RTC Initialised");
 
 		KernelKeyboard = new PS2Keyboard();
@@ -323,8 +341,8 @@ namespace Kernel
 				LFBInPages = bytes;
 
 				// map a bunch of pages for the buffer.
-				for(uint64_t k = 0; k < bytes; k++)
-					Virtual::MapAddress(LFBBufferAddress_INT + (k * 0x1000), Physical::AllocatePage(), 0x07);
+				// for(uint64_t k = 0; k < bytes; k++)
+				// 	Virtual::MapAddress(LFBBufferAddress_INT + (k * 0x1000), Physical::AllocatePage(), 0x07);
 
 				Virtual::MapRegion(LFBAddr, LFBAddr, bytes, 0x07);
 				// LFBBufferAddr = LFBBufferAddress_INT;

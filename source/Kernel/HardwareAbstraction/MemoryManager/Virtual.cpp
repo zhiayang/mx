@@ -3,8 +3,6 @@
 // Licensed under the Apache License Version 2.0.
 
 
-// Sets up the paging structures left by our bootstrap in (boot.s).
-
 #include <Kernel.hpp>
 #include <StandardIO.hpp>
 #include <stddef.h>
@@ -21,7 +19,7 @@ namespace Virtual
 	static PageMapStructure* CurrentPML4T;
 	static bool IsPaging;
 
-	#define I_RECURSIVE_SLOT	510
+	#define I_RECURSIVE_SLOT	509
 
 	// Convert an address into array index of a structure
 	// E.G. int index = I_PML4_INDEX(0xFFFFFFFFFFFFFFFF); // index = 511
@@ -445,7 +443,6 @@ namespace Virtual
 
 
 
-
 	void MapAddress(uint64_t VirtAddr, uint64_t PhysAddr, uint64_t Flags, PageMapStructure* PML4, bool DoNotUnmap)
 	{
 		uint64_t PageTableIndex					= I_PT_INDEX(VirtAddr);
@@ -500,7 +497,6 @@ namespace Virtual
 			Virtual::MapAddress((uint64_t) PageDirectory, (uint64_t) PageDirectory, 0x7);
 
 
-
 		if(!(PageDirectory->Entry[PageDirectoryIndex] & I_Present))
 		{
 			PageDirectory->Entry[PageDirectoryIndex] = Physical::AllocateFromReserved() | (Flags | 0x1);
@@ -508,6 +504,7 @@ namespace Virtual
 			invlpg(PDPT);
 			invlpg(PageDirectory);
 		}
+
 		PageMapStructure* PageTable = (PageMapStructure*) (PageDirectory->Entry[PageDirectoryIndex] & I_AlignMask);
 		if(other)
 			Virtual::MapAddress((uint64_t) PageTable, (uint64_t) PageTable, 0x7);
@@ -870,6 +867,7 @@ namespace Virtual
 			// that just gives us 1gb lower, now we need 512gb upper.
 
 			PML4->Entry[511] = (uint64_t) kernelpml4->Entry[511] | 0x6;
+			PML4->Entry[510] = (uint64_t) kernelpml4->Entry[510] | 0x6;
 		}
 
 		Virtual::MapAddress((uint64_t) PML4, (uint64_t) PML4, 0x07, PML4);

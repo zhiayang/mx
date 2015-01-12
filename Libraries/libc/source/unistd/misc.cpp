@@ -10,3 +10,8 @@ extern "C" int usleep(useconds_t usec)
 	Library::SystemCall::Sleep((usec + 999) / 1000);
 	return 0;
 }
+
+extern "C" pid_t fork()
+{
+	return Library::SystemCall::ForkProcess();
+}

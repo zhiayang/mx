@@ -16,6 +16,9 @@ namespace Devices
 {
 	namespace PS2
 	{
+		const uint8_t DataPort = 0x60;
+		const uint8_t CommandPort = 0x64;
+
 		uint8_t Device1Buffer = 0;
 		uint8_t Device2Buffer = 0;
 
