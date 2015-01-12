@@ -242,10 +242,8 @@ namespace TTY
 
 	uint64_t WriteTTY(long ttyid, uint8_t* data, uint64_t length)
 	{
-		if(!ttys)
-			HALT("TTY System not initialised");
-
-		else if(ttys->find(ttyid) != ttys->end())
+		assert(ttys);
+		if(ttys->find(ttyid) != ttys->end())
 		{
 			TTYObject* tty = ttys->find(ttyid)->second;
 			return tty->out(tty, data, length);
@@ -260,10 +258,8 @@ namespace TTY
 
 	uint64_t ReadTTY(long ttyid, uint8_t* data, uint64_t length)
 	{
-		if(!ttys)
-			HALT("TTY System not initialised");
-
-		else if(ttys->find(ttyid) != ttys->end())
+		assert(ttys);
+		if(ttys->find(ttyid) != ttys->end())
 		{
 			TTYObject* tty = ttys->find(ttyid)->second;
 			return tty->in(tty, data, length);
@@ -278,10 +274,8 @@ namespace TTY
 
 	void FlushTTY(long ttyid)
 	{
-		if(!ttys)
-			HALT("TTY System not initialised");
-
-		else if(ttys->find(ttyid) != ttys->end())
+		assert(ttys);
+		if(ttys->find(ttyid) != ttys->end())
 		{
 			TTYObject* tty = ttys->find(ttyid)->second;
 			tty->flush(tty);
