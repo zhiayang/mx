@@ -443,7 +443,6 @@ namespace Virtual
 
 
 
-
 	void MapAddress(uint64_t VirtAddr, uint64_t PhysAddr, uint64_t Flags, PageMapStructure* PML4, bool DoNotUnmap)
 	{
 		uint64_t PageTableIndex					= I_PT_INDEX(VirtAddr);
@@ -868,6 +867,7 @@ namespace Virtual
 			// that just gives us 1gb lower, now we need 512gb upper.
 
 			PML4->Entry[511] = (uint64_t) kernelpml4->Entry[511] | 0x6;
+			PML4->Entry[510] = (uint64_t) kernelpml4->Entry[510] | 0x6;
 		}
 
 		Virtual::MapAddress((uint64_t) PML4, (uint64_t) PML4, 0x07, PML4);

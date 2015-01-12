@@ -265,7 +265,7 @@ namespace Multitasking
 		using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
 		DisableScheduler();
 
-		PageMapStructure* PML4 = FirstProc ? (PageMapStructure*)(GetKernelCR3()) : (PageMapStructure*) Virtual::CreateVAS();
+		PageMapStructure* PML4 = FirstProc ? (PageMapStructure*) (GetKernelCR3()) : (PageMapStructure*) Virtual::CreateVAS();
 		Process* process = new Process(PML4);
 
 		// everybody needs some tls
