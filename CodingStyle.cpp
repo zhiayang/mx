@@ -60,7 +60,7 @@ namespace IsIndentedProperly
 		// Member variable names CAN be either lowercase or CamelCase.
 		// They can NEVER be halfAssedCamelCase, or stupid_underscore_naming.
 		// variable names CAN be completelylowercase, although this SHOULD be avoided in new code.
-		// The above clause is no longer strictly enforced as well.
+		// The above clause is no longer strictly enforced as either.
 
 		// Unused parameters MUST be silenced, either using
 		UNUSED(Argument1);
@@ -82,7 +82,7 @@ namespace IsIndentedProperly
 		// Will result in termination without prejudice.
 
 		// Variable names in a small scope (function, loop etc) can use non-verbose names:
-		// However, variable names in global scope must be verbose and in CamelCase.
+		// However, variable names in global scope MUST be verbose and in CamelCase.
 		// Global scope here refers to variables that will be referenced (using 'extern') from another source file.
 		for(uint64_t i = 0; i < 51; i++)
 		{
@@ -196,6 +196,7 @@ namespace IsIndentedProperly
 
 		// They can NEVER be prefixed; if such an effect is desired, increment before using.
 		// To increase/maintain code legibility, NEVER use (++) or (--) as an expression, only as a statement.
+		// EXCEPTIONS are probably string/memory copying code, or stack manipulation code (Task.cpp)
 	}
 }
 }

@@ -82,6 +82,7 @@ $(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) buildus
 	@$(OBJCOPY) -g -O elf32-i386 build/fxloader64.elf build/fxloader.mxa
 	@cp build/fxloader.mxa $(shell tools/getpath.sh)/boot/fxloader.mxa
 
+	@# use objcopy to strip debug symbols from the final executable -- saves about 1.3mb
 	@$(OBJCOPY) -g $(OUTPUT) $(shell tools/getpath.sh)/System/Library/CoreServices/kernel64
 
 

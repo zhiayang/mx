@@ -166,7 +166,7 @@ namespace Kernel
 		// check if we have enough memory.
 		if(K_SystemMemoryInBytes < 0x02000000)
 		{
-			PrintFormatted("[mx] requires at least 32 Megabytes (33554432 bytes) of memory to operate.\n");
+			PrintFormatted("[mx] requires at least 64 Megabytes (67 108 864 bytes) of memory to operate.\n");
 			PrintFormatted("Only %d bytes of memory detected.\n", K_SystemMemoryInBytes);
 			PrintFormatted("Install more RAM, or increase the amount of memory in your Virtual Machine.");
 			UHALT();
@@ -177,7 +177,7 @@ namespace Kernel
 		{
 			uint64_t a = (uint64_t) K_MemoryMap;
 			uint32_t s = K_MemoryMap->SizeOfThisStructure;
-			K_MemoryMap = (MemoryMap::MemoryMap_type*) Allocate_G(K_MemoryMap->SizeOfThisStructure + sizeof(uint64_t));
+			K_MemoryMap = (MemoryMap::MemoryMap_type*) new uint8_t[K_MemoryMap->SizeOfThisStructure + sizeof(uint64_t)];
 			Memory::CopyOverlap((void*) K_MemoryMap, (void*) a, s);
 			Log("Memory map relocation complete");
 		}
