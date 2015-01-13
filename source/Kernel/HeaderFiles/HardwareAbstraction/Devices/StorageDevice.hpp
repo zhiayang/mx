@@ -51,6 +51,8 @@ namespace HardwareAbstraction
 			GuidPartitionTable,
 		};
 
+
+
 		class Partition;
 		class StorageDevice : public DeviceManager::Device
 		{
@@ -62,47 +64,41 @@ namespace HardwareAbstraction
 
 				StorageDeviceType Type;
 				PartitionTableType PartitionTable;
-				rde::list<Partition*>* Partitions;
+				rde::list<Partition*> Partitions;
+
+				uid_t diskid;
 		};
 
 		class Partition
 		{
 			public:
 				Partition(StorageDevice* dev, uint8_t num, uint64_t StartLBA, uint64_t LBALength, Filesystems::FSTypes type, uint64_t PartitionGUID_high, uint64_t PartitionGUID_low, uint64_t TypeGUID_high, uint64_t TypeGUID_low, char* Name, bool Bootable);
-				void		PrintInfo();
 
-				uint64_t		GetStartLBA();
-				uint64_t		GetLBALength();
+				uint64_t				GetStartLBA();
+				uint64_t				GetLBALength();
 				Filesystems::FSTypes	GetType();
 
-				uint64_t	GetGUID_S1();
-				uint64_t	GetGUID_S2();
-				uint64_t	GetGUID_S3();
-				uint64_t	GetGUID_S4();
-				uint64_t	GetGUID_S5();
+				uint64_t				GetGUID_S1();
+				uint64_t				GetGUID_S2();
+				uint64_t				GetGUID_S3();
+				uint64_t				GetGUID_S4();
+				uint64_t				GetGUID_S5();
+				uint64_t				GetGUID_High();
+				uint64_t				GetGUID_Low();
 
 
-				uint64_t	GetGUID_High();
-				uint64_t	GetGUID_Low();
+				uint64_t				GetTypeGUID_S1();
+				uint64_t				GetTypeGUID_S2();
+				uint64_t				GetTypeGUID_S3();
+				uint64_t				GetTypeGUID_S4();
+				uint64_t				GetTypeGUID_S5();
+				uint64_t				GetTypeGUID_High();
+				uint64_t				GetTypeGUID_Low();
 
-
-				uint64_t	GetTypeGUID_S1();
-				uint64_t	GetTypeGUID_S2();
-				uint64_t	GetTypeGUID_S3();
-				uint64_t	GetTypeGUID_S4();
-				uint64_t	GetTypeGUID_S5();
-
-
-				uint64_t	GetTypeGUID_High();
-				uint64_t	GetTypeGUID_Low();
-				char*		GetName();
-				bool		IsBootable();
-				StorageDevice*	GetStorageDevice();
-				uint8_t		GetPartitionNumber();
-				Filesystems::FSDriver*	GetFilesystem();
-
-				void		ReadSector(uint64_t LBA);
-				void		WriteSector(uint64_t LBA);
+				char*					GetName();
+				bool					IsBootable();
+				StorageDevice*			GetStorageDevice();
+				uint8_t					GetPartitionNumber();
 
 			private:
 				uint64_t	StartLBA;
@@ -120,7 +116,7 @@ namespace HardwareAbstraction
 				StorageDevice* Drive;
 				uint8_t		PartitionNumber;
 
-				Filesystems::FSDriver*	Filesystem;
+				// Filesystems::FSDriver*	Filesystem;
 		};
 
 
@@ -158,7 +154,7 @@ namespace HardwareAbstraction
 				uint64_t PRDTable;
 				PCI::PCIDevice* ParentPCI;
 
-				static rde::list<ATADrive*>* ATADrives;
+				static rde::vector<ATADrive*>* ATADrives;
 
 			private:
 				uint8_t Bus;
@@ -171,6 +167,7 @@ namespace HardwareAbstraction
 		};
 
 
+		void AddDevice(StorageDevice* dev);
 
 
 

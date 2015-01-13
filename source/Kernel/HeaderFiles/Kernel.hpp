@@ -60,6 +60,28 @@
 
 
 
+// wrapper types for big endian shits
+// I don't think we will ever support big endian archs
+// I cannot handle that shit
+
+template<typename T, int bits>
+struct beInt
+{
+	beInt(T bval) : val(bval) { }
+	T le() { return (bits == 16 ? __builtin_bswap16(this->val) : (bits == 32 ? __builtin_bswap32(this->val) : __builtin_bswap64(this->val))); }
+	T be() { return this->val; }
+
+	T val;
+};
+
+template<> struct beInt<int16_t, 16>;
+template<> struct beInt<uint16_t, 16>;
+template<> struct beInt<int32_t, 32>;
+template<> struct beInt<uint32_t, 32>;
+template<> struct beInt<int64_t, 64>;
+template<> struct beInt<uint64_t, 64>;
+
+
 
 
 namespace Kernel

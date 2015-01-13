@@ -1,107 +1,88 @@
-// // HFS+.cpp
-// // Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
-// // Licensed under the Apache License Version 2.0.
+// HFS+.cpp
+// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Licensed under the Apache License Version 2.0.
 
-// #include <Kernel.hpp>
-// #include <StandardIO.hpp>
-// using namespace Kernel::HardwareAbstraction::MemoryManager;
-// using namespace Library::StandardIO;
+#include <Kernel.hpp>
+#include <StandardIO.hpp>
+using namespace Kernel::HardwareAbstraction::MemoryManager;
+using namespace Library::StandardIO;
 
-// namespace Kernel {
-// namespace HardwareAbstraction {
-// namespace Filesystems
-// {
-// 	#define __builtin_bswap16
+namespace Kernel {
+namespace HardwareAbstraction {
+namespace Filesystems
+{
+	FSDriverHFSPlus::FSDriverHFSPlus(Devices::Storage::Partition* _part) : FSDriver(_part, FSDriverType::Physical)
+	{
+		// read the fields from LBA 0
+		auto atadev = this->partition->GetStorageDevice();
 
-// 	HFSPlus::HFSPlus(Devices::Storage::Partition* parent) : FSDriver(FSTypes::hfsplus)
-// 	{
-// 		// allocate a page;
-// 		uint64_t buffer = Physical::AllocateDMA(1);
-// 		this->ParentPartition = parent;
+		uint64_t buf = MemoryManager::Physical::AllocateDMA(1);
+		IO::Read(atadev, this->partition->GetStartLBA() + 2, buf, 512);		// volume header is 512 bytes, starts 1024 bytes in
 
-// 		this->ParentPartition->GetStorageDevice()->Read(this->ParentPartition->GetStartLBA() + 2, buffer, 1024);
+		// todo: handle sector sizes not 512
+		assert(((Devices::Storage::ATADrive*) atadev)->GetSectorSize() == 512);
 
-// 		this->volumeheader = new VolumeHeader_type;
+		HFSPlusVolumeHeader* volheader = (HFSPlusVolumeHeader*) buf;
 
-// 		this->volumeheader->signature[0] = *((uint8_t*) buffer);
-// 		this->volumeheader->signature[1] = *((uint8_t*)(buffer + 1));
-// 		this->volumeheader->version = __builtin_bswap16(*((uint16_t*)(buffer + 2)));
-// 		this->volumeheader->attributes = __builtin_bswap32(*((uint32_t*)(buffer + 4)));
-// 		this->volumeheader->lastmountedversion = __builtin_bswap32(*((uint32_t*)(buffer + 8)));
-// 		this->volumeheader->journalinfoblock = __builtin_bswap32(*((uint32_t*)(buffer + 12)));
+		if(volheader->signature[0] != 'H')
+			Log(1, "Invalid signature on HFS+ filesystem (disk%ds%d), expected 'H', got '%c'", atadev->diskid, this->partition->GetPartitionNumber(), volheader->signature[0]);
 
-// 		this->volumeheader->createdate = __builtin_bswap32(*((uint32_t*)(buffer + 16)));
-// 		this->volumeheader->modifydate = __builtin_bswap32(*((uint32_t*)(buffer + 20)));
-// 		this->volumeheader->backupdate = __builtin_bswap32(*((uint32_t*)(buffer + 24)));
-// 		this->volumeheader->checkeddate = __builtin_bswap32(*((uint32_t*)(buffer + 28)));
-
-// 		this->volumeheader->filecount = __builtin_bswap32(*((uint32_t*)(buffer + 32)));
-// 		this->volumeheader->foldercount = __builtin_bswap32(*((uint32_t*)(buffer + 36)));
-
-// 		this->volumeheader->blocksize = __builtin_bswap32(*((uint32_t*)(buffer + 40)));
-// 		this->volumeheader->totalblocks = __builtin_bswap32(*((uint32_t*)(buffer + 44)));
-// 		this->volumeheader->freeblocks = __builtin_bswap32(*((uint32_t*)(buffer + 48)));
-
-// 		this->volumeheader->nextalloc = __builtin_bswap32(*((uint32_t*)(buffer + 52)));
-// 		this->volumeheader->resourceclumpsize = __builtin_bswap32(*((uint32_t*)(buffer + 56)));
-// 		this->volumeheader->dataclumpsize = __builtin_bswap32(*((uint32_t*)(buffer + 60)));
-// 		// __builtin_bswap32(*((uint32_t*)(buffer + 64)));
-
-// 		this->volumeheader->writecount = __builtin_bswap32(*((uint32_t*)(buffer + 68)));
-// 		this->volumeheader->encodingbitmap = __builtin_bswap64(*((uint64_t*)(buffer + 72)));
-
-// 		// this->volumeheader->journalinfoblock = __builtin_bswap32(*((uint32_t*)(buffer + 76)));
-
-// 		// this->volumeheader->journalinfoblock = __builtin_bswap32(*((uint32_t*)(buffer + 80)));
-// 		// this->volumeheader->journalinfoblock = __builtin_bswap32(*((uint32_t*)(buffer + 84)));
-// 		// this->volumeheader->journalinfoblock = __builtin_bswap32(*((uint32_t*)(buffer + 88)));
-// 		// this->volumeheader->journalinfoblock = __builtin_bswap32(*((uint32_t*)(buffer + 92)));
-// 		// this->volumeheader->journalinfoblock = __builtin_bswap32(*((uint32_t*)(buffer + 96)));
-
-// 		Physical::FreeDMA(buffer, 1);
-// 	}
+		if(volheader->signature[1] != '+' && volheader->signature[1] != 'X')
+			Log(1, "Invalid signature on HFS+ filesystem (disk%ds%d), expected '+' (for HFS+) or 'X' (for case-sensitive HFS+), got '%c'", atadev->diskid, this->partition->GetPartitionNumber(), volheader->signature[1]);
 
 
-// 	void HFSPlus::PrintInfo()
-// 	{
-// 		PrintFormatted("HFS+ Signature: %c%c\n", this->volumeheader->signature[0], this->volumeheader->signature[1]);
-// 		PrintFormatted("File Count:     %d\n", this->volumeheader->filecount);
-// 		PrintFormatted("Folder Count:   %d\n", this->volumeheader->foldercount);
-// 	}
 
 
-// 	void HFSPlus::ReadFile(VFS::File* file, uint64_t bufaddr, uint64_t length)
-// 	{
-// 		UNUSED(file);
-// 		UNUSED(bufaddr);
-// 		UNUSED(length);
-// 	}
+		Log("HFS+ Driver on disk%ds%d has been initialised, FS appears to conform to specifications.", atadev->diskid, this->partition->GetPartitionNumber());
+	}
 
-// 	void HFSPlus::WriteFile(VFS::File* file, uint64_t bufaddr, uint64_t length)
-// 	{
-// 		UNUSED(file);
-// 		UNUSED(bufaddr);
-// 		UNUSED(length);
-// 	}
+	FSDriverHFSPlus::~FSDriverHFSPlus()
+	{
 
-// 	void HFSPlus::AppendFile(VFS::File* file, uint64_t bufaddr, uint64_t length, uint64_t offset)
-// 	{
-// 		UNUSED(file);
-// 		UNUSED(bufaddr);
-// 		UNUSED(length);
-// 		UNUSED(offset);
-// 	}
+	}
 
-// 	Library::LinkedList<VFS::FSObject>* HFSPlus::GetFSObjects(VFS::Folder* start)
-// 	{
-// 		UNUSED(start);
-// 		return 0;
-// 	}
+	bool FSDriverHFSPlus::Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms)
+	{
+		return 0;
+	}
 
-// 	VFS::Folder* HFSPlus::GetRootFolder()
-// 	{
-// 		return 0;
-// 	}
-// }
-// }
-// }
+	bool FSDriverHFSPlus::Delete(VFS::vnode* node, const char* path)
+	{
+		return 0;
+	}
+
+	bool FSDriverHFSPlus::Traverse(VFS::vnode* node, const char* path, char** symlink)
+	{
+		return 0;
+	}
+
+	size_t FSDriverHFSPlus::Read(VFS::vnode* node, void* buf, off_t offset, size_t length)
+	{
+		return 0;
+	}
+
+	size_t FSDriverHFSPlus::Write(VFS::vnode* node, const void* buf, off_t offset, size_t length)
+	{
+		return 0;
+	}
+
+	void FSDriverHFSPlus::Flush(VFS::vnode* node)
+	{
+
+	}
+
+	void FSDriverHFSPlus::Stat(VFS::vnode* node, struct stat* stat, bool statlink)
+	{
+
+	}
+
+
+	// returns a list of items inside the directory, as vnodes.
+	rde::vector<VFS::vnode*>* FSDriverHFSPlus::ReadDir(VFS::vnode* node)
+	{
+		return 0;
+	}
+
+}
+}
+}

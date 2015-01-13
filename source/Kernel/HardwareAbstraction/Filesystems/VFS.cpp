@@ -196,8 +196,6 @@ namespace Filesystems
 		fileentry* Open(IOContext* ioctx, vnode* node, int flags)
 		{
 			assert(ioctx);
-			// assert(ioctx->fdarray);
-			// assert(ioctx->fdarray->fds);
 			assert(node);
 
 			auto fe		= new fileentry;

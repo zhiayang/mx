@@ -9,17 +9,15 @@
 #include "../FxLoader.hpp"
 namespace Memory
 {
-	FPL_t*			CurrentFPL;
-	uint32_t		FPLBottomIndex;
-	uint32_t		NumberOfFPLPairs;
+	static FPL_t*		CurrentFPL;
+	static uint32_t		FPLBottomIndex;
+	static uint32_t		NumberOfFPLPairs;
 
 
 	// Define a region of memory in which the VMM gets it's memory from, to create page strucures.
-	uint64_t ReservedRegionForVMM;
-	uint64_t LengthOfReservedRegion;
-	uint64_t ReservedRegionIndex = -0x1000;
-
-	uint64_t LastSuccessfulAlloc = 0;
+	static uint64_t ReservedRegionForVMM;
+	static uint64_t LengthOfReservedRegion;
+	static uint64_t ReservedRegionIndex = -0x1000;
 
 
 	uint64_t PageAlignDown(uint64_t x)
@@ -84,7 +82,7 @@ namespace Memory
 
 	void FreePage_NoUnmap(uint64_t PageAddr)
 	{
-		for(int i = 0; i < NumberOfFPLPairs; i++)
+		for(uint32_t i = 0; i < NumberOfFPLPairs; i++)
 		{
 			if(PageAddr == CurrentFPL->Pairs[i].BaseAddr + (CurrentFPL->Pairs[i].LengthInPages * 0x1000))
 			{

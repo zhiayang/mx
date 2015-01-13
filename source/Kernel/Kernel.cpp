@@ -364,12 +364,24 @@ namespace Kernel
 			VFS::InitIO();
 
 			// todo: detect fs type.
-			Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->front();
-			FSDriverFat32* fs = new FSDriverFat32(f1->Partitions->front());
+			{
+				Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->front();
+				FSDriverFat32* fs = new FSDriverFat32(f1->Partitions.front());
 
-			// mount root fs from partition 0 at /
-			VFS::Mount(f1->Partitions->front(), fs, "/");
-			Log("Root FS Mounted at /");
+				// mount root fs from partition 0 at /
+				VFS::Mount(f1->Partitions.front(), fs, "/");
+				Log("Root FS Mounted at /");
+			}
+
+
+
+			// todo: detect this too.
+			{
+				Devices::Storage::ATADrive* f2 = (*Devices::Storage::ATADrive::ATADrives)[1];
+				FSDriverHFSPlus* fs = new FSDriverHFSPlus(f2->Partitions.front());
+
+				VFS::Mount(f2->Partitions.front(), fs, "/Volumes/Data/");
+			}
 		}
 
 		TTY::Initialise();

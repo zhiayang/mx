@@ -42,7 +42,7 @@ namespace Storage
 	}
 
 
-	rde::list<ATADrive*>* ATADrive::ATADrives;
+	rde::vector<ATADrive*>* ATADrive::ATADrives;
 
 
 	bool ATADrive::GetIsGPT()			{ return this->IsGPT; }
@@ -93,16 +93,13 @@ namespace Storage
 				UHALT();
 			}
 
-			ATADrive::ATADrives = new rde::list<ATADrive*>();
+			ATADrive::ATADrives = new rde::vector<ATADrive*>();
 			IdentifyAll(devlist->front());
 
 			DMA::Initialise();
 
 			for(auto p : *ATADrive::ATADrives)
 				HardwareAbstraction::Filesystems::MBR::ReadPartitions(p);
-
-			// for(uint64_t i = 0; i < ATADrive::ATADrives->size(); i++)
-			// 	HardwareAbstraction::Filesystems::MBR::ReadPartitions(ATADrive::ATADrives->get(i));
 		}
 
 

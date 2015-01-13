@@ -4,18 +4,18 @@
 
 #include "FxLoader.hpp"
 
-extern "C" void* memset(void* ptr, uint8_t value, uint64_t num)
+extern "C" void* memset(void* ptr, int value, uint64_t num)
 {
 	// 'stosl' will use the value in eax but we only want the value in al
 	// so we make eax = al << 24 | al << 16 | al << 8 | al
-	if((value & 0xff) == 0)
+	if((value & 0xFF) == 0)
 		// this is a little optimization because memset is most often called with value = 0
 		value = 0;
 
 	else
 	{
-		value = (value & 0xff) | ((value & 0xff) << 8);
-		value = (value & 0xffff) | ((value & 0xffff) << 16);
+		value = (value & 0xFF) | ((value & 0xFF) << 8);
+		value = (value & 0xFFFF) | ((value & 0xFFFF) << 16);
 	}
 
 	void* temporaryPtr = ptr;

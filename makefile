@@ -52,17 +52,20 @@ LIBRARIES			= -liris -lgcc -lrdestl
 OUTPUT				= build/kernel64.elf
 
 
+
+QEMU_FLAGS			= -s -vga std -serial file:"build/serialout.log" -no-reboot -m $(MEMORY) -hda build/disk.img -hdb build/mxdatahfsplus.img -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap
+
 .PHONY: builduserspace buildlib mountdisk clean all cleandisk copyheader
 
 run: build
-	@$(QEMU) -s -vga std -serial file:"build/serialout.log" -no-reboot -m $(MEMORY) -hda build/disk.img -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap -monitor stdio
+	@$(QEMU) $(QEMU_FLAGS) -monitor stdio
 
 all: $(OUTPUT)
 	@# unmount??
 	@tools/unmountdisk.sh
 
 	@echo "# Starting QEMU"
-	@$(QEMU) -s -vga std -serial file:"build/serialout.log" -no-reboot -m $(MEMORY) -hda build/disk.img -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap
+	@$(QEMU) $(QEMU_FLAGS)
 	-@rm -f build/.dmf
 
 	@# mount the disk again for inspection.
