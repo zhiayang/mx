@@ -127,9 +127,9 @@ namespace Filesystems
 		// return mktime(&ts);
 	}
 
-	static rde::vector<rde::string*>* split(rde::string& s, char delim)
+	static rde::vector<rde::string*> split(rde::string& s, char delim)
 	{
-		auto ret = new rde::vector<rde::string*>();
+		rde::vector<rde::string*> ret;
 		rde::string* item = new rde::string();
 
 		for(auto c : s)
@@ -138,7 +138,7 @@ namespace Filesystems
 			{
 				if(!item->empty())
 				{
-					ret->push_back(item);
+					ret.push_back(item);
 					item = new rde::string();
 				}
 			}
@@ -147,7 +147,7 @@ namespace Filesystems
 		}
 
 		if(item->length() > 0)
-			ret->push_back(item);
+			ret.push_back(item);
 
 		return ret;
 	}
@@ -245,7 +245,7 @@ namespace Filesystems
 		assert(node->info);
 
 
-		auto vd = new vnode_data;
+		vnode_data* vd = new vnode_data;
 		node->info->data = (void*) vd;
 
 		rde::string pth = rde::string(path);
@@ -255,18 +255,17 @@ namespace Filesystems
 
 		assert(node->info);
 
-		auto dirs = split(pth, PATH_DELIMTER);
-		assert(dirs);
-		assert(dirs->size() > 0);
+		rde::vector<rde::string*> dirs = split(pth, PATH_DELIMTER);
+		assert(dirs.size() > 0);
 
-		size_t levels = dirs->size();
+		size_t levels = dirs.size();
 		size_t curlvl = 1;
 
 		// remove the last.
-		auto file = dirs->back();
+		auto file = dirs.back();
 		vnode* cn = node;
 
-		for(auto v : *dirs)
+		for(auto v : dirs)
 		{
 			bool found = false;
 
@@ -287,7 +286,13 @@ namespace Filesystems
 				rde::string vndlower = vnd->name;
 				vndlower.make_lower();
 
-				if(curlvl == levels && d->type == VNodeType::File && String::Compare(vnd->name.c_str(), file->c_str()) == 0)
+				rde::string filelower = *file;
+				filelower.make_lower();
+
+				rde::string vlower = *v;
+				vlower.make_lower();
+
+				if(curlvl == levels && d->type == VNodeType::File && String::Compare(vndlower.c_str(), filelower.c_str()) == 0)
 				{
 					node->info->data = d->info->data;
 					node->info->driver = d->info->driver;
@@ -296,7 +301,7 @@ namespace Filesystems
 
 					return true;
 				}
-				else if(String::Compare(vnd->name.c_str(), v->c_str()) == 0)
+				else if(String::Compare(vndlower.c_str(), vlower.c_str()) == 0)
 				{
 					found = true;
 					cn = d;
@@ -459,7 +464,7 @@ namespace Filesystems
 			else if(dirent->attrib == ATTR_LFN && dirent->clusterlow == 0)
 			{
 				int nument = 0;
-				name = this->ReadLFN(addr, nument);
+				name = this->ReadLFN(addr, &nument);
 				lfncheck = ((LFNEntry*) dirent)->checksum;
 
 				addr += (nument * sizeof(LFNEntry));
@@ -605,7 +610,7 @@ namespace Filesystems
 		return ret;
 	}
 
-	rde::string FSDriverFat32::ReadLFN(uint64_t addr, int& ret_nument)
+	rde::string FSDriverFat32::ReadLFN(uint64_t addr, int* ret_nument)
 	{
 		LFNEntry* ent = (LFNEntry*) addr;
 		uint8_t seqnum = ent->seqnum;
@@ -644,7 +649,7 @@ namespace Filesystems
 
 			ret.append((*items)[c - 1]);
 		}
-		ret_nument = nument;
+		*ret_nument = nument;
 		return ret;
 	}
 }
