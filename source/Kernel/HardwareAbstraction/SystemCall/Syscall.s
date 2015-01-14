@@ -145,14 +145,6 @@ ExitProc:
 	call Syscall_ExitProc
 	jmp CleanUp
 
-InstallIRQ:
-	call Syscall_InstallIRQHandler
-	jmp CleanUp
-
-InstallIRQNoRegs:
-	call Syscall_InstallIRQHandlerNoRegs
-	jmp CleanUp
-
 
 
 // page 1
@@ -308,8 +300,8 @@ FailString:
 SyscallTable0:
 	// misc things, page 0+
 	.quad	ExitProc			// 0000
-	.quad	InstallIRQ			// 0001
-	.quad	InstallIRQNoRegs	// 0002
+	.quad	Fail				// 0001
+	.quad	Fail				// 0002
 
 EndSyscallTable0:
 

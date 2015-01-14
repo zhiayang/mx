@@ -9,9 +9,9 @@ namespace HardwareAbstraction {
 namespace Devices {
 namespace NIC
 {
-	GenericNIC::GenericNIC(GenericNIC* dev)
+	GenericNIC::GenericNIC()
 	{
-		this->device = dev;
+
 	}
 
 	GenericNIC::~GenericNIC()
@@ -20,32 +20,27 @@ namespace NIC
 
 	void GenericNIC::Reset()
 	{
-		this->device->Reset();
+
 	}
 
-	void GenericNIC::SendData(uint8_t *data, uint64_t bytes)
+	void GenericNIC::SendData(uint8_t* data, uint64_t bytes)
 	{
-		this->device->SendData(data, bytes);
+		(void) data;
+		(void) bytes;
 	}
 
 	uint64_t GenericNIC::GetHardwareType()
 	{
-		return this->device->GetHardwareType();
-	}
-
-	uint8_t* GenericNIC::ReceiveData(uint8_t *data, uint64_t bytes)
-	{
-		return this->device->ReceiveData(data, bytes);
-	}
-
-	void GenericNIC::HandleInterrupt()
-	{
-		this->device->HandleInterrupt();
+		return 0;
 	}
 
 	uint8_t* GenericNIC::GetMAC()
 	{
-		return this->device->MAC;
+		return 0;
+	}
+
+	void GenericNIC::HandleInterrupt()
+	{
 	}
 }
 }

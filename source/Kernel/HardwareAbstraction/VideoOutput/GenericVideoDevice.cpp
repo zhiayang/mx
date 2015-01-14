@@ -1,60 +1,44 @@
 // GenericVideoDevice.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
-// Licensed under Creative Commons 3.0 Unported.
+// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Licensed under the Apache License Version 2.0.
 
-#include <Kernel.hpp>
+#include <HardwareAbstraction/VideoOutput/VideoDevice.hpp>
+
+using namespace Kernel::HardwareAbstraction::Devices;
 
 namespace Kernel {
 namespace HardwareAbstraction {
 namespace VideoOutput
 {
-	GenericVideoDevice::GenericVideoDevice(GenericVideoDevice* dev)
-	{
-		this->Device = dev;
-	}
-
 	GenericVideoDevice::~GenericVideoDevice()
 	{
 	}
 
-	void GenericVideoDevice::SetMode(uint16_t x, uint16_t y, uint16_t d)
+	void GenericVideoDevice::SetMode(uint16_t, uint16_t, uint16_t)
 	{
-		this->Device->SetMode(x, y, d);
+
 	}
 
 	uint16_t GenericVideoDevice::GetResX()
 	{
-		return this->Device->GetResX();
+		return 0;
 	}
 
 	uint16_t GenericVideoDevice::GetResY()
 	{
-		return this->Device->GetResY();
+		return 0;
 	}
 
 	uint16_t GenericVideoDevice::GetBitDepth()
 	{
-		return this->Device->GetBitDepth();
+		return 0;
 	}
 
 	uint64_t GenericVideoDevice::GetFramebufferAddress()
 	{
-		return this->Device->GetFramebufferAddress();
+		return 0;
 	}
+
 }
 }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

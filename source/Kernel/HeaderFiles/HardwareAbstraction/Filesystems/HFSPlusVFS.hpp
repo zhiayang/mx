@@ -123,6 +123,7 @@ namespace Filesystems
 
 
 		private:
+			bool					caseSensitive;
 			HFSPlusVolumeHeader		volumeHeader;
 	};
 }

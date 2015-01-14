@@ -57,8 +57,6 @@ namespace Kernel
 
 
 	// devices
-	VideoOutput::GenericVideoDevice* VideoDevice;
-	Devices::NIC::GenericNIC* KernelNIC;
 	Devices::PS2Controller* KernelPS2Controller;
 	Devices::Keyboard* KernelKeyboard;
 	Random* KernelRandom;
@@ -249,21 +247,6 @@ namespace Kernel
 				PrintFormatted("[mx] requires such a device to work.\n");
 				PrintFormatted("Check your system and try again.\n\n");
 				PrintFormatted("Currently, supported systems include: BGA (Bochs, QEMU, VirtualBox) and SVGA (VMWare)\n");
-				{
-					// for(uint16_t num = 0; num < PCI::PCIDevice::PCIDevices->size(); num++)
-					for(auto dev : *PCI::PCIDevice::PCIDevices)
-					{
-						dev->PrintPCIDeviceInfo();
-
-						if(dev->GetIsMultifunction())
-							PrintFormatted(" ==>Multifunction Device");
-
-						if(PCI::MatchVendorDevice(dev, 0x1234, 0x1111) || PCI::MatchVendorDevice(dev, 0x80EE, 0xBEEF))
-							PrintFormatted(" ==>BGA Compatible Video Card: %x", GetTrueLFBAddress());
-
-						PrintFormatted("\n");
-					}
-				}
 				UHALT();
 			}
 			else
@@ -277,13 +260,13 @@ namespace Kernel
 				else if(PCI::MatchVendorDevice(VideoDev, 0x1234, 0x1111) || PCI::MatchVendorDevice(VideoDev, 0x80EE, 0xBEEF))
 				{
 					// QEMU, Bochs and VBox's BGA card.
-					Kernel::VideoDevice = new GenericVideoDevice(new BochsGraphicsAdapter(VideoDev));
+					DeviceManager::AddDevice(new BochsGraphicsAdapter(VideoDev), DeviceType::FramebufferVideoCard);
 				}
 				else
 				{
 					PrintFormatted("Error: No supported video card found.\n");
 					PrintFormatted("[mx] does not support VGA-only video cards.\n");
-					PrintFormatted("Currently, supported systems include: BGA (Bochs, QEMU, VirtualBox) and SVGA (VMWare)\n");
+					PrintFormatted("Currently, supported systems include: BGA (Bochs, QEMU, VirtualBox) and SVGA II (VMWare)\n");
 					UHALT();
 				}
 			}
@@ -297,14 +280,11 @@ namespace Kernel
 			if(PCI::MatchVendorDevice(nic, 0x10EC, 0x8139))
 			{
 				Log("Realtek RTL8139 NIC found, initialising driver...");
-				// KernelNIC = new NIC::GenericNIC(new NIC::RTL8139(nic));
+				DeviceManager::AddDevice(new NIC::RTL8139(nic), DeviceType::EthernetNIC);
 			}
 		}
 
 		KernelRandom = new Random(new Random_PseudoRandom());
-
-		LFBAddr = VideoDevice->GetFramebufferAddress();
-		LFBBufferAddr = LFBAddr;
 
 		Log("Compatible video card located");
 
@@ -319,9 +299,16 @@ namespace Kernel
 			uint16_t PrefResX = 1024;
 			uint16_t PrefResY = 600;
 
+			// it better exist
+			GenericVideoDevice* vd = (GenericVideoDevice*) DeviceManager::GetDevice(DeviceType::FramebufferVideoCard);
+			assert(vd);
+
+			LFBAddr = vd->GetFramebufferAddress();
+			LFBBufferAddr = LFBAddr;
+
 			// Set video mode
 			PrintFormatted("\nInitialising Linear Framebuffer at %x...", LFBAddr);
-			VideoDevice->SetMode(PrefResX, PrefResY, 32);
+			vd->SetMode(PrefResX, PrefResY, 32);
 			VideoOutput::LinearFramebuffer::Initialise();
 
 			Log("Requested resolution of %dx%d, LFB at %x", PrefResX, PrefResY, LFBAddr);
@@ -340,12 +327,7 @@ namespace Kernel
 				bytes = (bytes + (4096 - 1)) / 4096;
 				LFBInPages = bytes;
 
-				// map a bunch of pages for the buffer.
-				// for(uint64_t k = 0; k < bytes; k++)
-				// 	Virtual::MapAddress(LFBBufferAddress_INT + (k * 0x1000), Physical::AllocatePage(), 0x07);
-
 				Virtual::MapRegion(LFBAddr, LFBAddr, bytes, 0x07);
-				// LFBBufferAddr = LFBBufferAddress_INT;
 			}
 
 			Log("Video mode set");
@@ -371,16 +353,6 @@ namespace Kernel
 				// mount root fs from partition 0 at /
 				VFS::Mount(f1->Partitions.front(), fs, "/");
 				Log("Root FS Mounted at /");
-			}
-
-
-
-			// todo: detect this too.
-			{
-				Devices::Storage::ATADrive* f2 = (*Devices::Storage::ATADrive::ATADrives)[1];
-				FSDriverHFSPlus* fs = new FSDriverHFSPlus(f2->Partitions.front());
-
-				VFS::Mount(f2->Partitions.front(), fs, "/Volumes/Data/");
 			}
 		}
 
@@ -509,11 +481,6 @@ namespace Kernel
 	uint64_t GetLFBLengthInPages()
 	{
 		return LFBInPages;
-	}
-
-	Kernel::HardwareAbstraction::VideoOutput::GenericVideoDevice* GetVideoDevice()
-	{
-		return VideoDevice;
 	}
 
 	void PrintVersion()

@@ -99,11 +99,9 @@ namespace Kernel
 
 	// global objects, in Kernel.cpp.
 	extern Time::TimeStruct* SystemTime;
-	extern HardwareAbstraction::VideoOutput::GenericVideoDevice* VideoDevice;
 	extern HardwareAbstraction::Multitasking::Process* KernelProcess;
 	extern HardwareAbstraction::Devices::PS2Controller* KernelPS2Controller;
 	extern HardwareAbstraction::Devices::Keyboard* KernelKeyboard;
-	extern HardwareAbstraction::Devices::NIC::GenericNIC* KernelNIC;
 	extern HardwareAbstraction::ACPI::RootTable* RootACPITable;
 	extern HardwareAbstraction::MemoryManager::MemoryMap::MemoryMap_type* K_MemoryMap;
 	extern HardwareAbstraction::CPUID::CPUIDData* KernelCPUID;
@@ -116,8 +114,6 @@ namespace Kernel
 	void KeyboardService();
 	void KernelCore(uint32_t MultibootMagic, uint32_t MBTAddr);
 	void KernelCoreThread();
-	// bool AssertCondition(bool condition, const char* filename, uint64_t line, const char* reason = 0);
-	// void HaltSystem(const char* message, const char* filename, uint64_t line, const char* reason = 0);
 
 	void AssertCondition(const char* file, int line, const char* func, const char* expr);
 	void HaltSystem(const char* message, const char* filename, const char* line, const char* reason = 0);
@@ -128,7 +124,6 @@ namespace Kernel
 	uint64_t GetFramebufferAddress();
 	uint64_t GetTrueLFBAddress();
 	uint64_t GetLFBLengthInPages();
-	Kernel::HardwareAbstraction::VideoOutput::GenericVideoDevice* GetVideoDevice();
 	void PrintVersion();
 
 	namespace Utilities

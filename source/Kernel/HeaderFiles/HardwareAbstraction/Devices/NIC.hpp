@@ -17,18 +17,16 @@ namespace NIC
 	class GenericNIC : public DeviceManager::Device
 	{
 		public:
-			GenericNIC(GenericNIC* dev);
+			GenericNIC();
 			virtual ~GenericNIC();
 
 			virtual void Reset();
 			virtual void SendData(uint8_t* data, uint64_t bytes);
-			virtual uint8_t* ReceiveData(uint8_t* data, uint64_t bytes);
-			virtual void HandleInterrupt();
 			virtual uint8_t* GetMAC();
 			virtual uint64_t GetHardwareType();
+			virtual void HandleInterrupt();
 
 		protected:
-			GenericNIC* device;
 			Devices::PCI::PCIDevice* pcidev;
 			uint8_t MAC[6];
 	};
@@ -38,13 +36,13 @@ namespace NIC
 	{
 		public:
 			RTL8139(PCI::PCIDevice* pcidev);
-			~RTL8139();
-			void Reset();
-			void SendData(uint8_t* data, uint64_t bytes);
-			uint8_t* ReceiveData(uint8_t* data, uint64_t bytes);
-			uint64_t GetHardwareType();
+			virtual ~RTL8139() override;
+			virtual void Reset() override;
+			virtual void SendData(uint8_t* data, uint64_t bytes) override;
+			virtual uint8_t* GetMAC() override;
+			virtual uint64_t GetHardwareType() override;
+			virtual void HandleInterrupt() override;
 
-			void HandleInterrupt();
 			void HandlePacket();
 
 			void HandleRxOk();
