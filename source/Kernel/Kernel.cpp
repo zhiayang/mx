@@ -336,6 +336,16 @@ namespace Kernel
 
 
 
+
+		// init network stuff
+		{
+			using namespace Network;
+			ARP::Initialise();
+			IP::Initialise();
+		}
+
+
+
 		// manual jump start.
 		{
 			using namespace Filesystems;

@@ -274,11 +274,10 @@ namespace Filesystems
 			assert(cn->info);
 			assert(cn->info->data);
 
-			auto cdcontent = this->ReadDir(cn);
-			assert(cdcontent);
+			rde::vector<VFS::vnode*> cdcontent = this->ReadDir(cn);
 
 			// check each.
-			for(auto d : *cdcontent)
+			for(auto d : cdcontent)
 			{
 				auto vnd = tovnd(d->info->data);
 				assert(vnd);
@@ -310,11 +309,9 @@ namespace Filesystems
 			}
 			if(!found)
 			{
-				delete cdcontent;
 				return false;
 			}
 
-			delete cdcontent;
 			curlvl++;
 		}
 
@@ -407,7 +404,7 @@ namespace Filesystems
 		stat->st_ctime		= datetounix(dirent->createdate, dirent->createtime);
 	}
 
-	rde::vector<VFS::vnode*>* FSDriverFat32::ReadDir(VFS::vnode* node)
+	rde::vector<VFS::vnode*> FSDriverFat32::ReadDir(VFS::vnode* node)
 	{
 		assert(node);
 		assert(node->info);
@@ -422,8 +419,9 @@ namespace Filesystems
 		// grab its clusters.
 		auto clusters = tovnd(node)->clusters;
 		uint64_t numclus = 0;
+
 		if(clusters.size() == 0)
-		clusters = this->GetClusterChain(node, &numclus);
+			clusters = this->GetClusterChain(node, &numclus);
 
 
 		assert(numclus == clusters.size());
@@ -440,7 +438,7 @@ namespace Filesystems
 		}
 		buf = obuf;
 
-		auto ret = new rde::vector<VFS::vnode*>();
+		rde::vector<VFS::vnode*> ret;
 		auto count = 0;
 
 		for(uint64_t addr = buf; addr < buf + dirsize; )
@@ -517,7 +515,7 @@ namespace Filesystems
 
 				vn->info->data = (void*) fsd;
 
-				ret->push_back(vn);
+				ret.push_back(vn);
 			}
 
 			addr += sizeof(LFNEntry);

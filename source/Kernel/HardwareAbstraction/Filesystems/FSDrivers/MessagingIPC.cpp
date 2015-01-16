@@ -16,7 +16,6 @@ namespace Filesystems
 	FSDriverIPCMsg::FSDriverIPCMsg() : FSDriver(nullptr, FSDriverType::Virtual)
 	{
 		// init the message queue.
-		this->messagequeue = new rde::hash_map<pathid*, Library::CircularMemoryBuffer*>();
 		this->_seekable = false;
 	}
 
@@ -51,7 +50,7 @@ namespace Filesystems
 			hash = (hash << 3) | (hash >> (29)) ^ data[i];
 
 		str->id = hash;
-		(*this->messagequeue)[str] = new Library::CircularMemoryBuffer(1024);
+		this->messagequeue[str] = new Library::CircularMemoryBuffer(1024);
 
 		return true;
 	}
@@ -75,7 +74,7 @@ namespace Filesystems
 		(void) node;
 		(void) symlink;
 
-		for(auto v : *this->messagequeue)
+		for(auto v : this->messagequeue)
 		{
 			if(String::Compare(path, v.first->path) == 0)
 				return true;
@@ -110,10 +109,10 @@ namespace Filesystems
 		(void) st;
 	}
 
-	rde::vector<VFS::vnode*>* FSDriverIPCMsg::ReadDir(VFS::vnode* node)
+	rde::vector<VFS::vnode*> FSDriverIPCMsg::ReadDir(VFS::vnode* node)
 	{
 		(void) node;
-		return nullptr;
+		return rde::vector<VFS::vnode*>();
 	}
 }
 }

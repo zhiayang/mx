@@ -132,10 +132,10 @@ namespace Filesystems
 
 
 	// returns a list of items inside the directory, as vnodes.
-	rde::vector<VFS::vnode*>* FSDriverHFSPlus::ReadDir(VFS::vnode* node)
+	rde::vector<VFS::vnode*> FSDriverHFSPlus::ReadDir(VFS::vnode* node)
 	{
 		(void) node;
-		return 0;
+		return rde::vector<VFS::vnode*>();
 	}
 
 }

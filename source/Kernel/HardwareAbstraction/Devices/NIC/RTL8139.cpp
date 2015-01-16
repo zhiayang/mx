@@ -220,7 +220,7 @@ namespace NIC
 			{
 				PacketCount++;
 				length = *(uint16_t*) &this->ReceiveBuffer[ReadOffset + 2];
-				// Ethernet::HandlePacket(this, &this->ReceiveBuffer[ReadOffset + 4], length - 4);
+				Ethernet::HandlePacket(this, &this->ReceiveBuffer[ReadOffset + 4], length - 4);
 
 				if(length > 2000)
 					HALT("What");
@@ -234,7 +234,7 @@ namespace NIC
 		while(ReadOffset < EndOffset)
 		{
 			PacketCount++;
-			// Ethernet::HandlePacket(this, &this->ReceiveBuffer[ReadOffset + 4], *(uint16_t*) &this->ReceiveBuffer[ReadOffset + 2] - 4);
+			Ethernet::HandlePacket(this, &this->ReceiveBuffer[ReadOffset + 4], *(uint16_t*) &this->ReceiveBuffer[ReadOffset + 2] - 4);
 
 			ReadOffset += *(uint16_t*) &this->ReceiveBuffer[ReadOffset + 2] + 4;
 			ReadOffset = (ReadOffset + 3) & ~3;	// align to 4 bytes
@@ -251,19 +251,16 @@ namespace NIC
 
 	void RTL8139::HandleRxErr()
 	{
-		StandardIO::PrintFormatted("Rx Err\n");
+		Log(1, "Rx Err\n");
 		IOPort::Write16(this->ioaddr + Registers::IntrStatus, 0x2);
 	}
 
 	void RTL8139::HandleTxOk()
 	{
-		// PrintFormatted("Tx Ok\n");
-
 		for(int i = 0; i < 4; i++)
 		{
 			if(IOPort::Read32((this->ioaddr + Registers::TxStatus0 + ((uint16_t) i * 4)) & 0x8000))
 			{
-				// PrintFormatted("Released Tx Buffer %d\n", i);
 				this->TxBufferInUse[i] = false;
 			}
 		}
@@ -273,13 +270,13 @@ namespace NIC
 
 	void RTL8139::HandleTxErr()
 	{
-		StandardIO::PrintFormatted("Tx Err\n");
+		Log(1, "Tx Err\n");
 		IOPort::Write16(this->ioaddr + Registers::IntrStatus, 0x8);
 	}
 
 	void RTL8139::HandleSysErr()
 	{
-		StandardIO::PrintFormatted("Error motherfucker\n");
+		Log(1, "Sys Err\n");
 		IOPort::Write16(this->ioaddr + Registers::IntrStatus, 0x8000);
 	}
 
