@@ -14,72 +14,57 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace Network
 {
-	uint64_t OpenSocket(uint16_t destport, Library::SocketProtocol prot)
+	using namespace Filesystems;
+
+	static IOContext* getctx()
+	{
+		auto proc = Multitasking::GetCurrentProcess();
+		assert(proc);
+
+		return &proc->iocontext;
+	}
+
+
+
+	fd_t OpenSocket(uint16_t destport, Library::SocketProtocol prot)
 	{
 		return OpenSocket(IPv4Address { 0 }, IPv4Address { 0xFFFFFFFF }, 0, destport, prot);
 	}
 
-	uint64_t OpenSocket(uint16_t sourceport, uint16_t destport, Library::SocketProtocol prot)
+	fd_t OpenSocket(uint16_t sourceport, uint16_t destport, Library::SocketProtocol prot)
 	{
 		return OpenSocket(IPv4Address { 0 }, IPv4Address { 0xFFFFFFFF }, sourceport, destport, prot);
 	}
 
-	uint64_t OpenSocket(IPv4Address dest, uint16_t destport, SocketProtocol prot)
+	fd_t OpenSocket(IPv4Address dest, uint16_t destport, SocketProtocol prot)
 	{
 		return OpenSocket(IP::GetIPv4Address(), dest, 0, destport, prot);
 	}
 
-	uint64_t OpenSocket(IPv4Address dest, uint16_t sourceport, uint16_t destport, SocketProtocol prot)
+	fd_t OpenSocket(IPv4Address dest, uint16_t sourceport, uint16_t destport, SocketProtocol prot)
 	{
 		return OpenSocket(IP::GetIPv4Address(), dest, sourceport, destport, prot);
 	}
 
 	// file descriptor stuff.
 	// TODO: clean up duplication
-	uint64_t OpenSocket(IPv4Address source, IPv4Address dest, uint16_t sourceport, uint16_t destport, SocketProtocol prot)
+	fd_t OpenSocket(IPv4Address source, IPv4Address dest, uint16_t sourceport, uint16_t destport, SocketProtocol prot)
 	{
 		if(prot == SocketProtocol::RawIPv6)
 			return 0;
-
-		// make sure the port isn't open somewhere else.
-		switch(prot)
-		{
-			case SocketProtocol::RawIPv4:
-				if((*IP::GetIPv4SocketMap()).find(SocketIPv4Mapping { source, dest }) != IP::GetIPv4SocketMap()->end())
-				{
-					Log(1, "Socket (%d.%d.%d.%d : %d) already opened by another process.", source.bytes[0], source.bytes[1], source.bytes[2], source.bytes[3], sourceport);
-					return 0;
-				}
-				break;
-
-			case SocketProtocol::TCP:
-				// if(TCP::tcpsocketmapv4->get(SocketFullMappingv4 { IPv4PortAddress { source, sourceport }, IPv4PortAddress { dest, destport } }) != nullptr)
-				{
-					Log(1, "Socket (%d.%d.%d.%d:%d) already opened by another process.", source.bytes[0], source.bytes[1], source.bytes[2], source.bytes[3], sourceport);
-					return 0;
-				}
-				// break;
-
-			case SocketProtocol::UDP:
-				// if(UDP::udpsocketmapv4->get(SocketFullMappingv4 { IPv4PortAddress { source, sourceport }, IPv4PortAddress { dest, destport } }) != nullptr)
-				{
-					Log(1, "Socket (%d.%d.%d.%d:%d) already opened by another process.", source.bytes[0], source.bytes[1], source.bytes[2], source.bytes[3], sourceport);
-					return 0;
-				}
-				// break;
-
-			default:
-				break;
-		}
 
 		Devices::NIC::GenericNIC* interface = (Devices::NIC::GenericNIC*) Devices::DeviceManager::GetDevice(Devices::DeviceType::EthernetNIC);
 		assert(interface);
 
 
-		Multitasking::Process* proc = Multitasking::GetCurrentProcess();
+		// socket driver init
 		Socket* socket = new Socket(interface, source, dest, sourceport, destport, prot);
 
-		// fd init goes here
+		vnode* node = VFS::CreateNode(socket);
+		assert(node);
+
+		node->type = VNodeType::Socket;
+		VFS::Open(getctx(), node, 0);
 
 
 
@@ -87,11 +72,17 @@ namespace Network
 		switch(prot)
 		{
 			case Library::SocketProtocol::RawIPv4:
-				(*IP::GetIPv4SocketMap())[SocketIPv4Mapping { source, dest }] = socket;
+				// no ports for this
+				IP::MapIPv4Socket(SocketIPv4Mapping { source, dest }, socket);
 				break;
 
 			case Library::SocketProtocol::TCP:
-				// TCP::tcpsocketmapv4->Put(SocketFullMappingv4 { IPv4PortAddress { source, sourceport }, IPv4PortAddress { dest, destport } }, *socket);
+				if(TCP::IsDuplicatePort(sourceport))
+				{
+					Log(1, "Attempted to open TCP connection on port %d, which is already in use", sourceport);
+					return -1;
+				}
+				TCP::MapSocket(SocketFullMappingv4 { IPv4PortAddress { source, sourceport }, IPv4PortAddress { dest, destport } }, socket);
 				break;
 
 			case Library::SocketProtocol::UDP:
@@ -102,8 +93,8 @@ namespace Network
 				break;
 		}
 
-		Log("Opened socket (%d.%d.%.d.%d : %d => %d.%d.%d.%d : %d) with PID (%d)", source.b1, source.b2, source.b3, source.b4, sourceport, dest.b1, dest.b2,
-			dest.b3, dest.b4, destport, proc->ProcessID);
+		Log("Opened socket (%d.%d.%.d.%d : %d => %d.%d.%d.%d : %d)", source.b1, source.b2, source.b3, source.b4, sourceport, dest.b1, dest.b2,
+			dest.b3, dest.b4, destport);
 		// return ret;
 
 		return 0;
@@ -113,7 +104,7 @@ namespace Network
 
 
 
-	void CloseSocket(uint64_t ds)
+	void CloseSocket(fd_t ds)
 	{
 		// Multitasking::Process* proc = Multitasking::GetCurrentProcess();
 		// Socket* socket = VerfiySocket(ds);
@@ -167,7 +158,7 @@ namespace Network
 
 
 	// actual class implementation
-	Socket::Socket(Devices::NIC::GenericNIC* iface, IPv4Address source, IPv4Address dest, uint64_t spt, uint64_t dpt, Library::SocketProtocol prot) : FSDriver(nullptr, Filesystems::FSDriverType::Virtual), recvbuffer(CircularMemoryBuffer(GLOBAL_MTU * 8))
+	Socket::Socket(Devices::NIC::GenericNIC* iface, IPv4Address source, IPv4Address dest, uint64_t spt, uint64_t dpt, Library::SocketProtocol prot) : FSDriver(nullptr, Filesystems::FSDriverType::Virtual), recvbuffer(GLOBAL_MTU * 8)
 	{
 		this->ip4source = source;
 		this->ip4dest = dest;

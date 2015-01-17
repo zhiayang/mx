@@ -14,6 +14,7 @@ namespace Library
 	{
 		public:
 			CircularMemoryBuffer(uint64_t s);
+			CircularMemoryBuffer(CircularMemoryBuffer& other);
 			~CircularMemoryBuffer();
 
 			void MoveWritePointer(uint64_t p);

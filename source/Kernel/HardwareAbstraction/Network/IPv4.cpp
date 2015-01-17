@@ -65,11 +65,18 @@ namespace IP
 		return CalculateIPChecksum_Finalise(CalculateIPChecksum_Partial(0, buf, len));
 	}
 
-
-	rde::hash_map<SocketIPv4Mapping, Socket*>* GetIPv4SocketMap()
+	void MapIPv4Socket(SocketIPv4Mapping addr, Socket* s)
 	{
-		return ipv4socketmap;
+		assert(ipv4socketmap->find(addr) == ipv4socketmap->end());
+		(*ipv4socketmap)[addr] = s;
 	}
+
+	void UnmapIPv4Socket(SocketIPv4Mapping addr)
+	{
+		if(ipv4socketmap->find(addr) != ipv4socketmap->end())
+			ipv4socketmap->erase(addr);
+	}
+
 
 	IPv4Address GetIPv4Address()
 	{

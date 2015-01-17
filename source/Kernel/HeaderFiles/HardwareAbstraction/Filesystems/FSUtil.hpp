@@ -10,6 +10,9 @@
 #include <CircularBuffer.hpp>
 #include "../Devices/StorageDevice.hpp"
 
+
+typedef long fd_t;
+
 namespace Kernel {
 namespace HardwareAbstraction {
 
@@ -22,7 +25,6 @@ namespace Filesystems
 {
 	class FSDriver;
 	struct IOContext;
-	typedef long fd_t;
 
 	enum Attributes
 	{
@@ -37,6 +39,7 @@ namespace Filesystems
 			None = 0,
 			File,
 			Folder,
+			Socket,
 		};
 
 		struct fsref

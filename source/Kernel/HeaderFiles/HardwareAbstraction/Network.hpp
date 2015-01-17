@@ -6,6 +6,7 @@
 #include <CircularBuffer.hpp>
 #include <HardwareAbstraction/Devices/NIC.hpp>
 #include <HardwareAbstraction/Filesystems.hpp>
+#include <HardwareAbstraction/Filesystems/FSUtil.hpp>
 #include <orionx/PacketNetwork.hpp>
 #pragma once
 
@@ -213,7 +214,8 @@ namespace Network
 		void SendIPv4Packet(Devices::NIC::GenericNIC* interface, void* packet, uint16_t length, uint16_t id, Library::IPv4Address dest, ProtocolType prot);
 		void HandleIPv4Packet(Devices::NIC::GenericNIC* interface, void* packet, uint64_t length);
 
-		rde::hash_map<SocketIPv4Mapping, Socket*>* GetIPv4SocketMap();
+		void MapIPv4Socket(SocketIPv4Mapping addr, Socket* s);
+		void UnmapIPv4Socket(SocketIPv4Mapping addr);
 
 		void Initialise();
 	}
@@ -370,8 +372,12 @@ namespace Network
 		// the IPv4 layer doesn't know about the TCPConnection, so we need to use traditional arguments.
 		void HandleIPv4Packet(Devices::NIC::GenericNIC* interface, void* packet, uint64_t length, Library::IPv4Address source, Library::IPv4Address destip);
 
+		void MapSocket(SocketFullMappingv4 addr, Socket* s);
+		void UnmapSocket(SocketFullMappingv4 addr);
+
 		uint16_t AllocateEphemeralPort();
 		void ReleaseEphemeralPort(uint16_t port);
+		bool IsDuplicatePort(uint16_t port);
 	}
 
 
@@ -640,14 +646,14 @@ namespace Network
 	};
 
 
-	uint64_t OpenSocket(uint16_t serverport, Library::SocketProtocol prot);
-	uint64_t OpenSocket(uint16_t clientport, uint16_t serverport, Library::SocketProtocol prot);
+	fd_t OpenSocket(uint16_t serverport, Library::SocketProtocol prot);
+	fd_t OpenSocket(uint16_t clientport, uint16_t serverport, Library::SocketProtocol prot);
 
-	uint64_t OpenSocket(Library::IPv4Address dest, uint16_t serverport, Library::SocketProtocol prot);
-	uint64_t OpenSocket(Library::IPv4Address dest, uint16_t clientport, uint16_t serverport, Library::SocketProtocol prot);
-	uint64_t OpenSocket(Library::IPv4Address source, Library::IPv4Address dest, uint16_t clientport, uint16_t serverport, Library::SocketProtocol prot);
+	fd_t OpenSocket(Library::IPv4Address dest, uint16_t serverport, Library::SocketProtocol prot);
+	fd_t OpenSocket(Library::IPv4Address dest, uint16_t clientport, uint16_t serverport, Library::SocketProtocol prot);
+	fd_t OpenSocket(Library::IPv4Address source, Library::IPv4Address dest, uint16_t clientport, uint16_t serverport, Library::SocketProtocol prot);
 
-	void CloseSocket(uint64_t ds);
+	void CloseSocket(fd_t ds);
 }
 }
 }

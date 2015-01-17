@@ -50,7 +50,7 @@ namespace TCP
 		}
 	}
 
-	TCPConnection::TCPConnection(Socket* skt, uint16_t srcport, uint16_t destport) : packetbuffer(Library::CircularMemoryBuffer(TCP_MAXWINDOW))
+	TCPConnection::TCPConnection(Socket* skt, uint16_t srcport, uint16_t destport) : packetbuffer(TCP_MAXWINDOW)
 	{
 		this->socket = skt;
 		this->destip6 = {{ 0 }};

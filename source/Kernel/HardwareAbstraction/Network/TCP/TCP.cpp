@@ -25,7 +25,8 @@ namespace TCP
 	uint16_t AllocateEphemeralPort()
 	{
 		usedports->push_back(nextfree);
-		return nextfree++;
+		nextfree++;
+		return nextfree - 1;
 	}
 
 	void ReleaseEphemeralPort(uint16_t port)
@@ -33,10 +34,29 @@ namespace TCP
 		for(uint64_t i = 0, s = usedports->size(); i < s; i++)
 		{
 			if((*usedports)[i] == port)
+			{
 				usedports->erase_unordered(usedports->begin() + i);
+				return;
+			}
 		}
 	}
 
+	bool IsDuplicatePort(uint16_t port)
+	{
+		return usedports->contains(port);
+	}
+
+	void MapSocket(SocketFullMappingv4 addr, Socket* s)
+	{
+		assert(tcpsocketmapv4->find(addr) == tcpsocketmapv4->end());
+		(*tcpsocketmapv4)[addr] = s;
+	}
+
+	void UnmapSocket(SocketFullMappingv4 addr)
+	{
+		if(tcpsocketmapv4->find(addr) != tcpsocketmapv4->end())
+			tcpsocketmapv4->erase(addr);
+	}
 
 	void HandleIPv4Packet(Devices::NIC::GenericNIC* interface, void* packet, uint64_t length, IPv4Address source, IPv4Address destip)
 	{

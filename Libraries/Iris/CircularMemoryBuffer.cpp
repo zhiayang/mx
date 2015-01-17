@@ -18,6 +18,17 @@ namespace Library
 		this->backingstore = new uint8_t[this->size];
 	}
 
+	CircularMemoryBuffer::CircularMemoryBuffer(CircularMemoryBuffer& other)
+	{
+		this->size = other.size;
+		this->readp = other.readp;
+		this->writep = other.writep;
+		this->elements = other.elements;
+
+		this->backingstore = new uint8_t[this->size];
+		Memory::Copy(this->backingstore, other.backingstore, this->size);
+	}
+
 	CircularMemoryBuffer::~CircularMemoryBuffer()
 	{
 		delete[] this->backingstore;
