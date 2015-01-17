@@ -80,6 +80,7 @@ namespace Filesystems
 		vnode* NodeFromID(id_t id);
 		fd_t FDFromNode(IOContext* ioctx, vnode* node);
 		vnode* NodeFromFD(IOContext* ioctx, fd_t fd);
+		fileentry* FileEntryFromFD(IOContext* ioctx, fd_t fd);
 
 		vnode* CreateNode(FSDriver* fs);
 		vnode* DuplicateNode(vnode* orig);
@@ -120,7 +121,8 @@ namespace Filesystems
 	{
 		Invalid = 0,
 		Physical,
-		Virtual
+		Virtual,
+		Socket
 	};
 
 	struct IOContext

@@ -60,7 +60,7 @@ namespace ARP
 			packet->TargetMacAddress.mac[i] = 0xFF;
 
 		packet->TargetIPv4.raw = ip.raw;
-		// PrintFormatted("sent arp\n");
+		Log("sent arp");
 		Ethernet::SendPacket(interface, packet, sizeof(ARPPacket), Ethernet::EtherType::ARP, packet->TargetMacAddress);
 	}
 
@@ -72,7 +72,7 @@ namespace ARP
 		ARPPacket* arp = (ARPPacket*) packet;
 		(*ARPTable)[arp->SenderIPv4] = arp->SenderMacAddress;
 
-		// Log("Received ARP reply");
+		Log("Received ARP reply");
 		Log("Added translation from IPv4 %d.%d.%d.%d to EUI48 (MAC) %#02x:%#02x:%#02x:%#02x:%#02x:%#02x", arp->SenderIPv4.bytes[0], arp->SenderIPv4.bytes[1], arp->SenderIPv4.bytes[2], arp->SenderIPv4.bytes[3], arp->SenderMacAddress.mac[0], arp->SenderMacAddress.mac[1], arp->SenderMacAddress.mac[2], arp->SenderMacAddress.mac[3], arp->SenderMacAddress.mac[4], arp->SenderMacAddress.mac[5]);
 
 		received = true;

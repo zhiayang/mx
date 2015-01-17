@@ -19,31 +19,25 @@ namespace Network {
 namespace TCP
 {
 	static rde::hash_map<SocketFullMappingv4, Socket*>* tcpsocketmapv4 = 0;
-	static rde::vector<uint16_t>* usedports = 0;
-	static uint16_t nextfree = 49152;
+	static rde::vector<uint16_t>* freeports = 0;
 
 	uint16_t AllocateEphemeralPort()
 	{
-		usedports->push_back(nextfree);
-		nextfree++;
-		return nextfree - 1;
+		uint16_t ret = freeports->back();
+		freeports->pop_back();
+
+		return ret;
 	}
 
 	void ReleaseEphemeralPort(uint16_t port)
 	{
-		for(uint64_t i = 0, s = usedports->size(); i < s; i++)
-		{
-			if((*usedports)[i] == port)
-			{
-				usedports->erase_unordered(usedports->begin() + i);
-				return;
-			}
-		}
+		if(!freeports->contains(port))
+			freeports->push_back(port);
 	}
 
 	bool IsDuplicatePort(uint16_t port)
 	{
-		return usedports->contains(port);
+		return !(freeports->contains(port)) && port >= EPHEMERAL_PORT_RANGE;
 	}
 
 	void MapSocket(SocketFullMappingv4 addr, Socket* s)
@@ -56,6 +50,14 @@ namespace TCP
 	{
 		if(tcpsocketmapv4->find(addr) != tcpsocketmapv4->end())
 			tcpsocketmapv4->erase(addr);
+	}
+
+	void Initialise()
+	{
+		tcpsocketmapv4 = new rde::hash_map<SocketFullMappingv4, Socket*>();
+		freeports = new rde::vector<uint16_t>();
+		for(uint16_t i = 49152; i < SHRT_MAX; i++)
+			freeports->push_back(i);
 	}
 
 	void HandleIPv4Packet(Devices::NIC::GenericNIC* interface, void* packet, uint64_t length, IPv4Address source, IPv4Address destip)

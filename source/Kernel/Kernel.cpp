@@ -292,7 +292,6 @@ namespace Kernel
 		// Devices::RTC::Initialise(0);
 		Log("RTC Initialised");
 
-		KernelKeyboard = new PS2Keyboard();
 
 		// setup framebuffer
 		{
@@ -335,17 +334,6 @@ namespace Kernel
 		}
 
 
-
-
-		// init network stuff
-		{
-			using namespace Network;
-			ARP::Initialise();
-			IP::Initialise();
-		}
-
-
-
 		// manual jump start.
 		{
 			using namespace Filesystems;
@@ -366,6 +354,25 @@ namespace Kernel
 			}
 		}
 
+
+
+		// init network stuff
+		// if we have an nic, that is
+		if(DeviceManager::GetDevice(DeviceType::EthernetNIC) != 0)
+		{
+			NIC::GenericNIC* nic = (NIC::GenericNIC*) DeviceManager::GetDevice(DeviceType::EthernetNIC);
+			using namespace Network;
+			ARP::Initialise();
+			IP::Initialise();
+			TCP::Initialise();
+			UDP::Initialise();
+			DHCP::Initialise(nic);
+		}
+
+		while(true)
+			;
+
+		KernelKeyboard = new PS2Keyboard();
 		TTY::Initialise();
 		Console::ClearScreen();
 

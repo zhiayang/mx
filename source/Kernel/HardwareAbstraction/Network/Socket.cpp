@@ -24,32 +24,31 @@ namespace Network
 		return &proc->iocontext;
 	}
 
-
-
-	fd_t OpenSocket(uint16_t destport, Library::SocketProtocol prot)
+	static vnode* getvnode(fd_t fd)
 	{
-		return OpenSocket(IPv4Address { 0 }, IPv4Address { 0xFFFFFFFF }, 0, destport, prot);
-	}
+		auto ctx = getctx();
+		fileentry* fe = VFS::FileEntryFromFD(ctx, fd);
+		if(fe == nullptr)
+			return 0;
 
-	fd_t OpenSocket(uint16_t sourceport, uint16_t destport, Library::SocketProtocol prot)
-	{
-		return OpenSocket(IPv4Address { 0 }, IPv4Address { 0xFFFFFFFF }, sourceport, destport, prot);
-	}
+		assert(fe->node);
 
-	fd_t OpenSocket(IPv4Address dest, uint16_t destport, SocketProtocol prot)
-	{
-		return OpenSocket(IP::GetIPv4Address(), dest, 0, destport, prot);
-	}
+		if(fe->node->info->driver->GetType() != FSDriverType::Socket)
+		{
+			Log(1, "Cannot perform socket operations on a non-socket FD!");
+			return 0;
+			// todo: errno
+		}
 
-	fd_t OpenSocket(IPv4Address dest, uint16_t sourceport, uint16_t destport, SocketProtocol prot)
-	{
-		return OpenSocket(IP::GetIPv4Address(), dest, sourceport, destport, prot);
+		return fe->node;
 	}
 
 	// file descriptor stuff.
 	// TODO: clean up duplication
-	fd_t OpenSocket(IPv4Address source, IPv4Address dest, uint16_t sourceport, uint16_t destport, SocketProtocol prot)
+	fd_t OpenSocket(SocketProtocol prot, uint64_t flags)
 	{
+		(void) flags;
+
 		if(prot == SocketProtocol::RawIPv6)
 			return 0;
 
@@ -58,53 +57,19 @@ namespace Network
 
 
 		// socket driver init
-		Socket* socket = new Socket(interface, source, dest, sourceport, destport, prot);
+		Socket* socket = new Socket(interface, prot);
 
 		vnode* node = VFS::CreateNode(socket);
 		assert(node);
 
 		node->type = VNodeType::Socket;
-		VFS::Open(getctx(), node, 0);
+		fileentry* fe = VFS::Open(getctx(), node, 0);
+		assert(fe);
 
-
-
-		// ipv4
-		switch(prot)
-		{
-			case Library::SocketProtocol::RawIPv4:
-				// no ports for this
-				IP::MapIPv4Socket(SocketIPv4Mapping { source, dest }, socket);
-				break;
-
-			case Library::SocketProtocol::TCP:
-				if(TCP::IsDuplicatePort(sourceport))
-				{
-					Log(1, "Attempted to open TCP connection on port %d, which is already in use", sourceport);
-					return -1;
-				}
-				TCP::MapSocket(SocketFullMappingv4 { IPv4PortAddress { source, sourceport }, IPv4PortAddress { dest, destport } }, socket);
-				break;
-
-			case Library::SocketProtocol::UDP:
-				// UDP::udpsocketmapv4->Put(SocketFullMappingv4 { IPv4PortAddress { source, sourceport }, IPv4PortAddress { dest, destport } }, *socket);
-				break;
-
-			default:
-				break;
-		}
-
-		Log("Opened socket (%d.%d.%.d.%d : %d => %d.%d.%d.%d : %d)", source.b1, source.b2, source.b3, source.b4, sourceport, dest.b1, dest.b2,
-			dest.b3, dest.b4, destport);
-		// return ret;
-
-		return 0;
+		return fe->fd;
 	}
 
-
-
-
-
-	void CloseSocket(fd_t ds)
+	void CloseSocket(fd_t)
 	{
 		// Multitasking::Process* proc = Multitasking::GetCurrentProcess();
 		// Socket* socket = VerfiySocket(ds);
@@ -155,29 +120,127 @@ namespace Network
 	}
 
 
+	err_t BindSocket(fd_t fd, Library::IPv4Address local, uint16_t port)
+	{
+		vnode* node = getvnode(fd);
+		((Socket*) node->info->driver)->Bind(node, local, port);
+		return 0;
+	}
 
+	err_t ConnectSocket(fd_t fd, Library::IPv4Address remote, uint16_t port)
+	{
+		vnode* node = getvnode(fd);
+		((Socket*) node->info->driver)->Connect(node, remote, port);
+		return 0;
+	}
+
+	size_t ReadSocket(fd_t socket, void* buf, size_t bytes)
+	{
+		vnode* node = getvnode(socket);
+		return ((Socket*) node->info->driver)->Read(node, buf, 0, bytes);
+	}
+
+	size_t WriteSocket(fd_t socket, void* buf, size_t bytes)
+	{
+		vnode* node = getvnode(socket);
+		return ((Socket*) node->info->driver)->Write(node, buf, 0, bytes);
+	}
+
+	size_t GetSocketBufferFill(fd_t socket)
+	{
+		vnode* node = getvnode(socket);
+		return ((Socket*) node->info->driver)->recvbuffer.ByteCount();
+	}
 
 	// actual class implementation
-	Socket::Socket(Devices::NIC::GenericNIC* iface, IPv4Address source, IPv4Address dest, uint64_t spt, uint64_t dpt, Library::SocketProtocol prot) : FSDriver(nullptr, Filesystems::FSDriverType::Virtual), recvbuffer(GLOBAL_MTU * 8)
+	Socket::Socket(Devices::NIC::GenericNIC* iface, Library::SocketProtocol prot) : FSDriver(nullptr, Filesystems::FSDriverType::Socket), recvbuffer(GLOBAL_MTU * 8)
 	{
-		this->ip4source = source;
-		this->ip4dest = dest;
+		// this->ip4source = source;
+		// this->ip4dest = dest;
 
 		this->ip6source.high = 0;
 		this->ip6source.low = 0;
 		this->ip6dest.high = 0;
 		this->ip6dest.low = 0;
 
-		this->clientport = spt;
-		this->serverport = dpt;
+		// this->clientport = spt;
+		// this->serverport = dpt;
 		this->protocol = prot;
-
-		if(prot == SocketProtocol::TCP)
-			this->tcpconnection = new TCP::TCPConnection(this, dest, (uint16_t) spt, (uint16_t) dpt);
-
 		this->_seekable = false;
+		this->interface = iface;
 	}
 
+	Socket::~Socket()
+	{
+	}
+
+	// bind address to local
+	void Socket::Bind(vnode* node, IPv4Address local, uint16_t localport)
+	{
+		(void) node;
+
+		// cannot bind shit.
+		// make sure port not already in use
+		if(localport == 0)
+		{
+			// todo: handle UDP ephemeral port
+			this->clientport = TCP::AllocateEphemeralPort();
+		}
+		else if(this->protocol == SocketProtocol::TCP ? !TCP::IsDuplicatePort(localport) : !UDP::IsDuplicatePort(localport))
+		{
+			this->clientport = localport;
+		}
+		else
+		{
+			Log(1, "Port already in use, cannot bind()!");
+
+			// todo: set errno
+			return;
+		}
+
+		// if source is zero, use local
+		if(local.raw == 0)
+		{
+			this->ip4source = IP::GetIPv4Address();
+		}
+		else
+		{
+			this->ip4source = local;
+		}
+	}
+
+	void Socket::Connect(vnode* node, IPv4Address remote, uint16_t remoteport)
+	{
+		(void) node;
+
+		this->ip4dest = remote;
+		this->serverport = remoteport;
+
+		// ipv4
+		switch(this->protocol)
+		{
+			case Library::SocketProtocol::RawIPv4:
+				// no ports for this
+				IP::MapIPv4Socket(SocketIPv4Mapping { this->ip4source, this->ip4dest }, this);
+				break;
+
+			case Library::SocketProtocol::TCP:
+				TCP::MapSocket(SocketFullMappingv4 { IPv4PortAddress { this->ip4source, (uint16_t) this->clientport },
+					IPv4PortAddress { this->ip4dest, (uint16_t) this->serverport } }, this);
+				break;
+
+			case Library::SocketProtocol::UDP:
+				// UDP::udpsocketmapv4->Put(SocketFullMappingv4 { IPv4PortAddress { source, sourceport }, IPv4PortAddress { dest, destport } }, *socket);
+				break;
+
+			default:
+				break;
+		}
+
+
+		if(this->protocol == SocketProtocol::TCP)
+			this->tcpconnection = new TCP::TCPConnection(this, this->ip4dest, (uint16_t) this->clientport, (uint16_t) this->serverport);
+	}
 
 	size_t Socket::Read(Filesystems::VFS::vnode* node, void* buf, off_t offset, size_t length)
 	{
@@ -191,24 +254,25 @@ namespace Network
 
 	size_t Socket::Write(Filesystems::VFS::vnode* node, const void* buf, off_t offset, size_t length)
 	{
+		(void) node;
+		(void) offset;
+
 		// tcp is special because we need to do stupid things in the TCPConnection class.
 		if(this->protocol == SocketProtocol::TCP)
 		{
-			if(this->ip6source.high == 0 && this->ip6dest.low == 0 && this->ip6dest.high == 0 && this->ip6dest.low == 0)
-			{
-				this->tcpconnection->SendUserPacket((uint8_t*) buf, (uint16_t) length);
-			}
+			this->tcpconnection->SendUserPacket((uint8_t*) buf, (uint16_t) length);
 		}
 		else if(this->protocol == SocketProtocol::UDP)
 		{
 			// udp is simpler.
 			if(length > GLOBAL_MTU)
-				HALT("can't do that");
-
-			if(this->ip6source.high == 0 && this->ip6dest.low == 0 && this->ip6dest.high == 0 && this->ip6dest.low == 0)
 			{
-				// UDP::SendIPv4Packet(this->interface, (uint8_t*) buf, (uint16_t) length, this->ip4dest, (uint16_t) this->clientport, (uint16_t) this->serverport);
+				Log(1, "Tried to send a UDP packet larger than the MTU, which is illegal");
+				return 0;
 			}
+
+			UDP::SendIPv4Packet(this->interface, (uint8_t*) buf, (uint16_t) length, this->ip4dest,
+				(uint16_t) this->clientport, (uint16_t) this->serverport);
 		}
 
 		return length;
@@ -239,7 +303,7 @@ namespace Network
 
 	}
 
-	rde::vector<Filesystems::VFS::vnode*> Socket::ReadDir(Filesystems::VFS::vnode* node)
+	rde::vector<Filesystems::VFS::vnode*> Socket::ReadDir(Filesystems::VFS::vnode*)
 	{
 		return rde::vector<Filesystems::VFS::vnode*>();
 	}

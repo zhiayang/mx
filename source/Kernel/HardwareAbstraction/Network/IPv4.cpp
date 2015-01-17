@@ -121,6 +121,7 @@ namespace IP
 	void HandleIPv4Packet(Devices::NIC::GenericNIC* interface, void* packet, uint64_t length)
 	{
 		UNUSED(interface);
+		Log(3, "received IPv4 packet");
 
 		IPv4Packet* ip = (IPv4Packet*) packet;
 		uint64_t raw = (uint64_t) packet;

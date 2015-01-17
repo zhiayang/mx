@@ -51,6 +51,7 @@ namespace NIC
 			void HandleTxErr();
 			void HandleSysErr();
 
+
 		private:
 			uint16_t ioaddr;
 			uint8_t* ReceiveBuffer;
