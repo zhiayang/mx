@@ -461,7 +461,6 @@ namespace Virtual
 			HALT("Tried to map to PML4[510]! (RESTRICTED, KERNEL USE)");
 		}
 
-
 		(void) DoNotUnmap;
 
 

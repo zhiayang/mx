@@ -34,7 +34,6 @@ namespace Physical
 	extern Kernel::HardwareAbstraction::MemoryManager::MemoryMap::MemoryMap_type* K_MemoryMap;
 
 	static bool DidInit = false;
-	// static LinkedList<Pair>* PageList;
 	static rde::vector<Pair*>* PageList;
 
 	// Define a region of memory in which the VMM gets it's memory from, to create page strucures.
@@ -83,7 +82,7 @@ namespace Physical
 	uint64_t AllocatePage(uint64_t size)
 	{
 		if(!DidInit)
-			return AllocateFromReserved();
+			return AllocateFromReserved(size);
 
 		auto mut = AutoMutex(mtx);
 		OpsSinceLastCoalesce++;
@@ -109,7 +108,7 @@ namespace Physical
 		else if(p->LengthInPages == size)
 		{
 			auto raddr = p->BaseAddr;
-			PageList->erase_unordered(PageList->begin());
+			PageList->erase(PageList->begin());
 
 			delete p;
 
@@ -121,7 +120,7 @@ namespace Physical
 			{
 				// PageList->push_back(PageList->pop_front());
 				auto fr = PageList->front();
-				PageList->erase_unordered(PageList->begin());
+				PageList->erase(PageList->begin());
 				PageList->push_back(fr);
 
 				trycount++;
@@ -147,7 +146,7 @@ namespace Physical
 		{
 			// Pair* pair = PageList->pop_front();
 			Pair* pair = PageList->front();
-			PageList->erase_unordered(PageList->begin());
+			PageList->erase(PageList->begin());
 
 			// 3 basic conditions
 			// 1. we find a match below a pair's baseaddr
@@ -183,15 +182,15 @@ namespace Physical
 	}
 
 
-	uint64_t AllocateFromReserved()
+	uint64_t AllocateFromReserved(uint64_t size)
 	{
 		// we need this 'reserved' region especially to store page tables/directories etc.
 		// if not, we'll end up with a super-screwed mapping.
 		// possibly some overlap as well.
 
 		uint64_t ret = ReservedRegionForVMM + ReservedRegionIndex;
-		ReservedRegionIndex += 0x1000;
-		Memory::Set((void*) ret, 0x00, 0x1000);
+		ReservedRegionIndex += (0x1000 * size);
+		Memory::Set((void*) ret, 0x00, (size * 0x1000));
 		return ret;
 	}
 
@@ -199,43 +198,93 @@ namespace Physical
 
 	uint64_t AllocateDMA(uint64_t size, bool Below4Gb)
 	{
-		if(!Below4Gb)
-		{
-			uint64_t a = AllocatePage(size);
-			Virtual::MapRegion(a, a, size, 0x3);
-			return a;
-		}
-
-		auto mut = AutoMutex(mtx);
+		// allocate a virtual page first
+		uint64_t virt = Virtual::AllocateVirtual(size);
 		OpsSinceLastCoalesce++;
+		auto mut = AutoMutex(mtx);
+
 		for(size_t i = 0; i < PageList->size(); i++)
 		{
-			// Pair* pair = &PageList->pop_front();
 			Pair* pair = PageList->front();
-			PageList->erase_unordered(PageList->begin());
+			PageList->erase(PageList->begin());
 
-			if(pair->BaseAddr + (size * 0x1000) < 0xFFFFFFFF && pair->LengthInPages >= size)
+			// if the virtual address matches a phys page in this range,
+			// and the size matches -- account for the possibility where the base address is not exactly the virt
+			// addr, but the length does encapsulate the entire thing
+			if(pair->BaseAddr + (size * 0x1000) <= virt && (Below4Gb ? pair->BaseAddr + (size * 0x1000) < 0xFFFFFFFF : true)
+				&& pair->LengthInPages >= (size + ((virt - pair->BaseAddr) / 0x1000)))
 			{
-				uint64_t ret = pair->BaseAddr;
-				pair->BaseAddr = pair->LengthInPages == size ? 0 : ret + size * 0x1000;
-				pair->LengthInPages -= size;
+				// we got one
+				uint64_t beginOffset = virt - pair->BaseAddr;								// in bytes
+				uint64_t endOffset = pair->LengthInPages - size - (beginOffset / 0x1000);	// in pages
 
-				Virtual::MapRegion(ret, ret, size, 0x3);
-				if(pair->BaseAddr == 0)
-					delete pair;
+				if(beginOffset > 0)
+				{
+					// create a new pair at the beginning
+					Pair* newp = new Pair();
+					newp->BaseAddr = pair->BaseAddr + beginOffset;
+					newp->LengthInPages = beginOffset / 0x1000;
 
-				else
-					PageList->push_back(pair);
+					PageList->push_back(newp);
+				}
 
+				if(endOffset > 0)
+				{
+					Pair* newp = new Pair();
+					newp->BaseAddr = virt + (size * 0x1000);
+					newp->LengthInPages = endOffset;
 
-				return ret;
+					PageList->push_back(newp);
+				}
+
+				delete pair;
+
+				Virtual::MapRegion(virt, virt, size, 0x3);
+				return virt;
 			}
 
 			PageList->push_back(pair);
 		}
 
-		HALT("Could not satisfy DMA memory request");
-		return 0;
+		// if we haven't found anything, this virtual addr can't be matched
+		uint64_t ret = AllocateDMA(size);
+		Virtual::FreeVirtual(virt);		// free after, so we don't go allocating what we just freed
+
+		return ret;
+
+
+		// auto mut = AutoMutex(mtx);
+		// OpsSinceLastCoalesce++;
+		// for(size_t i = 0; i < PageList->size(); i++)
+		// {
+		// 	Pair* pair = PageList->front();
+		// 	PageList->erase(PageList->begin());
+
+		// 	if(pair->BaseAddr + (size * 0x1000) < 0xFFFFFFFF && pair->LengthInPages >= size)
+		// 	{
+		// 		uint64_t ret = pair->BaseAddr;
+		// 		pair->BaseAddr = pair->LengthInPages == size ? 0 : ret + size * 0x1000;
+		// 		pair->LengthInPages -= size;
+
+		// 		Log("Mapping %x to %x for DMA (%d pages)", ret, ret, size);
+		// 		for(uint64_t s = 0; s < size; s++)
+		// 			Virtual::MapAddress(ret + (s * 0x1000), ret + (s * 0x1000), 0x3);
+
+		// 		if(pair->BaseAddr == 0)
+		// 			delete pair;
+
+		// 		else
+		// 			PageList->push_back(pair);
+
+		// 		assert(Virtual::AllocateVirtual(size, ret, 0, ret) == ret);
+		// 		return ret;
+		// 	}
+
+		// 	PageList->push_back(pair);
+		// }
+
+		// HALT("Could not satisfy DMA memory request");
+		// return 0;
 	}
 
 	void FreeDMA(uint64_t addr, uint64_t size)
@@ -353,7 +402,7 @@ namespace Physical
 			bool delp = false;
 			// Pair* p = PageList->pop_front();
 			auto p = PageList->front();
-			PageList->erase_unordered(PageList->begin());
+			PageList->erase(PageList->begin());
 
 			uint64_t base = p->BaseAddr;
 			uint64_t end = p->BaseAddr + (p->LengthInPages * 0x1000);
@@ -362,7 +411,7 @@ namespace Physical
 			{
 				// Pair* other = PageList->pop_front();
 				auto other = PageList->front();
-				PageList->erase_unordered(PageList->begin());
+				PageList->erase(PageList->begin());
 
 				if(other->BaseAddr == end)
 				{

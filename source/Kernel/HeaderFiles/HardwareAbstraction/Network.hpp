@@ -117,7 +117,7 @@ namespace Network
 		} __attribute__((packed));
 
 		extern EUI48Address GatewayMAC;
-		EUI48Address SendQuery(Library::IPv4Address addr);
+		EUI48Address SendQuery(Devices::NIC::GenericNIC* interface, Library::IPv4Address addr);
 		void HandlePacket(Devices::NIC::GenericNIC* interface, void* PacketAddr, uint64_t length);
 		void SendPacket(Devices::NIC::GenericNIC* interface, Library::IPv4Address addr);
 

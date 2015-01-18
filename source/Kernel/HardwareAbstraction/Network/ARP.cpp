@@ -79,7 +79,7 @@ namespace ARP
 	}
 
 
-	EUI48Address SendQuery(Library::IPv4Address addr)
+	EUI48Address SendQuery(Devices::NIC::GenericNIC* interface, Library::IPv4Address addr)
 	{
 		// override behaviour: if we're broadcasting IP, then we should broadcast MAC as well.
 		if(addr.raw == 0xFFFFFFFF)
@@ -100,7 +100,7 @@ namespace ARP
 		if((*ARPTable)[addr].isZero())
 		{
 			// Log("IP Address %d.%d.%d.%d not in cache, sending ARP request...", addr.bytes[0], addr.bytes[1], addr.bytes[2], addr.bytes[3]);
-			ARP::SendPacket(0, addr);
+			ARP::SendPacket(interface, addr);
 
 			// 500 ms
 			volatile uint64_t timeout = Time::Now() + 500;
@@ -110,7 +110,7 @@ namespace ARP
 				if(received)
 				{
 					EUI48Address ret = (*ARPTable)[addr];
-					// Log("Received ARP reply, IP address %d.%d.%d.%d is at MAC %#02x:%#02x:%#02x:%#02x:%#02x:%#02x", addr.bytes[0], addr.bytes[1], addr.bytes[2], addr.bytes[3], ret->mac[0], ret->mac[1], ret->mac[2], ret->mac[3], ret->mac[4], ret->mac[5]);
+					Log("Received ARP reply, IP address %d.%d.%d.%d is at MAC %#02x:%#02x:%#02x:%#02x:%#02x:%#02x", addr.bytes[0], addr.bytes[1], addr.bytes[2], addr.bytes[3], ret.mac[0], ret.mac[1], ret.mac[2], ret.mac[3], ret.mac[4], ret.mac[5]);
 
 					received = false;
 					return ret;

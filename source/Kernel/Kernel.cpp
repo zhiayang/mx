@@ -114,7 +114,7 @@ namespace Kernel
 		// copy kernel CR3 to somewhere sane-r
 		{
 			uint64_t oldcr3 = Virtual::GetRawCR3();
-			uint64_t newcr3 = Physical::AllocateDMA(0x20, false);
+			uint64_t newcr3 = Physical::AllocateFromReserved(0x20);
 			Memory::Copy((void*) newcr3, (void*) 0x3000, 0xF000);
 
 			// switch to that cr3.

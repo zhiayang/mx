@@ -230,10 +230,12 @@ namespace Network
 				break;
 
 			case Library::SocketProtocol::UDP:
-				// UDP::udpsocketmapv4->Put(SocketFullMappingv4 { IPv4PortAddress { source, sourceport }, IPv4PortAddress { dest, destport } }, *socket);
+				UDP::MapSocket(SocketFullMappingv4 { IPv4PortAddress { this->ip4source, (uint16_t) this->clientport },
+					IPv4PortAddress { this->ip4dest, (uint16_t) this->serverport } }, this);
 				break;
 
 			default:
+				Log(1, "Unknown protocol, ignoring connect()");
 				break;
 		}
 

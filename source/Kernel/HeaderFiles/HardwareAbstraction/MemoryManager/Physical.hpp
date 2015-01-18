@@ -24,12 +24,11 @@ namespace MemoryManager
 		void Initialise();
 		void InitialiseFPLs(MemoryMap::MemoryMap_type* MemoryMap);
 
-		uint64_t AllocateViaPlacement();
 		uint64_t AllocateDMA(uint64_t size, bool Below4Gb = true);
 		void FreeDMA(uint64_t addr, uint64_t size);
 
 		void CoalesceFPLs();
-		uint64_t AllocateFromReserved();
+		uint64_t AllocateFromReserved(uint64_t size = 1);
 	}
 }
 }

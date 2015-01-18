@@ -121,7 +121,6 @@ namespace IP
 	void HandleIPv4Packet(Devices::NIC::GenericNIC* interface, void* packet, uint64_t length)
 	{
 		UNUSED(interface);
-		Log(3, "received IPv4 packet");
 
 		IPv4Packet* ip = (IPv4Packet*) packet;
 		uint64_t raw = (uint64_t) packet;
@@ -197,7 +196,7 @@ namespace IP
 				break;
 
 			case ProtocolType::UDP:
-				// UDP::HandleIPv4Packet(interface, payload, totallength - headerlength, ip->SourceIPAddress, destip);
+				UDP::HandleIPv4Packet(interface, payload, totallength - headerlength, ip->SourceIPAddress, destip);
 				break;
 		}
 	}
@@ -205,7 +204,7 @@ namespace IP
 	void SendIPv4Packet(Devices::NIC::GenericNIC* interface, void* packet, uint16_t length, uint16_t id, Library::IPv4Address dest, ProtocolType prot)
 	{
 		// first check if the dest is valid
-		EUI48Address mac = ARP::SendQuery(dest);
+		EUI48Address mac = ARP::SendQuery(interface, dest);
 
 		if(mac.isZero())
 		{

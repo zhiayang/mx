@@ -38,7 +38,7 @@ namespace UDP
 
 	void MapSocket(SocketFullMappingv4 addr, Socket* s)
 	{
-		assert(udpsocketmapv4->find(addr) == udpsocketmapv4->end());
+		// assert(udpsocketmapv4->find(addr) == udpsocketmapv4->end());
 		(*udpsocketmapv4)[addr] = s;
 	}
 
@@ -145,7 +145,7 @@ namespace UDP
 			goto retry;
 		}
 
-		Log("No sockets found for target, discarding packet.");
+		Log("No open UDP sockets found for target, discarding packet.");
 
 		UNUSED(interface);
 		UNUSED(length);

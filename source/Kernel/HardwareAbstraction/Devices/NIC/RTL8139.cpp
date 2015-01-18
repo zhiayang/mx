@@ -81,14 +81,13 @@ namespace NIC
 		uint32_t f = this->pcidev->GetRegisterData(0x4, 0, 2);
 		this->pcidev->WriteRegisterData(0x4, 0, 2, (f | 0x4) & ~0x400);
 
+
 		uint32_t mmio = (uint32_t) this->pcidev->GetBAR(0);
 		assert(this->pcidev->IsBARIOPort(0));
 		Log("Initialised Busmastering RTL8139 NIC with BaseIO %x", mmio);
 
 		this->ioaddr = (uint16_t) mmio;
-
 		Interrupts::InstallIRQHandler(this->pcidev->GetInterruptLine(), StaticHandleInterrupt, this);
-
 
 		// power on
 		IOPort::WriteByte(this->ioaddr + Registers::Config1, 0x0);
@@ -99,9 +98,7 @@ namespace NIC
 		// get mac address
 		Memory::Set(this->MAC, 0, sizeof(this->MAC));
 		for(uint8_t i = 0; i < 6; i++)
-		{
 			this->MAC[i] = IOPort::ReadByte(this->ioaddr + Registers::MAC0 + i);
-		}
 
 		Log("Initialised RTL8139 NIC with MAC address %#02x:%#02x:%#02x:%#02x:%#02x:%#02x", this->MAC[0], this->MAC[1], this->MAC[2], this->MAC[3], this->MAC[4], this->MAC[5]);
 
@@ -113,6 +110,7 @@ namespace NIC
 
 		this->ReceiveBuffer = (uint8_t*) MemoryManager::Physical::AllocateDMA(3);
 		Log("Configured 12kb buffer for RX at %x", this->ReceiveBuffer);
+		Memory::Set(this->ReceiveBuffer, 0xAA, 0x1000 * 3);
 
 		IOPort::Write32(this->ioaddr + Registers::RxBuf, (uint32_t) (uint64_t) this->ReceiveBuffer);
 		IOPort::Write16(this->ioaddr + Registers::RxBufPtr, 0);
@@ -138,14 +136,10 @@ namespace NIC
 		IOPort::Write32(this->ioaddr + Registers::TxAddr2, (uint32_t) this->TransmitBuffers[2]);
 		IOPort::Write32(this->ioaddr + Registers::TxAddr3, (uint32_t) this->TransmitBuffers[3]);
 
-
 		// set size (max, 8K + 15 + WRAP = 1)
 		IOPort::Write32(this->ioaddr + Registers::RxConfig, 0x8F);
 
-
 		// enable TransmitOK, ReceiveOK, TransmitErr, ReceiveErr, SystemErr interrupts
-
-		// enable things.
 		IOPort::WriteByte(this->ioaddr + Registers::Command, 0x0C);
 
 		this->transmitbuffermtx[0] = new Mutex();
@@ -166,14 +160,13 @@ namespace NIC
 		while(IOPort::ReadByte(this->ioaddr + Registers::Command) & 0x10);
 	}
 
-	void RTL8139::SendData(uint8_t *data, uint64_t bytes)
+	void RTL8139::SendData(uint8_t* data, uint64_t bytes)
 	{
 		if(bytes > 1500)
 		{
 			Log(1, "Tried to transmit packet larger than 1500 bytes long, exceeds MTU -- aborting transmit");
 			return;
 		}
-
 
 		int usebuf = this->CurrentTxBuffer;
 		this->CurrentTxBuffer++;
@@ -212,16 +205,13 @@ namespace NIC
 		EndOffset = IOPort::Read16(this->ioaddr + Registers::RxBufAddr);
 		ReadOffset = this->SeenOfs;
 
-		Log("EndOffset: %x, ReadOffset: %x, RecvBuf: %x", EndOffset, ReadOffset, this->ReceiveBuffer);
-
 		if(ReadOffset > EndOffset)
 		{
-			HALT("");
 			while(ReadOffset < RxBufferSize)
 			{
 				PacketCount++;
 				length = *(uint16_t*) &this->ReceiveBuffer[ReadOffset + 2];
-				// Ethernet::HandlePacket(this, &this->ReceiveBuffer[ReadOffset + 4], length - 4);
+				Ethernet::HandlePacket(this, &this->ReceiveBuffer[ReadOffset + 4], length - 4);
 
 				if(length > 2000)
 					HALT("What");
@@ -235,10 +225,9 @@ namespace NIC
 		while(ReadOffset < EndOffset)
 		{
 			length = *(uint16_t*) &this->ReceiveBuffer[ReadOffset + 2];
-			Log("Length: %x", length);
 
 			PacketCount++;
-			// Ethernet::HandlePacket(this, &this->ReceiveBuffer[ReadOffset + 4], length - 4);
+			Ethernet::HandlePacket(this, &this->ReceiveBuffer[ReadOffset + 4], length - 4);
 
 			ReadOffset += length + 4;
 			ReadOffset = (ReadOffset + 3) & ~3;	// align to 4 bytes

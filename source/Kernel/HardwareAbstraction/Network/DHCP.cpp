@@ -25,7 +25,7 @@ namespace DHCP
 
 	void HandleOffer(Devices::NIC::GenericNIC* interface);
 	void SendRequest(Devices::NIC::GenericNIC* interface, IPv4Address serverip);
-	void HandleAck();
+	void HandleAck(Devices::NIC::GenericNIC* interface);
 
 	void MonitorThread()
 	{
@@ -49,7 +49,7 @@ namespace DHCP
 
 					case 1:
 						CurrentStage++;
-						HandleAck();
+						HandleAck((Devices::NIC::GenericNIC*) Devices::DeviceManager::GetDevice(Devices::DeviceType::EthernetNIC));
 						break;
 				}
 				delete[] packetbuffer;
@@ -112,10 +112,14 @@ namespace DHCP
 
 	void Initialise(Devices::NIC::GenericNIC* interface)
 	{
+		Log("Initialising DHCP...");
+
 		// setup our socket.
 		socket = OpenSocket(SocketProtocol::UDP, 0);
 		BindSocket(socket, 0, 67);
 		ConnectSocket(socket, 0xFFFFFFFF, 68);
+
+		Log("Socket opened.");
 
 		// setup transaction id
 		transid = Kernel::KernelRandom->Generate32();
@@ -251,7 +255,7 @@ namespace DHCP
 		delete (packet - sizeof(DHCPPacket));
 	}
 
-	void HandleAck()
+	void HandleAck(Devices::NIC::GenericNIC* interface)
 	{
 		// 8 byte UDP header has to go
 		receivedpacket = true;
@@ -322,7 +326,7 @@ namespace DHCP
 		Log("Received DHCP Ack, obtained IP address %d.%d.%d.%d for %d seconds", thisip.b1, thisip.b2, thisip.b3, thisip.b4, LeaseTime);
 
 		// get/set the gateway MAC.
-		ARP::GatewayMAC = ARP::SendQuery(IP::GetGatewayIP());
+		ARP::GatewayMAC = ARP::SendQuery(interface, IP::GetGatewayIP());
 	}
 }
 }

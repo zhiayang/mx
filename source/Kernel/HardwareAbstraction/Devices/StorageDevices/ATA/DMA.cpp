@@ -29,9 +29,8 @@ namespace DMA
 	const uint8_t ATA_WriteSectors28DMA	= 0xCA;
 	const uint8_t ATA_WriteSectors48DMA	= 0x35;
 
-
-	static volatile bool _WaitingDMA14 = false;
-	static volatile bool _WaitingDMA15 = false;
+	static volatile bool _WaitingDMA14	= false;
+	static volatile bool _WaitingDMA15	= false;
 
 	static ATADrive* PreviousDevice = 0;
 
