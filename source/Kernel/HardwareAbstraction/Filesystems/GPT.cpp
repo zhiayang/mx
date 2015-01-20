@@ -19,7 +19,7 @@ namespace GPT
 	void ReadPartitions(StorageDevice* atadev)
 	{
 		// read the gpt
-		uint64_t b = MemoryManager::Physical::AllocateDMA(1);
+		uint64_t b = MemoryManager::Virtual::AllocatePage(1);
 		IO::Read(atadev, 1, b, 512);
 		uint8_t* gpt = (uint8_t*) b;
 
@@ -49,7 +49,7 @@ namespace GPT
 
 		Devices::Storage::AddDevice(atadev);
 		Log("/dev/disk%d has %d partition%s", atadev->diskid, atadev->Partitions.size(), atadev->Partitions.size() != 1 ? "s" : "");
-		MemoryManager::Physical::FreeDMA(b, 1);
+		MemoryManager::Virtual::FreePage(b, 1);
 	}
 }
 }

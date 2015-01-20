@@ -132,12 +132,9 @@ namespace Kernel
 		Multitasking::Initialise();
 		Log("[mx] is initialising...");
 
-
-
 		// we use this to store page mappings.
 		// TODO: move to temp mapping scheme, where physical pages can come from anywhere.
 		Log("PMM Reserved Region from %x to %x", Physical::ReservedRegionForVMM, Physical::ReservedRegionForVMM + Physical::LengthOfReservedRegion);
-
 
 
 		// Start the less crucial but still important services.
@@ -293,6 +290,17 @@ namespace Kernel
 		Log("RTC Initialised");
 
 
+
+		/*
+
+			pastel
+			darkside
+			solarflare
+
+
+		*/
+
+
 		// setup framebuffer
 		{
 			uint16_t PrefResX = 1024;
@@ -369,8 +377,8 @@ namespace Kernel
 			DHCP::Initialise(nic);
 		}
 
-		while(true)
-			;
+
+
 
 		KernelKeyboard = new PS2Keyboard();
 		TTY::Initialise();
@@ -583,7 +591,3 @@ extern "C" void* realloc(void* ptr, size_t size)
 
 	return np;
 }
-
-
-
-

@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 #include "PCI.hpp"
+#include <GlobalTypes.hpp>
 #include <Synchro.hpp>
 #include <HardwareAbstraction/DeviceManager.hpp>
 #pragma once
@@ -54,12 +55,12 @@ namespace NIC
 
 		private:
 			uint16_t ioaddr;
-			uint8_t* ReceiveBuffer;
+			DMAAddr ReceiveBuffer;
 			uint8_t CurrentTxBuffer;
 			uint64_t SeenOfs;
 
 			bool TxBufferInUse[4];
-			uint64_t TransmitBuffers[4];
+			DMAAddr TransmitBuffers[4];
 			Mutex* transmitbuffermtx[4];
 	};
 }

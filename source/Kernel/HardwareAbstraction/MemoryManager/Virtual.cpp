@@ -73,6 +73,7 @@ namespace Virtual
 
 			if(found)
 			{
+				// exact match
 				if(found->start == addr && found->length == size)
 				{
 					vas->pairs.remove(found);
@@ -80,6 +81,8 @@ namespace Virtual
 				}
 				else if(found->start == addr)
 				{
+					// longer than what we need, create a new pair
+
 					AddressLengthPair* np = new AddressLengthPair(end, found->length - size);
 					vas->pairs.remove(found);
 					vas->pairs.push_back(np);
@@ -87,7 +90,7 @@ namespace Virtual
 				}
 				else
 				{
-					// make a new pair.
+					// make a new pair at the beginning
 					AddressLengthPair* np = new AddressLengthPair(found->start, (addr - found->start) / 0x1000);
 					vas->pairs.push_back(np);
 

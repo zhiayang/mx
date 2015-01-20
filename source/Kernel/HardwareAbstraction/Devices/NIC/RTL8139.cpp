@@ -108,11 +108,11 @@ namespace NIC
 		// setup 8K + 1500 + 16
 		// 3 pages contiguous
 
-		this->ReceiveBuffer = (uint8_t*) MemoryManager::Physical::AllocateDMA(3);
+		this->ReceiveBuffer = MemoryManager::Physical::AllocateDMA(3);
 		Log("Configured 12kb buffer for RX at %x", this->ReceiveBuffer);
-		Memory::Set(this->ReceiveBuffer, 0xAA, 0x1000 * 3);
+		// Memory::Set(this->ReceiveBuffer, 0xAA, 0x1000 * 3);
 
-		IOPort::Write32(this->ioaddr + Registers::RxBuf, (uint32_t) (uint64_t) this->ReceiveBuffer);
+		IOPort::Write32(this->ioaddr + Registers::RxBuf, (uint32_t) this->ReceiveBuffer.phys);
 		IOPort::Write16(this->ioaddr + Registers::RxBufPtr, 0);
 		IOPort::Write16(this->ioaddr + Registers::RxBufAddr, 0);
 		IOPort::Write16(this->ioaddr + Registers::IntrMask, 0xF);
@@ -123,18 +123,20 @@ namespace NIC
 		// 2 pages, non contiguous.
 
 		this->TransmitBuffers[0] = MemoryManager::Physical::AllocateDMA(1);
-		this->TransmitBuffers[1] = this->TransmitBuffers[0] + 0x800;
+		this->TransmitBuffers[1].phys = this->TransmitBuffers[0].phys + 0x800;
+		this->TransmitBuffers[1].virt = this->TransmitBuffers[0].virt + 0x800;
 
 		this->TransmitBuffers[2] = MemoryManager::Physical::AllocateDMA(1);
-		this->TransmitBuffers[3] = this->TransmitBuffers[2] + 0x800;
+		this->TransmitBuffers[3].phys = this->TransmitBuffers[2].phys + 0x800;
+		this->TransmitBuffers[3].virt = this->TransmitBuffers[2].virt + 0x800;
 
 		Log("Tx[0] at %x, Tx[1] at %x, Tx[2] at %x, Tx[3] at %x", this->TransmitBuffers[0], this->TransmitBuffers[1], this->TransmitBuffers[2], this->TransmitBuffers[3]);
 
 		// send data to the card
-		IOPort::Write32(this->ioaddr + Registers::TxAddr0, (uint32_t) this->TransmitBuffers[0]);
-		IOPort::Write32(this->ioaddr + Registers::TxAddr1, (uint32_t) this->TransmitBuffers[1]);
-		IOPort::Write32(this->ioaddr + Registers::TxAddr2, (uint32_t) this->TransmitBuffers[2]);
-		IOPort::Write32(this->ioaddr + Registers::TxAddr3, (uint32_t) this->TransmitBuffers[3]);
+		IOPort::Write32(this->ioaddr + Registers::TxAddr0, (uint32_t) this->TransmitBuffers[0].phys);
+		IOPort::Write32(this->ioaddr + Registers::TxAddr1, (uint32_t) this->TransmitBuffers[1].phys);
+		IOPort::Write32(this->ioaddr + Registers::TxAddr2, (uint32_t) this->TransmitBuffers[2].phys);
+		IOPort::Write32(this->ioaddr + Registers::TxAddr3, (uint32_t) this->TransmitBuffers[3].phys);
 
 		// set size (max, 8K + 15 + WRAP = 1)
 		IOPort::Write32(this->ioaddr + Registers::RxConfig, 0x8F);
@@ -175,7 +177,7 @@ namespace NIC
 		auto m = AutoMutex(this->transmitbuffermtx[usebuf]);
 
 		// copy the data to the transmit buffer.
-		Memory::Copy((void*) (this->TransmitBuffers[usebuf]), data, bytes);
+		Memory::Copy((void*) (this->TransmitBuffers[usebuf].virt), data, bytes);
 
 		uint32_t status = 0;
 		status |= bytes & 0x1FFF;	// 0-12: Length
@@ -205,13 +207,15 @@ namespace NIC
 		EndOffset = IOPort::Read16(this->ioaddr + Registers::RxBufAddr);
 		ReadOffset = this->SeenOfs;
 
+		uint8_t* recvBuffer = (uint8_t*) this->ReceiveBuffer.virt;
+
 		if(ReadOffset > EndOffset)
 		{
 			while(ReadOffset < RxBufferSize)
 			{
 				PacketCount++;
-				length = *(uint16_t*) &this->ReceiveBuffer[ReadOffset + 2];
-				Ethernet::HandlePacket(this, &this->ReceiveBuffer[ReadOffset + 4], length - 4);
+				length = *(uint16_t*) &recvBuffer[ReadOffset + 2];
+				Ethernet::HandlePacket(this, &recvBuffer[ReadOffset + 4], length - 4);
 
 				if(length > 2000)
 					HALT("What");
@@ -224,10 +228,10 @@ namespace NIC
 		}
 		while(ReadOffset < EndOffset)
 		{
-			length = *(uint16_t*) &this->ReceiveBuffer[ReadOffset + 2];
+			length = *(uint16_t*) &recvBuffer[ReadOffset + 2];
 
 			PacketCount++;
-			Ethernet::HandlePacket(this, &this->ReceiveBuffer[ReadOffset + 4], length - 4);
+			Ethernet::HandlePacket(this, &recvBuffer[ReadOffset + 4], length - 4);
 
 			ReadOffset += length + 4;
 			ReadOffset = (ReadOffset + 3) & ~3;	// align to 4 bytes

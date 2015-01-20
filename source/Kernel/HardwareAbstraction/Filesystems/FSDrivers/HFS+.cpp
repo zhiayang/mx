@@ -26,41 +26,39 @@ namespace Filesystems
 {
 	FSDriverHFSPlus::FSDriverHFSPlus(Devices::Storage::Partition* _part) : FSDriver(_part, FSDriverType::Physical)
 	{
-		// read the fields from LBA 0
-		auto atadev = this->partition->GetStorageDevice();
+		// // read the fields from LBA 0
+		// auto atadev = this->partition->GetStorageDevice();
 
-		uint64_t buf = MemoryManager::Physical::AllocateDMA(1);
-		IO::Read(atadev, this->partition->GetStartLBA() + 2, buf, 512);		// volume header is 512 bytes, starts 1024 bytes in
+		// uint64_t buf = MemoryManager::Physical::AllocateDMA(1);
+		// IO::Read(atadev, this->partition->GetStartLBA() + 2, buf, 512);		// volume header is 512 bytes, starts 1024 bytes in
 
-		// todo: handle sector sizes not 512
-		assert(((Devices::Storage::ATADrive*) atadev)->GetSectorSize() == 512);
+		// // todo: handle sector sizes not 512
+		// assert(((Devices::Storage::ATADrive*) atadev)->GetSectorSize() == 512);
 
-		HFSPlusVolumeHeader* volheader = (HFSPlusVolumeHeader*) buf;
+		// HFSPlusVolumeHeader* volheader = (HFSPlusVolumeHeader*) buf;
 
-		if(volheader->signature[0] != 'H')
-			Log(1, "Invalid signature on HFS+ filesystem (disk%ds%d), expected 'H', got '%c'", atadev->diskid, this->partition->GetPartitionNumber(), volheader->signature[0]);
+		// if(volheader->signature[0] != 'H')
+		// 	Log(1, "Invalid signature on HFS+ filesystem (disk%ds%d), expected 'H', got '%c'", atadev->diskid, this->partition->GetPartitionNumber(), volheader->signature[0]);
 
-		if(volheader->signature[1] != '+' && volheader->signature[1] != 'X')
-			Log(1, "Invalid signature on HFS+ filesystem (disk%ds%d), expected '+' (for HFS+) or 'X' (for case-sensitive HFS+), got '%c'", atadev->diskid, this->partition->GetPartitionNumber(), volheader->signature[1]);
-
-
-		if(volheader->signature[1] == 'X')
-		{
-			assert(bswap16(volheader->version) == 5);
-			this->caseSensitive = true;
-		}
-		else
-		{
-			assert(bswap16(volheader->version) == 4);
-			this->caseSensitive = false;
-		}
+		// if(volheader->signature[1] != '+' && volheader->signature[1] != 'X')
+		// 	Log(1, "Invalid signature on HFS+ filesystem (disk%ds%d), expected '+' (for HFS+) or 'X' (for case-sensitive HFS+), got '%c'", atadev->diskid, this->partition->GetPartitionNumber(), volheader->signature[1]);
 
 
+		// if(volheader->signature[1] == 'X')
+		// {
+		// 	assert(bswap16(volheader->version) == 5);
+		// 	this->caseSensitive = true;
+		// }
+		// else
+		// {
+		// 	assert(bswap16(volheader->version) == 4);
+		// 	this->caseSensitive = false;
+		// }
 
-		// fucking warnings
-		(void) this->volumeHeader;
 
 
+		// // fucking warnings
+		// (void) this->volumeHeader;
 
 
 
@@ -68,7 +66,9 @@ namespace Filesystems
 
 
 
-		Log("HFS+ Driver on disk%ds%d has been initialised, FS appears to conform to specifications.", atadev->diskid, this->partition->GetPartitionNumber());
+
+
+		// Log("HFS+ Driver on disk%ds%d has been initialised, FS appears to conform to specifications.", atadev->diskid, this->partition->GetPartitionNumber());
 	}
 
 	FSDriverHFSPlus::~FSDriverHFSPlus()

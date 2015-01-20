@@ -45,17 +45,17 @@ namespace Storage
 	rde::vector<ATADrive*>* ATADrive::ATADrives;
 
 
-	bool ATADrive::GetIsGPT()			{ return this->IsGPT; }
-	void ATADrive::SetIsGPT(bool g)		{ this->IsGPT = g; }
-	uint8_t ATADrive::GetDriveNumber()		{ return this->DriveNumber; }
-	uint8_t ATADrive::GetBus()			{ return this->Bus; }
-	uint8_t ATADrive::GetDrive()			{ return this->Drive; }
-	bool ATADrive::IsSlave()			{ return this->Drive; }
+	bool ATADrive::GetIsGPT()					{ return this->IsGPT; }
+	void ATADrive::SetIsGPT(bool g)				{ this->IsGPT = g; }
+	uint8_t ATADrive::GetDriveNumber()			{ return this->DriveNumber; }
+	uint8_t ATADrive::GetBus()					{ return this->Bus; }
+	uint8_t ATADrive::GetDrive()				{ return this->Drive; }
+	bool ATADrive::IsSlave()					{ return this->Drive; }
 	void ATADrive::SetSectors(uint64_t s)		{ this->MaxSectors = s; }
-	uint64_t ATADrive::GetSectors()		{ return this->MaxSectors; }
+	uint64_t ATADrive::GetSectors()				{ return this->MaxSectors; }
 	void ATADrive::SetSectorSize(uint16_t s)	{ this->SectorSize = s; }
-	uint32_t ATADrive::GetSectorSize()		{ return this->SectorSize; }
-	uint16_t ATADrive::GetBaseIO()		{ return this->BaseIO; }
+	uint32_t ATADrive::GetSectorSize()			{ return this->SectorSize; }
+	uint16_t ATADrive::GetBaseIO()				{ return this->BaseIO; }
 
 	void ATADrive::Read(uint64_t LBA, uint64_t Buffer, uint64_t Bytes)
 	{

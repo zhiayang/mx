@@ -10,17 +10,18 @@
 #endif
 
 #include <stdint.h>
-#include <Time.hpp>
-#include <HardwareAbstraction/VideoOutput/VideoDevice.hpp>
-#include <HardwareAbstraction/Multitasking.hpp>
-#include <HardwareAbstraction/IO.hpp>
-#include <HardwareAbstraction/Devices/PS2.hpp>
-#include <HardwareAbstraction/Devices/Keyboard.hpp>
-#include <HardwareAbstraction/ACPI.hpp>
-#include <HardwareAbstraction/MemoryManager.hpp>
-#include <HardwareAbstraction/CPUID.hpp>
-#include <HardwareAbstraction/Random.hpp>
-#include <HardwareAbstraction/Devices/NIC.hpp>
+#include "Time.hpp"
+#include "GlobalTypes.hpp"
+#include "HardwareAbstraction/VideoOutput/VideoDevice.hpp"
+#include "HardwareAbstraction/Multitasking.hpp"
+#include "HardwareAbstraction/IO.hpp"
+#include "HardwareAbstraction/Devices/PS2.hpp"
+#include "HardwareAbstraction/Devices/Keyboard.hpp"
+#include "HardwareAbstraction/ACPI.hpp"
+#include "HardwareAbstraction/MemoryManager.hpp"
+#include "HardwareAbstraction/CPUID.hpp"
+#include "HardwareAbstraction/Random.hpp"
+#include "HardwareAbstraction/Devices/NIC.hpp"
 #include <assert.h>
 
 
@@ -143,9 +144,6 @@ namespace Kernel
 
 #define LOCK(x)				Kernel::LockMutex(x);
 #define UNLOCK(x)			Kernel::UnlockMutex(x);
-
-#define Allocate_G(x)		Kernel::HardwareAbstraction::MemoryManager::KernelHeap::AllocateChunk(x)
-#define Free_G(x)			Kernel::HardwareAbstraction::MemoryManager::KernelHeap::FreeChunk(x)
 
 #define BOpt_Likely(x)		__builtin_expect((x), 1)
 #define BOpt_Unlikely(x)	__builtin_expect((x), 0)
