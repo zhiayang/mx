@@ -10,6 +10,9 @@
 #include <CircularBuffer.hpp>
 #include "../Devices/StorageDevice.hpp"
 
+
+typedef long fd_t;
+
 namespace Kernel {
 namespace HardwareAbstraction {
 
@@ -22,7 +25,6 @@ namespace Filesystems
 {
 	class FSDriver;
 	struct IOContext;
-	typedef long fd_t;
 
 	enum Attributes
 	{
@@ -37,6 +39,7 @@ namespace Filesystems
 			None = 0,
 			File,
 			Folder,
+			Socket,
 		};
 
 		struct fsref
@@ -77,6 +80,7 @@ namespace Filesystems
 		vnode* NodeFromID(id_t id);
 		fd_t FDFromNode(IOContext* ioctx, vnode* node);
 		vnode* NodeFromFD(IOContext* ioctx, fd_t fd);
+		fileentry* FileEntryFromFD(IOContext* ioctx, fd_t fd);
 
 		vnode* CreateNode(FSDriver* fs);
 		vnode* DuplicateNode(vnode* orig);
@@ -117,7 +121,8 @@ namespace Filesystems
 	{
 		Invalid = 0,
 		Physical,
-		Virtual
+		Virtual,
+		Socket
 	};
 
 	struct IOContext
@@ -139,7 +144,7 @@ namespace Filesystems
 			virtual void Stat(VFS::vnode* node, struct stat* stat, bool statlink);
 
 			// returns a list of items inside the directory, as vnodes.
-			virtual rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node);
+			virtual rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node);
 
 			virtual dev_t GetID() final { return this->fsid; }
 			virtual FSDriverType GetType() final { return this->_type; }

@@ -23,7 +23,7 @@ namespace Kernel
 					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
 					void Flush(VFS::vnode* node);
 
-					rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+					rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 			};
 
 			class FSDriverStdin : public FSDriver
@@ -39,7 +39,7 @@ namespace Kernel
 					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
 					void Flush(VFS::vnode* node);
 
-					rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+					rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 			};
 
 			class FSDriverStdout : public FSDriver
@@ -55,7 +55,7 @@ namespace Kernel
 					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
 					void Flush(VFS::vnode* node);
 
-					rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+					rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 			};
 
 			class FSDriverStdlog : public FSDriver
@@ -71,7 +71,7 @@ namespace Kernel
 					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
 					void Flush(VFS::vnode* node);
 
-					rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+					rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 			};
 
 			class FSDriverIPCMsg : public FSDriver
@@ -93,9 +93,9 @@ namespace Kernel
 					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
 					void Flush(VFS::vnode* node);
 
-					rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+					rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 
-					rde::hash_map<pathid*, Library::CircularMemoryBuffer*>* messagequeue = nullptr;
+					rde::hash_map<pathid*, Library::CircularMemoryBuffer*> messagequeue;
 			};
 		}
 	}

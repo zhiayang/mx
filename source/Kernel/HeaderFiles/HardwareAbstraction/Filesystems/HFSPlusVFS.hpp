@@ -119,10 +119,11 @@ namespace Filesystems
 			virtual void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
 
 			// returns a list of items inside the directory, as vnodes.
-			virtual rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+			virtual rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 
 
 		private:
+			bool					caseSensitive;
 			HFSPlusVolumeHeader		volumeHeader;
 	};
 }

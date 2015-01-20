@@ -19,7 +19,7 @@ namespace MBR
 		// warning: will trash whatever the ATADevice's data buffer contains.
 
 		// read the mbr
-		uint64_t b = MemoryManager::Physical::AllocateDMA(1);
+		uint64_t b = MemoryManager::Virtual::AllocatePage(1);
 		IO::Read(atadev, 0, b, 512);
 
 		// verify the MBR signature: 0x55, 0xAA
@@ -74,7 +74,7 @@ namespace MBR
 
 		Devices::Storage::AddDevice(atadev);
 		Log("/dev/disk%d has %d partition%s", atadev->diskid, atadev->Partitions.size(), atadev->Partitions.size() != 1 ? "s" : "");
-		MemoryManager::Physical::FreeDMA(b, 1);
+		MemoryManager::Virtual::FreePage(b, 1);
 	}
 }
 }

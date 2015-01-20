@@ -98,8 +98,6 @@ namespace Filesystems
 		fileentry* FileEntryFromFD(IOContext* ioctx, fd_t fd)
 		{
 			assert(ioctx);
-			// assert(ioctx->fdarray);
-			// assert(ioctx->fdarray->fds);
 
 			for(auto v : ioctx->fdarray.fds)
 			{

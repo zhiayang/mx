@@ -178,7 +178,7 @@ namespace Filesystems
 		// read the fields from LBA 0
 		auto atadev = this->partition->GetStorageDevice();
 
-		uint64_t buf = MemoryManager::Physical::AllocateDMA(1);
+		uint64_t buf = MemoryManager::Virtual::AllocatePage(1);
 		IO::Read(atadev, this->partition->GetStartLBA(), buf, 512);
 
 		uint8_t* fat = (uint8_t*) buf;
@@ -217,7 +217,7 @@ namespace Filesystems
 		name[10] = (char) fat[81];
 
 		name = String::TrimWhitespace(name);
-		MemoryManager::Physical::FreeDMA(buf, 1);
+		MemoryManager::Virtual::FreePage(buf, 1);
 
 		this->_seekable = true;
 
@@ -274,11 +274,10 @@ namespace Filesystems
 			assert(cn->info);
 			assert(cn->info->data);
 
-			auto cdcontent = this->ReadDir(cn);
-			assert(cdcontent);
+			rde::vector<VFS::vnode*> cdcontent = this->ReadDir(cn);
 
 			// check each.
-			for(auto d : *cdcontent)
+			for(auto d : cdcontent)
 			{
 				auto vnd = tovnd(d->info->data);
 				assert(vnd);
@@ -310,11 +309,9 @@ namespace Filesystems
 			}
 			if(!found)
 			{
-				delete cdcontent;
 				return false;
 			}
 
-			delete cdcontent;
 			curlvl++;
 		}
 
@@ -356,18 +353,22 @@ namespace Filesystems
 		if(offset > 0)
 			cluslen++;
 
-		uint64_t dma = MemoryManager::Physical::AllocateDMA((cluslen * this->SectorsPerCluster * 512 + 0xFFF) / 0x1000);
-		uint64_t obuf = dma;
+		uint64_t bufferPageSize = (cluslen * this->SectorsPerCluster * 512 + 0xFFF) / 0x1000;
+
+
+		uint64_t rbuf = MemoryManager::Virtual::AllocatePage(bufferPageSize);
+		uint64_t obuf = rbuf;
 
 		for(auto i = skippedclus; i < skippedclus + cluslen; i++)
 		{
 			// Log(3, "call");
-			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA(vnd->clusters[i]), dma, this->SectorsPerCluster * 512);
-			dma += this->SectorsPerCluster * 512;
+			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA(vnd->clusters[i]), rbuf, this->SectorsPerCluster * 512);
+			rbuf += this->SectorsPerCluster * 512;
 		}
 
-		dma = obuf;
-		Memory::Copy(buf, (void*) (dma + clusoffset), length);
+		rbuf = obuf;
+		Memory::Copy(buf, (void*) (rbuf + clusoffset), length);
+		MemoryManager::Virtual::FreePage(rbuf, bufferPageSize);
 		return length;
 	}
 
@@ -407,7 +408,7 @@ namespace Filesystems
 		stat->st_ctime		= datetounix(dirent->createdate, dirent->createtime);
 	}
 
-	rde::vector<VFS::vnode*>* FSDriverFat32::ReadDir(VFS::vnode* node)
+	rde::vector<VFS::vnode*> FSDriverFat32::ReadDir(VFS::vnode* node)
 	{
 		assert(node);
 		assert(node->info);
@@ -422,15 +423,18 @@ namespace Filesystems
 		// grab its clusters.
 		auto clusters = tovnd(node)->clusters;
 		uint64_t numclus = 0;
+
 		if(clusters.size() == 0)
-		clusters = this->GetClusterChain(node, &numclus);
+			clusters = this->GetClusterChain(node, &numclus);
 
 
 		assert(numclus == clusters.size());
 
 		// try and read each cluster into a contiguous buffer.
+		uint64_t bufferPageSize = ((numclus * this->SectorsPerCluster * 512) + 0xFFF) / 0x1000;
+
 		uint64_t dirsize = numclus * this->SectorsPerCluster * 512;
-		uint64_t buf = MemoryManager::Physical::AllocateDMA(((numclus * this->SectorsPerCluster * 512) + 0xFFF) / 0x1000);
+		uint64_t buf = MemoryManager::Virtual::AllocatePage(bufferPageSize);
 		auto obuf = buf;
 
 		for(auto v : clusters)
@@ -440,7 +444,7 @@ namespace Filesystems
 		}
 		buf = obuf;
 
-		auto ret = new rde::vector<VFS::vnode*>();
+		rde::vector<VFS::vnode*> ret;
 		auto count = 0;
 
 		for(uint64_t addr = buf; addr < buf + dirsize; )
@@ -517,12 +521,13 @@ namespace Filesystems
 
 				vn->info->data = (void*) fsd;
 
-				ret->push_back(vn);
+				ret.push_back(vn);
 			}
 
 			addr += sizeof(LFNEntry);
 		}
 
+		MemoryManager::Virtual::FreePage(buf, bufferPageSize);
 		return ret;
 	}
 
@@ -567,7 +572,7 @@ namespace Filesystems
 		rde::vector<uint32_t> ret;
 
 		uint64_t lastsec = 0;
-		auto buf = MemoryManager::Physical::AllocateDMA(2);
+		auto buf = MemoryManager::Virtual::AllocatePage(2);
 		auto obuf = buf;
 		do
 		{
@@ -593,7 +598,7 @@ namespace Filesystems
 			lastsec = FatSector;
 
 			uint8_t* clusterchain = (uint8_t*) buf;
-			cchain = *((uint32_t*)&clusterchain[FatOffset]) & 0x0FFFFFFF;
+			cchain = *((uint32_t*) &clusterchain[FatOffset]) & 0x0FFFFFFF;
 
 			// cchain is the next cluster in the list.
 			ret.push_back(Cluster);
@@ -604,7 +609,7 @@ namespace Filesystems
 		} while((cchain != 0) && !((cchain & 0x0FFFFFFF) >= 0x0FFFFFF8));
 
 		buf = obuf;
-		MemoryManager::Physical::FreeDMA(buf, 2);
+		MemoryManager::Virtual::FreePage(buf, 2);
 		tovnd(node)->clusters = ret;
 
 		return ret;

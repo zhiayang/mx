@@ -228,24 +228,18 @@ namespace PCI
 
 	PCIDevice::PCIDevice(uint16_t b, uint16_t s, uint8_t f)
 	{
-		this->Bus		= b;
-		this->Slot		= s;
-		this->Function	= f;
+		this->Bus			= b;
+		this->Slot			= s;
+		this->Function		= f;
 
-		this->Address	= MakeAddr(this->Bus, this->Slot, this->Function);
-
-		this->VendorID	= ReadConfig16(this->Address, 0x00);
-		this->DeviceID	= (uint16_t)(ReadConfig32(this->Address, 0x00) >> 16);
-
-
-		this->Class		= (uint8_t)(ReadConfig32(this->Address, 0x08) >> 24);
-		this->Subclass	= (uint8_t)(ReadConfig32(this->Address, 0x08) >> 16);
-
-		this->ProgIF	= (uint8_t)(ReadConfig32(this->Address, 0x08) >> 8);
-
-
-		this->InterruptLine	= (uint8_t)(ReadConfig8(this->Address, 0x3C));
-		this->InterruptPin	= (uint8_t)(ReadConfig32(this->Address, 0x3C + 0x1) >> 8);
+		this->Address		= MakeAddr(this->Bus, this->Slot, this->Function);
+		this->VendorID		= ReadConfig16(this->Address, 0x00);
+		this->DeviceID		= (uint16_t) (ReadConfig32(this->Address, 0x00) >> 16);
+		this->Class			= (uint8_t) (ReadConfig32(this->Address, 0x08) >> 24);
+		this->Subclass		= (uint8_t) (ReadConfig32(this->Address, 0x08) >> 16);
+		this->ProgIF		= (uint8_t) (ReadConfig32(this->Address, 0x08) >> 8);
+		this->InterruptLine	= (uint8_t) (ReadConfig8(this->Address, 0x3C));
+		this->InterruptPin	= (uint8_t) (ReadConfig32(this->Address, 0x3C + 0x1) >> 8);
 	}
 
 

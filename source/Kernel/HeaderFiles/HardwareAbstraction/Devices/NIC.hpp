@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 #include "PCI.hpp"
+#include <GlobalTypes.hpp>
 #include <Synchro.hpp>
 #include <HardwareAbstraction/DeviceManager.hpp>
 #pragma once
@@ -17,18 +18,16 @@ namespace NIC
 	class GenericNIC : public DeviceManager::Device
 	{
 		public:
-			GenericNIC(GenericNIC* dev);
+			GenericNIC();
 			virtual ~GenericNIC();
 
 			virtual void Reset();
 			virtual void SendData(uint8_t* data, uint64_t bytes);
-			virtual uint8_t* ReceiveData(uint8_t* data, uint64_t bytes);
-			virtual void HandleInterrupt();
 			virtual uint8_t* GetMAC();
 			virtual uint64_t GetHardwareType();
+			virtual void HandleInterrupt();
 
 		protected:
-			GenericNIC* device;
 			Devices::PCI::PCIDevice* pcidev;
 			uint8_t MAC[6];
 	};
@@ -38,13 +37,13 @@ namespace NIC
 	{
 		public:
 			RTL8139(PCI::PCIDevice* pcidev);
-			~RTL8139();
-			void Reset();
-			void SendData(uint8_t* data, uint64_t bytes);
-			uint8_t* ReceiveData(uint8_t* data, uint64_t bytes);
-			uint64_t GetHardwareType();
+			virtual ~RTL8139() override;
+			virtual void Reset() override;
+			virtual void SendData(uint8_t* data, uint64_t bytes) override;
+			virtual uint8_t* GetMAC() override;
+			virtual uint64_t GetHardwareType() override;
+			virtual void HandleInterrupt() override;
 
-			void HandleInterrupt();
 			void HandlePacket();
 
 			void HandleRxOk();
@@ -53,14 +52,15 @@ namespace NIC
 			void HandleTxErr();
 			void HandleSysErr();
 
+
 		private:
 			uint16_t ioaddr;
-			uint8_t* ReceiveBuffer;
+			DMAAddr ReceiveBuffer;
 			uint8_t CurrentTxBuffer;
 			uint64_t SeenOfs;
 
 			bool TxBufferInUse[4];
-			uint64_t TransmitBuffers[4];
+			DMAAddr TransmitBuffers[4];
 			Mutex* transmitbuffermtx[4];
 	};
 }

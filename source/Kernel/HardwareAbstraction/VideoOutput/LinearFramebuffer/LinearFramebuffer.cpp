@@ -36,11 +36,10 @@ namespace LinearFramebuffer
 	static void* memset32(void* dst, uint32_t val, uint64_t len)
 	{
 		uintptr_t d0 = 0;
-		uint64_t uval = ((uint64_t) val << 32) + val;
 		asm volatile(
-			"rep stosq"
+			"rep stosl"
 			:"=&D" (d0), "+&c" (len)
-			:"0" (dst), "a" (uval)
+			:"0" (dst), "a" (val)
 			:"memory");
 
 		return dst;
@@ -48,8 +47,11 @@ namespace LinearFramebuffer
 
 	void Initialise()
 	{
-		ResX = Kernel::GetVideoDevice()->GetResX();
-		ResY = Kernel::GetVideoDevice()->GetResY();
+		GenericVideoDevice* vid = (GenericVideoDevice*) DeviceManager::GetDevice(DeviceType::FramebufferVideoCard);
+		assert(vid);
+
+		ResX = vid->GetResX();
+		ResY = vid->GetResY();
 	}
 
 	void PutPixelAtAddr(uint32_t pos, uint32_t Colour)
@@ -98,13 +100,11 @@ namespace LinearFramebuffer
 		if(c == ' ')
 		{
 			for(uint64_t i = y; i < y + CharHeight; i++)
-			{
-				memset32((void*)(Kernel::GetFramebufferAddress() + (i * GetResX() + x) * 4), backColour, 4);
-			}
+				memset32((void*) (Kernel::GetFramebufferAddress() + (i * GetResX() + x) * 4), backColour, 4);
 		}
 
-		uint32_t* rowAddress;
-		uint32_t* columnAddress;
+		uint32_t* rowAddress = 0;
+		uint32_t* columnAddress = 0;
 
 		rowAddress = (uint32_t *) Kernel::GetFramebufferAddress() + y * GetResX() + x;
 		for(int row = 0; row < CharHeight; row++)
@@ -125,26 +125,7 @@ namespace LinearFramebuffer
 
 	void RefreshBuffer()
 	{
-		// while(true)
-		// {
-		// 	// // loop through all regions marked dirty.
-		// 	// uint64_t s = DirtyList->size();
-		// 	// for(uint64_t m = 0; m < s; m++)
-		// 	// {
-		// 	// 	DirtyRegion* r = DirtyList->pop_front();
 
-		// 	// 	// memcopy each region, row by row
-		// 	// 	for(uint64_t h = 0; h < r->GetHeight(); h++)
-		// 	// 	{
-		// 	// 		// calculate location.
-		// 	// 		uint32_t pos = (r->GetY() + h) * GetResX() + r->GetX();
-		// 	// 		pos *= BytesPerPixel;	// 4 bytes per pixel
-
-		// 	// 		Memory::Copy64((void*)(Kernel::GetTrueLFBAddress() + pos), (void*)(Kernel::GetFramebufferAddress() + pos), (r->GetWidth() * BytesPerPixel) / 8);
-		// 	// 	}
-		// 	// }
-		// 	YIELD();
-		// }
 	}
 
 	uint16_t GetResX()

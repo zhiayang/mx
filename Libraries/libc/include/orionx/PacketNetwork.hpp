@@ -1,4 +1,4 @@
-// Network.hpp
+// PacketNetwork.hpp
 // Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
@@ -23,6 +23,19 @@ namespace Library
 			uint8_t b4;
 
 		} __attribute__ ((packed));
+
+		explicit IPv4Address() { this->raw = 0; }
+		IPv4Address(uint32_t r) { this->raw = r; }
+
+		operator uint32_t () const
+		{
+			return this->raw;
+		}
+
+		bool operator==(IPv4Address other) const
+		{
+			return this->raw == other.raw;
+		}
 
 	} __attribute__ ((packed));
 

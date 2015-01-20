@@ -16,6 +16,7 @@
 #include "Devices/PIT.hpp"
 #include "Devices/NIC.hpp"
 #include "Devices/HPET.hpp"
+#include "DeviceManager.hpp"
 
 
 

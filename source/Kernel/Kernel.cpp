@@ -57,8 +57,6 @@ namespace Kernel
 
 
 	// devices
-	VideoOutput::GenericVideoDevice* VideoDevice;
-	Devices::NIC::GenericNIC* KernelNIC;
 	Devices::PS2Controller* KernelPS2Controller;
 	Devices::Keyboard* KernelKeyboard;
 	Random* KernelRandom;
@@ -116,7 +114,7 @@ namespace Kernel
 		// copy kernel CR3 to somewhere sane-r
 		{
 			uint64_t oldcr3 = Virtual::GetRawCR3();
-			uint64_t newcr3 = Physical::AllocateDMA(0x20, false);
+			uint64_t newcr3 = Physical::AllocateFromReserved(0x20);
 			Memory::Copy((void*) newcr3, (void*) 0x3000, 0xF000);
 
 			// switch to that cr3.
@@ -134,12 +132,9 @@ namespace Kernel
 		Multitasking::Initialise();
 		Log("[mx] is initialising...");
 
-
-
 		// we use this to store page mappings.
 		// TODO: move to temp mapping scheme, where physical pages can come from anywhere.
 		Log("PMM Reserved Region from %x to %x", Physical::ReservedRegionForVMM, Physical::ReservedRegionForVMM + Physical::LengthOfReservedRegion);
-
 
 
 		// Start the less crucial but still important services.
@@ -249,21 +244,6 @@ namespace Kernel
 				PrintFormatted("[mx] requires such a device to work.\n");
 				PrintFormatted("Check your system and try again.\n\n");
 				PrintFormatted("Currently, supported systems include: BGA (Bochs, QEMU, VirtualBox) and SVGA (VMWare)\n");
-				{
-					// for(uint16_t num = 0; num < PCI::PCIDevice::PCIDevices->size(); num++)
-					for(auto dev : *PCI::PCIDevice::PCIDevices)
-					{
-						dev->PrintPCIDeviceInfo();
-
-						if(dev->GetIsMultifunction())
-							PrintFormatted(" ==>Multifunction Device");
-
-						if(PCI::MatchVendorDevice(dev, 0x1234, 0x1111) || PCI::MatchVendorDevice(dev, 0x80EE, 0xBEEF))
-							PrintFormatted(" ==>BGA Compatible Video Card: %x", GetTrueLFBAddress());
-
-						PrintFormatted("\n");
-					}
-				}
 				UHALT();
 			}
 			else
@@ -277,13 +257,13 @@ namespace Kernel
 				else if(PCI::MatchVendorDevice(VideoDev, 0x1234, 0x1111) || PCI::MatchVendorDevice(VideoDev, 0x80EE, 0xBEEF))
 				{
 					// QEMU, Bochs and VBox's BGA card.
-					Kernel::VideoDevice = new GenericVideoDevice(new BochsGraphicsAdapter(VideoDev));
+					DeviceManager::AddDevice(new BochsGraphicsAdapter(VideoDev), DeviceType::FramebufferVideoCard);
 				}
 				else
 				{
 					PrintFormatted("Error: No supported video card found.\n");
 					PrintFormatted("[mx] does not support VGA-only video cards.\n");
-					PrintFormatted("Currently, supported systems include: BGA (Bochs, QEMU, VirtualBox) and SVGA (VMWare)\n");
+					PrintFormatted("Currently, supported systems include: BGA (Bochs, QEMU, VirtualBox) and SVGA II (VMWare)\n");
 					UHALT();
 				}
 			}
@@ -297,14 +277,11 @@ namespace Kernel
 			if(PCI::MatchVendorDevice(nic, 0x10EC, 0x8139))
 			{
 				Log("Realtek RTL8139 NIC found, initialising driver...");
-				// KernelNIC = new NIC::GenericNIC(new NIC::RTL8139(nic));
+				DeviceManager::AddDevice(new NIC::RTL8139(nic), DeviceType::EthernetNIC);
 			}
 		}
 
 		KernelRandom = new Random(new Random_PseudoRandom());
-
-		LFBAddr = VideoDevice->GetFramebufferAddress();
-		LFBBufferAddr = LFBAddr;
 
 		Log("Compatible video card located");
 
@@ -312,16 +289,33 @@ namespace Kernel
 		// Devices::RTC::Initialise(0);
 		Log("RTC Initialised");
 
-		KernelKeyboard = new PS2Keyboard();
+
+
+		/*
+
+			pastel
+			darkside
+			solarflare
+
+
+		*/
+
 
 		// setup framebuffer
 		{
 			uint16_t PrefResX = 1024;
 			uint16_t PrefResY = 600;
 
+			// it better exist
+			GenericVideoDevice* vd = (GenericVideoDevice*) DeviceManager::GetDevice(DeviceType::FramebufferVideoCard);
+			assert(vd);
+
+			LFBAddr = vd->GetFramebufferAddress();
+			LFBBufferAddr = LFBAddr;
+
 			// Set video mode
 			PrintFormatted("\nInitialising Linear Framebuffer at %x...", LFBAddr);
-			VideoDevice->SetMode(PrefResX, PrefResY, 32);
+			vd->SetMode(PrefResX, PrefResY, 32);
 			VideoOutput::LinearFramebuffer::Initialise();
 
 			Log("Requested resolution of %dx%d, LFB at %x", PrefResX, PrefResY, LFBAddr);
@@ -340,18 +334,12 @@ namespace Kernel
 				bytes = (bytes + (4096 - 1)) / 4096;
 				LFBInPages = bytes;
 
-				// map a bunch of pages for the buffer.
-				// for(uint64_t k = 0; k < bytes; k++)
-				// 	Virtual::MapAddress(LFBBufferAddress_INT + (k * 0x1000), Physical::AllocatePage(), 0x07);
-
 				Virtual::MapRegion(LFBAddr, LFBAddr, bytes, 0x07);
-				// LFBBufferAddr = LFBBufferAddress_INT;
 			}
 
 			Log("Video mode set");
 			Console::Initialise();
 		}
-
 
 
 		// manual jump start.
@@ -372,18 +360,27 @@ namespace Kernel
 				VFS::Mount(f1->Partitions.front(), fs, "/");
 				Log("Root FS Mounted at /");
 			}
-
-
-
-			// todo: detect this too.
-			{
-				Devices::Storage::ATADrive* f2 = (*Devices::Storage::ATADrive::ATADrives)[1];
-				FSDriverHFSPlus* fs = new FSDriverHFSPlus(f2->Partitions.front());
-
-				VFS::Mount(f2->Partitions.front(), fs, "/Volumes/Data/");
-			}
 		}
 
+
+
+		// init network stuff
+		// if we have an nic, that is
+		if(DeviceManager::GetDevice(DeviceType::EthernetNIC) != 0)
+		{
+			NIC::GenericNIC* nic = (NIC::GenericNIC*) DeviceManager::GetDevice(DeviceType::EthernetNIC);
+			using namespace Network;
+			ARP::Initialise();
+			IP::Initialise();
+			TCP::Initialise();
+			UDP::Initialise();
+			DHCP::Initialise(nic);
+		}
+
+
+
+
+		KernelKeyboard = new PS2Keyboard();
 		TTY::Initialise();
 		Console::ClearScreen();
 
@@ -511,11 +508,6 @@ namespace Kernel
 		return LFBInPages;
 	}
 
-	Kernel::HardwareAbstraction::VideoOutput::GenericVideoDevice* GetVideoDevice()
-	{
-		return VideoDevice;
-	}
-
 	void PrintVersion()
 	{
 		PrintFormatted("[mx] Version %d.%d.%d r%02d -- Build %d\n", VER_MAJOR, VER_MINOR, VER_REVSN, VER_MINRV, X_BUILD_NUMBER);
@@ -599,7 +591,3 @@ extern "C" void* realloc(void* ptr, size_t size)
 
 	return np;
 }
-
-
-
-

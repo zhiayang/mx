@@ -24,9 +24,9 @@ namespace VideoOutput
 	static const uint16_t VBE_DISPI_LFB_ENABLED			= 0x40;
 
 
-	BochsGraphicsAdapter::BochsGraphicsAdapter(PCI::PCIDevice* thisdev) : GenericVideoDevice(this)
+	BochsGraphicsAdapter::BochsGraphicsAdapter(PCI::PCIDevice* _dev)
 	{
-		this->PCIDev = thisdev;
+		this->pcidev = _dev;
 
 		// check if this version is usable.
 		uint16_t ver = (uint16_t) this->ReadRegister(VBE_DISPI_INDEX_ID);
@@ -76,7 +76,7 @@ namespace VideoOutput
 
 	uint64_t BochsGraphicsAdapter::GetFramebufferAddress()
 	{
-		return this->PCIDev->GetBAR(0) & 0xFFFFFFF0;
+		return this->pcidev->GetBAR(0) & 0xFFFFFFF0;
 	}
 }
 }

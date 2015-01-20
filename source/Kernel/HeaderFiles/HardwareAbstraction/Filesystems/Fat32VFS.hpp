@@ -22,7 +22,7 @@ namespace Filesystems
 			void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
 			void Flush(VFS::vnode* node);
 
-			rde::vector<VFS::vnode*>* ReadDir(VFS::vnode* node) override;
+			rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 
 		private:
 			rde::string ReadLFN(uint64_t addr, int* nument);

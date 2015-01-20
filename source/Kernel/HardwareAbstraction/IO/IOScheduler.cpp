@@ -75,9 +75,6 @@ namespace IO
 					assert(req.owningthread);
 					Multitasking::WakeForMessage(req.owningthread);
 				}
-
-				// if(req.blockop)
-				// 	delete req;
 			}
 		}
 	}

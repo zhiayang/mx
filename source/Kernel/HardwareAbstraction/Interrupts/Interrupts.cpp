@@ -49,17 +49,10 @@ namespace Interrupts
 		return pluglist;
 	}
 
-	/* This installs a custom IRQ handler for the given IRQ */
-	void InstallIRQHandler(uint64_t irq, void (*Handler)(RegisterStruct_type* r))
+	void InstallIRQHandler(uint64_t irq, void(*Handler)(void*), void* arg)
 	{
 		// add it to the list.
-		GetPlugList(irq)->HandlerList->push_back(new IRQHandlerPlug(Handler, Multitasking::GetCurrentProcess()));
-	}
-
-	void InstallIRQHandler(uint64_t irq, void(*Handler)())
-	{
-		// add it to the list.
-		GetPlugList(irq)->HandlerList->push_back(new IRQHandlerPlug(Handler, Multitasking::GetCurrentProcess()));
+		GetPlugList(irq)->HandlerList.push_back(new IRQHandlerPlug(Handler, arg));
 	}
 
 	void UninstallIRQHandler(uint64_t irq)
@@ -90,15 +83,10 @@ namespace Interrupts
 			{
 				IRQHandlerPlugList* pl = (*IRQHandlerList)[i];
 
-				for(uint64_t k = 0; k < pl->HandlerList->size(); k++)
+				for(uint64_t k = 0; k < pl->HandlerList.size(); k++)
 				{
-					if((*pl->HandlerList)[k]->handleregs)
-					{
-						HALT("not supported");
-					}
-
-					else
-						(*pl->HandlerList)[k]->handle();
+					auto handler = pl->HandlerList[k];
+					handler->handle(handler->arg);
 				}
 
 				// send a message to central dispatch, informing of this IRQ.

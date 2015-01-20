@@ -25,25 +25,14 @@ namespace HardwareAbstraction
 		class IRQHandlerPlug
 		{
 			public:
-				IRQHandlerPlug(void (*x)(RegisterStruct_type* d), Multitasking::Process* p)
+				IRQHandlerPlug(void (*x)(void*), void* a)
 				{
-					 this->handleregs = x;
-					 this->ParentProcess = p;
-					 this->handle = 0;
-				}
-
-				IRQHandlerPlug(void (*x)(), Multitasking::Process* p)
-				{
-					 this->handleregs = 0;
-					 this->ParentProcess = p;
 					 this->handle = x;
+					 this->arg = a;
 				}
 
-
-				void (*handleregs)(RegisterStruct_type* r);
-				void (*handle)();
-
-				Multitasking::Process* ParentProcess;
+				void (*handle)(void* arg);
+				void* arg;
 		};
 
 		class IRQHandlerPlugList
@@ -51,12 +40,11 @@ namespace HardwareAbstraction
 			public:
 				IRQHandlerPlugList(uint64_t n)
 				{
-					this->HandlerList = new rde::vector<IRQHandlerPlug*>();
 					this->IRQNum = n;
 				}
 
 				uint64_t IRQNum;
-				rde::vector<IRQHandlerPlug*>* HandlerList;
+				rde::vector<IRQHandlerPlug*> HandlerList;
 		};
 
 
@@ -65,8 +53,7 @@ namespace HardwareAbstraction
 		void SetGate(uint8_t num, uint64_t base, uint16_t sel, uint8_t flags);
 		void Initialise();
 		void InstallDefaultHandlers();
-		void InstallIRQHandler(uint64_t irq, void (*handler)(RegisterStruct_type*));
-		void InstallIRQHandler(uint64_t irq, void(*Handler)());
+		void InstallIRQHandler(uint64_t irq, void(*handler)(void*), void* arg = 0);
 		void UninstallIRQHandler(uint64_t irq);
 
 		void MaskInterrupt(uint8_t interrupt);
