@@ -372,7 +372,7 @@ namespace Console
 		uint64_t PrintedChars = 0;
 
 		char c = 0;
-		int32_t z = 0;
+		int64_t z = 0;
 		uint64_t x = 0;
 		char* s = 0;
 		char ch = 0;

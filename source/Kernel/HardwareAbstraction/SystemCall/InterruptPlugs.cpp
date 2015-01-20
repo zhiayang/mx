@@ -9,15 +9,6 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace SystemCalls
 {
-	extern "C" void Syscall_InstallIRQHandler(uint64_t handler, uint64_t pointer)
-	{
-		Kernel::HardwareAbstraction::Interrupts::InstallIRQHandler(handler, (void(*)(Interrupts::RegisterStruct_type*)) pointer);
-	}
-
-	extern "C" void Syscall_InstallIRQHandlerNoRegs(uint64_t handler, uint64_t pointer)
-	{
-		Kernel::HardwareAbstraction::Interrupts::InstallIRQHandler(handler, (void(*)()) pointer);
-	}
 }
 }
 }

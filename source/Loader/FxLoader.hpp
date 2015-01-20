@@ -140,7 +140,7 @@ uint64_t LoadKernelELF(uint64_t start, uint64_t length);
 extern uint64_t KernelEnd;
 
 
-extern "C" void* memset(void* destptr, uint8_t value, uint64_t length);
+extern "C" void* memset(void* destptr, int value, uint64_t length);
 extern "C" void* memcpy(void* dest, const void* src, uint64_t len);
 extern "C" void* memmove(void* dst, const void* src, uint64_t n);
 extern "C" size_t strlen(const char* str);

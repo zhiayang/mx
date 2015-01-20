@@ -98,8 +98,6 @@ namespace Filesystems
 		fileentry* FileEntryFromFD(IOContext* ioctx, fd_t fd)
 		{
 			assert(ioctx);
-			// assert(ioctx->fdarray);
-			// assert(ioctx->fdarray->fds);
 
 			for(auto v : ioctx->fdarray.fds)
 			{
@@ -196,8 +194,6 @@ namespace Filesystems
 		fileentry* Open(IOContext* ioctx, vnode* node, int flags)
 		{
 			assert(ioctx);
-			// assert(ioctx->fdarray);
-			// assert(ioctx->fdarray->fds);
 			assert(node);
 
 			auto fe		= new fileentry;

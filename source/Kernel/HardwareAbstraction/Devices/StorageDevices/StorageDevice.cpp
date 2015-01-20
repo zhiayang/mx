@@ -28,7 +28,34 @@ namespace Storage
 		UNUSED(outbuf);
 		UNUSED(bytes);
 	}
+
+
+	static rde::vector<StorageDevice*>* storageDevices;
+	void AddDevice(StorageDevice* dev)
+	{
+		if(!storageDevices)	 storageDevices = new rde::vector<StorageDevice*>();
+		if(storageDevices->contains(dev))
+		{
+			Log(1, "Ignoring duplicate device");
+			return;
+		}
+
+		dev->diskid = storageDevices->size();
+		storageDevices->push_back(dev);
+	}
 }
 }
 }
 }
+
+
+
+
+
+
+
+
+
+
+
+

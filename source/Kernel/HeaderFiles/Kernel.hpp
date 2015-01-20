@@ -10,17 +10,18 @@
 #endif
 
 #include <stdint.h>
-#include <Time.hpp>
-#include <HardwareAbstraction/VideoOutput/VideoDevice.hpp>
-#include <HardwareAbstraction/Multitasking.hpp>
-#include <HardwareAbstraction/IO.hpp>
-#include <HardwareAbstraction/Devices/PS2.hpp>
-#include <HardwareAbstraction/Devices/Keyboard.hpp>
-#include <HardwareAbstraction/ACPI.hpp>
-#include <HardwareAbstraction/MemoryManager.hpp>
-#include <HardwareAbstraction/CPUID.hpp>
-#include <HardwareAbstraction/Random.hpp>
-#include <HardwareAbstraction/Devices/NIC.hpp>
+#include "Time.hpp"
+#include "GlobalTypes.hpp"
+#include "HardwareAbstraction/VideoOutput/VideoDevice.hpp"
+#include "HardwareAbstraction/Multitasking.hpp"
+#include "HardwareAbstraction/IO.hpp"
+#include "HardwareAbstraction/Devices/PS2.hpp"
+#include "HardwareAbstraction/Devices/Keyboard.hpp"
+#include "HardwareAbstraction/ACPI.hpp"
+#include "HardwareAbstraction/MemoryManager.hpp"
+#include "HardwareAbstraction/CPUID.hpp"
+#include "HardwareAbstraction/Random.hpp"
+#include "HardwareAbstraction/Devices/NIC.hpp"
 #include <assert.h>
 
 
@@ -60,6 +61,28 @@
 
 
 
+// wrapper types for big endian shits
+// I don't think we will ever support big endian archs
+// I cannot handle that shit
+
+template<typename T, int bits>
+struct beInt
+{
+	beInt(T bval) : val(bval) { }
+	T le() { return (bits == 16 ? __builtin_bswap16(this->val) : (bits == 32 ? __builtin_bswap32(this->val) : __builtin_bswap64(this->val))); }
+	T be() { return this->val; }
+
+	T val;
+};
+
+template<> struct beInt<int16_t, 16>;
+template<> struct beInt<uint16_t, 16>;
+template<> struct beInt<int32_t, 32>;
+template<> struct beInt<uint32_t, 32>;
+template<> struct beInt<int64_t, 64>;
+template<> struct beInt<uint64_t, 64>;
+
+
 
 
 namespace Kernel
@@ -77,11 +100,9 @@ namespace Kernel
 
 	// global objects, in Kernel.cpp.
 	extern Time::TimeStruct* SystemTime;
-	extern HardwareAbstraction::VideoOutput::GenericVideoDevice* VideoDevice;
 	extern HardwareAbstraction::Multitasking::Process* KernelProcess;
 	extern HardwareAbstraction::Devices::PS2Controller* KernelPS2Controller;
 	extern HardwareAbstraction::Devices::Keyboard* KernelKeyboard;
-	extern HardwareAbstraction::Devices::NIC::GenericNIC* KernelNIC;
 	extern HardwareAbstraction::ACPI::RootTable* RootACPITable;
 	extern HardwareAbstraction::MemoryManager::MemoryMap::MemoryMap_type* K_MemoryMap;
 	extern HardwareAbstraction::CPUID::CPUIDData* KernelCPUID;
@@ -94,8 +115,6 @@ namespace Kernel
 	void KeyboardService();
 	void KernelCore(uint32_t MultibootMagic, uint32_t MBTAddr);
 	void KernelCoreThread();
-	// bool AssertCondition(bool condition, const char* filename, uint64_t line, const char* reason = 0);
-	// void HaltSystem(const char* message, const char* filename, uint64_t line, const char* reason = 0);
 
 	void AssertCondition(const char* file, int line, const char* func, const char* expr);
 	void HaltSystem(const char* message, const char* filename, const char* line, const char* reason = 0);
@@ -106,7 +125,6 @@ namespace Kernel
 	uint64_t GetFramebufferAddress();
 	uint64_t GetTrueLFBAddress();
 	uint64_t GetLFBLengthInPages();
-	Kernel::HardwareAbstraction::VideoOutput::GenericVideoDevice* GetVideoDevice();
 	void PrintVersion();
 
 	namespace Utilities
@@ -126,9 +144,6 @@ namespace Kernel
 
 #define LOCK(x)				Kernel::LockMutex(x);
 #define UNLOCK(x)			Kernel::UnlockMutex(x);
-
-#define Allocate_G(x)		Kernel::HardwareAbstraction::MemoryManager::KernelHeap::AllocateChunk(x)
-#define Free_G(x)			Kernel::HardwareAbstraction::MemoryManager::KernelHeap::FreeChunk(x)
 
 #define BOpt_Likely(x)		__builtin_expect((x), 1)
 #define BOpt_Unlikely(x)	__builtin_expect((x), 0)

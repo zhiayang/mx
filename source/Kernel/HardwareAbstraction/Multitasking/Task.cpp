@@ -223,7 +223,7 @@ namespace Multitasking
 
 	Thread* CloneThread(Thread* orig)
 	{
-		Thread* ret = new Thread();
+		Thread* ret			= new Thread();
 		ret->ThreadID		= NumThreads, NumThreads++;
 		ret->StackPointer	= orig->StackPointer;
 		ret->TopOfStack		= orig->TopOfStack;
@@ -365,8 +365,8 @@ namespace Multitasking
 		using namespace Filesystems::VFS;
 		OpenFile(&proc->iocontext, "/dev/stdin", 0);
 		OpenFile(&proc->iocontext, "/dev/stdout", 0);
-		OpenFile(&proc->iocontext, "/dev/stderr", 0);
-		OpenFile(&proc->iocontext, "/dev/stdlog", 0);
+		// OpenFile(&proc->iocontext, "/dev/stderr", 0);
+		// OpenFile(&proc->iocontext, "/dev/stdlog", 0);
 
 		Log("Forking process from PID %d, new PID %d, CR3 %x", proc->Parent->ProcessID, proc->ProcessID, proc->VAS.PML4);
 

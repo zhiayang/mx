@@ -29,9 +29,8 @@ namespace DMA
 	const uint8_t ATA_WriteSectors28DMA	= 0xCA;
 	const uint8_t ATA_WriteSectors48DMA	= 0x35;
 
-
-	static volatile bool _WaitingDMA14 = false;
-	static volatile bool _WaitingDMA15 = false;
+	static volatile bool _WaitingDMA14	= false;
+	static volatile bool _WaitingDMA15	= false;
 
 	static ATADrive* PreviousDevice = 0;
 
@@ -45,7 +44,7 @@ namespace DMA
 
 	struct PRDTableCache
 	{
-		uint64_t address;
+		DMAAddr address;
 		uint32_t length;
 		uint32_t used;
 	};
@@ -66,8 +65,6 @@ namespace DMA
 
 		uint32_t mmio = (uint32_t) ide->GetBAR(4);
 		assert(ide->IsBARIOPort(4));
-		Log("Initialised Busmastering DMA with BaseIO %x", mmio);
-
 
 		cachedPRDTables = new rde::vector<PRDTableCache>();
 		for(int i = 0; i < MaxCachedTables; i++)
@@ -86,6 +83,8 @@ namespace DMA
 
 		IOPort::WriteByte(0x3F6, 0);
 		IOPort::WriteByte(0x376, 0);
+
+		Log("Initialised Busmastering DMA with BaseIO %x", mmio);
 	}
 
 	void ReadBytes(ATADrive* dev, uint64_t Buffer, uint64_t Sector, uint64_t Bytes)
@@ -115,15 +114,17 @@ namespace DMA
 			cachedPRDTables->push_back(prdCache);
 		}
 
-		PRDEntry* prd = (PRDEntry*) prdCache.address;
+		PRDEntry* prd = (PRDEntry*) prdCache.address.virt;
 
+		// allocate a buffer that we know is a good deal
+		DMAAddr paddr = Physical::AllocateDMA((Bytes + 0xFFF) / 0x1000);
 
-		prd->bufferPhysAddr = (uint32_t) Buffer;
+		prd->bufferPhysAddr = (uint32_t) paddr.phys;
 		prd->byteCount = (uint16_t) Bytes;
 		prd->lastEntry = 0x8000;
 
 		// write the bytes of address into register
-		IOPort::Write32((uint16_t) (mmio + (dev->GetBus() ? 8 : 0) + 4), (uint32_t) ((uint64_t) prd));
+		IOPort::Write32((uint16_t) (mmio + (dev->GetBus() ? 8 : 0) + 4), (uint32_t) prdCache.address.phys);
 
 		PreviousDevice = dev;
 		PIO::SendCommandData(dev, Sector, (uint8_t) (Bytes / dev->GetSectorSize()));
@@ -144,6 +145,11 @@ namespace DMA
 
 		// stop
 		IOPort::WriteByte((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 0), DMA::DMACommandRead | DMA::DMACommandStop);
+
+
+		// copy over
+		Memory::Copy((void*) Buffer, (void*) paddr.virt, Bytes);
+		Physical::FreeDMA(paddr, (Bytes + 0xFFF) / 0x1000);
 	}
 
 
@@ -178,15 +184,17 @@ namespace DMA
 			cachedPRDTables->push_back(prdCache);
 		}
 
-		PRDEntry* prd = (PRDEntry*) prdCache.address;
+		PRDEntry* prd = (PRDEntry*) prdCache.address.virt;
 
+		// allocate a buffer that we know is a good deal
+		DMAAddr paddr = Physical::AllocateDMA((Bytes + 0xFFF) / 0x1000);
 
-		prd->bufferPhysAddr = (uint32_t) Buffer;
+		prd->bufferPhysAddr = (uint32_t) paddr.phys;
 		prd->byteCount = (uint16_t) Bytes;
 		prd->lastEntry = 0x8000;
 
 		// write the bytes of address into register
-		IOPort::Write32((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 4), (uint32_t)((uint64_t) prd));
+		IOPort::Write32((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 4), (uint32_t) prdCache.address.phys);
 
 		PreviousDevice = dev;
 		PIO::SendCommandData(dev, Sector, (uint8_t)(Bytes / dev->GetSectorSize()));
@@ -208,6 +216,11 @@ namespace DMA
 
 		// stop
 		IOPort::WriteByte((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 0), DMA::DMACommandWrite | DMA::DMACommandStop);
+
+
+		// copy over
+		Memory::Copy((void*) Buffer, (void*) paddr.virt, Bytes);
+		Physical::FreeDMA(paddr, (Bytes + 0xFFF) / 0x1000);
 	}
 
 

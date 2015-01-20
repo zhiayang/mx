@@ -21,7 +21,7 @@ export MOUNTPATH	:= $(shell tools/getpath.sh)
 CXX_				= clang++
 GCCVERSION			= 4.9.1
 
-WARNINGS			= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-align -Wno-unreachable-code -Wno-gnu -Wno-missing-prototypes -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-sign-conversion -Wno-old-style-cast -Wno-exit-time-destructors
+WARNINGS			= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-align -Wno-unreachable-code -Wno-gnu -Wno-missing-prototypes -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-sign-conversion -Wno-old-style-cast -Wno-exit-time-destructors -Wno-unused-macros -Wno-global-constructors
 
 CXXFLAGS			= -m64 -g -Weverything -msse3 -integrated-as -O2 -fPIC -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -c
 
@@ -52,17 +52,20 @@ LIBRARIES			= -liris -lgcc -lrdestl
 OUTPUT				= build/kernel64.elf
 
 
+
+QEMU_FLAGS			= -s -vga std -no-reboot -m $(MEMORY) -hda build/disk.img -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap
+
 .PHONY: builduserspace buildlib mountdisk clean all cleandisk copyheader
 
 run: build
-	@$(QEMU) -s -vga std -serial file:"build/serialout.log" -no-reboot -m $(MEMORY) -hda build/disk.img -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap -monitor stdio
+	@$(QEMU) -serial file:"build/serialout.log" $(QEMU_FLAGS) -monitor stdio
 
 all: $(OUTPUT)
 	@# unmount??
 	@tools/unmountdisk.sh
 
 	@echo "# Starting QEMU"
-	@$(QEMU) -s -vga std -serial file:"build/serialout.log" -no-reboot -m $(MEMORY) -hda build/disk.img -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap
+	@$(QEMU) -serial stdio $(QEMU_FLAGS) | tee build/serialout.log
 	-@rm -f build/.dmf
 
 	@# mount the disk again for inspection.

@@ -14,8 +14,6 @@ uint64_t KernelEnd = 0x00400000;
 // set in start.s
 static uint64_t CurrentCR3 = 0x3000;
 
-#define TemporaryVirtualMapping 0x000000FF00000000
-
 extern "C" uint64_t LoaderBootstrap(uint32_t MultibootMagic, uint32_t MBTAddr)
 {
 	// clear the bss
@@ -80,6 +78,8 @@ void LoadKernelModule(Multiboot::Info_type* mbt, uint64_t* start, uint64_t* leng
 
 uint64_t LoadKernelELF(uint64_t start, uint64_t length)
 {
+	(void) length;
+
 	ELF64FileHeader_type* FileHeader = (ELF64FileHeader_type*) start;
 	assert(FileHeader->ElfIdentification[EI_MAGIC0] == ELF_MAGIC0);
 	assert(FileHeader->ElfIdentification[EI_MAGIC1] == ELF_MAGIC1);

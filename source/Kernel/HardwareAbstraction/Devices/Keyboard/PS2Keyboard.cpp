@@ -22,14 +22,9 @@ namespace Devices
 	PS2Keyboard::PS2Keyboard()
 	{
 		IOPort::ReadByte(PS2::DataPort);
-		// this->Buffer = new CircularBuffer<uint8_t>(BufferSize);
-		// this->ByteBuffer = new CircularBuffer<uint8_t>(BufferSize * 2);
 
 		this->Buffer = new CircularMemoryBuffer(BufferSize);
 		this->ByteBuffer = new CircularMemoryBuffer(BufferSize * 2);
-
-		Log("Initialising IPC based driver...");
-		// IPC::SendSimpleMessage(0, IPC::MessageTypes::RequestServiceInitialise, 0, 2, 0, 0);
 	}
 
 	void PS2Keyboard::HandleKeypress()

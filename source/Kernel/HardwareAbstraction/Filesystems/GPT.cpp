@@ -18,17 +18,9 @@ namespace GPT
 {
 	void ReadPartitions(StorageDevice* atadev)
 	{
-		// normally MBR::ReadPartitions will call this... so we can assume the list is uninitialised.
-		atadev->Partitions = new rde::list<Partition*>();
-		// warning: will trash whatever the ATADevice's data buffer contains.
-
 		// read the gpt
-		uint64_t b = MemoryManager::Physical::AllocateDMA(1);
+		uint64_t b = MemoryManager::Virtual::AllocatePage(1);
 		IO::Read(atadev, 1, b, 512);
-		// atadev->Read(1, b, 512);
-
-
-		// uint8_t* gpt = (uint8_t*) atadev->Data;
 		uint8_t* gpt = (uint8_t*) b;
 
 		// 0x5452415020494645
@@ -42,9 +34,8 @@ namespace GPT
 
 
 		// if the header is fine, read LBA 2 to parse the partition table.
-		// PIO::ReadSector(atadev, 2);
-		// atadev->Read(2, b + 512, 512);
 		IO::Read(atadev, 2, b + 512, 512);
+		Log("GPT-formatted drive detected, parsing...");
 
 		uint8_t* table = (uint8_t*) (b + 512);
 
@@ -52,11 +43,13 @@ namespace GPT
 		{
 			if(*((uint64_t*)(table + (p * 128) + 8)) != 0 && *((uint64_t*)(table + (p * 128) + 0)) != 0)
 			{
-				atadev->Partitions->push_back(new Partition(atadev, (uint8_t) p, *((uint64_t*)(table + (p * 128) + 32)), *((uint64_t*)(table + (p * 128) + 40)) - *((uint64_t*)(table + (p * 128) + 32)) + 1, FSTypes::hfsplus, *((uint64_t*)(table + (p * 128) + 24)), *((uint64_t*)(table + (p * 128) + 16)), *((uint64_t*)(table + (p * 128) + 0)), *((uint64_t*)(table + (p * 128) + 8)), (char*) "", false));
+				atadev->Partitions.push_back(new Partition(atadev, (uint8_t) p, *((uint64_t*)(table + (p * 128) + 32)), *((uint64_t*)(table + (p * 128) + 40)) - *((uint64_t*)(table + (p * 128) + 32)) + 1, FSTypes::hfsplus, *((uint64_t*)(table + (p * 128) + 24)), *((uint64_t*)(table + (p * 128) + 16)), *((uint64_t*)(table + (p * 128) + 0)), *((uint64_t*)(table + (p * 128) + 8)), (char*) "", false));
 			}
 		}
 
-		MemoryManager::Physical::FreeDMA(b, 1);
+		Devices::Storage::AddDevice(atadev);
+		Log("/dev/disk%d has %d partition%s", atadev->diskid, atadev->Partitions.size(), atadev->Partitions.size() != 1 ? "s" : "");
+		MemoryManager::Virtual::FreePage(b, 1);
 	}
 }
 }

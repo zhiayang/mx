@@ -3,13 +3,19 @@
 // Licensed under the Apache License Version 2.0.
 
 #include <icxxabi.h>
+#include <Kernel.hpp>
 
 static atexit_func_entry_t __atexit_funcs[ATEXIT_MAX_FUNCS];
 static uarch_t __atexit_func_count = 0;
 
 extern void* __dso_handle;
 
-int __cxa_atexit(void (*f)(void*), void* objptr, void *dso)
+extern "C" void __cxa_pure_virtual()
+{
+	HALT("Failed to resolve pure virtual function at runtime!");
+}
+
+extern "C" int __cxa_atexit(void (*f)(void*), void* objptr, void *dso)
 {
 	if(__atexit_func_count >= ATEXIT_MAX_FUNCS)
 		return -1;
@@ -23,7 +29,7 @@ int __cxa_atexit(void (*f)(void*), void* objptr, void *dso)
 	return 0;
 };
 
-void __cxa_finalize(void* func)
+extern "C" void __cxa_finalize(void* func)
 {
 	uarch_t i = __atexit_func_count;
 	if(!func)

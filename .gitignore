@@ -12,3 +12,5 @@ a2l
 
 tools
 !tools/*.sh
+test*.*
+*.out

@@ -23,6 +23,10 @@ namespace Devices
 		FramebufferVideoCard,
 
 
+		// Network card
+		EthernetNIC,
+
+
 		// Misc
 		AdvancedPIC,
 	};

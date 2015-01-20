@@ -60,7 +60,7 @@ namespace IsIndentedProperly
 		// Member variable names CAN be either lowercase or CamelCase.
 		// They can NEVER be halfAssedCamelCase, or stupid_underscore_naming.
 		// variable names CAN be completelylowercase, although this SHOULD be avoided in new code.
-		// The above clause is no longer strictly enforced as either.
+		// The above clause is no longer strictly enforced either.
 
 		// Unused parameters MUST be silenced, either using
 		UNUSED(Argument1);

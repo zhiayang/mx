@@ -15,6 +15,8 @@
 #include <rdestl/vector.h>
 #include <sys/stat.h>
 
+#include <HardwareAbstraction/Filesystems.hpp>
+
 using namespace Library;
 using namespace Kernel::HardwareAbstraction::Devices::Storage;
 using namespace Kernel::HardwareAbstraction::Filesystems::VFS;
@@ -74,9 +76,9 @@ namespace Filesystems
 
 	struct vnode_data
 	{
-		rde::string* name;
+		rde::string name;
 		uint32_t entrycluster;
-		rde::vector<uint32_t>* clusters;
+		rde::vector<uint32_t> clusters;
 		uint32_t filesize;
 
 		DirectoryEntry dirent;
@@ -106,7 +108,7 @@ namespace Filesystems
 	{
 		uint8_t year	= (dosdate & 0xFE00) >> 9;
 		uint8_t month	= (dosdate & 0x1E0) >> 5;
-		uint8_t day	= dosdate & 0x1F;
+		uint8_t day		= dosdate & 0x1F;
 
 		uint8_t hour	= (dostime & 0xF800) >> 11;
 		uint8_t minute	= (dostime & 0x7E0) >> 5;
@@ -125,9 +127,9 @@ namespace Filesystems
 		// return mktime(&ts);
 	}
 
-	static rde::vector<rde::string*>* split(rde::string& s, char delim)
+	static rde::vector<rde::string*> split(rde::string& s, char delim)
 	{
-		auto ret = new rde::vector<rde::string*>();
+		rde::vector<rde::string*> ret;
 		rde::string* item = new rde::string();
 
 		for(auto c : s)
@@ -136,7 +138,7 @@ namespace Filesystems
 			{
 				if(!item->empty())
 				{
-					ret->push_back(item);
+					ret.push_back(item);
 					item = new rde::string();
 				}
 			}
@@ -145,7 +147,7 @@ namespace Filesystems
 		}
 
 		if(item->length() > 0)
-			ret->push_back(item);
+			ret.push_back(item);
 
 		return ret;
 	}
@@ -176,33 +178,28 @@ namespace Filesystems
 		// read the fields from LBA 0
 		auto atadev = this->partition->GetStorageDevice();
 
-		uint64_t buf = MemoryManager::Physical::AllocateDMA(1);
+		uint64_t buf = MemoryManager::Virtual::AllocatePage(1);
 		IO::Read(atadev, this->partition->GetStartLBA(), buf, 512);
 
 		uint8_t* fat = (uint8_t*) buf;
 
 		this->BytesPerSector		= *((uint16_t*)((uintptr_t) fat + 11));
-
 		this->SectorsPerCluster		= *((uint8_t*)((uintptr_t) fat + 13));
 		this->ReservedSectors		= *((uint16_t*)((uintptr_t) fat + 14));
-		this->NumberOfFATs		= *((uint8_t*)((uintptr_t) fat + 16));
+		this->NumberOfFATs			= *((uint8_t*)((uintptr_t) fat + 16));
 		this->NumberOfDirectories	= *((uint16_t*)((uintptr_t) fat + 17));
 
-
 		if((uint16_t)(*((uint16_t*)(fat + 17))) > 0)
-			this->TotalSectors	= *((uint16_t*)((uintptr_t) fat + 17));
+			this->TotalSectors		= *((uint16_t*)((uintptr_t) fat + 17));
 
 		else
-			this->TotalSectors	= *((uint32_t*)((uintptr_t) fat + 32));
+			this->TotalSectors		= *((uint32_t*)((uintptr_t) fat + 32));
 
-
-		this->HiddenSectors		= *((uint32_t*)((uintptr_t) fat + 28));
-
-		this->FATSectorSize		= *((uint32_t*)((uintptr_t) fat + 36));
+		this->HiddenSectors			= *((uint32_t*)((uintptr_t) fat + 28));
+		this->FATSectorSize			= *((uint32_t*)((uintptr_t) fat + 36));
 		this->RootDirectoryCluster	= *((uint32_t*)((uintptr_t) fat + 44));
-		this->FSInfoCluster		= *((uint16_t*)((uintptr_t) fat + 48));
-
-		this->backupBootCluster	= *((uint16_t*)((uintptr_t) fat + 50));
+		this->FSInfoCluster			= *((uint16_t*)((uintptr_t) fat + 48));
+		this->backupBootCluster		= *((uint16_t*)((uintptr_t) fat + 50));
 		this->FirstUsableCluster	= this->partition->GetStartLBA() + this->ReservedSectors + (this->NumberOfFATs * this->FATSectorSize);
 
 
@@ -220,9 +217,17 @@ namespace Filesystems
 		name[10] = (char) fat[81];
 
 		name = String::TrimWhitespace(name);
-		MemoryManager::Physical::FreeDMA(buf, 1);
+		MemoryManager::Virtual::FreePage(buf, 1);
 
 		this->_seekable = true;
+
+
+
+		// todo: handle not 512-byte sectors
+		assert(this->BytesPerSector == 512);
+		assert(((Devices::Storage::ATADrive*) atadev)->GetSectorSize() == 512);
+
+		Log("FAT32 Driver on disk%ds%d has been initialised, FS appears to conform to specifications.", atadev->diskid, this->partition->GetPartitionNumber());
 	}
 
 	FSDriverFat32::~FSDriverFat32()
@@ -240,30 +245,27 @@ namespace Filesystems
 		assert(node->info);
 
 
-		auto vd = new vnode_data;
+		vnode_data* vd = new vnode_data;
 		node->info->data = (void*) vd;
 
 		rde::string pth = rde::string(path);
 
 		// setup cn
 		tovnd(node)->entrycluster = 0;
-		tovnd(node)->clusters = 0;
-		tovnd(node)->name = 0;
 
 		assert(node->info);
 
-		auto dirs = split(pth, PATH_DELIMTER);
-		assert(dirs);
-		assert(dirs->size() > 0);
+		rde::vector<rde::string*> dirs = split(pth, PATH_DELIMTER);
+		assert(dirs.size() > 0);
 
-		size_t levels = dirs->size();
+		size_t levels = dirs.size();
 		size_t curlvl = 1;
 
 		// remove the last.
-		auto file = dirs->back();
+		auto file = dirs.back();
 		vnode* cn = node;
 
-		for(auto v : *dirs)
+		for(auto v : dirs)
 		{
 			bool found = false;
 
@@ -272,17 +274,24 @@ namespace Filesystems
 			assert(cn->info);
 			assert(cn->info->data);
 
-			auto cdcontent = this->ReadDir(cn);
-			assert(cdcontent);
+			rde::vector<VFS::vnode*> cdcontent = this->ReadDir(cn);
 
 			// check each.
-			for(auto d : *cdcontent)
+			for(auto d : cdcontent)
 			{
 				auto vnd = tovnd(d->info->data);
 				assert(vnd);
-				assert(vnd->name);
 
-				if(curlvl == levels && d->type == VNodeType::File && String::Compare(vnd->name->c_str(), file->c_str()) == 0)
+				rde::string vndlower = vnd->name;
+				vndlower.make_lower();
+
+				rde::string filelower = *file;
+				filelower.make_lower();
+
+				rde::string vlower = *v;
+				vlower.make_lower();
+
+				if(curlvl == levels && d->type == VNodeType::File && String::Compare(vndlower.c_str(), filelower.c_str()) == 0)
 				{
 					node->info->data = d->info->data;
 					node->info->driver = d->info->driver;
@@ -291,7 +300,7 @@ namespace Filesystems
 
 					return true;
 				}
-				else if(String::Compare(vnd->name->c_str(), v->c_str()) == 0)
+				else if(String::Compare(vndlower.c_str(), vlower.c_str()) == 0)
 				{
 					found = true;
 					cn = d;
@@ -300,11 +309,9 @@ namespace Filesystems
 			}
 			if(!found)
 			{
-				delete cdcontent;
 				return false;
 			}
 
-			delete cdcontent;
 			curlvl++;
 		}
 
@@ -324,8 +331,8 @@ namespace Filesystems
 
 		vnode_data* vnd = tovnd(node);
 		uint64_t numclus = 0;
-		if(!vnd->clusters)
-			vnd->clusters = this->GetClusterChain(node, &numclus);
+		if(vnd->clusters.size() == 0)
+		vnd->clusters = this->GetClusterChain(node, &numclus);
 
 		// assert(vnd->clusters->size() == numclus);
 
@@ -346,18 +353,22 @@ namespace Filesystems
 		if(offset > 0)
 			cluslen++;
 
-		uint64_t dma = MemoryManager::Physical::AllocateDMA((cluslen * this->SectorsPerCluster * 512 + 0xFFF) / 0x1000);
-		uint64_t obuf = dma;
+		uint64_t bufferPageSize = (cluslen * this->SectorsPerCluster * 512 + 0xFFF) / 0x1000;
+
+
+		uint64_t rbuf = MemoryManager::Virtual::AllocatePage(bufferPageSize);
+		uint64_t obuf = rbuf;
 
 		for(auto i = skippedclus; i < skippedclus + cluslen; i++)
 		{
 			// Log(3, "call");
-			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA((*vnd->clusters)[i]), dma, this->SectorsPerCluster * 512);
-			dma += this->SectorsPerCluster * 512;
+			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA(vnd->clusters[i]), rbuf, this->SectorsPerCluster * 512);
+			rbuf += this->SectorsPerCluster * 512;
 		}
 
-		dma = obuf;
-		Memory::Copy(buf, (void*) (dma + clusoffset), length);
+		rbuf = obuf;
+		Memory::Copy(buf, (void*) (rbuf + clusoffset), length);
+		MemoryManager::Virtual::FreePage(rbuf, bufferPageSize);
 		return length;
 	}
 
@@ -397,7 +408,7 @@ namespace Filesystems
 		stat->st_ctime		= datetounix(dirent->createdate, dirent->createtime);
 	}
 
-	rde::vector<VFS::vnode*>* FSDriverFat32::ReadDir(VFS::vnode* node)
+	rde::vector<VFS::vnode*> FSDriverFat32::ReadDir(VFS::vnode* node)
 	{
 		assert(node);
 		assert(node->info);
@@ -412,33 +423,34 @@ namespace Filesystems
 		// grab its clusters.
 		auto clusters = tovnd(node)->clusters;
 		uint64_t numclus = 0;
-		if(!clusters)
+
+		if(clusters.size() == 0)
 			clusters = this->GetClusterChain(node, &numclus);
 
 
-		assert(clusters);
-		assert(numclus == clusters->size());
+		assert(numclus == clusters.size());
 
 		// try and read each cluster into a contiguous buffer.
+		uint64_t bufferPageSize = ((numclus * this->SectorsPerCluster * 512) + 0xFFF) / 0x1000;
+
 		uint64_t dirsize = numclus * this->SectorsPerCluster * 512;
-		uint64_t buf = MemoryManager::Physical::AllocateDMA(((numclus * this->SectorsPerCluster * 512) + 0xFFF) / 0x1000);
+		uint64_t buf = MemoryManager::Virtual::AllocatePage(bufferPageSize);
 		auto obuf = buf;
 
-		assert(clusters);
-		for(auto v : *clusters)
+		for(auto v : clusters)
 		{
 			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA(v), buf, this->SectorsPerCluster * 512);
 			buf += this->SectorsPerCluster * 512;
 		}
 		buf = obuf;
 
-		auto ret = new rde::vector<VFS::vnode*>();
+		rde::vector<VFS::vnode*> ret;
 		auto count = 0;
 
 		for(uint64_t addr = buf; addr < buf + dirsize; )
 		{
 			count++;
-			auto name = new rde::string();
+			rde::string name;
 			uint8_t lfncheck = 0;
 
 			// check if we're on an LFN
@@ -456,8 +468,7 @@ namespace Filesystems
 			else if(dirent->attrib == ATTR_LFN && dirent->clusterlow == 0)
 			{
 				int nument = 0;
-				delete name;
-				name = this->ReadLFN(addr, nument);
+				name = this->ReadLFN(addr, &nument);
 				lfncheck = ((LFNEntry*) dirent)->checksum;
 
 				addr += (nument * sizeof(LFNEntry));
@@ -467,7 +478,7 @@ namespace Filesystems
 
 			if(dirent->name[0] != 0)
 			{
-				if(name->empty() || lfncheck != LFNChecksum((char*) &dirent->name[0]))
+				if(name.empty() || lfncheck != LFNChecksum((char*) &dirent->name[0]))
 				{
 					bool lowext = false;
 					bool lownm = false;
@@ -477,13 +488,13 @@ namespace Filesystems
 					if(cas & 0x10)	lowext = true;
 
 					for(int i = 0; i < 8 && dirent->name[i] != ' '; i++)
-						name->append(lownm ? (char) tolower(dirent->name[i]) : dirent->name[i]);
+						name.append(lownm ? (char) tolower(dirent->name[i]) : dirent->name[i]);
 
 					if(!(dirent->attrib & ATTR_FOLDER) && dirent->ext[0] != ' ')
-						name->append('.');
+						name.append('.');
 
 					for(int i = 0; i < 3 && dirent->ext[i] != ' '; i++)
-						name->append(lowext ? (char) tolower(dirent->ext[i]) : dirent->ext[i]);
+						name.append(lowext ? (char) tolower(dirent->ext[i]) : dirent->ext[i]);
 
 				}
 
@@ -505,18 +516,18 @@ namespace Filesystems
 				fsd->name = name;
 				fsd->entrycluster = ((uint32_t) (dirent->clusterhigh << 16)) | dirent->clusterlow;
 				fsd->filesize = dirent->filesize;
-				fsd->clusters = nullptr;
 
 				Memory::Copy(&fsd->dirent, dirent, sizeof(DirectoryEntry));
 
 				vn->info->data = (void*) fsd;
 
-				ret->push_back(vn);
+				ret.push_back(vn);
 			}
 
 			addr += sizeof(LFNEntry);
 		}
 
+		MemoryManager::Virtual::FreePage(buf, bufferPageSize);
 		return ret;
 	}
 
@@ -547,7 +558,7 @@ namespace Filesystems
 
 
 
-	rde::vector<uint32_t>* FSDriverFat32::GetClusterChain(VFS::vnode* node, uint64_t* numclus)
+	rde::vector<uint32_t> FSDriverFat32::GetClusterChain(VFS::vnode* node, uint64_t* numclus)
 	{
 		// read the cluster chain
 
@@ -558,10 +569,10 @@ namespace Filesystems
 
 		uint32_t Cluster = tovnd(node)->entrycluster;
 		uint32_t cchain = 0;
-		auto ret = new rde::vector<uint32_t>();
+		rde::vector<uint32_t> ret;
 
 		uint64_t lastsec = 0;
-		auto buf = MemoryManager::Physical::AllocateDMA(2);
+		auto buf = MemoryManager::Virtual::AllocatePage(2);
 		auto obuf = buf;
 		do
 		{
@@ -587,10 +598,10 @@ namespace Filesystems
 			lastsec = FatSector;
 
 			uint8_t* clusterchain = (uint8_t*) buf;
-			cchain = *((uint32_t*)&clusterchain[FatOffset]) & 0x0FFFFFFF;
+			cchain = *((uint32_t*) &clusterchain[FatOffset]) & 0x0FFFFFFF;
 
 			// cchain is the next cluster in the list.
-			ret->push_back(Cluster);
+			ret.push_back(Cluster);
 
 			Cluster = cchain;
 			(*numclus)++;
@@ -598,18 +609,18 @@ namespace Filesystems
 		} while((cchain != 0) && !((cchain & 0x0FFFFFFF) >= 0x0FFFFFF8));
 
 		buf = obuf;
-		MemoryManager::Physical::FreeDMA(buf, 2);
+		MemoryManager::Virtual::FreePage(buf, 2);
 		tovnd(node)->clusters = ret;
 
 		return ret;
 	}
 
-	rde::string* FSDriverFat32::ReadLFN(uint64_t addr, int& ret_nument)
+	rde::string FSDriverFat32::ReadLFN(uint64_t addr, int* ret_nument)
 	{
 		LFNEntry* ent = (LFNEntry*) addr;
 		uint8_t seqnum = ent->seqnum;
 
-		rde::string* ret = new rde::string;
+		rde::string ret;
 		rde::vector<char>* items = new rde::vector<char>();
 		// first seqnum & ~0x40 is the number of entries
 		uint8_t nument = seqnum & ~0x40;
@@ -641,9 +652,9 @@ namespace Filesystems
 			if((*items)[c - 1] == 0)
 				break;
 
-			ret->append((*items)[c - 1]);
+			ret.append((*items)[c - 1]);
 		}
-		ret_nument = nument;
+		*ret_nument = nument;
 		return ret;
 	}
 }

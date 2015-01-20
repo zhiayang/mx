@@ -19,7 +19,7 @@ namespace MBR
 		// warning: will trash whatever the ATADevice's data buffer contains.
 
 		// read the mbr
-		uint64_t b = MemoryManager::Physical::AllocateDMA(1);
+		uint64_t b = MemoryManager::Virtual::AllocatePage(1);
 		IO::Read(atadev, 0, b, 512);
 
 		// verify the MBR signature: 0x55, 0xAA
@@ -48,8 +48,8 @@ namespace MBR
 			}
 		}
 
-		// if we got here, there should be no GPT partitions -- init the list.
-		atadev->Partitions = new rde::list<Partition*>();
+		Log("MBR-partitioned drive detected, parsing...");
+
 		// read the partition table
 		for(uint16_t o = 0x1BE; o < 0x1BE + 0x40; o += 0x10)
 		{
@@ -68,11 +68,13 @@ namespace MBR
 						break;
 				}
 
-				atadev->Partitions->push_back(new Partition(atadev, (uint8_t) (o - 0x1BE) / 0x10, *((uint32_t*) (mbr + o + 8)), *((uint32_t*) (mbr + o + 12)), fstype, 0, 0, 0, 0, (char*) "", *(mbr + o) & 0x80));
+				atadev->Partitions.push_back(new Partition(atadev, (uint8_t) (o - 0x1BE) / 0x10, *((uint32_t*) (mbr + o + 8)), *((uint32_t*) (mbr + o + 12)), fstype, 0, 0, 0, 0, (char*) "", *(mbr + o) & 0x80));
 			}
 		}
 
-		MemoryManager::Physical::FreeDMA(b, 1);
+		Devices::Storage::AddDevice(atadev);
+		Log("/dev/disk%d has %d partition%s", atadev->diskid, atadev->Partitions.size(), atadev->Partitions.size() != 1 ? "s" : "");
+		MemoryManager::Virtual::FreePage(b, 1);
 	}
 }
 }
