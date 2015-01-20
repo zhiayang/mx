@@ -16,7 +16,6 @@ namespace Network {
 namespace ARP
 {
 	static rde::hash_map<IPv4Address, EUI48Address>* ARPTable = 0;
-	static bool received = false;
 	EUI48Address GatewayMAC;
 
 
@@ -60,7 +59,6 @@ namespace ARP
 			packet->TargetMacAddress.mac[i] = 0xFF;
 
 		packet->TargetIPv4.raw = ip.raw;
-		Log("sent arp");
 		Ethernet::SendPacket(interface, packet, sizeof(ARPPacket), Ethernet::EtherType::ARP, packet->TargetMacAddress);
 	}
 
@@ -72,10 +70,7 @@ namespace ARP
 		ARPPacket* arp = (ARPPacket*) packet;
 		(*ARPTable)[arp->SenderIPv4] = arp->SenderMacAddress;
 
-		Log("Received ARP reply");
 		Log("Added translation from IPv4 %d.%d.%d.%d to EUI48 (MAC) %#02x:%#02x:%#02x:%#02x:%#02x:%#02x", arp->SenderIPv4.bytes[0], arp->SenderIPv4.bytes[1], arp->SenderIPv4.bytes[2], arp->SenderIPv4.bytes[3], arp->SenderMacAddress.mac[0], arp->SenderMacAddress.mac[1], arp->SenderMacAddress.mac[2], arp->SenderMacAddress.mac[3], arp->SenderMacAddress.mac[4], arp->SenderMacAddress.mac[5]);
-
-		received = true;
 	}
 
 
@@ -99,25 +94,18 @@ namespace ARP
 
 		if((*ARPTable)[addr].isZero())
 		{
-			// Log("IP Address %d.%d.%d.%d not in cache, sending ARP request...", addr.bytes[0], addr.bytes[1], addr.bytes[2], addr.bytes[3]);
 			ARP::SendPacket(interface, addr);
 
 			// 500 ms
 			volatile uint64_t timeout = Time::Now() + 500;
 			while(timeout > Time::Now())
 			{
-				// PrintFormatted("%d - %d\n", timeout, Time::Now());
-				if(received)
-				{
-					EUI48Address ret = (*ARPTable)[addr];
-					Log("Received ARP reply, IP address %d.%d.%d.%d is at MAC %#02x:%#02x:%#02x:%#02x:%#02x:%#02x", addr.bytes[0], addr.bytes[1], addr.bytes[2], addr.bytes[3], ret.mac[0], ret.mac[1], ret.mac[2], ret.mac[3], ret.mac[4], ret.mac[5]);
-
-					received = false;
+				EUI48Address ret;
+				if(!(ret = (*ARPTable)[addr]).isZero())
 					return ret;
-				}
 			}
 
-			// Log("ARP reply not received within timeout");
+			Log("ARP reply not received within timeout");
 			return EUI48Address();
 		}
 		else
