@@ -309,7 +309,6 @@ namespace Multitasking
 			OpenFile(&process->iocontext, "/dev/stdin", 0);
 			OpenFile(&process->iocontext, "/dev/stdout", 0);
 			OpenFile(&process->iocontext, "/dev/stderr", 0);
-			OpenFile(&process->iocontext, "/dev/stdlog", 0);
 		}
 
 		Log("Creating new process in VAS (%s): CR3(phys): %x, PID %d", name, (uint64_t) PML4, process->ProcessID);
@@ -366,7 +365,6 @@ namespace Multitasking
 		OpenFile(&proc->iocontext, "/dev/stdin", 0);
 		OpenFile(&proc->iocontext, "/dev/stdout", 0);
 		OpenFile(&proc->iocontext, "/dev/stderr", 0);
-		OpenFile(&proc->iocontext, "/dev/stdlog", 0);
 
 		Log("Forking process from PID %d, new PID %d, CR3 %x", proc->Parent->ProcessID, proc->ProcessID, proc->VAS.PML4);
 
