@@ -61,6 +61,8 @@ namespace Kernel
 	Devices::Keyboard* KernelKeyboard;
 	Random* KernelRandom;
 
+	bool __debug_flag__ = false;
+
 	static uint64_t VER_MAJOR;
 	static uint64_t VER_MINOR;
 	static uint64_t VER_REVSN;

@@ -109,6 +109,7 @@ namespace Kernel
 	extern HardwareAbstraction::Random* KernelRandom;
 
 
+	extern bool __debug_flag__;
 
 
 	void Idle();

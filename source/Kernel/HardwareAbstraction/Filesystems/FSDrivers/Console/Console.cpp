@@ -47,7 +47,7 @@ namespace Filesystems
 
 	bool FSDriverConsole::Traverse(VFS::vnode*, const char*, char**)
 	{
-		return false;
+		return true;
 	}
 
 	size_t FSDriverConsole::Read(VFS::vnode*, void*, off_t, size_t)
