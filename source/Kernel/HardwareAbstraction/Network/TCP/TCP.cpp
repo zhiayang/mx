@@ -23,6 +23,7 @@ namespace TCP
 
 	uint16_t AllocateEphemeralPort()
 	{
+		assert(freeports);
 		uint16_t ret = freeports->back();
 		freeports->pop_back();
 
@@ -56,7 +57,7 @@ namespace TCP
 	{
 		tcpsocketmapv4 = new rde::hash_map<SocketFullMappingv4, Socket*>();
 		freeports = new rde::vector<uint16_t>();
-		for(uint16_t i = 49152; i < SHRT_MAX; i++)
+		for(uint16_t i = 49152; i < UINT16_MAX; i++)
 			freeports->push_back(i);
 	}
 

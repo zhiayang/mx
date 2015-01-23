@@ -288,7 +288,7 @@ namespace Kernel
 		Log("Compatible video card located");
 
 		PrintFormatted("Initialising RTC...\n");
-		// Devices::RTC::Initialise(0);
+		Devices::RTC::Initialise(0);
 		Log("RTC Initialised");
 
 
@@ -377,10 +377,9 @@ namespace Kernel
 			TCP::Initialise();
 			UDP::Initialise();
 			DHCP::Initialise(nic);
+
+			DNS::Initialise();
 		}
-
-
-
 
 		KernelKeyboard = new PS2Keyboard();
 		TTY::Initialise();
@@ -402,6 +401,10 @@ namespace Kernel
 
 			Multitasking::AddToQueue(proc);
 		}
+
+		IPv4Address google = Network::DNS::QueryDNSv4(rde::string("www.google.com.sg"));
+		PrintFormatted("Google is at %d.%d.%d.%d\n", google.b1, google.b2, google.b3, google.b4);
+
 
 		PrintFormatted("[mx] has completed initialisation.\n");
 		Log("Kernel init complete\n--------------------------------------------------------\n");

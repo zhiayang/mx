@@ -183,19 +183,18 @@ namespace Network
 		// make sure port not already in use
 		if(localport == 0)
 		{
-			// todo: handle UDP ephemeral port
-			this->clientport = TCP::AllocateEphemeralPort();
-		}
-		else if(this->protocol == SocketProtocol::TCP ? !TCP::IsDuplicatePort(localport) : !UDP::IsDuplicatePort(localport))
-		{
-			this->clientport = localport;
+			if(this->protocol == SocketProtocol::TCP)
+				this->clientport = TCP::AllocateEphemeralPort();
+
+			else if(this->protocol == SocketProtocol::UDP)
+				this->clientport = UDP::AllocateEphemeralPort();
+
+			else
+				Log("Unsupported protocol, WTF are you doing?!");
 		}
 		else
 		{
-			Log(1, "Port already in use, cannot bind()!");
-
-			// todo: set errno
-			return;
+			this->clientport = localport;
 		}
 
 		// if source is zero, use local

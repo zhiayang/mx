@@ -13,14 +13,26 @@ namespace HardwareAbstraction {
 namespace Network {
 namespace UDP
 {
+	struct UDPPacket
+	{
+		uint16_t sourceport;
+		uint16_t destport;
+		uint16_t length;
+		uint16_t checksum;
+
+	} __attribute__ ((packed));
+
 
 	static rde::hash_map<SocketFullMappingv4, Socket*>* udpsocketmapv4 = 0;
 	static rde::vector<uint16_t>* freeports = 0;
 
 	uint16_t AllocateEphemeralPort()
 	{
+		assert(freeports);
 		uint16_t ret = freeports->back();
 		freeports->pop_back();
+
+		Log("allocated udp port %d, %b", ret, freeports->contains(ret));
 
 		return ret;
 	}
@@ -38,7 +50,6 @@ namespace UDP
 
 	void MapSocket(SocketFullMappingv4 addr, Socket* s)
 	{
-		// assert(udpsocketmapv4->find(addr) == udpsocketmapv4->end());
 		(*udpsocketmapv4)[addr] = s;
 	}
 
@@ -52,7 +63,7 @@ namespace UDP
 	{
 		udpsocketmapv4 = new rde::hash_map<SocketFullMappingv4, Socket*>();
 		freeports = new rde::vector<uint16_t>();
-		for(uint16_t i = 49152; i < SHRT_MAX; i++)
+		for(uint16_t i = 49152; i < UINT16_MAX; i++)
 			freeports->push_back(i);
 	}
 

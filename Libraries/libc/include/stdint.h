@@ -1,201 +1,176 @@
-/*
+/*******************************************************************************
 
-	Copyright 2009 Pierre KRIEGER
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2013, 2014.
 
-	Licensed under the Apache License, Version 2.0 (the "License");
-	you may not use this file except in compliance with the License.
-	You may obtain a copy of the License at
+    This file is part of the Sortix C Library.
 
-		 http://www.apache.org/licenses/LICENSE-2.0
+    The Sortix C Library is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or (at your
+    option) any later version.
 
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
+    The Sortix C Library is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+    or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+    License for more details.
 
-*/
+    You should have received a copy of the GNU Lesser General Public License
+    along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef _STDC_STDINT_H_
-#define _STDC_STDINT_H_
+    stdint.h
+    Integer types.
 
-#include "machine/_sizes.h"
+*******************************************************************************/
+
+#ifndef INCLUDE_STDINT_H
+#define INCLUDE_STDINT_H
+
+#include <sys/cdefs.h>
+#include <defs/_stdint.h>
+
+// todo: do something about this?
+#define __STDC_CONSTANT_MACROS
+#define __STDC_LIMIT_MACROS
 
 
-#if	__CHAR_BIT__ == 8
-typedef char				int8_t;
-typedef unsigned char			uint8_t;
+__BEGIN_DECLS
+
+/* Only define these constant macros in C++ if requested. */
+#if defined(__STDC_CONSTANT_MACROS) || !defined(__cplusplus)
+
+#define INT8_C(c) __INT8_C(c)
+#define INT16_C(c) __INT16_C(c)
+#define INT32_C(c) __INT32_C(c)
+#define INT64_C(c) __INT64_C(c)
+
+#define UINT8_C(c) __UINT8_C(c)
+#define UINT16_C(c) __UINT16_C(c)
+#define UINT32_C(c) __UINT32_C(c)
+#define UINT64_C(c) __UINT64_C(c)
+
+#define INTMAX_C(c) __INTMAX_C(c)
+#define UINTMAX_C(c) __UINTMAX_C(c)
+
 #endif
 
-#if	__CHAR_BIT__ >= 8
-typedef char				int_least8_t;
-typedef unsigned char			uint_least8_t;
-#else
-#error Could not determine int_least8_t and uint_least8_t
+/* Only define these limit macros in C++ if requested. */
+#if defined(__STDC_LIMIT_MACROS) || !defined(__cplusplus)
+
+#define INT8_MIN __INT8_MIN
+#define INT16_MIN __INT16_MIN
+#define INT32_MIN __INT32_MIN
+#define INT64_MIN __INT64_MIN
+
+#define INT8_MAX __INT8_MAX
+#define INT16_MAX __INT16_MAX
+#define INT32_MAX __INT32_MAX
+#define INT64_MAX __INT64_MAX
+
+#define UINT8_MAX __UINT8_MAX
+#define UINT16_MAX __UINT16_MAX
+#define UINT32_MAX __UINT32_MAX
+#define UINT64_MAX __UINT64_MAX
+
+#define INT_LEAST8_MIN __INT_LEAST8_MIN
+#define INT_LEAST16_MIN __INT_LEAST16_MIN
+#define INT_LEAST32_MIN __INT_LEAST32_MIN
+#define INT_LEAST64_MIN __INT_LEAST64_MIN
+
+#define INT_LEAST8_MAX __INT_LEAST8_MAX
+#define INT_LEAST16_MAX __INT_LEAST16_MAX
+#define INT_LEAST32_MAX __INT_LEAST32_MAX
+#define INT_LEAST64_MAX __INT_LEAST64_MAX
+
+#define UINT_LEAST8_MAX __UINT_LEAST8_MAX
+#define UINT_LEAST16_MAX __UINT_LEAST16_MAX
+#define UINT_LEAST32_MAX __UINT_LEAST32_MAX
+#define UINT_LEAST64_MAX __UINT_LEAST64_MAX
+
+#define INT_FAST8_MIN __INT_FAST8_MIN
+#define INT_FAST16_MIN __INT_FAST16_MIN
+#define INT_FAST32_MIN __INT_FAST32_MIN
+#define INT_FAST64_MIN __INT_FAST64_MIN
+
+#define INT_FAST8_MAX __INT_FAST8_MAX
+#define INT_FAST16_MAX __INT_FAST16_MAX
+#define INT_FAST32_MAX __INT_FAST32_MAX
+#define INT_FAST64_MAX __INT_FAST64_MAX
+
+#define UINT_FAST8_MAX __UINT_FAST8_MAX
+#define UINT_FAST16_MAX __UINT_FAST16_MAX
+#define UINT_FAST32_MAX __UINT_FAST32_MAX
+#define UINT_FAST64_MAX __UINT_FAST64_MAX
+
+#define INTPTR_MIN __INTPTR_MIN
+#define INTPTR_MAX __INTPTR_MAX
+#define UINTPTR_MAX __UINTPTR_MAX
+
+#define INTMAX_MIN __INTMAX_MIN
+#define INTMAX_MAX __INTMAX_MAX
+#define UINTMAX_MAX __UINTMAX_MAX
+
+#define PTRDIFF_MIN __PTRDIFF_MIN
+#define PTRDIFF_MAX __PTRDIFF_MAX
+
+#define SIG_ATOMIC_MIN __SIG_ATOMIC_MIN
+#define SIG_ATOMIC_MAX __SIG_ATOMIC_MAX
+
+#define SIZE_MAX __SIZE_MAX
+
+#ifndef WCHAR_MIN
+#define WCHAR_MIN __WCHAR_MIN
 #endif
 
-
-#if	__CHAR_BIT__ == 16
-typedef char				int16_t;
-typedef unsigned char			uint16_t;
-typedef int16_t				int_least16_t;
-typedef uint16_t			uint_least16_t;
-
-#elif	__CHAR_BIT__ * __SIZEOF_SHORT__ == 16
-typedef short				int16_t;
-typedef unsigned short		uint16_t;
-typedef int16_t				int_least16_t;
-typedef uint16_t			uint_least16_t;
-
-#elif	__CHAR_BIT__ * __SIZEOF_INT__ == 16
-typedef int					int16_t;
-typedef unsigned int			uint16_t;
-typedef int16_t				int_least16_t;
-typedef uint16_t			uint_least16_t;
-
-#elif	__CHAR_BIT__ * __SIZEOF_LONG__ == 16
-typedef long				int16_t;
-typedef unsigned long		uint16_t;
-typedef int16_t				int_least16_t;
-typedef uint16_t			uint_least16_t;
-
-#elif	__CHAR_BIT__ * __SIZEOF_LONG_LONG__ == 16
-typedef long long			int16_t;
-typedef unsigned long long		uint16_t;
-typedef int16_t				int_least16_t;
-typedef uint16_t			uint_least16_t;
-
-#elif	__CHAR_BIT__ * __SIZEOF_LONG_LONG__ >= 16
-typedef long long			int_least16_t;
-typedef unsigned long long		uint_least16_t;
-
-#else
-#error Could not determine int_least16_t and uint_least16_t
+#ifndef WCHAR_MAX
+#define WCHAR_MAX __WCHAR_MAX
 #endif
 
-
-#if	__CHAR_BIT__ == 32
-typedef char				int32_t;
-typedef unsigned char			uint32_t;
-typedef int32_t				int_least32_t;
-typedef uint32_t			uint_least32_t;
-
-#elif	__CHAR_BIT__ * __SIZEOF_SHORT__ == 32
-typedef short				int32_t;
-typedef unsigned short			uint32_t;
-typedef int32_t				int_least32_t;
-typedef uint32_t			uint_least32_t;
-
-#elif	__CHAR_BIT__ * __SIZEOF_INT__ == 32
-typedef int					int32_t;
-typedef unsigned int			uint32_t;
-typedef int32_t				int_least32_t;
-typedef uint32_t			uint_least32_t;
-
-#elif	__CHAR_BIT__ * __SIZEOF_LONG__ == 32
-typedef long				int32_t;
-typedef unsigned long			uint32_t;
-typedef int32_t				int_least32_t;
-typedef uint32_t			uint_least32_t;
-
-#elif	__CHAR_BIT__ * __SIZEOF_LONG_LONG__ == 32
-typedef long long			int32_t;
-typedef unsigned long long		uint32_t;
-typedef int32_t				int_least32_t;
-typedef uint32_t			uint_least32_t;
-
-#elif	__CHAR_BIT__ * __SIZEOF_LONG_LONG__ >= 32
-typedef long long			int_least32_t;
-typedef unsigned long long		uint_least32_t;
-
-#else
-#error Could not determine int_least32_t and uint_least32_t
+#ifndef WINT_MIN
+#define WINT_MIN __WINT_MIN
 #endif
 
-
-#if	__CHAR_BIT__ == 64
-typedef char				int64_t;
-typedef unsigned char			uint64_t;
-typedef int64_t				int_least64_t;
-typedef uint64_t			uint_least64_t;
-
-#elif	__CHAR_BIT__ * __SIZEOF_SHORT__ == 64
-typedef short				int64_t;
-typedef unsigned short			uint64_t;
-typedef int64_t				int_least64_t;
-typedef uint64_t			uint_least64_t;
-
-#elif	__CHAR_BIT__ * __SIZEOF_INT__ == 64
-typedef int						int64_t;
-typedef unsigned int			uint64_t;
-typedef int64_t				int_least64_t;
-typedef uint64_t			uint_least64_t;
-
-#elif	__CHAR_BIT__ * __SIZEOF_LONG__ == 64
-typedef long				int64_t;
-typedef unsigned long			uint64_t;
-typedef int64_t				int_least64_t;
-typedef uint64_t			uint_least64_t;
-
-#elif	__CHAR_BIT__ * __SIZEOF_LONG_LONG__ == 64
-typedef long long			int64_t;
-typedef unsigned long long		uint64_t;
-typedef int64_t				int_least64_t;
-typedef uint64_t			uint_least64_t;
-
-#elif	__CHAR_BIT__ * __SIZEOF_LONG_LONG__ >= 64
-typedef long long			int_least64_t;
-typedef unsigned long long		uint_least64_t;
-
-#else
-#error Could not determine int_least64_t and uint_least64_t
+#ifndef WINT_MAX
+#define WINT_MAX __WINT_MAX
 #endif
 
-
-typedef int_least8_t			int_fast8_t;
-typedef uint_least8_t			uint_fast8_t;
-typedef int_least16_t			int_fast16_t;
-typedef uint_least16_t			uint_fast16_t;
-typedef int_least32_t			int_fast32_t;
-typedef uint_least32_t			uint_fast32_t;
-typedef int_least64_t			int_fast64_t;
-typedef uint_least64_t			uint_fast64_t;
-
-
-typedef long int intmax_t;
-typedef unsigned long int uintmax_t;
-
-#if	__SIZEOF_POINTER__ <= 1
-typedef char				intptr_t;
-typedef unsigned char			uintptr_t;
-
-#elif	__SIZEOF_POINTER__ <= __SIZEOF_SHORT__
-typedef short				intptr_t;
-typedef unsigned short			uintptr_t;
-
-#elif	__SIZEOF_POINTER__ <= __SIZEOF_INT__
-typedef int				intptr_t;
-typedef unsigned int			uintptr_t;
-
-#elif	__SIZEOF_POINTER__ <= __SIZEOF_LONG__
-typedef long				intptr_t;
-typedef unsigned long			uintptr_t;
-
-#elif	__SIZEOF_POINTER__ <= __SIZEOF_LONG_LONG__
-typedef long long			intptr_t;
-typedef unsigned long long		uintptr_t;
 #endif
 
+typedef __int8_t int8_t;
+typedef __int16_t int16_t;
+typedef __int32_t int32_t;
+typedef __int64_t int64_t;
 
-/* typedef some dumb things */
-typedef uint8_t		__uint8_t;
-typedef int8_t		__int8_t;
-typedef uint16_t	__uint16_t;
-typedef int16_t		__int16_t;
-typedef uint32_t	__uint32_t;
-typedef int32_t		__int32_t;
-typedef uint64_t	__uint64_t;
-typedef int64_t		__int64_t;
+typedef __uint8_t uint8_t;
+typedef __uint16_t uint16_t;
+typedef __uint32_t uint32_t;
+typedef __uint64_t uint64_t;
 
+typedef __int_least8_t int_least8_t;
+typedef __int_least16_t int_least16_t;
+typedef __int_least32_t int_least32_t;
+typedef __int_least64_t int_least64_t;
+
+typedef __uint_least8_t uint_least8_t;
+typedef __uint_least16_t uint_least16_t;
+typedef __uint_least32_t uint_least32_t;
+typedef __uint_least64_t uint_least64_t;
+
+typedef __int_fast8_t int_fast8_t;
+typedef __int_fast16_t int_fast16_t;
+typedef __int_fast32_t int_fast32_t;
+typedef __int_fast64_t int_fast64_t;
+
+typedef __uint_fast8_t uint_fast8_t;
+typedef __uint_fast16_t uint_fast16_t;
+typedef __uint_fast32_t uint_fast32_t;
+typedef __uint_fast64_t uint_fast64_t;
+
+typedef __intptr_t intptr_t;
+typedef __uintptr_t uintptr_t;
+
+typedef __intmax_t intmax_t;
+typedef __uintmax_t uintmax_t;
+
+__END_DECLS
 
 #endif

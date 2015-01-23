@@ -208,7 +208,7 @@ namespace IP
 
 		if(mac.isZero())
 		{
-			mac = ARP::GatewayMAC;
+			mac = ARP::GetGatewayMAC();
 		}
 
 		// length + IP packet size
