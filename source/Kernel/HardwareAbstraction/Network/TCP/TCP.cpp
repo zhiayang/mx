@@ -43,14 +43,13 @@ namespace TCP
 
 	void MapSocket(SocketFullMappingv4 addr, Socket* s)
 	{
-		assert(tcpsocketmapv4->find(addr) == tcpsocketmapv4->end());
+		// assert(tcpsocketmapv4->find(addr) == tcpsocketmapv4->end());
 		(*tcpsocketmapv4)[addr] = s;
 	}
 
 	void UnmapSocket(SocketFullMappingv4 addr)
 	{
-		if(tcpsocketmapv4->find(addr) != tcpsocketmapv4->end())
-			tcpsocketmapv4->erase(addr);
+		tcpsocketmapv4->erase(addr);
 	}
 
 	void Initialise()

@@ -275,8 +275,7 @@ namespace Multitasking
 		process->Flags					= Flags;
 		process->ProcessID				= NumProcesses;
 		process->VAS					= Virtual::VirtualAddressSpace(PML4);
-		process->SignalHandlers			= (sighandler_t*) KernelHeap::AllocateChunk(sizeof(sighandler_t) * __SIGCOUNT);
-		// process->iocontext				= Filesystems::IOContext();
+		process->SignalHandlers			= new sighandler_t[__SIGCOUNT];
 		process->tlssize				= tlssize;
 		for(int i = 0; i < __SIGCOUNT; i++)
 			process->SignalHandlers[i] = __signal_ignore;
@@ -337,7 +336,7 @@ namespace Multitasking
 		proc->Flags					= proc->Parent->Flags;
 		proc->ProcessID				= NumProcesses;
 		proc->VAS					= Virtual::VirtualAddressSpace(PML4);
-		proc->SignalHandlers		= (sighandler_t*) KernelHeap::AllocateChunk(sizeof(sighandler_t) * __SIGCOUNT);
+		proc->SignalHandlers		= new sighandler_t[__SIGCOUNT];
 		proc->tlssize				= proc->Parent->tlssize;
 
 		for(int i = 0; i < __SIGCOUNT; i++)

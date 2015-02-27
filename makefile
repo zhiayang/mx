@@ -5,25 +5,28 @@
 X_BUILD_FILE	= .build.h
 
 export QEMU			:= /usr/local/bin/qemu-system-x86_64
-export SYSROOT		:= $(CURDIR)/build/sysroot
-export TOOLCHAIN	:= $(CURDIR)/build/toolchain
-export CXX			:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-g++
-export AS			:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-as
-export LD			:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-ld
-export OBJCOPY		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-objcopy
-export READELF		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-readelf
-export STRIP		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-strip
-export AR			:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-ar
-export RANLIB		:= $(CURDIR)/build/toolchain/bin/x86_64-orionx-ranlib
+export SYSROOT		:= $(shell pwd)/build/sysroot
+export TOOLCHAIN	:= $(shell pwd)/build/toolchain
+export CXX			:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-g++
+export AS			:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-as
+export LD			:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-ld
+export OBJCOPY		:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-objcopy
+export READELF		:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-readelf
+export STRIP		:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-strip
+export AR			:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-ar
+export RANLIB		:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-ranlib
 export MOUNTPATH	:= $(shell tools/getpath.sh)
 
 # we use clang only for the kernel, don't pollute makefiles
 CXX_				= clang++
+FLXC				= $(SYSROOT)/usr/local/bin/flaxc
 GCCVERSION			= 4.9.1
 
 WARNINGS			= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-align -Wno-unreachable-code -Wno-gnu -Wno-missing-prototypes -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-sign-conversion -Wno-old-style-cast -Wno-exit-time-destructors -Wno-unused-macros -Wno-global-constructors
 
-CXXFLAGS			= -m64 -g -Weverything -msse3 -integrated-as -O2 -fPIC -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -c
+CXXFLAGS			= -m64 -g -Weverything -msse3 -integrated-as -O2 -fno-omit-frame-pointer -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -mcmodel=kernel -c
+
+# FLXFLAGS			= -O3 -mcmodel kernel -target x86_64-elf -c -sysroot $(SYSROOT)
 
 LDFLAGS				= --gc-sections -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib
 
@@ -33,9 +36,11 @@ MEMORY				= 1024
 
 SSRC				= $(shell find source -iname "*.s")
 CXXSRC				= $(shell find source -iname "*.cpp")
+# FLAXMAIN			= source/Kernel/Test.flx
 
 SOBJ				= $(SSRC:.s=.s.o)
 CXXOBJ				= $(CXXSRC:.cpp=.cpp.o)
+# FLAXMAINOBJ			= $(FLAXMAIN:.flx=.flx.o)
 
 CXXDEPS				= $(CXXOBJ:.o=.d)
 
@@ -74,7 +79,7 @@ all: $(OUTPUT)
 build: $(OUTPUT)
 	# built
 
-$(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) builduserspace
+$(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) $(FLAXMAINOBJ) builduserspace
 	@echo "\n# Linking [mx] object files"
 	@$(LD) $(LDFLAGS) -T kernel.ld -o build/kernel64.elf $(shell find source/Kernel -name "*.o") $(LIBRARIES)
 
@@ -107,6 +112,20 @@ $(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) buildus
 
 	@$(eval DONEFILES += "CPP")
 	@printf "\r                                               \r$(words $(DONEFILES)) / $(NUMFILES) ($(notdir $<))"
+
+# %.flx:
+# 	@
+
+# %.flx.o: %.flx
+# 	@if [ ! -a build.dmf ]; then tools/updatebuild.sh; fi;
+# 	@touch build/.dmf
+
+# 	@$(FLXC) $(FLXFLAGS) -o $@ $<
+
+# 	@$(eval DONEFILES += "FLX")
+# 	@printf "\r                                               \r$(words $(DONEFILES)) / $(NUMFILES) ($(notdir $<))"
+
+
 
 builduserspace:
 	@printf "\n# Building userspace applications"

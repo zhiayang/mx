@@ -67,14 +67,12 @@ namespace IP
 
 	void MapIPv4Socket(SocketIPv4Mapping addr, Socket* s)
 	{
-		assert(ipv4socketmap->find(addr) == ipv4socketmap->end());
 		(*ipv4socketmap)[addr] = s;
 	}
 
 	void UnmapIPv4Socket(SocketIPv4Mapping addr)
 	{
-		if(ipv4socketmap->find(addr) != ipv4socketmap->end())
-			ipv4socketmap->erase(addr);
+		ipv4socketmap->erase(addr);
 	}
 
 

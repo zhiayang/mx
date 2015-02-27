@@ -429,7 +429,7 @@ namespace Network
 			// unix-isms that we'll just have to implement for an easier time in userspace
 			void Connect(Filesystems::VFS::vnode* node, Library::IPv4Address remote, uint16_t remoteport);		// remote address
 			void Bind(Filesystems::VFS::vnode* node, Library::IPv4Address local, uint16_t localport);			// local address
-
+			void Close(Filesystems::VFS::vnode* node);
 
 
 			Library::CircularMemoryBuffer recvbuffer;

@@ -21,7 +21,7 @@ namespace Kernel
 					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
 					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
-					void Flush(VFS::vnode* node);
+					void Flush(VFS::vnode* node) override;
 
 					rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 			};
@@ -37,7 +37,7 @@ namespace Kernel
 					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
 					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
-					void Flush(VFS::vnode* node);
+					void Flush(VFS::vnode* node) override;
 
 					rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 			};
@@ -53,7 +53,7 @@ namespace Kernel
 					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
 					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
-					void Flush(VFS::vnode* node);
+					void Flush(VFS::vnode* node) override;
 
 					rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 			};
@@ -69,7 +69,7 @@ namespace Kernel
 					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
 					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
-					void Flush(VFS::vnode* node);
+					void Flush(VFS::vnode* node) override;
 
 					rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 			};
@@ -91,7 +91,7 @@ namespace Kernel
 					size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
 					size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
 					void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
-					void Flush(VFS::vnode* node);
+					void Flush(VFS::vnode* node) override;
 
 					rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 

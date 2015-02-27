@@ -36,6 +36,8 @@ extern "C" void KernelInit(uint32_t MultibootMagic, uint32_t MBTAddr)
 	KernelCore(MultibootMagic, MBTAddr);
 }
 
+
+
 namespace Kernel
 {
 	// If you're against global variables, fuck away.
@@ -174,7 +176,7 @@ namespace Kernel
 		{
 			uint64_t a = (uint64_t) K_MemoryMap;
 			uint32_t s = K_MemoryMap->SizeOfThisStructure;
-			K_MemoryMap = (MemoryMap::MemoryMap_type*) new uint8_t[K_MemoryMap->SizeOfThisStructure + sizeof(uint64_t)];
+			K_MemoryMap = (MemoryMap::MemoryMap_type*) (new uint8_t[K_MemoryMap->SizeOfThisStructure + sizeof(uint64_t)]);
 			Memory::CopyOverlap((void*) K_MemoryMap, (void*) a, s);
 			Log("Memory map relocation complete");
 		}
@@ -292,17 +294,6 @@ namespace Kernel
 		Log("RTC Initialised");
 
 
-
-		/*
-
-			pastel
-			darkside
-			solarflare
-
-
-		*/
-
-
 		// setup framebuffer
 		{
 			uint16_t PrefResX = 1024;
@@ -385,6 +376,7 @@ namespace Kernel
 		TTY::Initialise();
 		Console::ClearScreen();
 
+
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
 		{
 			// setup args:
@@ -402,17 +394,28 @@ namespace Kernel
 			Multitasking::AddToQueue(proc);
 		}
 
-		IPv4Address google = Network::DNS::QueryDNSv4(rde::string("www.google.com.sg"));
-		PrintFormatted("Google is at %d.%d.%d.%d\n", google.b1, google.b2, google.b3, google.b4);
-
-
 		PrintFormatted("[mx] has completed initialisation.\n");
 		Log("Kernel init complete\n--------------------------------------------------------\n");
+
+		Multitasking::AddToQueue(Multitasking::CreateKernelThread(Kernel::Time::PrintTime));
+
+
+		// {
+		// 	using namespace Network;
+		// 	IPv4Address example = DNS::QueryDNSv4(rde::string("www.example.com"));
+		// 	PrintFormatted("example.com is at %d.%d.%d.%d\n", example.b1, example.b2, example.b3, example.b4);
+		// }
+
+
+
+
+
+
 
 
 		// PrintFormatted("mutex tests\n");
 		// {
-		// 	test = new Mutex;
+		// 	static Mutex* test = new Mutex;
 		// 	auto func1 = []()
 		// 	{
 		// 		PrintFormatted("locking mutex\n");
@@ -430,8 +433,8 @@ namespace Kernel
 		// 		SLEEP(1000);
 		// 		PrintFormatted("trying mutex\n");
 
-		// 		while(!TryLockMutex(test))
-		// 			PrintFormatted("x");
+		// 		// while(!TryLockMutex(test))
+		// 		// 	PrintFormatted("x");
 
 		// 		PrintFormatted("locked!\n");
 		// 		UNLOCK(test);
@@ -442,9 +445,18 @@ namespace Kernel
 		// }
 
 
+		// KernelHeap::Print();
+
 		// kernel stops here
 		// for now.
-		BLOCK();
+		while(true)
+		{
+			SLEEP(1000);
+			PrintFormatted(".");
+			// BLOCK();
+			// Log(1, "Who dares awaken the kernel?!");
+			// Log(1, "Back to sleep!");
+		}
 	}
 
 	void Idle()
@@ -558,29 +570,18 @@ namespace rapidxml
 	}
 }
 
-void operator delete(void* p) _GLIBCXX_USE_NOEXCEPT
-{
-	KernelHeap::FreeChunk(p);
-}
 
-void operator delete[](void* p) _GLIBCXX_USE_NOEXCEPT
-{
-	KernelHeap::FreeChunk(p);
-}
 
-void* operator new(unsigned long size)
-{
-	return (void*) KernelHeap::AllocateChunk(size);
-}
 
-void* operator new[](unsigned long size)
-{
-	return (void*) KernelHeap::AllocateChunk(size);
-}
+
+
+
+
+
 
 extern "C" void* malloc(size_t s)
 {
-	return KernelHeap::AllocateChunk(s);
+	return KernelHeap::AllocateFromHeap(s);
 }
 extern "C" void free(void* ptr)
 {
@@ -588,11 +589,13 @@ extern "C" void free(void* ptr)
 }
 extern "C" void* realloc(void* ptr, size_t size)
 {
-	void* np = KernelHeap::AllocateChunk(size);
-	size_t os = KernelHeap::QuerySize(ptr);
-
-	Memory::Copy(np, ptr, os);
-	KernelHeap::FreeChunk(ptr);
-
-	return np;
+	return KernelHeap::ReallocateChunk(ptr, size);
 }
+
+
+
+
+
+
+
+

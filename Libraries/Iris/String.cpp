@@ -62,6 +62,9 @@ namespace String
 
 		return str;
 	}
+
+
+
 }
 
 extern "C" uint64_t strlen(const char* str)
@@ -79,7 +82,11 @@ extern "C" int strcmp(const char* str1, const char* str2)
 	return String::Compare(str1, str2);
 }
 
-
+extern "C" char* strcat(char* dest, const char* src)
+{
+	strcpy(dest + strlen(dest), src);
+	return dest;
+}
 
 
 

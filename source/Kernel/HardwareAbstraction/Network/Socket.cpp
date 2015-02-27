@@ -69,54 +69,10 @@ namespace Network
 		return fe->fd;
 	}
 
-	void CloseSocket(fd_t)
+	void CloseSocket(fd_t fd)
 	{
-		// Multitasking::Process* proc = Multitasking::GetCurrentProcess();
-		// Socket* socket = VerfiySocket(ds);
-
-		// switch(socket->protocol)
-		// {
-		// 	case Library::SocketProtocol::RawIPv4:
-		// 	{
-		// 		IP::ipv4socketmap->Remove(SocketIPv4Mapping { socket->ip4source, socket->ip4dest });
-		// 		break;
-		// 	}
-
-		// 	case Library::SocketProtocol::RawIPv6:
-		// 		break;
-
-		// 	case Library::SocketProtocol::TCP:
-		// 	{
-		// 		if(socket->ip4source.raw != 0)
-		// 			TCP::tcpsocketmapv4->Remove(SocketFullMappingv4 { IPv4PortAddress { socket->ip4source, (uint16_t) socket->clientport },
-		// 				IPv4PortAddress { socket->ip4dest, (uint16_t)  socket->serverport } });
-		// 		else
-		// 			TCP::tcpsocketmapv6->Remove(SocketFullMappingv6 { IPv6PortAddress { socket->ip6source, (uint16_t) socket->clientport },
-		// 				IPv6PortAddress { socket->ip6dest, (uint16_t)  socket->serverport } });
-
-		// 		// delete the socket's tcpconnection
-		// 		delete socket->tcpconnection;
-
-		// 		break;
-		// 	}
-
-		// 	case Library::SocketProtocol::UDP:
-		// 	{
-		// 		if(socket->ip4source.raw != 0)
-		// 			UDP::udpsocketmapv4->Remove(SocketFullMappingv4 { IPv4PortAddress { socket->ip4source, (uint16_t) socket->clientport },
-		// 				IPv4PortAddress { socket->ip4dest, (uint16_t)  socket->serverport } });
-
-		// 		else
-		// 			UDP::udpsocketmapv6->Remove(SocketFullMappingv6 { IPv6PortAddress { socket->ip6source, (uint16_t) socket->clientport },
-		// 				IPv6PortAddress { socket->ip6dest, (uint16_t)  socket->serverport } });
-
-		// 		break;
-		// 	}
-		// }
-
-		// // delete the object.
-		// proc->CurrentFDIndex = ds;
-		// delete (Socket*) proc->FileDescriptors[ds].Pointer;
+		vnode* node = getvnode(fd);
+		((Socket*) node->info->driver)->Close(node);
 	}
 
 
@@ -215,6 +171,9 @@ namespace Network
 		this->ip4dest = remote;
 		this->serverport = remoteport;
 
+		// if(this->ip4source.raw == 0 || this->clientport == 0)
+		// 	this->Bind(node, 0, 0);
+
 		// ipv4
 		switch(this->protocol)
 		{
@@ -238,9 +197,40 @@ namespace Network
 				break;
 		}
 
+		if(this->protocol == SocketProtocol::TCP)
+		{
+			this->tcpconnection = new TCP::TCPConnection(this, this->ip4dest, (uint16_t) this->clientport, (uint16_t) this->serverport);
+			this->tcpconnection->Connect();
+		}
+	}
+
+	void Socket::Close(Filesystems::VFS::vnode* node)
+	{
+		(void) node;
+
+		switch(this->protocol)
+		{
+			case Library::SocketProtocol::RawIPv4:
+				// no ports for this
+				IP::UnmapIPv4Socket(SocketIPv4Mapping { this->ip4source, this->ip4dest });
+				break;
+
+			case Library::SocketProtocol::TCP:
+				TCP::UnmapSocket(SocketFullMappingv4 { IPv4PortAddress { this->ip4source, (uint16_t) this->clientport },
+					IPv4PortAddress { this->ip4dest, (uint16_t) this->serverport } });
+				break;
+
+			case Library::SocketProtocol::UDP:
+				UDP::UnmapSocket(SocketFullMappingv4 { IPv4PortAddress { this->ip4source, (uint16_t) this->clientport },
+					IPv4PortAddress { this->ip4dest, (uint16_t) this->serverport } });
+				break;
+
+			default:
+				HALT("???");
+		}
 
 		if(this->protocol == SocketProtocol::TCP)
-			this->tcpconnection = new TCP::TCPConnection(this, this->ip4dest, (uint16_t) this->clientport, (uint16_t) this->serverport);
+			delete this->tcpconnection;
 	}
 
 	size_t Socket::Read(Filesystems::VFS::vnode* node, void* buf, off_t offset, size_t length)

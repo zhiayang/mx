@@ -55,8 +55,7 @@ namespace UDP
 
 	void UnmapSocket(SocketFullMappingv4 addr)
 	{
-		if(udpsocketmapv4->find(addr) != udpsocketmapv4->end())
-			udpsocketmapv4->erase(addr);
+		udpsocketmapv4->erase(addr);
 	}
 
 	void Initialise()

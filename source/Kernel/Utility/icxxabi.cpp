@@ -4,9 +4,11 @@
 
 #include <icxxabi.h>
 #include <Kernel.hpp>
+#include <Synchro.hpp>
 
 static atexit_func_entry_t __atexit_funcs[ATEXIT_MAX_FUNCS];
 static uarch_t __atexit_func_count = 0;
+typedef uint64_t __guard;
 
 extern void* __dso_handle;
 
@@ -14,6 +16,32 @@ extern "C" void __cxa_pure_virtual()
 {
 	HALT("Failed to resolve pure virtual function at runtime!");
 }
+
+extern "C" int __cxa_guard_acquire(__guard* g)
+{
+	using namespace Kernel;
+	Mutex* m = (Mutex*) g;
+	if(!m->lock)
+	{
+		LockMutex(m);
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+extern "C" void __cxa_guard_release(__guard* g)
+{
+	UnlockMutex((Kernel::Mutex*) g);
+}
+
+extern "C" void __cxa_guard_abort(__guard *)
+{
+	HALT("???");
+}
+
 
 extern "C" int __cxa_atexit(void (*f)(void*), void* objptr, void *dso)
 {

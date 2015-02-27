@@ -117,8 +117,20 @@ namespace LinearFramebuffer
 				{
 					*columnAddress = Colour;
 				}
+				else
+				{
+					*columnAddress = 0;
+				}
 				columnAddress++;
 			}
+
+			// fill the last column(s??!) with nothingness
+			*(columnAddress + 0) = 0;
+			*(columnAddress + 1) = 0;
+			*(columnAddress + 2) = 0;
+			*(columnAddress + 3) = 0;
+			*(columnAddress + 4) = 0;
+
 			rowAddress += GetResX();
 		}
 	}

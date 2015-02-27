@@ -5,6 +5,7 @@
 #include <Kernel.hpp>
 #include <Console.hpp>
 #include <HardwareAbstraction/Devices/RTC.hpp>
+#include <HardwareAbstraction/Devices/IOPort.hpp>
 #include <StandardIO.hpp>
 
 using namespace Library::StandardIO;
@@ -55,7 +56,7 @@ namespace Time
 	uint64_t SecondsSinceEpoch	= 0;			// Epoch as defined as 1st January, 2000
 
 	bool TimerOn = false;
-	bool PrintSeconds = false;
+	bool PrintSeconds = true;
 
 	void GetTime()
 	{
@@ -226,7 +227,7 @@ namespace Time
 
 	uint64_t Now()
 	{
-		return HardwareAbstraction::Devices::RTC::DidInitialise() ? Kernel::SystemTime->MillisecondsSinceEpoch : 0;
+		return HardwareAbstraction::Devices::RTC::DidInitialise() ? Kernel::SystemTime->MillisecondsSinceEpoch : 100;
 	}
 
 	void GetHumanReadableTime(rde::string& output)
@@ -256,10 +257,10 @@ namespace Time
 						{
 							Kernel::SystemTime->Year	++;
 							Kernel::SystemTime->Month	= 1;
-							Kernel::SystemTime->Day	= 1;
+							Kernel::SystemTime->Day		= 1;
 							Kernel::SystemTime->Hour	= 0;
 							Kernel::SystemTime->Hour12F	= 0;
-							Kernel::SystemTime->AM	= true;
+							Kernel::SystemTime->AM		= true;
 							Kernel::SystemTime->Minute	= 0;
 							Kernel::SystemTime->Second	= 0;
 							Kernel::SystemTime->YearDay	= 1;
@@ -267,10 +268,10 @@ namespace Time
 						else
 						{
 							Kernel::SystemTime->Month	++;
-							Kernel::SystemTime->Day	= 1;
+							Kernel::SystemTime->Day		= 1;
 							Kernel::SystemTime->Hour	= 0;
 							Kernel::SystemTime->Hour12F	= 0;
-							Kernel::SystemTime->AM	= true;
+							Kernel::SystemTime->AM		= true;
 							Kernel::SystemTime->Minute	= 0;
 							Kernel::SystemTime->Second	= 0;
 							Kernel::SystemTime->YearDay	++;
@@ -278,10 +279,10 @@ namespace Time
 					}
 					else
 					{
-						Kernel::SystemTime->Day	++;
+						Kernel::SystemTime->Day		++;
 						Kernel::SystemTime->Hour	= 0;
 						Kernel::SystemTime->Hour12F	= 0;
-						Kernel::SystemTime->AM	= true;
+						Kernel::SystemTime->AM		= true;
 						Kernel::SystemTime->Minute	= 0;
 						Kernel::SystemTime->Second	= 0;
 						Kernel::SystemTime->YearDay	++;
@@ -291,7 +292,7 @@ namespace Time
 				{
 					Kernel::SystemTime->Hour	++;
 					Kernel::SystemTime->Hour12F	= (Kernel::SystemTime->Hour > 12 ? Kernel::SystemTime->Hour - 12 : Kernel::SystemTime->Hour);
-					Kernel::SystemTime->AM	= IsAM();
+					Kernel::SystemTime->AM		= IsAM();
 					Kernel::SystemTime->Minute	= 0;
 					Kernel::SystemTime->Second 	= 0;
 				}
@@ -351,10 +352,12 @@ namespace Time
 
 	extern "C" void RTCTimerHandler()
 	{
-		// TimerOn = true;
-		// UpdateTime();
-		// HardwareAbstraction::Devices::IOPort::WriteByte(0x70, 0x0C);
-		// HardwareAbstraction::Devices::IOPort::ReadByte(0x71);
+		TimerOn = true;
+		UpdateTime();
+
+		using namespace Kernel::HardwareAbstraction::Devices;
+		IOPort::WriteByte(0x70, 0x0C);
+		IOPort::ReadByte(0x71);
 	}
 
 	void PrintTime()
@@ -364,10 +367,10 @@ namespace Time
 		rde::string spaces;
 
 		if(PrintSeconds)
-			spaces.append("              ");
+			spaces = "                 ";
 
 		else
-			spaces.append("           ");
+			spaces = "                 ";
 
 		while(true)
 		{
@@ -391,7 +394,7 @@ namespace Time
 
 
 			Console::MoveCursor(x, y);
-			SLEEP(200);
+			SLEEP(300);
 		}
 	}
 }

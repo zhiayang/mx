@@ -102,7 +102,7 @@ namespace DNS
 
 	static void SendDNSPacket(Devices::NIC::GenericNIC* interface, rde::string query, uint16_t id)
 	{
-		DNSMessageHeader* header = (DNSMessageHeader*) new uint8_t[sizeof(DNSMessageHeader) + query.length() + 8];
+		DNSMessageHeader* header = (DNSMessageHeader*) (new uint8_t[sizeof(DNSMessageHeader) + query.length() + 8]);
 		Memory::Set(header, 0, sizeof(DNSMessageHeader));
 		header->id = SwapEndian16(id);
 
