@@ -165,11 +165,9 @@ SendSignalToThread:
 	jmp CleanUp
 
 SendMessage:
-	call IPC_SendMessage
 	jmp CleanUp
 
 ReceiveMessage:
-	call IPC_ReceiveMessage
 	jmp CleanUp
 
 Sleep:

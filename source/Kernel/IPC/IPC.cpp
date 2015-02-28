@@ -151,10 +151,10 @@ namespace IPC
 
 			uint64_t* rbp = (uint64_t*) stackptr;
 
-			while(*rbp != 0xFFFFFFFFFFFFFFFF)
+			while(*rbp != 0xFFFFFFFFDEADBEEF)
 				rbp++;
 
-			assert(*rbp == 0xFFFFFFFFFFFFFFFF);
+			assert(*rbp == 0xFFFFFFFFDEADBEEF);
 
 			/*
 				from syscall.s:
@@ -226,56 +226,9 @@ namespace IPC
 		IPC_SignalThread(proc->Threads.front()->ThreadID, signum);
 	}
 
-	extern "C" int IPC_SendMessage(long key, void* msg, size_t size, uint64_t flags)
-	{
-		(void) key;
-		(void) msg;
-		(void) size;
-		(void) flags;
-
-		// if(messagequeue == nullptr)
-		// 	messagequeue = new rde::hash_map<key_t, rde::list<uintptr_t>*>();
-
-		// // copy the message into the kernel heap.
-		// uint8_t* kernmsg = new uint8_t[size];
-		// Memory::Copy(kernmsg, msg, size);
-
-		// // todo: something about flags
-		// rde::list<uintptr_t>* queue = (*messagequeue)[key];
-		// if(queue == nullptr)
-		// 	return -1;	// errno = EIDRM
-
-		// if(queue->size() >= MaxMessages && flags & IPC_NOWAIT)
-		// 	return -1;	// todo: set errno to EAGAIN
-
-		// // todo: block properly.
-		// while(queue->size() >= MaxMessages);
-
-		// // add to the queue.
-		// queue->push_back((uintptr_t) kernmsg);
-
-		// // done.
-		return 0;
-	}
-
-	extern "C" ssize_t IPC_ReceiveMessage(long key, void* msg, size_t size, uint64_t type, uint64_t flags)
-	{
-		(void) key;
-		(void) msg;
-		(void) size;
-		(void) type;
-		(void) flags;
 
 
-		// if(messagequeue == nullptr)
-		// 	messagequeue = new rde::hash_map<key_t, rde::list<uintptr_t>*>();
 
-		return 0;
-	}
-
-	extern "C" void IPC_CreateQueue()
-	{
-	}
 
 
 

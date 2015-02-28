@@ -7,6 +7,8 @@
 #include <StandardIO.hpp>
 #include <HardwareAbstraction/Network.hpp>
 
+#include <defs/_errnos.h>
+
 using namespace Library;
 using namespace Kernel::HardwareAbstraction::Filesystems::VFS;
 
@@ -29,22 +31,31 @@ namespace Network
 		auto ctx = getctx();
 		fileentry* fe = VFS::FileEntryFromFD(ctx, fd);
 		if(fe == nullptr)
+		{
+			Log(1, "File descriptor ID '%ld' does not exist!", fd);
+			Multitasking::SetThreadErrno(EBADF);
 			return 0;
+		}
 
 		assert(fe->node);
 
 		if(fe->node->info->driver->GetType() != FSDriverType::Socket)
 		{
 			Log(1, "Cannot perform socket operations on a non-socket FD!");
+			Multitasking::SetThreadErrno(ENOTSOCK);
+
 			return 0;
-			// todo: errno
 		}
 
 		return fe->node;
 	}
 
+
+
+
+
+
 	// file descriptor stuff.
-	// TODO: clean up duplication
 	fd_t OpenSocket(SocketProtocol prot, uint64_t flags)
 	{
 		(void) flags;
@@ -108,6 +119,18 @@ namespace Network
 		return ((Socket*) node->info->driver)->recvbuffer.ByteCount();
 	}
 
+
+
+
+
+
+
+
+
+
+
+
+
 	// actual class implementation
 	Socket::Socket(Devices::NIC::GenericNIC* iface, Library::SocketProtocol prot) : FSDriver(nullptr, Filesystems::FSDriverType::Socket), recvbuffer(GLOBAL_MTU * 8)
 	{
@@ -134,6 +157,13 @@ namespace Network
 	void Socket::Bind(vnode* node, IPv4Address local, uint16_t localport)
 	{
 		(void) node;
+		if(this->ip4source.raw != 0 || this->clientport != 0)
+		{
+			Log(1, "Socket is already bound, ignoring");
+			Multitasking::SetThreadErrno(EINVAL);
+			return;
+		}
+
 
 		// cannot bind shit.
 		// make sure port not already in use
@@ -167,27 +197,31 @@ namespace Network
 	void Socket::Connect(vnode* node, IPv4Address remote, uint16_t remoteport)
 	{
 		(void) node;
+		if(this->ip4dest.raw != 0 || this->serverport != 0)
+		{
+			Log(1, "Socket is already connected, ignoring");
+			Multitasking::SetThreadErrno(EISCONN);
+			return;
+		}
+
 
 		this->ip4dest = remote;
 		this->serverport = remoteport;
 
-		// if(this->ip4source.raw == 0 || this->clientport == 0)
-		// 	this->Bind(node, 0, 0);
-
 		// ipv4
 		switch(this->protocol)
 		{
-			case Library::SocketProtocol::RawIPv4:
+			case SocketProtocol::RawIPv4:
 				// no ports for this
 				IP::MapIPv4Socket(SocketIPv4Mapping { this->ip4source, this->ip4dest }, this);
 				break;
 
-			case Library::SocketProtocol::TCP:
+			case SocketProtocol::TCP:
 				TCP::MapSocket(SocketFullMappingv4 { IPv4PortAddress { this->ip4source, (uint16_t) this->clientport },
 					IPv4PortAddress { this->ip4dest, (uint16_t) this->serverport } }, this);
 				break;
 
-			case Library::SocketProtocol::UDP:
+			case SocketProtocol::UDP:
 				UDP::MapSocket(SocketFullMappingv4 { IPv4PortAddress { this->ip4source, (uint16_t) this->clientport },
 					IPv4PortAddress { this->ip4dest, (uint16_t) this->serverport } }, this);
 				break;
@@ -203,6 +237,29 @@ namespace Network
 			this->tcpconnection->Connect();
 		}
 	}
+
+
+	// note: the overloads of Socket::Bind and Socket::Connect taking const char* paths (for AF_UNIX IPC sockets)
+	// are implemented in HardwareAbstraction/Filesystems/FSDrivers/SocketIPC.cpp
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	void Socket::Close(Filesystems::VFS::vnode* node)
 	{
@@ -225,10 +282,15 @@ namespace Network
 					IPv4PortAddress { this->ip4dest, (uint16_t) this->serverport } });
 				break;
 
+			case Library::SocketProtocol::IPC:
+				// nothing to do
+				break;
+
 			default:
 				HALT("???");
 		}
 
+		// this will close the TCP connection
 		if(this->protocol == SocketProtocol::TCP)
 			delete this->tcpconnection;
 	}
@@ -264,6 +326,10 @@ namespace Network
 
 			UDP::SendIPv4Packet(this->interface, (uint8_t*) buf, (uint16_t) length, this->ip4dest,
 				(uint16_t) this->clientport, (uint16_t) this->serverport);
+		}
+		else if(this->protocol == SocketProtocol::IPC)
+		{
+			this->recvbuffer.Write((uint8_t*) buf, length);
 		}
 
 		return length;

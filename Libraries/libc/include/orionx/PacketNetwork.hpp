@@ -69,7 +69,9 @@ namespace Library
 		TCP,
 		UDP,
 		RawIPv4,
-		RawIPv6
+		RawIPv6,
+
+		IPC
 	};
 }
 

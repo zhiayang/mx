@@ -429,6 +429,10 @@ namespace Network
 			// unix-isms that we'll just have to implement for an easier time in userspace
 			void Connect(Filesystems::VFS::vnode* node, Library::IPv4Address remote, uint16_t remoteport);		// remote address
 			void Bind(Filesystems::VFS::vnode* node, Library::IPv4Address local, uint16_t localport);			// local address
+
+			void Connect(Filesystems::VFS::vnode* node, const char* path);
+			void Bind(Filesystems::VFS::vnode* node, const char* path);
+
 			void Close(Filesystems::VFS::vnode* node);
 
 
@@ -445,8 +449,6 @@ namespace Network
 
 			TCP::TCPConnection* tcpconnection;
 			Devices::NIC::GenericNIC* interface;
-			// uint64_t packetcount;
-			// Library::CircularBuffer<uint64_t>* packetsizes;
 	};
 
 	fd_t OpenSocket(Library::SocketProtocol prot, uint64_t flags);

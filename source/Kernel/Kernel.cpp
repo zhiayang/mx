@@ -290,7 +290,7 @@ namespace Kernel
 		Log("Compatible video card located");
 
 		PrintFormatted("Initialising RTC...\n");
-		Devices::RTC::Initialise(0);
+		Devices::RTC::Initialise(+8);
 		Log("RTC Initialised");
 
 
@@ -395,19 +395,26 @@ namespace Kernel
 		}
 
 		PrintFormatted("[mx] has completed initialisation.\n");
-		Log("Kernel init complete\n--------------------------------------------------------\n");
-
-		Multitasking::AddToQueue(Multitasking::CreateKernelThread(Kernel::Time::PrintTime));
-
-
-		// {
-		// 	using namespace Network;
-		// 	IPv4Address example = DNS::QueryDNSv4(rde::string("www.example.com"));
-		// 	PrintFormatted("example.com is at %d.%d.%d.%d\n", example.b1, example.b2, example.b3, example.b4);
-		// }
+		Log("Kernel init complete\n----------------------------\n");
 
 
 
+		{
+			using namespace Network;
+			IPv4Address example = DNS::QueryDNSv4(rde::string("www.example.com"));
+			PrintFormatted("example.com is at %d.%d.%d.%d\n", example.b1, example.b2, example.b3, example.b4);
+		}
+
+
+
+		/*
+			socket(stuff);
+
+			bind("/some/addr");
+			connect("/some/addr");
+
+
+		*/
 
 
 
@@ -449,13 +456,28 @@ namespace Kernel
 
 		// kernel stops here
 		// for now.
-		while(true)
 		{
-			SLEEP(1000);
-			PrintFormatted(".");
-			// BLOCK();
-			// Log(1, "Who dares awaken the kernel?!");
-			// Log(1, "Back to sleep!");
+			uint16_t xpos = Console::GetCharsPerLine();
+			uint64_t state = 0;
+
+			while(true)
+			{
+				HardwareAbstraction::Multitasking::DisableScheduler();
+				uint16_t x = Console::GetCursorX();
+				uint16_t y = Console::GetCursorY();
+
+				Console::MoveCursor(xpos, 0);
+
+				if(state % 2 == 0)		Console::PrintChar('+');
+				else if(state % 2 == 1)	Console::PrintChar(' ');
+
+				state++;
+				Console::MoveCursor(x, y);
+
+				HardwareAbstraction::Multitasking::EnableScheduler();
+
+				SLEEP(250);
+			}
 		}
 	}
 

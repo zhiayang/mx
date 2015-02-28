@@ -35,7 +35,7 @@ namespace Filesystems
 		static FSDriver* driver_stdin;
 		static FSDriver* driver_stdout;
 		static FSDriver* driver_stderr;
-		static FSDriver* driver_ipcmsg;
+		static FSDriver* driver_socket;
 
 		static IOContext* getctx()
 		{
@@ -70,13 +70,13 @@ namespace Filesystems
 			driver_stdin = new FSDriverStdin();
 			driver_stdout = new FSDriverStdout();
 			driver_stderr = new FSDriverStdlog();
-			driver_ipcmsg = new FSDriverIPCMsg();
+			driver_socket = new FSDriverSocketIPC();
 
 			Mount(nullptr, ConsoleFSD, "/dev/console");
 			Mount(nullptr, driver_stdin, "/dev/stdin");
 			Mount(nullptr, driver_stdout, "/dev/stdout");
 			Mount(nullptr, driver_stdout, "/dev/stderr");
-			Mount(nullptr, driver_ipcmsg, "/dev/_mq");
+			Mount(nullptr, driver_socket, "/dev/socketfs");
 
 			auto ctx = getctx();
 			OpenFile(ctx, "/dev/stdin", 0);

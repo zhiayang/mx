@@ -343,7 +343,8 @@ namespace Time
 			if(c == ResyncRate / (GlobalMilliseconds / GlobalTickRate))
 			{
 				c = 0;
-				// ReSyncTime();
+				ReSyncTime();
+				Log("sync");
 			}
 
 			SLEEP(500);
@@ -362,40 +363,61 @@ namespace Time
 
 	void PrintTime()
 	{
-		uint16_t xpos = Console::GetCharsPerLine() - 1 - (PrintSeconds ? 15 : 11);
-		uint16_t x = 0, y = 0;
-		rde::string spaces;
+		#if 0
+			uint16_t xpos = Console::GetCharsPerLine();
 
-		if(PrintSeconds)
-			spaces = "                 ";
-
-		else
-			spaces = "                 ";
-
-		while(true)
-		{
-			x = Console::GetCursorX();
-			y = Console::GetCursorY();
-
-			Console::MoveCursor(xpos, 0);
-			PrintString(spaces.c_str());
-			Console::MoveCursor(xpos, 0);
-
-			PrintFormatted("%s[ %d.%02d %s ", Kernel::SystemTime->Hour12F < 10 ? " " : "", Kernel::SystemTime->Hour12F + Kernel::SystemTime->UTCOffset, Kernel::SystemTime->Minute, IsAM() ? "am" : "pm");
-
-			if(PrintSeconds)
+			// 0 = -, 1 = \, 2 = |, 3 = /
+			uint64_t state = 0;
+			while(true)
 			{
-				PrintFormatted("%02ds ]", Kernel::SystemTime->Second);
-			}
-			else
-			{
-				PrintString("]");
+				HardwareAbstraction::Multitasking::DisableScheduler();
+				uint16_t x = Console::GetCursorX();
+				uint16_t y = Console::GetCursorY();
+
+				Console::MoveCursor(xpos, 0);
+
+				if(state % 2 == 0)		PrintString("-");
+				else if(state % 2 == 1)	PrintString("|");
+
+				state++;
+				Console::MoveCursor(x, y);
+
+				HardwareAbstraction::Multitasking::EnableScheduler();
+
+				SLEEP(500);
 			}
 
+			// ----------------------------------------------------------------------
 
-			Console::MoveCursor(x, y);
-			SLEEP(300);
-		}
+			uint16_t xpos = Console::GetCharsPerLine() - 1 - (PrintSeconds ? 15 : 11);
+			uint16_t x = 0, y = 0;
+			rde::string spaces("                 ");
+
+			while(true)
+			{
+				x = Console::GetCursorX();
+				y = Console::GetCursorY();
+
+				Console::MoveCursor(xpos, 0);
+				PrintString(spaces.c_str());
+				Console::MoveCursor(xpos, 0);
+
+				PrintFormatted("%s[ %d.%02d %s ", Kernel::SystemTime->Hour12F < 10 ? " " : "", Kernel::SystemTime->Hour12F + Kernel::SystemTime->UTCOffset, Kernel::SystemTime->Minute, IsAM() ? "am" : "pm");
+
+				if(PrintSeconds)
+				{
+					PrintFormatted("%02ds ]", Kernel::SystemTime->Second);
+				}
+				else
+				{
+					PrintString("]");
+				}
+
+
+				Console::MoveCursor(x, y);
+				SLEEP(300);
+			}
+		#endif
 	}
 }
 }

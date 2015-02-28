@@ -11,6 +11,7 @@
 #include "Filesystems/ConsoleVFS.hpp"
 #include "Filesystems/HFSPlusVFS.hpp"
 #include "Filesystems/Fat32VFS.hpp"
+#include "Filesystems/SocketIPCVFS.hpp"
 
 namespace Kernel
 {

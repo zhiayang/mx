@@ -43,7 +43,7 @@
 #define DefaultRing3StackSize	0x4000
 
 // Global IRQ0 tickrate.
-#define GlobalTickRate		50
+#define GlobalTickRate		20
 #define GlobalMilliseconds	1000
 
 // Configuration paramaters
