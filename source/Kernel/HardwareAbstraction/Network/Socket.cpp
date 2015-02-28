@@ -16,6 +16,33 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace Network
 {
+	/*
+		TODO: unfuck sockets.
+		Sockets shouldn't be FSDrivers! There should be a SocketIPC FSDriver that handles data
+		through vnode->fsref->info
+
+		I always had a lingering suspicion that something was wrong when I wasn't using any of the vnode*s passed
+		to the Socket::* functions.
+
+		the Socket class itself can probably stay the same, with instance methods moving out into functions operating
+		on vnodes. In this case vnode->fsref->info will probably be a Socket* casted as void*.
+
+
+		contemplate
+	*/
+
+
+
+
+
+
+
+
+
+
+
+
+
 	using namespace Filesystems;
 
 	static IOContext* getctx()
