@@ -69,11 +69,11 @@ struct __attribute__((packed)) ELF64FileHeader_type
 
 // Bunch of ElfType defines
 
-#define ElfTypeNone			0	// No file type
-#define ElfTypeRelocatable		1	// Relocatable File
-#define ElfTypeExecutable		2	// Executable File
-#define ElfTypeSharedObject		3	// Shared Object
-#define ElfTypeCore			4	// Core File
+#define ElfTypeNone			0		// No file type
+#define ElfTypeRelocatable	1		// Relocatable File
+#define ElfTypeExecutable	2		// Executable File
+#define ElfTypeSharedObject	3		// Shared Object
+#define ElfTypeCore			4		// Core File
 #define ElfType_LOPROC		0xFF0	// Processor Specific
 #define ElfType_HIPROC		0xFFF	// Processor Specific
 
@@ -90,7 +90,7 @@ struct __attribute__((packed)) ELF64FileHeader_type
 // Bunch of ElfMachine defines
 
 #define ElfMachineNone		0
-#define ElfMachine386			3
+#define ElfMachine386		3
 
 
 // Bunch of ElfVersion defines
@@ -118,13 +118,13 @@ struct __attribute__((packed)) ELF64ProgramHeader_type
 
 // Bunch of ProgramType defines
 
-#define ProgramTypeNull			0
-#define ProgramTypeLoadableSegment		1
-#define ProgramTypeDynamicLinking		2
-#define ProgramTypeIntepreter			3
-#define ProgramTypeAuxillaryInfo		4
-#define ProgramTypeSectionHeader		5
-#define ProgramTypeProgramHeader		6
+#define ProgramTypeNull				0
+#define ProgramTypeLoadableSegment	1
+#define ProgramTypeDynamicLinking	2
+#define ProgramTypeIntepreter		3
+#define ProgramTypeAuxillaryInfo	4
+#define ProgramTypeSectionHeader	5
+#define ProgramTypeProgramHeader	6
 #define ProgramType_LOPROC			0x70000000
 #define ProgramType_HIPROC			0x7FFFFFFF
 
@@ -161,26 +161,26 @@ struct __attribute__ ((__packed__))	ELF64SectionHeader_type
 
 // Bunch of SectionHeaderType defines
 
-#define SectionHeaderTypeNone		0
+#define SectionHeaderTypeNone			0
 #define SectionHeaderTypeProgramBits	1
 #define SectionHeaderTypeSymbolTable	2
-#define SectionHeaderTypeStringTable		3
+#define SectionHeaderTypeStringTable	3
 #define SectionHeaderTypeRelocation		4
 #define SectionHeaderTypeHashTable		5
 #define SectionHeaderTypeDynSymTable	6
-#define SectionHeaderTypeNotes		7
-#define SectionHeaderTypeNoBits		8
+#define SectionHeaderTypeNotes			7
+#define SectionHeaderTypeNoBits			8
 
-#define SHF_WRITE			(1 << 0)		// Writable
-#define SHF_ALLOC			(1 << 1)		// Occupies memory during execution
-#define SHF_EXECINSTR		(1 << 2)		// Executable
-#define SHF_MERGE			(1 << 4)		// Might be merged
-#define SHF_STRINGS			(1 << 5)		// Contains nul-terminated strings
-#define SHF_INFO_LINK		(1 << 6)		// 'sh_info' contains SHT index
-#define SHF_LINK_ORDER		(1 << 7)		// Preserve order after combining
+#define SHF_WRITE				(1 << 0)		// Writable
+#define SHF_ALLOC				(1 << 1)		// Occupies memory during execution
+#define SHF_EXECINSTR			(1 << 2)		// Executable
+#define SHF_MERGE				(1 << 4)		// Might be merged
+#define SHF_STRINGS				(1 << 5)		// Contains nul-terminated strings
+#define SHF_INFO_LINK			(1 << 6)		// 'sh_info' contains SHT index
+#define SHF_LINK_ORDER			(1 << 7)		// Preserve order after combining
 #define SHF_OS_NONCONFORMING	(1 << 8)		// Non-standard OS specific handling required
-#define SHF_GROUP			(1 << 9)		// Section is member of a group.
-#define SHF_TLS			(1 << 10)	// Section hold thread-local data.
+#define SHF_GROUP				(1 << 9)		// Section is member of a group.
+#define SHF_TLS					(1 << 10)		// Section hold thread-local data.
 
 
 
