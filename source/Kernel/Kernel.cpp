@@ -456,16 +456,6 @@ namespace Kernel
 
 
 
-		/*
-			socket(stuff);
-
-			bind("/some/addr");
-			connect("/some/addr");
-
-
-		*/
-
-
 
 
 
