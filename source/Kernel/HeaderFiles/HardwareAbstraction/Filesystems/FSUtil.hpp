@@ -73,9 +73,27 @@ namespace Filesystems
 			rde::vector<fileentry*> fds;
 		};
 
+		struct Filesystem
+		{
+			FSDriver* driver;
+			Devices::Storage::Partition* partition;
+			rde::string* mountpoint;
+			bool ismounted;
+		};
+
+
+		extern const char* FS_CONSOLE_MOUNTPOINT;
+		extern const char* FS_STDIN_MOUNTPOINT;
+		extern const char* FS_STDOUT_MOUNTPOINT;
+		extern const char* FS_STDERR_MOUNTPOINT;
+		extern const char* FS_SOCKET_MOUNTPOINT;
+
+
 
 		void Initialise();
 		void InitIO();
+
+		Filesystem* GetFilesystemAtPath(const char* path);
 
 		vnode* NodeFromID(id_t id);
 		fd_t FDFromNode(IOContext* ioctx, vnode* node);

@@ -50,6 +50,13 @@ namespace UDP
 
 	void MapSocket(SocketFullMappingv4 addr, Socket* s)
 	{
+		if(udpsocketmapv4->find(addr) != udpsocketmapv4->end())
+		{
+			Log(1, "Socket (%d.%d.%d.%d:%d -> %d.%d.%d.%d:%d) already mapped, overriding",
+				addr.source.ip.b1, addr.source.ip.b2, addr.source.ip.b3, addr.source.ip.b4, addr.source.port,
+				addr.dest.ip.b1, addr.dest.ip.b2, addr.dest.ip.b3, addr.dest.ip.b4, addr.dest.port);
+		}
+
 		(*udpsocketmapv4)[addr] = s;
 	}
 

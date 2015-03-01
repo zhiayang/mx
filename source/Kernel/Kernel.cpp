@@ -406,15 +406,54 @@ namespace Kernel
 		}
 
 
+		Log("Socket test\n");
+		{
+			using namespace Network;
 
-		/*
-			socket(stuff);
+			auto other = []()
+			{
+				fd_t skt = OpenSocket(SocketProtocol::IPC, 0);
+				ConnectSocket(skt, "/some/socket");
+				Log("socket connected");
 
-			bind("/some/addr");
-			connect("/some/addr");
+				uint64_t x = 0;
+				while(true)
+				{
+					WriteSocket(skt, (void*) &x, 8);
+					YieldCPU();
+
+					x++;
+				}
+			};
 
 
-		*/
+
+
+
+
+
+
+			// open a socket
+			fd_t skt = OpenSocket(SocketProtocol::IPC, 0);
+			Log("socket opened: %d", skt);
+
+			BindSocket(skt, "/some/socket");
+			Log("socket bound");
+
+			Multitasking::AddToQueue(Multitasking::CreateKernelThread(other, 2));
+
+			while(true)
+			{
+				while(GetSocketBufferFill(skt) >= 8)
+				{
+					uint64_t d = 0;
+					ReadSocket(skt, &d, 8);
+
+					PrintFormatted("%x\n", d);
+				}
+			}
+		}
+
 
 
 
