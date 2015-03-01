@@ -109,7 +109,7 @@ namespace NIC
 		// 3 pages contiguous
 
 		this->ReceiveBuffer = MemoryManager::Physical::AllocateDMA(3);
-		Log("Configured 12kb buffer for RX at %x", this->ReceiveBuffer);
+		Log("Configured 12kb buffer for RX at %x", this->ReceiveBuffer.virt);
 		// Memory::Set(this->ReceiveBuffer, 0xAA, 0x1000 * 3);
 
 		IOPort::Write32(this->ioaddr + Registers::RxBuf, (uint32_t) this->ReceiveBuffer.phys);
@@ -130,7 +130,7 @@ namespace NIC
 		this->TransmitBuffers[3].phys = this->TransmitBuffers[2].phys + 0x800;
 		this->TransmitBuffers[3].virt = this->TransmitBuffers[2].virt + 0x800;
 
-		Log("Tx[0] at %x, Tx[1] at %x, Tx[2] at %x, Tx[3] at %x", this->TransmitBuffers[0], this->TransmitBuffers[1], this->TransmitBuffers[2], this->TransmitBuffers[3]);
+		Log("Tx[0] at %x, Tx[1] at %x, Tx[2] at %x, Tx[3] at %x", this->TransmitBuffers[0].virt, this->TransmitBuffers[1].virt, this->TransmitBuffers[2].virt, this->TransmitBuffers[3].virt);
 
 		// send data to the card
 		IOPort::Write32(this->ioaddr + Registers::TxAddr0, (uint32_t) this->TransmitBuffers[0].phys);
@@ -201,7 +201,6 @@ namespace NIC
 	{
 		uint64_t ReadOffset = 0;
 		uint64_t EndOffset = 0;
-		uint64_t PacketCount = 0;
 		uint64_t length = 0;
 
 		EndOffset = IOPort::Read16(this->ioaddr + Registers::RxBufAddr);
@@ -213,7 +212,7 @@ namespace NIC
 		{
 			while(ReadOffset < RxBufferSize)
 			{
-				PacketCount++;
+				assert(ReadOffset < RxBufferSize);
 				length = *(uint16_t*) &recvBuffer[ReadOffset + 2];
 				Ethernet::HandlePacket(this, &recvBuffer[ReadOffset + 4], length - 4);
 
@@ -228,15 +227,15 @@ namespace NIC
 		}
 		while(ReadOffset < EndOffset)
 		{
+			assert(ReadOffset < RxBufferSize);
 			length = *(uint16_t*) &recvBuffer[ReadOffset + 2];
 
-			PacketCount++;
 			Ethernet::HandlePacket(this, &recvBuffer[ReadOffset + 4], length - 4);
 
 			ReadOffset += length + 4;
 			ReadOffset = (ReadOffset + 3) & ~3;	// align to 4 bytes
-
 		}
+
 		this->SeenOfs = ReadOffset;
 	}
 
@@ -296,8 +295,6 @@ namespace NIC
 		if(status & 0x8000)
 			this->HandleSysErr();
 	}
-
-
 }
 }
 }

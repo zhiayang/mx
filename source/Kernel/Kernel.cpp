@@ -36,6 +36,8 @@ extern "C" void KernelInit(uint32_t MultibootMagic, uint32_t MBTAddr)
 	KernelCore(MultibootMagic, MBTAddr);
 }
 
+
+
 namespace Kernel
 {
 	// If you're against global variables, fuck away.
@@ -174,7 +176,7 @@ namespace Kernel
 		{
 			uint64_t a = (uint64_t) K_MemoryMap;
 			uint32_t s = K_MemoryMap->SizeOfThisStructure;
-			K_MemoryMap = (MemoryMap::MemoryMap_type*) new uint8_t[K_MemoryMap->SizeOfThisStructure + sizeof(uint64_t)];
+			K_MemoryMap = (MemoryMap::MemoryMap_type*) (new uint8_t[K_MemoryMap->SizeOfThisStructure + sizeof(uint64_t)]);
 			Memory::CopyOverlap((void*) K_MemoryMap, (void*) a, s);
 			Log("Memory map relocation complete");
 		}
@@ -288,19 +290,8 @@ namespace Kernel
 		Log("Compatible video card located");
 
 		PrintFormatted("Initialising RTC...\n");
-		// Devices::RTC::Initialise(0);
+		Devices::RTC::Initialise(+8);
 		Log("RTC Initialised");
-
-
-
-		/*
-
-			pastel
-			darkside
-			solarflare
-
-
-		*/
 
 
 		// setup framebuffer
@@ -377,14 +368,14 @@ namespace Kernel
 			TCP::Initialise();
 			UDP::Initialise();
 			DHCP::Initialise(nic);
+
+			DNS::Initialise();
 		}
-
-
-
 
 		KernelKeyboard = new PS2Keyboard();
 		TTY::Initialise();
 		Console::ClearScreen();
+
 
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
 		{
@@ -404,12 +395,73 @@ namespace Kernel
 		}
 
 		PrintFormatted("[mx] has completed initialisation.\n");
-		Log("Kernel init complete\n--------------------------------------------------------\n");
+		Log("Kernel init complete\n----------------------------\n");
+
+
+
+		{
+			using namespace Network;
+			IPv4Address example = DNS::QueryDNSv4(rde::string("www.example.com"));
+			PrintFormatted("example.com is at %d.%d.%d.%d\n", example.b1, example.b2, example.b3, example.b4);
+		}
+
+
+		Log("Socket test\n");
+		{
+			using namespace Network;
+
+			auto other = []()
+			{
+				fd_t skt = OpenSocket(SocketProtocol::IPC, 0);
+				ConnectSocket(skt, "/some/socket");
+				Log("socket connected");
+
+				uint64_t x = 0;
+				while(true)
+				{
+					WriteSocket(skt, (void*) &x, 8);
+					YieldCPU();
+
+					x++;
+				}
+			};
+
+
+
+
+
+
+
+
+			// open a socket
+			fd_t skt = OpenSocket(SocketProtocol::IPC, 0);
+			Log("socket opened: %d", skt);
+
+			BindSocket(skt, "/some/socket");
+			Log("socket bound");
+
+			Multitasking::AddToQueue(Multitasking::CreateKernelThread(other, 2));
+
+			while(true)
+			{
+				while(GetSocketBufferFill(skt) >= 8)
+				{
+					uint64_t d = 0;
+					ReadSocket(skt, &d, 8);
+
+					PrintFormatted("%x\n", d);
+				}
+			}
+		}
+
+
+
+
 
 
 		// PrintFormatted("mutex tests\n");
 		// {
-		// 	test = new Mutex;
+		// 	static Mutex* test = new Mutex;
 		// 	auto func1 = []()
 		// 	{
 		// 		PrintFormatted("locking mutex\n");
@@ -427,8 +479,8 @@ namespace Kernel
 		// 		SLEEP(1000);
 		// 		PrintFormatted("trying mutex\n");
 
-		// 		while(!TryLockMutex(test))
-		// 			PrintFormatted("x");
+		// 		// while(!TryLockMutex(test))
+		// 		// 	PrintFormatted("x");
 
 		// 		PrintFormatted("locked!\n");
 		// 		UNLOCK(test);
@@ -439,9 +491,33 @@ namespace Kernel
 		// }
 
 
+		// KernelHeap::Print();
+
 		// kernel stops here
 		// for now.
-		BLOCK();
+		{
+			uint16_t xpos = Console::GetCharsPerLine();
+			uint64_t state = 0;
+
+			while(true)
+			{
+				HardwareAbstraction::Multitasking::DisableScheduler();
+				uint16_t x = Console::GetCursorX();
+				uint16_t y = Console::GetCursorY();
+
+				Console::MoveCursor(xpos, 0);
+
+				if(state % 2 == 0)		Console::PrintChar('+');
+				else if(state % 2 == 1)	Console::PrintChar(' ');
+
+				state++;
+				Console::MoveCursor(x, y);
+
+				HardwareAbstraction::Multitasking::EnableScheduler();
+
+				SLEEP(250);
+			}
+		}
 	}
 
 	void Idle()
@@ -555,29 +631,18 @@ namespace rapidxml
 	}
 }
 
-void operator delete(void* p) _GLIBCXX_USE_NOEXCEPT
-{
-	KernelHeap::FreeChunk(p);
-}
 
-void operator delete[](void* p) _GLIBCXX_USE_NOEXCEPT
-{
-	KernelHeap::FreeChunk(p);
-}
 
-void* operator new(unsigned long size)
-{
-	return (void*) KernelHeap::AllocateChunk(size);
-}
 
-void* operator new[](unsigned long size)
-{
-	return (void*) KernelHeap::AllocateChunk(size);
-}
+
+
+
+
+
 
 extern "C" void* malloc(size_t s)
 {
-	return KernelHeap::AllocateChunk(s);
+	return KernelHeap::AllocateFromHeap(s);
 }
 extern "C" void free(void* ptr)
 {
@@ -585,11 +650,13 @@ extern "C" void free(void* ptr)
 }
 extern "C" void* realloc(void* ptr, size_t size)
 {
-	void* np = KernelHeap::AllocateChunk(size);
-	size_t os = KernelHeap::QuerySize(ptr);
-
-	Memory::Copy(np, ptr, os);
-	KernelHeap::FreeChunk(ptr);
-
-	return np;
+	return KernelHeap::ReallocateChunk(ptr, size);
 }
+
+
+
+
+
+
+
+

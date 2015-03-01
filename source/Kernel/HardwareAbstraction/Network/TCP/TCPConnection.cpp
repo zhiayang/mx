@@ -43,7 +43,7 @@ namespace TCP
 				YieldCPU();
 
 			ppt = tcp->lastpackettime;
-			// tcp->AlreadyAcked = true;
+			tcp->AlreadyAcked = true;
 
 			// flush tcp to application.
 			tcp->SendPacket(0, 0, 0x10);

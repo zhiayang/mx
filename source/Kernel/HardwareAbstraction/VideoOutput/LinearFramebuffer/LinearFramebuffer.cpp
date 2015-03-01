@@ -28,7 +28,7 @@ namespace LinearFramebuffer
 
 	// #define BytesPerPixel		4
 	#define CharHeight			16
-	// #define CharWidth			8
+	#define CharWidth			9
 
 	#define CurrentFont			Font8x16_Thick
 
@@ -111,11 +111,17 @@ namespace LinearFramebuffer
 		{
 			uint8_t data = CurrentFont[c][row];
 			columnAddress = rowAddress;
-			for(data = CurrentFont[c][row]; data != 0; data <<= 1)
+
+			int col = 0;
+			for(data = CurrentFont[c][row]; col < CharWidth; data <<= 1, col++)
 			{
 				if((data & 0x80) != 0)
 				{
 					*columnAddress = Colour;
+				}
+				else
+				{
+					*columnAddress = 0;
 				}
 				columnAddress++;
 			}

@@ -16,10 +16,16 @@ namespace MemoryManager
 
 		void Initialise();
 
-		void* AllocateChunk(uint64_t Size);
-		void FreeChunk(void* Pointer);
+		#ifndef STRINGIFY
+			#define STRINGIFY0(x) #x
+			#define STRINGIFY(x) STRINGIFY0(x)
+		#endif
 
-		uint64_t QuerySize(void* Address);
+		void* AllocateChunk(uint64_t size, const char* fileAndLine);
+		#define AllocateFromHeap(sz) AllocateChunk(sz, __FILE__ ":" STRINGIFY(__LINE__))
+
+		void FreeChunk(void* Pointer);
+		void* ReallocateChunk(void* ptr, uint64_t size);
 
 		void Print();
 	}

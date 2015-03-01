@@ -43,7 +43,7 @@
 #define DefaultRing3StackSize	0x4000
 
 // Global IRQ0 tickrate.
-#define GlobalTickRate		50
+#define GlobalTickRate		20
 #define GlobalMilliseconds	1000
 
 // Configuration paramaters
@@ -151,22 +151,32 @@ namespace Kernel
 
 #define UNUSED(x)			((void) x)
 
-#define STRINGIZE(x) STRINGIZE2(x)
-#define STRINGIZE2(x) #x
-#define LINE_STRING STRINGIZE(__LINE__)
+#define STRINGIFY(x) STRINGIFY0(x)
+#define STRINGIFY0(x) #x
+#define __LINE_STRING__ STRINGIFY(__LINE__)
 ;
 
+#define DEBUG_NEW 0
 
 void operator delete(void* p) _GLIBCXX_USE_NOEXCEPT;
 void operator delete[](void* p) _GLIBCXX_USE_NOEXCEPT;
-void* operator new(unsigned long size);
-void* operator new[](unsigned long size);
-void* operator new(unsigned long, void* addr) noexcept;
+void* operator new(size_t size);
+void* operator new[](size_t size);
 
+void* operator new(size_t, void* addr) noexcept;
+
+
+#if DEBUG_NEW
+// fucking hack
+const char* __set_line(const char* line);
+const char* __set_file(const char* file);
+
+#define new ((__set_file(__FILE__), __set_line(__LINE_STRING__)) && 0) ? nullptr : new
+#endif
 
 
 #define UHALT()					asm volatile("cli; hlt")
-#define HALT(x)					Kernel::HaltSystem(x, __FILE__, LINE_STRING, "")
+#define HALT(x)					Kernel::HaltSystem(x, __FILE__, __LINE_STRING__, "")
 #define BBPNT()					asm volatile("xchg %bx, %bx")
 
 

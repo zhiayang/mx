@@ -15,9 +15,40 @@ namespace HardwareAbstraction {
 namespace Network {
 namespace ARP
 {
-	static rde::hash_map<IPv4Address, EUI48Address>* ARPTable = 0;
-	EUI48Address GatewayMAC;
+	// ARP
+	struct ARPPacket
+	{
+		uint16_t HardwareType;
+		uint16_t ProtocolType;
 
+		uint8_t HardwareAddressLength;
+		uint8_t ProtocolAddressLength;
+
+		uint16_t Operation;
+
+		EUI48Address SenderMacAddress;
+		Library::IPv4Address SenderIPv4;
+
+		EUI48Address TargetMacAddress;
+		Library::IPv4Address TargetIPv4;
+
+		ARPPacket();
+
+	} __attribute__((packed));
+
+
+	static rde::hash_map<IPv4Address, EUI48Address>* ARPTable = 0;
+	static EUI48Address GatewayMAC;
+
+	EUI48Address GetGatewayMAC()
+	{
+		return GatewayMAC;
+	}
+
+	void SetGatewayMAC(EUI48Address addr)
+	{
+		GatewayMAC = addr;
+	}
 
 	void Initialise()
 	{

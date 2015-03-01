@@ -22,6 +22,8 @@
 #include "machine/_sizes.h"
 #include "defs/_limits.h"
 
+#define PATH_MAX		65536
+
 #define CHAR_BIT		__CHAR_BIT
 
 #define SCHAR_MIN		__SCHAR_MIN
@@ -32,8 +34,8 @@
 #define SHRT_MAX		__SHRT_MAX
 #define USHRT_MAX		__USHRT_MAX
 
-#define INT_MIN		__INT_MIN
-#define INT_MAX		__INT_MAX
+#define INT_MIN			__INT_MIN
+#define INT_MAX			__INT_MAX
 #define UINT_MAX		__UINT_MAX
 
 #define LONG_MIN		__LONG_MIN
@@ -43,6 +45,16 @@
 #define LLONG_MIN		__LLONG_MIN
 #define LLONG_MAX		__LLONG_MAX
 #define ULLONG_MAX		__ULLONG_MAX
+
+
+#ifndef WCHAR_MIN
+#define WCHAR_MIN __INT_MIN
+#endif
+
+#ifndef WCHAR_MAX
+#define WCHAR_MAX __INT_MAX
+#endif
+
 
 #endif
 

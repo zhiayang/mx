@@ -69,7 +69,7 @@ namespace Network
 
 
 
-	class Socket;
+	struct Socket;
 	namespace Ethernet
 	{
 		// Ethernet
@@ -95,28 +95,8 @@ namespace Network
 
 	namespace ARP
 	{
-		// ARP
-		struct ARPPacket
-		{
-			uint16_t HardwareType;
-			uint16_t ProtocolType;
-
-			uint8_t HardwareAddressLength;
-			uint8_t ProtocolAddressLength;
-
-			uint16_t Operation;
-
-			EUI48Address SenderMacAddress;
-			Library::IPv4Address SenderIPv4;
-
-			EUI48Address TargetMacAddress;
-			Library::IPv4Address TargetIPv4;
-
-			ARPPacket();
-
-		} __attribute__((packed));
-
-		extern EUI48Address GatewayMAC;
+		EUI48Address GetGatewayMAC();
+		void SetGatewayMAC(EUI48Address addr);
 		EUI48Address SendQuery(Devices::NIC::GenericNIC* interface, Library::IPv4Address addr);
 		void HandlePacket(Devices::NIC::GenericNIC* interface, void* PacketAddr, uint64_t length);
 		void SendPacket(Devices::NIC::GenericNIC* interface, Library::IPv4Address addr);
@@ -260,16 +240,6 @@ namespace Network
 
 	namespace UDP
 	{
-		// UDP
-		struct UDPPacket
-		{
-			uint16_t sourceport;
-			uint16_t destport;
-			uint16_t length;
-			uint16_t checksum;
-
-		} __attribute__ ((packed));
-
 		void SendIPv4Packet(Devices::NIC::GenericNIC* interface, uint8_t* packet, uint64_t length, Library::IPv4Address dest, uint16_t sourceport, uint16_t destport);
 		void HandleIPv4Packet(Devices::NIC::GenericNIC* interface, void* packet, uint64_t length, Library::IPv4Address source, Library::IPv4Address destip);
 
@@ -391,195 +361,19 @@ namespace Network
 
 	namespace DHCP
 	{
-		// DHCP
-		struct DHCPPacket
-		{
-			uint8_t operation;
-			uint8_t hardwaretype;
-			uint8_t hardwareaddrlength;
-			uint8_t hopcount;
-
-			uint32_t transactionid;
-			uint16_t seconds;
-			uint16_t flags;
-
-			Library::IPv4Address thisip;
-			Library::IPv4Address givenip;
-			Library::IPv4Address serverip;
-			Library::IPv4Address relayip;
-
-			uint8_t hardwareaddr[16];
-			uint8_t servername[64];
-			uint8_t bootfilename[128];
-
-			uint8_t cookie[4];
-
-		} __attribute__((packed));
-
 		void MonitorThread();
 		void Initialise(Devices::NIC::GenericNIC* interface);
-
-		namespace Options
-		{
-			enum class Message : uint8_t
-			{
-				DHCPDiscover = 1,
-				DHCPOffer = 2,
-				DHCPRequest = 3,
-				DHCPDecline = 4,
-				DHCPAck = 5,
-				DHCPNak = 6,
-				DHCPRelease = 7,
-				DHCPInform = 8
-			};
-
-			enum class OptionCode : uint8_t
-			{
-				SubnetMask = 1,
-				Router = 3,
-				DNSServer = 6,
-				DomainName = 15,
-				LeaseTime = 51,
-				MessageType = 53,
-				DHCPServer = 54,
-				ParameterRequest = 55
-			};
-
-			struct Option
-			{
-			};
-
-			struct SubnetMask : public Option
-			{
-				SubnetMask() : code(OptionCode::SubnetMask), length(4) {}
-				OptionCode code;
-				uint8_t length;
-
-				Library::IPv4Address mask;
-
-			} __attribute__((packed));
-
-			struct Router : public Option
-			{
-				Router() : code(OptionCode::Router) {}
-				OptionCode code;
-				uint8_t length;
-
-				Library::IPv4Address mainrouter;
-
-			} __attribute__((packed));
-
-			struct DNSServer : public Option
-			{
-				DNSServer() : code(OptionCode::DNSServer) {}
-				OptionCode code;
-				uint8_t length;
-
-				Library::IPv4Address mainserver;
-
-			} __attribute__((packed));
-
-			struct DomainName : public Option
-			{
-				DomainName() : code(OptionCode::DomainName) {}
-				OptionCode code;
-				uint8_t length;
-
-				const char* str;
-
-			} __attribute__((packed));
-
-			struct LeaseTime : public Option
-			{
-				LeaseTime() : code(OptionCode::LeaseTime), length(4) {}
-				OptionCode code;
-				uint8_t length;
-
-				uint32_t time;
-
-			} __attribute__((packed));
-
-			struct MessageType : public Option
-			{
-				MessageType() : code(OptionCode::MessageType), length(1) {}
-				OptionCode code;
-				uint8_t length;
-
-				uint8_t type;
-
-			} __attribute__((packed));
-
-			struct DHCPServer : public Option
-			{
-				DHCPServer() : code(OptionCode::DHCPServer), length(4) {}
-				OptionCode code;
-				uint8_t length;
-
-				Library::IPv4Address addr;
-
-			} __attribute__((packed));
-
-			struct ParameterRequest : public Option
-			{
-				ParameterRequest() : code(OptionCode::ParameterRequest) {}
-
-				OptionCode code;
-				uint8_t length;
-				uint8_t options[16];
-
-			} __attribute__((packed));
-		}
 	}
 
-	// namespace DNS
-	// {
-	// 	struct DNSMessageHeader
-	// 	{
-	// 		uint16_t id;
-	// 		struct
-	// 		{
-	// 			uint8_t userecursion : 1;
-	// 			uint8_t truncated : 1;
-	// 			uint8_t authoritative : 1;
-	// 			uint8_t opcode : 4;
-	// 			uint8_t query : 1;
+	namespace DNS
+	{
+		Library::IPv4Address GetDNSServer();
+		void SetDNSServer(Library::IPv4Address addr);
 
-	// 		} __attribute__ ((packed));
-
-	// 		struct
-	// 		{
-	// 			uint8_t responsecode : 4;
-	// 			uint8_t reserved : 3;
-	// 			uint8_t hasrecursion : 1;
-
-	// 		} __attribute__ ((packed));
-
-	// 		uint16_t questions;
-	// 		uint16_t answers;
-	// 		uint16_t authorities;
-	// 		uint16_t extras;
-
-	// 	} __attribute__ ((packed));
-
-	// 	enum class RecordType
-	// 	{
-	// 		A		= 0x1,
-	// 		CNAME		= 0x5,
-	// 		AAAA		= 0x1C
-	// 	};
-
-	// 	enum class RecordClass
-	// 	{
-	// 		Internet	= 0x1
-	// 	};
-
-	// 	Library::IPv4Address* GetDNSServer();
-	// 	void SetDNSServer(Library::IPv4Address addr);
-
-	// 	void Initialise();
-	// 	void MonitorThread();
-	// 	Library::IPv4Address* QueryDNSv4(Library::string hostname);
-	// }
+		void Initialise();
+		void MonitorThread();
+		Library::IPv4Address QueryDNSv4(rde::string hostname);
+	}
 
 
 
@@ -612,14 +406,33 @@ namespace Network
 
 
 
+	struct Socket
+	{
+		Socket(size_t BufferSize, Library::SocketProtocol prot) : recvbuffer(BufferSize), protocol(prot) { }
 
+		Library::CircularMemoryBuffer recvbuffer;
+		Library::IPv4Address ip4source;
+		Library::IPv4Address ip4dest;
 
-	class Socket : public Filesystems::FSDriver
+		Library::IPv6Address ip6source;
+		Library::IPv6Address ip6dest;
+
+		Library::SocketProtocol protocol;
+		uint64_t clientport;
+		uint64_t serverport;
+
+		TCP::TCPConnection* tcpconnection;
+		Devices::NIC::GenericNIC* interface;
+
+		rde::string ipcSocketPath;
+	};
+
+	class SocketVFS : public Filesystems::FSDriver
 	{
 		public:
-			Socket(Devices::NIC::GenericNIC* interface, Library::SocketProtocol prot);
+			SocketVFS();
 
-			virtual ~Socket() override;
+			virtual ~SocketVFS() override;
 			virtual bool Create(Filesystems::VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms) override;
 			virtual bool Delete(Filesystems::VFS::vnode* node, const char* path) override;
 			virtual bool Traverse(Filesystems::VFS::vnode* node, const char* path, char** symlink) override;
@@ -636,23 +449,12 @@ namespace Network
 			void Connect(Filesystems::VFS::vnode* node, Library::IPv4Address remote, uint16_t remoteport);		// remote address
 			void Bind(Filesystems::VFS::vnode* node, Library::IPv4Address local, uint16_t localport);			// local address
 
+			void Connect(Filesystems::VFS::vnode* node, const char* path);
+			void Bind(Filesystems::VFS::vnode* node, const char* path);
 
+			void Close(Filesystems::VFS::vnode* node);
 
-			Library::CircularMemoryBuffer recvbuffer;
-			Library::IPv4Address ip4source;
-			Library::IPv4Address ip4dest;
-
-			Library::IPv6Address ip6source;
-			Library::IPv6Address ip6dest;
-
-			Library::SocketProtocol protocol;
-			uint64_t clientport;
-			uint64_t serverport;
-
-			TCP::TCPConnection* tcpconnection;
 			Devices::NIC::GenericNIC* interface;
-			// uint64_t packetcount;
-			// Library::CircularBuffer<uint64_t>* packetsizes;
 	};
 
 	fd_t OpenSocket(Library::SocketProtocol prot, uint64_t flags);
@@ -660,6 +462,9 @@ namespace Network
 
 	err_t BindSocket(fd_t socket, Library::IPv4Address local, uint16_t port);
 	err_t ConnectSocket(fd_t socket, Library::IPv4Address remote, uint16_t port);
+
+	err_t BindSocket(fd_t socket, const char* path);
+	err_t ConnectSocket(fd_t socket, const char* path);
 
 	size_t ReadSocket(fd_t socket, void* buf, size_t bytes);
 	size_t WriteSocket(fd_t socket, void* buf, size_t bytes);

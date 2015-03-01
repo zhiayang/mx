@@ -13,6 +13,159 @@ namespace HardwareAbstraction {
 namespace Network {
 namespace DHCP
 {
+	// DHCP
+	struct DHCPPacket
+	{
+		uint8_t operation;
+		uint8_t hardwaretype;
+		uint8_t hardwareaddrlength;
+		uint8_t hopcount;
+
+		uint32_t transactionid;
+		uint16_t seconds;
+		uint16_t flags;
+
+		Library::IPv4Address thisip;
+		Library::IPv4Address givenip;
+		Library::IPv4Address serverip;
+		Library::IPv4Address relayip;
+
+		uint8_t hardwareaddr[16];
+		uint8_t servername[64];
+		uint8_t bootfilename[128];
+
+		uint8_t cookie[4];
+
+	} __attribute__((packed));
+
+	namespace Options
+	{
+		enum class Message : uint8_t
+		{
+			DHCPDiscover = 1,
+			DHCPOffer = 2,
+			DHCPRequest = 3,
+			DHCPDecline = 4,
+			DHCPAck = 5,
+			DHCPNak = 6,
+			DHCPRelease = 7,
+			DHCPInform = 8
+		};
+
+		enum class OptionCode : uint8_t
+		{
+			SubnetMask = 1,
+			Router = 3,
+			DNSServer = 6,
+			DomainName = 15,
+			LeaseTime = 51,
+			MessageType = 53,
+			DHCPServer = 54,
+			ParameterRequest = 55
+		};
+
+		struct Option
+		{
+		};
+
+		struct SubnetMask : public Option
+		{
+			SubnetMask() : code(OptionCode::SubnetMask), length(4) {}
+			OptionCode code;
+			uint8_t length;
+
+			Library::IPv4Address mask;
+
+		} __attribute__((packed));
+
+		struct Router : public Option
+		{
+			Router() : code(OptionCode::Router) {}
+			OptionCode code;
+			uint8_t length;
+
+			Library::IPv4Address mainrouter;
+
+		} __attribute__((packed));
+
+		struct DNSServer : public Option
+		{
+			DNSServer() : code(OptionCode::DNSServer) {}
+			OptionCode code;
+			uint8_t length;
+
+			Library::IPv4Address mainserver;
+
+		} __attribute__((packed));
+
+		struct DomainName : public Option
+		{
+			DomainName() : code(OptionCode::DomainName) {}
+			OptionCode code;
+			uint8_t length;
+
+			const char* str;
+
+		} __attribute__((packed));
+
+		struct LeaseTime : public Option
+		{
+			LeaseTime() : code(OptionCode::LeaseTime), length(4) {}
+			OptionCode code;
+			uint8_t length;
+
+			uint32_t time;
+
+		} __attribute__((packed));
+
+		struct MessageType : public Option
+		{
+			MessageType() : code(OptionCode::MessageType), length(1) {}
+			OptionCode code;
+			uint8_t length;
+
+			uint8_t type;
+
+		} __attribute__((packed));
+
+		struct DHCPServer : public Option
+		{
+			DHCPServer() : code(OptionCode::DHCPServer), length(4) {}
+			OptionCode code;
+			uint8_t length;
+
+			Library::IPv4Address addr;
+
+		} __attribute__((packed));
+
+		struct ParameterRequest : public Option
+		{
+			ParameterRequest() : code(OptionCode::ParameterRequest) {}
+
+			OptionCode code;
+			uint8_t length;
+			uint8_t options[16];
+
+		} __attribute__((packed));
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	static fd_t socket = 0;
 	static uint8_t* packetbuffer = 0;
 	static uint64_t socketlength = 0;
@@ -40,16 +193,17 @@ namespace DHCP
 
 				ReadSocket(socket, packetbuffer, bytes);
 
+				auto iface = (Devices::NIC::GenericNIC*) Devices::DeviceManager::GetDevice(Devices::DeviceType::EthernetNIC);
 				switch(CurrentStage)
 				{
 					case 0:
 						CurrentStage++;
-						HandleOffer((Devices::NIC::GenericNIC*) Devices::DeviceManager::GetDevice(Devices::DeviceType::EthernetNIC));
+						HandleOffer(iface);
 						break;
 
 					case 1:
 						CurrentStage++;
-						HandleAck((Devices::NIC::GenericNIC*) Devices::DeviceManager::GetDevice(Devices::DeviceType::EthernetNIC));
+						HandleAck(iface);
 						break;
 				}
 				delete[] packetbuffer;
@@ -118,8 +272,6 @@ namespace DHCP
 		socket = OpenSocket(SocketProtocol::UDP, 0);
 		BindSocket(socket, 0, 67);
 		ConnectSocket(socket, 0xFFFFFFFF, 68);
-
-		Log("Socket opened.");
 
 		// setup transaction id
 		transid = Kernel::KernelRandom->Generate32();
@@ -305,7 +457,7 @@ namespace DHCP
 					break;
 
 				case (uint8_t) Options::OptionCode::DNSServer:
-					// DNS::SetDNSServer(*((IPv4Address*) (&options[2])));
+					DNS::SetDNSServer(*((IPv4Address*) (&options[2])));
 					break;
 
 				case (uint8_t) Options::OptionCode::LeaseTime:
@@ -326,7 +478,7 @@ namespace DHCP
 		Log("Received DHCP Ack, obtained IP address %d.%d.%d.%d for %d seconds", thisip.b1, thisip.b2, thisip.b3, thisip.b4, LeaseTime);
 
 		// get/set the gateway MAC.
-		ARP::GatewayMAC = ARP::SendQuery(interface, IP::GetGatewayIP());
+		ARP::SetGatewayMAC(ARP::SendQuery(interface, IP::GetGatewayIP()));
 	}
 }
 }

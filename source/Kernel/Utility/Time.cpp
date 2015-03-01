@@ -5,6 +5,7 @@
 #include <Kernel.hpp>
 #include <Console.hpp>
 #include <HardwareAbstraction/Devices/RTC.hpp>
+#include <HardwareAbstraction/Devices/IOPort.hpp>
 #include <StandardIO.hpp>
 
 using namespace Library::StandardIO;
@@ -55,7 +56,7 @@ namespace Time
 	uint64_t SecondsSinceEpoch	= 0;			// Epoch as defined as 1st January, 2000
 
 	bool TimerOn = false;
-	bool PrintSeconds = false;
+	bool PrintSeconds = true;
 
 	void GetTime()
 	{
@@ -226,7 +227,7 @@ namespace Time
 
 	uint64_t Now()
 	{
-		return HardwareAbstraction::Devices::RTC::DidInitialise() ? Kernel::SystemTime->MillisecondsSinceEpoch : 0;
+		return HardwareAbstraction::Devices::RTC::DidInitialise() ? Kernel::SystemTime->MillisecondsSinceEpoch : 100;
 	}
 
 	void GetHumanReadableTime(rde::string& output)
@@ -256,10 +257,10 @@ namespace Time
 						{
 							Kernel::SystemTime->Year	++;
 							Kernel::SystemTime->Month	= 1;
-							Kernel::SystemTime->Day	= 1;
+							Kernel::SystemTime->Day		= 1;
 							Kernel::SystemTime->Hour	= 0;
 							Kernel::SystemTime->Hour12F	= 0;
-							Kernel::SystemTime->AM	= true;
+							Kernel::SystemTime->AM		= true;
 							Kernel::SystemTime->Minute	= 0;
 							Kernel::SystemTime->Second	= 0;
 							Kernel::SystemTime->YearDay	= 1;
@@ -267,10 +268,10 @@ namespace Time
 						else
 						{
 							Kernel::SystemTime->Month	++;
-							Kernel::SystemTime->Day	= 1;
+							Kernel::SystemTime->Day		= 1;
 							Kernel::SystemTime->Hour	= 0;
 							Kernel::SystemTime->Hour12F	= 0;
-							Kernel::SystemTime->AM	= true;
+							Kernel::SystemTime->AM		= true;
 							Kernel::SystemTime->Minute	= 0;
 							Kernel::SystemTime->Second	= 0;
 							Kernel::SystemTime->YearDay	++;
@@ -278,10 +279,10 @@ namespace Time
 					}
 					else
 					{
-						Kernel::SystemTime->Day	++;
+						Kernel::SystemTime->Day		++;
 						Kernel::SystemTime->Hour	= 0;
 						Kernel::SystemTime->Hour12F	= 0;
-						Kernel::SystemTime->AM	= true;
+						Kernel::SystemTime->AM		= true;
 						Kernel::SystemTime->Minute	= 0;
 						Kernel::SystemTime->Second	= 0;
 						Kernel::SystemTime->YearDay	++;
@@ -291,7 +292,7 @@ namespace Time
 				{
 					Kernel::SystemTime->Hour	++;
 					Kernel::SystemTime->Hour12F	= (Kernel::SystemTime->Hour > 12 ? Kernel::SystemTime->Hour - 12 : Kernel::SystemTime->Hour);
-					Kernel::SystemTime->AM	= IsAM();
+					Kernel::SystemTime->AM		= IsAM();
 					Kernel::SystemTime->Minute	= 0;
 					Kernel::SystemTime->Second 	= 0;
 				}
@@ -342,7 +343,8 @@ namespace Time
 			if(c == ResyncRate / (GlobalMilliseconds / GlobalTickRate))
 			{
 				c = 0;
-				// ReSyncTime();
+				ReSyncTime();
+				Log("sync");
 			}
 
 			SLEEP(500);
@@ -351,48 +353,71 @@ namespace Time
 
 	extern "C" void RTCTimerHandler()
 	{
-		// TimerOn = true;
-		// UpdateTime();
-		// HardwareAbstraction::Devices::IOPort::WriteByte(0x70, 0x0C);
-		// HardwareAbstraction::Devices::IOPort::ReadByte(0x71);
+		TimerOn = true;
+		UpdateTime();
+
+		using namespace Kernel::HardwareAbstraction::Devices;
+		IOPort::WriteByte(0x70, 0x0C);
+		IOPort::ReadByte(0x71);
 	}
 
 	void PrintTime()
 	{
-		uint16_t xpos = Console::GetCharsPerLine() - 1 - (PrintSeconds ? 15 : 11);
-		uint16_t x = 0, y = 0;
-		rde::string spaces;
+		#if 0
+			uint16_t xpos = Console::GetCharsPerLine();
 
-		if(PrintSeconds)
-			spaces.append("              ");
-
-		else
-			spaces.append("           ");
-
-		while(true)
-		{
-			x = Console::GetCursorX();
-			y = Console::GetCursorY();
-
-			Console::MoveCursor(xpos, 0);
-			PrintString(spaces.c_str());
-			Console::MoveCursor(xpos, 0);
-
-			PrintFormatted("%s[ %d.%02d %s ", Kernel::SystemTime->Hour12F < 10 ? " " : "", Kernel::SystemTime->Hour12F + Kernel::SystemTime->UTCOffset, Kernel::SystemTime->Minute, IsAM() ? "am" : "pm");
-
-			if(PrintSeconds)
+			// 0 = -, 1 = \, 2 = |, 3 = /
+			uint64_t state = 0;
+			while(true)
 			{
-				PrintFormatted("%02ds ]", Kernel::SystemTime->Second);
-			}
-			else
-			{
-				PrintString("]");
+				HardwareAbstraction::Multitasking::DisableScheduler();
+				uint16_t x = Console::GetCursorX();
+				uint16_t y = Console::GetCursorY();
+
+				Console::MoveCursor(xpos, 0);
+
+				if(state % 2 == 0)		PrintString("-");
+				else if(state % 2 == 1)	PrintString("|");
+
+				state++;
+				Console::MoveCursor(x, y);
+
+				HardwareAbstraction::Multitasking::EnableScheduler();
+
+				SLEEP(500);
 			}
 
+			// ----------------------------------------------------------------------
 
-			Console::MoveCursor(x, y);
-			SLEEP(200);
-		}
+			uint16_t xpos = Console::GetCharsPerLine() - 1 - (PrintSeconds ? 15 : 11);
+			uint16_t x = 0, y = 0;
+			rde::string spaces("                 ");
+
+			while(true)
+			{
+				x = Console::GetCursorX();
+				y = Console::GetCursorY();
+
+				Console::MoveCursor(xpos, 0);
+				PrintString(spaces.c_str());
+				Console::MoveCursor(xpos, 0);
+
+				PrintFormatted("%s[ %d.%02d %s ", Kernel::SystemTime->Hour12F < 10 ? " " : "", Kernel::SystemTime->Hour12F + Kernel::SystemTime->UTCOffset, Kernel::SystemTime->Minute, IsAM() ? "am" : "pm");
+
+				if(PrintSeconds)
+				{
+					PrintFormatted("%02ds ]", Kernel::SystemTime->Second);
+				}
+				else
+				{
+					PrintString("]");
+				}
+
+
+				Console::MoveCursor(x, y);
+				SLEEP(300);
+			}
+		#endif
 	}
 }
 }

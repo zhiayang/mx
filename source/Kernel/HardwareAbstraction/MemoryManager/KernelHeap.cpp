@@ -2,7 +2,6 @@
 // Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
-
 // Heap things.
 
 #include <Kernel.hpp>
@@ -18,7 +17,7 @@ using namespace Library;
 #define MaximumHeapSizeInPages		0xFFFFFFFF
 #define Alignment					32
 #define MetadataSize				32
-#define Warn						0
+#define Warn						1
 #define MapFlags					0x7
 #define ClearMemory					1
 
@@ -38,10 +37,9 @@ namespace KernelHeap
 	{
 		uint64_t Offset;
 		uint64_t Size;
-		uint64_t pad;
+		uint64_t callerAddr;
 		uint64_t magic;
 	};
-
 
 	uint64_t GetSize(Block* c)
 	{
@@ -71,8 +69,9 @@ namespace KernelHeap
 	Block* sane(Block* c)
 	{
 		if(c && (c->Offset ^ c->Size) == c->magic)
+		{
 			return c;
-
+		}
 		else
 		{
 			Log(1, "Expected 'magic' to be %x, got %x", c->Offset ^ c->Size, c->magic);
@@ -208,8 +207,6 @@ namespace KernelHeap
 	uint64_t FindFirstFreeSlot(uint64_t Size)
 	{
 		// free chunks are more often than not found at the back,
-		// so fuck convention and scan from the back.
-
 		{
 			uint64_t p = KernelHeapMetadata + MetadataSize + (FirstFreeIndex * sizeof(Block));
 
@@ -300,7 +297,7 @@ namespace KernelHeap
 		SizeOfHeapInPages++;
 	}
 
-	void* AllocateChunk(uint64_t s)
+	void* AllocateChunk(uint64_t s, const char* callerData)
 	{
 		uint64_t Size = (uint64_t) s;
 
@@ -319,7 +316,7 @@ namespace KernelHeap
 		if(in == 0)
 		{
 			ExpandHeap();
-			return AllocateChunk(as);
+			return AllocateChunk(as, callerData);
 		}
 		else
 		{
@@ -336,6 +333,13 @@ namespace KernelHeap
 
 			c->Size &= (uint64_t) (~0x1);
 			c->magic = c->Offset ^ c->Size;
+			c->callerAddr = (uint64_t) __builtin_return_address(1);	// two levels up, since (0) is probably operator new
+
+			if(c->callerAddr == 0)	// but if it's 0, then... try (0).
+				c->callerAddr = (uint64_t) __builtin_return_address(0);
+
+			(void) callerData;
+
 			if(ClearMemory)
 				Memory::Set((void*) (KernelHeapAddress + c->Offset), 0, GetSize(c));
 
@@ -425,11 +429,8 @@ namespace KernelHeap
 		return false;
 	}
 
-
-	void FreeChunk(void* Pointer)
+	Block* LookupBlockFromOffset(uint64_t offset)
 	{
-		// AutoMutex lock = AutoMutex(Mutexes::KernelHeap);
-
 		// find the corresponding chunk in the mdata.
 		uint64_t p = KernelHeapMetadata + MetadataSize;
 		Block* tc = 0;
@@ -437,9 +438,9 @@ namespace KernelHeap
 		for(uint64_t k = 0; k < NumberOfChunksInHeap; k++)
 		{
 			Block* c = (Block*) p;
-			if((uint64_t) Pointer - KernelHeapAddress == (uint64_t) c->Offset)
+			if(offset - KernelHeapAddress == (uint64_t) c->Offset)
 			{
-				if(k < FirstFreeIndex)
+				if(k < FirstFreeIndex && c && IsFree(c))
 					FirstFreeIndex = k;
 
 				tc = c;
@@ -453,23 +454,52 @@ namespace KernelHeap
 		if(!tc)
 		{
 			if(Warn)
-				Log(1, "Tried to free nonexistent chunk at address %x, return address: %x, ignoring...", (uint64_t) Pointer, __builtin_return_address(0));
+			{
+				Log(1, "Tried to free nonexistent chunk at address %x, RA: %x, ignoring...",
+					offset, __builtin_return_address(1));
+			}
 
-			return;
+			return 0;
 		}
 
-		// else, set it to free.
-
-		tc->Size |= 0x1;
-		tc->magic = tc->Offset ^ tc->Size;
-		Memory::Set((void*)((uint64_t)(tc->Offset + KernelHeapAddress)), 0x00, GetSize(tc));
-
-		// try to merge left or right.
-		TryMergeRight(tc);
-		TryMergeLeft(tc);
+		sane(tc);
+		return tc;
 	}
 
 
+	void FreeChunk(void* Pointer)
+	{
+		// else, set it to free.
+		Block* tc = LookupBlockFromOffset((uint64_t) Pointer);
+		if(tc)
+		{
+			tc->Size |= 0x1;
+			tc->magic = tc->Offset ^ tc->Size;
+			Memory::Set((void*) ((uint64_t) (tc->Offset + KernelHeapAddress)), 0x00, GetSize(tc));
+
+			// try to merge left or right.
+			TryMergeRight(tc);
+			TryMergeLeft(tc);
+		}
+	}
+
+	void* ReallocateChunk(void* ptr, uint64_t size)
+	{
+		Block* b = LookupBlockFromOffset((uint64_t) ptr);
+
+		if(b->Size > size)
+		{
+			return (void*) b->Offset;
+		}
+		else
+		{
+			void* ret = AllocateChunk(size, "");
+			assert(ret);
+
+			Memory::Copy(ret, ptr, b->Size);
+			return ret;
+		}
+	}
 
 
 
@@ -510,7 +540,8 @@ namespace KernelHeap
 		for(uint64_t n = 0; n < NumberOfChunksInHeap; n++)
 		{
 			Block* c = (Block*) p;
-			Log("Offset: %x, Size: %x, IsFree: %b", (uint64_t) c->Offset, GetSize(c), IsFree(c));
+			Log("=> Offset: %x, Size: %x, IsFree: %b\n"
+				"\t %p", (uint64_t) c->Offset, GetSize(c), IsFree(c), c->callerAddr);
 
 			p += sizeof(Block);
 		}
@@ -519,5 +550,4 @@ namespace KernelHeap
 }
 }
 }
-
 

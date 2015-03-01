@@ -3,6 +3,14 @@
 // Licensed under the Apache License Version 2.0.
 
 
+
+// Flax rewrite candidate
+// required features:
+// declaration of function without body
+// global variables
+
+
+
 #include <Kernel.hpp>
 #include <Console.hpp>
 #include <HardwareAbstraction/VideoOutput.hpp>
@@ -18,8 +26,8 @@ using namespace Kernel::HardwareAbstraction::VideoOutput::LinearFramebuffer;
 namespace Kernel {
 namespace Console
 {
-	#define CharWidth	9
-	#define CharHeight	16
+	#define CharWidth		9
+	#define CharHeight		16
 	#define BitsPerPixel	32
 
 	static uint16_t VT_CursorX = 0;
@@ -31,8 +39,7 @@ namespace Console
 
 	static uint32_t VT_Colour = 0xFFFFFFFF;
 	static bool VT_DidInit = false;
-
-	const uint16_t OffsetLeft = 4;
+	static uint16_t OffsetLeft = 4;
 
 	static Mutex* mtx;
 
@@ -67,7 +74,7 @@ namespace Console
 			return;
 		}
 
-		AutoMutex lk = AutoMutex(mtx);
+		// AutoMutex lk = AutoMutex(mtx);
 
 		if(c == '\r')
 		{
@@ -174,17 +181,13 @@ namespace Console
 
 	void Scroll()
 	{
-		// asm volatile("cli");
 		uint64_t x = GetResX(), y = GetResY();
-
 
 		// copy up.
 		Memory::Copy((void*) Kernel::GetFramebufferAddress(), (void*)(Kernel::GetFramebufferAddress() + (x * CharHeight * (BitsPerPixel / 8))), (x * y * (BitsPerPixel / 8)) - (x * CharHeight * (BitsPerPixel / 8)));
 
 		// delete the last line.
 		Memory::Set((void*)(Kernel::GetFramebufferAddress() + ((x * y * (BitsPerPixel / 8)) - (x * CharHeight * (BitsPerPixel / 8)))), 0x00, x * CharHeight * (BitsPerPixel / 8));
-
-		// asm volatile("sti");
 	}
 
 	void ScrollDown(uint64_t lines)

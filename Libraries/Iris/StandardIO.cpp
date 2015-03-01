@@ -320,12 +320,18 @@ namespace StandardIO
 		va_end(args);
 	}
 
-	void printf(const char* str, ...)
+	extern "C" void printf(const char* str, ...)
 	{
 		va_list args;
 		va_start(args, str);
 		PrintFormatted(0, str, args);
 		va_end(args);
+	}
+
+	extern "C" int puts(const char* str)
+	{
+		PrintString(str);
+		return 0;
 	}
 
 	void PrintFormatted(const char* str, va_list args)
@@ -391,7 +397,7 @@ namespace StandardIO
 		uint64_t PrintedChars = 0;
 
 		char c = 0;
-		int32_t z = 0;
+		int64_t z = 0;
 		uint64_t x = 0;
 		double f = 0.00;
 		char* s = 0;
@@ -430,7 +436,7 @@ namespace StandardIO
 					case 'd':
 					case 'i':
 					case 'u':
-						z = va_arg(args, int32_t);
+						z = ArgSize == 0 ? va_arg(args, int32_t) : va_arg(args, int64_t);
 						if(DisplaySign)
 						{
 							if(z > 0)

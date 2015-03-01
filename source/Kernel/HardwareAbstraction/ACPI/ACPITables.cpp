@@ -25,7 +25,7 @@ namespace ACPI
 		// or between 0xE0000 to 0xFFFFF
 
 		// first get the ebda address.
-		uint8_t* ebda = (uint8_t*)(uint64_t)((uint32_t)(*((uint16_t*)0x40E)) << 4);
+		uint8_t* ebda = (uint8_t*) ((uintptr_t) ((uint32_t) (*((uint16_t*) 0x40E)) << 4));
 
 		Log("Searching for RootSystemDescriptionPointer structure in EBDA at %x", (uintptr_t) ebda);
 
@@ -97,17 +97,17 @@ namespace ACPI
 		// initialise
 		Memory::Copy((void*) this->signature, (void*) address, 8);
 		Memory::Copy((void*) this->oemid, (void*)(address + 9), 6);
-		this->revision = *((uint8_t*)(address + 15));
-		this->rsdtaddress = (uint64_t)(*((uint32_t*)(address + 16)));
+		this->revision = *((uint8_t*) (address + 15));
+		this->rsdtaddress = (uint64_t) (*((uint32_t*) (address + 16)));
 
 		// check revision.
 		if(this->revision > 0)
 		{
 			Log("XSDP Structure present");
 
-			this->length = *((uint32_t*)(address + 20));
-			this->xsdtaddress = *((uint64_t*)(address + 24));
-			this->extendedchecksum = *((uint8_t*)(address + 32));
+			this->length = *((uint32_t*) (address + 20));
+			this->xsdtaddress = *((uint64_t*) (address + 24));
+			this->extendedchecksum = *((uint8_t*) (address + 32));
 		}
 		else
 		{
@@ -120,7 +120,7 @@ namespace ACPI
 		uint8_t cs = 0;
 		for(uint64_t i = 0; i < 36; i++)
 		{
-			cs += (uint8_t)(*((uint8_t*)(address + i)));
+			cs += (uint8_t) (*((uint8_t*) (address + i)));
 		}
 
 		Log("RSDP structure checksum: %d, expected %d, %s", cs, 0, cs == 0 ? "match" : "fail");
@@ -152,10 +152,10 @@ namespace ACPI
 		// map the first page first.
 		MemoryManager::Virtual::MapAddress(a, a, 0x03);
 
-		uint32_t Length = *((uint32_t*)((uint64_t)(this->revision > 0 ? this->xsdtaddress : this->rsdtaddress) + 4));
+		uint32_t Length = *((uint32_t*) ((uint64_t) (this->revision > 0 ? this->xsdtaddress : this->rsdtaddress) + 4));
 		for(uint64_t i = 1; i < (Length + 0xFFF) / 0x1000; i++)
 		{
-			MemoryManager::Virtual::MapAddress((uint64_t)(a + (i * 0x1000)), (uint64_t)(a + (i * 0x1000)), 0x03);
+			MemoryManager::Virtual::MapAddress((uint64_t) (a + (i * 0x1000)), (uint64_t) (a + (i * 0x1000)), 0x03);
 		}
 
 
@@ -184,7 +184,7 @@ namespace ACPI
 		// add them all to list.
 		for(uint64_t k = 0; k < numentries; k++)
 		{
-			uint64_t ad = this->revision > 0 ? (*((uint64_t*)((uint64_t) entries64 + (k * (this->revision > 0 ? 8 : 4))))) : ((uint64_t)*((uint32_t*)((uint64_t) entries + (k * 4))));
+			uintptr_t ad = this->revision > 0 ? (*((uint64_t*) ((uint64_t) entries64 + (k * (this->revision > 0 ? 8 : 4))))) : ((uintptr_t) *((uint32_t*) ((uint64_t) entries + (k * 4))));
 
 			SystemDescriptionTable* sdt = new SystemDescriptionTable(ad);
 
