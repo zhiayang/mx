@@ -27,7 +27,6 @@ namespace Network
 		the Socket class itself can probably stay the same, with instance methods moving out into functions operating
 		on vnodes. In this case vnode->fsref->info will probably be a Socket* casted as void*.
 
-
 		contemplate
 	*/
 
@@ -77,7 +76,14 @@ namespace Network
 		return fe->node;
 	}
 
+	static Socket* getsockdata(vnode* node)
+	{
+		assert(node);
+		assert(node->info);
+		assert(node->info->data);
 
+		return (Socket*) node->info->data;
+	}
 
 
 
@@ -95,14 +101,25 @@ namespace Network
 
 
 		// socket driver init
-		Socket* socket = new Socket(interface, prot);
 
-		vnode* node = VFS::CreateNode(socket);
+		Filesystem* socketfs = VFS::GetFilesystemAtPath(VFS::FS_SOCKET_MOUNTPOINT);
+		assert(socketfs);
+		assert(socketfs->driver);
+
+		assert(socketfs->driver->GetType() == FSDriverType::Socket);
+
+		if(!((SocketVFS*) socketfs->driver)->interface)
+			((SocketVFS*) socketfs->driver)->interface = interface;
+
+		vnode* node = VFS::CreateNode(socketfs->driver);
 		assert(node);
 
 		node->type = VNodeType::Socket;
 		fileentry* fe = VFS::Open(getctx(), node, 0);
 		assert(fe);
+
+		Socket* socket = new Socket(GLOBAL_MTU * 8, prot);
+		node->info->data = (void*) socket;
 
 		return fe->fd;
 	}
@@ -110,40 +127,40 @@ namespace Network
 	void CloseSocket(fd_t fd)
 	{
 		vnode* node = getvnode(fd);
-		((Socket*) node->info->driver)->Close(node);
+		((SocketVFS*) node->info->driver)->Close(node);
 	}
 
 
 	err_t BindSocket(fd_t fd, Library::IPv4Address local, uint16_t port)
 	{
 		vnode* node = getvnode(fd);
-		((Socket*) node->info->driver)->Bind(node, local, port);
+		((SocketVFS*) node->info->driver)->Bind(node, local, port);
 		return 0;
 	}
 
 	err_t ConnectSocket(fd_t fd, Library::IPv4Address remote, uint16_t port)
 	{
 		vnode* node = getvnode(fd);
-		((Socket*) node->info->driver)->Connect(node, remote, port);
+		((SocketVFS*) node->info->driver)->Connect(node, remote, port);
 		return 0;
 	}
 
 	size_t ReadSocket(fd_t socket, void* buf, size_t bytes)
 	{
 		vnode* node = getvnode(socket);
-		return ((Socket*) node->info->driver)->Read(node, buf, 0, bytes);
+		return ((SocketVFS*) node->info->driver)->Read(node, buf, 0, bytes);
 	}
 
 	size_t WriteSocket(fd_t socket, void* buf, size_t bytes)
 	{
 		vnode* node = getvnode(socket);
-		return ((Socket*) node->info->driver)->Write(node, buf, 0, bytes);
+		return ((SocketVFS*) node->info->driver)->Write(node, buf, 0, bytes);
 	}
 
 	size_t GetSocketBufferFill(fd_t socket)
 	{
 		vnode* node = getvnode(socket);
-		return ((Socket*) node->info->driver)->recvbuffer.ByteCount();
+		return ((Socket*) node->info->data)->recvbuffer.ByteCount();
 	}
 
 
@@ -159,32 +176,26 @@ namespace Network
 
 
 	// actual class implementation
-	Socket::Socket(Devices::NIC::GenericNIC* iface, Library::SocketProtocol prot) : FSDriver(nullptr, Filesystems::FSDriverType::Socket), recvbuffer(GLOBAL_MTU * 8)
+	SocketVFS::SocketVFS() : FSDriver(nullptr, Filesystems::FSDriverType::Socket)
 	{
-		// this->ip4source = source;
-		// this->ip4dest = dest;
-
-		this->ip6source.high = 0;
-		this->ip6source.low = 0;
-		this->ip6dest.high = 0;
-		this->ip6dest.low = 0;
-
-		// this->clientport = spt;
-		// this->serverport = dpt;
-		this->protocol = prot;
 		this->_seekable = false;
-		this->interface = iface;
 	}
 
-	Socket::~Socket()
+	SocketVFS::~SocketVFS()
 	{
+	}
+
+	bool SocketVFS::Create(Filesystems::VFS::vnode*, const char*, uint64_t, uint64_t)
+	{
+		return false;
 	}
 
 	// bind address to local
-	void Socket::Bind(vnode* node, IPv4Address local, uint16_t localport)
+	void SocketVFS::Bind(vnode* node, IPv4Address local, uint16_t localport)
 	{
-		(void) node;
-		if(this->ip4source.raw != 0 || this->clientport != 0)
+		Socket* skt = getsockdata(node);
+
+		if(skt->ip4source.raw != 0 || skt->clientport != 0)
 		{
 			Log(1, "Socket is already bound, ignoring");
 			Multitasking::SetThreadErrno(EINVAL);
@@ -196,35 +207,36 @@ namespace Network
 		// make sure port not already in use
 		if(localport == 0)
 		{
-			if(this->protocol == SocketProtocol::TCP)
-				this->clientport = TCP::AllocateEphemeralPort();
+			if(skt->protocol == SocketProtocol::TCP)
+				skt->clientport = TCP::AllocateEphemeralPort();
 
-			else if(this->protocol == SocketProtocol::UDP)
-				this->clientport = UDP::AllocateEphemeralPort();
+			else if(skt->protocol == SocketProtocol::UDP)
+				skt->clientport = UDP::AllocateEphemeralPort();
 
 			else
 				Log("Unsupported protocol, WTF are you doing?!");
 		}
 		else
 		{
-			this->clientport = localport;
+			skt->clientport = localport;
 		}
 
 		// if source is zero, use local
 		if(local.raw == 0)
 		{
-			this->ip4source = IP::GetIPv4Address();
+			skt->ip4source = IP::GetIPv4Address();
 		}
 		else
 		{
-			this->ip4source = local;
+			skt->ip4source = local;
 		}
 	}
 
-	void Socket::Connect(vnode* node, IPv4Address remote, uint16_t remoteport)
+	void SocketVFS::Connect(vnode* node, IPv4Address remote, uint16_t remoteport)
 	{
-		(void) node;
-		if(this->ip4dest.raw != 0 || this->serverport != 0)
+		Socket* skt = getsockdata(node);
+
+		if(skt->ip4dest.raw != 0 || skt->serverport != 0)
 		{
 			Log(1, "Socket is already connected, ignoring");
 			Multitasking::SetThreadErrno(EISCONN);
@@ -232,25 +244,25 @@ namespace Network
 		}
 
 
-		this->ip4dest = remote;
-		this->serverport = remoteport;
+		skt->ip4dest = remote;
+		skt->serverport = remoteport;
 
 		// ipv4
-		switch(this->protocol)
+		switch(skt->protocol)
 		{
 			case SocketProtocol::RawIPv4:
 				// no ports for this
-				IP::MapIPv4Socket(SocketIPv4Mapping { this->ip4source, this->ip4dest }, this);
+				IP::MapIPv4Socket(SocketIPv4Mapping { skt->ip4source, skt->ip4dest }, skt);
 				break;
 
 			case SocketProtocol::TCP:
-				TCP::MapSocket(SocketFullMappingv4 { IPv4PortAddress { this->ip4source, (uint16_t) this->clientport },
-					IPv4PortAddress { this->ip4dest, (uint16_t) this->serverport } }, this);
+				TCP::MapSocket(SocketFullMappingv4 { IPv4PortAddress { skt->ip4source, (uint16_t) skt->clientport },
+					IPv4PortAddress { skt->ip4dest, (uint16_t) skt->serverport } }, skt);
 				break;
 
 			case SocketProtocol::UDP:
-				UDP::MapSocket(SocketFullMappingv4 { IPv4PortAddress { this->ip4source, (uint16_t) this->clientport },
-					IPv4PortAddress { this->ip4dest, (uint16_t) this->serverport } }, this);
+				UDP::MapSocket(SocketFullMappingv4 { IPv4PortAddress { skt->ip4source, (uint16_t) skt->clientport },
+					IPv4PortAddress { skt->ip4dest, (uint16_t) skt->serverport } }, skt);
 				break;
 
 			default:
@@ -258,10 +270,10 @@ namespace Network
 				break;
 		}
 
-		if(this->protocol == SocketProtocol::TCP)
+		if(skt->protocol == SocketProtocol::TCP)
 		{
-			this->tcpconnection = new TCP::TCPConnection(this, this->ip4dest, (uint16_t) this->clientport, (uint16_t) this->serverport);
-			this->tcpconnection->Connect();
+			skt->tcpconnection = new TCP::TCPConnection(skt, skt->ip4dest, (uint16_t) skt->clientport, (uint16_t) skt->serverport);
+			skt->tcpconnection->Connect();
 		}
 	}
 
@@ -271,42 +283,25 @@ namespace Network
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	void Socket::Close(Filesystems::VFS::vnode* node)
+	void SocketVFS::Close(Filesystems::VFS::vnode* node)
 	{
-		(void) node;
+		Socket* skt = getsockdata(node);
 
-		switch(this->protocol)
+		switch(skt->protocol)
 		{
 			case Library::SocketProtocol::RawIPv4:
 				// no ports for this
-				IP::UnmapIPv4Socket(SocketIPv4Mapping { this->ip4source, this->ip4dest });
+				IP::UnmapIPv4Socket(SocketIPv4Mapping { skt->ip4source, skt->ip4dest });
 				break;
 
 			case Library::SocketProtocol::TCP:
-				TCP::UnmapSocket(SocketFullMappingv4 { IPv4PortAddress { this->ip4source, (uint16_t) this->clientport },
-					IPv4PortAddress { this->ip4dest, (uint16_t) this->serverport } });
+				TCP::UnmapSocket(SocketFullMappingv4 { IPv4PortAddress { skt->ip4source, (uint16_t) skt->clientport },
+					IPv4PortAddress { skt->ip4dest, (uint16_t) skt->serverport } });
 				break;
 
 			case Library::SocketProtocol::UDP:
-				UDP::UnmapSocket(SocketFullMappingv4 { IPv4PortAddress { this->ip4source, (uint16_t) this->clientport },
-					IPv4PortAddress { this->ip4dest, (uint16_t) this->serverport } });
+				UDP::UnmapSocket(SocketFullMappingv4 { IPv4PortAddress { skt->ip4source, (uint16_t) skt->clientport },
+					IPv4PortAddress { skt->ip4dest, (uint16_t) skt->serverport } });
 				break;
 
 			case Library::SocketProtocol::IPC:
@@ -318,31 +313,31 @@ namespace Network
 		}
 
 		// this will close the TCP connection
-		if(this->protocol == SocketProtocol::TCP)
-			delete this->tcpconnection;
+		if(skt->protocol == SocketProtocol::TCP)
+			delete skt->tcpconnection;
 	}
 
-	size_t Socket::Read(Filesystems::VFS::vnode* node, void* buf, off_t offset, size_t length)
+	size_t SocketVFS::Read(Filesystems::VFS::vnode* node, void* buf, off_t offset, size_t length)
 	{
 		(void) offset;
-		(void) node;
+		Socket* skt = getsockdata(node);
 
-		uint64_t ret = __min(this->recvbuffer.ByteCount(), length);
-		this->recvbuffer.Read((uint8_t*) buf, length);
+		uint64_t ret = __min(skt->recvbuffer.ByteCount(), length);
+		skt->recvbuffer.Read((uint8_t*) buf, length);
 		return ret;
 	}
 
-	size_t Socket::Write(Filesystems::VFS::vnode* node, const void* buf, off_t offset, size_t length)
+	size_t SocketVFS::Write(Filesystems::VFS::vnode* node, const void* buf, off_t offset, size_t length)
 	{
-		(void) node;
 		(void) offset;
+		Socket* skt = getsockdata(node);
 
 		// tcp is special because we need to do stupid things in the TCPConnection class.
-		if(this->protocol == SocketProtocol::TCP)
+		if(skt->protocol == SocketProtocol::TCP)
 		{
-			this->tcpconnection->SendUserPacket((uint8_t*) buf, (uint16_t) length);
+			skt->tcpconnection->SendUserPacket((uint8_t*) buf, (uint16_t) length);
 		}
-		else if(this->protocol == SocketProtocol::UDP)
+		else if(skt->protocol == SocketProtocol::UDP)
 		{
 			// udp is simpler.
 			if(length > GLOBAL_MTU)
@@ -351,43 +346,38 @@ namespace Network
 				return 0;
 			}
 
-			UDP::SendIPv4Packet(this->interface, (uint8_t*) buf, (uint16_t) length, this->ip4dest,
-				(uint16_t) this->clientport, (uint16_t) this->serverport);
+			UDP::SendIPv4Packet(skt->interface, (uint8_t*) buf, (uint16_t) length, skt->ip4dest,
+				(uint16_t) skt->clientport, (uint16_t) skt->serverport);
 		}
-		else if(this->protocol == SocketProtocol::IPC)
+		else if(skt->protocol == SocketProtocol::IPC)
 		{
-			this->recvbuffer.Write((uint8_t*) buf, length);
+			skt->recvbuffer.Write((uint8_t*) buf, length);
 		}
 
 		return length;
 	}
 
-	bool Socket::Create(Filesystems::VFS::vnode*, const char*, uint64_t, uint64_t)
+	bool SocketVFS::Delete(Filesystems::VFS::vnode*, const char*)
 	{
 		return false;
 	}
 
-	bool Socket::Delete(Filesystems::VFS::vnode*, const char*)
+	bool SocketVFS::Traverse(Filesystems::VFS::vnode*, const char*, char**)
 	{
 		return false;
 	}
 
-	bool Socket::Traverse(Filesystems::VFS::vnode*, const char*, char**)
-	{
-		return false;
-	}
-
-	void Socket::Flush(Filesystems::VFS::vnode*)
+	void SocketVFS::Flush(Filesystems::VFS::vnode*)
 	{
 
 	}
 
-	void Socket::Stat(Filesystems::VFS::vnode*, struct stat*, bool)
+	void SocketVFS::Stat(Filesystems::VFS::vnode*, struct stat*, bool)
 	{
 
 	}
 
-	rde::vector<Filesystems::VFS::vnode*> Socket::ReadDir(Filesystems::VFS::vnode*)
+	rde::vector<Filesystems::VFS::vnode*> SocketVFS::ReadDir(Filesystems::VFS::vnode*)
 	{
 		return rde::vector<Filesystems::VFS::vnode*>();
 	}

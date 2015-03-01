@@ -66,6 +66,7 @@ namespace Library
 
 	enum class SocketProtocol
 	{
+		Invalid,
 		TCP,
 		UDP,
 		RawIPv4,

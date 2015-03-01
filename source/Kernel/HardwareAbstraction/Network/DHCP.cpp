@@ -193,16 +193,17 @@ namespace DHCP
 
 				ReadSocket(socket, packetbuffer, bytes);
 
+				auto iface = (Devices::NIC::GenericNIC*) Devices::DeviceManager::GetDevice(Devices::DeviceType::EthernetNIC);
 				switch(CurrentStage)
 				{
 					case 0:
 						CurrentStage++;
-						HandleOffer((Devices::NIC::GenericNIC*) Devices::DeviceManager::GetDevice(Devices::DeviceType::EthernetNIC));
+						HandleOffer(iface);
 						break;
 
 					case 1:
 						CurrentStage++;
-						HandleAck((Devices::NIC::GenericNIC*) Devices::DeviceManager::GetDevice(Devices::DeviceType::EthernetNIC));
+						HandleAck(iface);
 						break;
 				}
 				delete[] packetbuffer;
@@ -271,8 +272,6 @@ namespace DHCP
 		socket = OpenSocket(SocketProtocol::UDP, 0);
 		BindSocket(socket, 0, 67);
 		ConnectSocket(socket, 0xFFFFFFFF, 68);
-
-		Log("Socket opened.");
 
 		// setup transaction id
 		transid = Kernel::KernelRandom->Generate32();

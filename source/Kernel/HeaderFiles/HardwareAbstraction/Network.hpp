@@ -69,7 +69,7 @@ namespace Network
 
 
 
-	class Socket;
+	struct Socket;
 	namespace Ethernet
 	{
 		// Ethernet
@@ -406,14 +406,31 @@ namespace Network
 
 
 
+	struct Socket
+	{
+		Socket(size_t BufferSize, Library::SocketProtocol prot) : recvbuffer(BufferSize), protocol(prot) { }
 
+		Library::CircularMemoryBuffer recvbuffer;
+		Library::IPv4Address ip4source;
+		Library::IPv4Address ip4dest;
 
-	class Socket : public Filesystems::FSDriver
+		Library::IPv6Address ip6source;
+		Library::IPv6Address ip6dest;
+
+		Library::SocketProtocol protocol;
+		uint64_t clientport;
+		uint64_t serverport;
+
+		TCP::TCPConnection* tcpconnection;
+		Devices::NIC::GenericNIC* interface;
+	};
+
+	class SocketVFS : public Filesystems::FSDriver
 	{
 		public:
-			Socket(Devices::NIC::GenericNIC* interface, Library::SocketProtocol prot);
+			SocketVFS();
 
-			virtual ~Socket() override;
+			virtual ~SocketVFS() override;
 			virtual bool Create(Filesystems::VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms) override;
 			virtual bool Delete(Filesystems::VFS::vnode* node, const char* path) override;
 			virtual bool Traverse(Filesystems::VFS::vnode* node, const char* path, char** symlink) override;
@@ -435,19 +452,6 @@ namespace Network
 
 			void Close(Filesystems::VFS::vnode* node);
 
-
-			Library::CircularMemoryBuffer recvbuffer;
-			Library::IPv4Address ip4source;
-			Library::IPv4Address ip4dest;
-
-			Library::IPv6Address ip6source;
-			Library::IPv6Address ip6dest;
-
-			Library::SocketProtocol protocol;
-			uint64_t clientport;
-			uint64_t serverport;
-
-			TCP::TCPConnection* tcpconnection;
 			Devices::NIC::GenericNIC* interface;
 	};
 

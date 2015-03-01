@@ -10,6 +10,8 @@
 #include <fcntl.h>
 #include <String.hpp>
 
+#include <HardwareAbstraction/Network.hpp>
+
 using namespace Kernel::HardwareAbstraction::Devices::Storage;
 namespace Kernel {
 namespace HardwareAbstraction {
@@ -17,25 +19,29 @@ namespace Filesystems
 {
 	namespace VFS
 	{
+		const char* FS_CONSOLE_MOUNTPOINT = "/dev/console";
+		const char* FS_STDIN_MOUNTPOINT = "/dev/stdin";
+		const char* FS_STDOUT_MOUNTPOINT = "/dev/stdout";
+		const char* FS_STDERR_MOUNTPOINT = "/dev/stderr";
+		const char* FS_SOCKET_MOUNTPOINT = "/dev/socketfs";
+
+
+
+
+
+
 		static id_t curid = 0;
 		static id_t curfeid = 0;
 		static fd_t FirstFreeFD = 0;
 
-		struct Filesystem
-		{
-			FSDriver* driver;
-			Partition* partition;
-			rde::string* mountpoint;
-			bool ismounted;
-		};
-
 		static rde::vector<Filesystem*>* mountedfses;
 		static rde::hash_map<id_t, vnode*>* vnodepool;
 
+		static FSDriver* driver_console;
 		static FSDriver* driver_stdin;
 		static FSDriver* driver_stdout;
 		static FSDriver* driver_stderr;
-		static FSDriver* driver_socket;
+		static FSDriver* driver_socketfs;
 
 		static IOContext* getctx()
 		{
@@ -57,6 +63,13 @@ namespace Filesystems
 			return nullptr;
 		}
 
+		Filesystem* GetFilesystemAtPath(const char* path)
+		{
+			rde::string p(path);
+			return getfs(p);
+		}
+
+
 
 		void Initialise()
 		{
@@ -66,23 +79,23 @@ namespace Filesystems
 
 		void InitIO()
 		{
-			auto ConsoleFSD = new FSDriverConsole();
+			driver_console = new FSDriverConsole();
 			driver_stdin = new FSDriverStdin();
 			driver_stdout = new FSDriverStdout();
 			driver_stderr = new FSDriverStdlog();
-			driver_socket = new FSDriverSocketIPC();
+			driver_socketfs = new Network::SocketVFS();
 
-			Mount(nullptr, ConsoleFSD, "/dev/console");
-			Mount(nullptr, driver_stdin, "/dev/stdin");
-			Mount(nullptr, driver_stdout, "/dev/stdout");
-			Mount(nullptr, driver_stdout, "/dev/stderr");
-			Mount(nullptr, driver_socket, "/dev/socketfs");
+			Mount(nullptr, driver_console, FS_CONSOLE_MOUNTPOINT);
+			Mount(nullptr, driver_stdin, FS_STDIN_MOUNTPOINT);
+			Mount(nullptr, driver_stdout, FS_STDOUT_MOUNTPOINT);
+			Mount(nullptr, driver_stdout, FS_STDERR_MOUNTPOINT);
+			Mount(nullptr, driver_socketfs, FS_SOCKET_MOUNTPOINT);
 
 			auto ctx = getctx();
-			OpenFile(ctx, "/dev/stdin", 0);
-			OpenFile(ctx, "/dev/stdout", 0);
-			OpenFile(ctx, "/dev/stderr", 0);
-			OpenFile(ctx, "/dev/console", 0);
+			OpenFile(ctx, FS_STDIN_MOUNTPOINT, 0);
+			OpenFile(ctx, FS_STDOUT_MOUNTPOINT, 0);
+			OpenFile(ctx, FS_STDERR_MOUNTPOINT, 0);
+			OpenFile(ctx, FS_CONSOLE_MOUNTPOINT, 0);
 		}
 
 		// this fetches from the pool. used mainly by fsdrivers to avoid creating duplicate vnodes.
