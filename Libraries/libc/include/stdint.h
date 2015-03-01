@@ -118,20 +118,13 @@ __BEGIN_DECLS
 #define SIZE_MAX __SIZE_MAX
 
 #ifndef WCHAR_MIN
-#define WCHAR_MIN __WCHAR_MIN
+#define WCHAR_MIN __INT_MIN
 #endif
 
 #ifndef WCHAR_MAX
-#define WCHAR_MAX __WCHAR_MAX
+#define WCHAR_MAX __INT_MAX
 #endif
 
-#ifndef WINT_MIN
-#define WINT_MIN __WINT_MIN
-#endif
-
-#ifndef WINT_MAX
-#define WINT_MAX __WINT_MAX
-#endif
 
 #endif
 

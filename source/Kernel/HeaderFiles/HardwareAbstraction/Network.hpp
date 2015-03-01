@@ -461,6 +461,9 @@ namespace Network
 	err_t BindSocket(fd_t socket, Library::IPv4Address local, uint16_t port);
 	err_t ConnectSocket(fd_t socket, Library::IPv4Address remote, uint16_t port);
 
+	err_t BindSocket(fd_t socket, const char* path);
+	err_t ConnectSocket(fd_t socket, const char* path);
+
 	size_t ReadSocket(fd_t socket, void* buf, size_t bytes);
 	size_t WriteSocket(fd_t socket, void* buf, size_t bytes);
 	size_t GetSocketBufferFill(fd_t socket);

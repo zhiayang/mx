@@ -127,6 +127,8 @@ namespace Network
 	void CloseSocket(fd_t fd)
 	{
 		vnode* node = getvnode(fd);
+		if(!node) return;
+
 		((SocketVFS*) node->info->driver)->Close(node);
 	}
 
@@ -134,6 +136,8 @@ namespace Network
 	err_t BindSocket(fd_t fd, Library::IPv4Address local, uint16_t port)
 	{
 		vnode* node = getvnode(fd);
+		if(!node) return -1;
+
 		((SocketVFS*) node->info->driver)->Bind(node, local, port);
 		return 0;
 	}
@@ -141,25 +145,58 @@ namespace Network
 	err_t ConnectSocket(fd_t fd, Library::IPv4Address remote, uint16_t port)
 	{
 		vnode* node = getvnode(fd);
+		if(!node) return -1;
+
 		((SocketVFS*) node->info->driver)->Connect(node, remote, port);
 		return 0;
 	}
 
+	err_t BindSocket(fd_t fd, const char* path)
+	{
+		vnode* node = getvnode(fd);
+		if(!node) return -1;
+
+		((SocketVFS*) node->info->driver)->Bind(node, path);
+		return 0;
+	}
+
+	err_t ConnectSocket(fd_t fd, const char* path)
+	{
+		vnode* node = getvnode(fd);
+		if(!node) return -1;
+
+		((SocketVFS*) node->info->driver)->Connect(node, path);
+		return 0;
+	}
+
+
+
+
+
+
+
+
 	size_t ReadSocket(fd_t socket, void* buf, size_t bytes)
 	{
 		vnode* node = getvnode(socket);
+		if(!node) return -1;
+
 		return ((SocketVFS*) node->info->driver)->Read(node, buf, 0, bytes);
 	}
 
 	size_t WriteSocket(fd_t socket, void* buf, size_t bytes)
 	{
 		vnode* node = getvnode(socket);
+		if(!node) return -1;
+
 		return ((SocketVFS*) node->info->driver)->Write(node, buf, 0, bytes);
 	}
 
 	size_t GetSocketBufferFill(fd_t socket)
 	{
 		vnode* node = getvnode(socket);
+		if(!node) return -1;
+
 		return ((Socket*) node->info->data)->recvbuffer.ByteCount();
 	}
 
@@ -278,8 +315,68 @@ namespace Network
 	}
 
 
-	// note: the overloads of Socket::Bind and Socket::Connect taking const char* paths (for AF_UNIX IPC sockets)
-	// are implemented in HardwareAbstraction/Filesystems/FSDrivers/SocketIPC.cpp
+
+
+
+
+
+
+
+	// note: implemented here since they do similar things
+	static rde::hash_map<rde::string, Socket*>* ipcSocketMap = 0;
+
+	void SocketVFS::Bind(Filesystems::VFS::vnode* node, const char* _path)
+	{
+		Socket* skt = getsockdata(node);
+
+		// bind/connect is what actually opens the file on the VFS layer, for IPC sockets
+		if(!ipcSocketMap) ipcSocketMap = new rde::hash_map<rde::string, Socket*>();
+		assert(ipcSocketMap);
+
+		rde::string path(_path);
+
+		if(ipcSocketMap->find(path) != ipcSocketMap->end())
+		{
+			Log(1, "Socket with path '%s' already exists, aborting...", _path);
+			Multitasking::SetThreadErrno(EADDRINUSE);
+			return;
+		}
+
+		(*ipcSocketMap)[path] = skt;
+	}
+
+	void SocketVFS::Connect(Filesystems::VFS::vnode* node, const char* _path)
+	{
+		if(!ipcSocketMap) ipcSocketMap = new rde::hash_map<rde::string, Socket*>();
+		assert(ipcSocketMap);
+
+		rde::string path(_path);
+
+		// connect to the socket.
+		if(ipcSocketMap->find(path) == ipcSocketMap->end())
+		{
+			Log(1, "No such socket at path '%s'", _path);
+			return;
+		}
+
+		Socket* skt = (*ipcSocketMap)[path];
+		assert(skt);
+
+		// will this work?
+		node->info->data = (void*) skt;
+	}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
