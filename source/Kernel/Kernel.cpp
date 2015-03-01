@@ -416,14 +416,13 @@ namespace Kernel
 				ConnectSocket(skt, "/some/socket");
 				Log("socket connected");
 
-				int i = 0;
+				uint64_t x = 0;
 				while(true)
 				{
-					Log("sending\n");
-					int x = 'A' + i;
+					WriteSocket(skt, (void*) &x, 8);
+					YieldCPU();
 
-					WriteSocket(skt, (void*) &x, 1);
-					SLEEP(1000);
+					x++;
 				}
 			};
 
@@ -441,16 +440,16 @@ namespace Kernel
 			BindSocket(skt, "/some/socket");
 			Log("socket bound");
 
-			Multitasking::AddToQueue(Multitasking::CreateKernelThread(other));
+			Multitasking::AddToQueue(Multitasking::CreateKernelThread(other, 2));
 
 			while(true)
 			{
-				if(GetSocketBufferFill(skt) > 0)
+				while(GetSocketBufferFill(skt) >= 8)
 				{
-					char d = 0;
-					ReadSocket(skt, &d, 1);
+					uint64_t d = 0;
+					ReadSocket(skt, &d, 8);
 
-					Log("Recv: %c", d);
+					PrintFormatted("%x\n", d);
 				}
 			}
 		}

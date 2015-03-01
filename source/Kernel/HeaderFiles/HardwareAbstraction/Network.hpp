@@ -423,6 +423,8 @@ namespace Network
 
 		TCP::TCPConnection* tcpconnection;
 		Devices::NIC::GenericNIC* interface;
+
+		rde::string ipcSocketPath;
 	};
 
 	class SocketVFS : public Filesystems::FSDriver

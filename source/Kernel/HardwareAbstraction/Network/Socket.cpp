@@ -342,6 +342,7 @@ namespace Network
 			return;
 		}
 
+		skt->ipcSocketPath = path;
 		(*ipcSocketMap)[path] = skt;
 	}
 
@@ -402,7 +403,8 @@ namespace Network
 				break;
 
 			case Library::SocketProtocol::IPC:
-				// nothing to do
+				assert(skt->ipcSocketPath.length() > 0);
+				ipcSocketMap->erase(skt->ipcSocketPath);
 				break;
 
 			default:
@@ -440,7 +442,8 @@ namespace Network
 			if(length > GLOBAL_MTU)
 			{
 				Log(1, "Tried to send a UDP packet larger than the MTU, which is illegal");
-				return 0;
+				Multitasking::SetThreadErrno(EMSGSIZE);
+				return -1;
 			}
 
 			UDP::SendIPv4Packet(skt->interface, (uint8_t*) buf, (uint16_t) length, skt->ip4dest,
