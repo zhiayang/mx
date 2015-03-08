@@ -19,6 +19,11 @@ namespace SystemCalls
 		return OpenFile(path, (int) flags);
 	}
 
+	extern "C" uint64_t Syscall_OpenSocket(uint64_t domain, uint64_t type, uint64_t protocol)
+	{
+		return 0;
+	}
+
 	extern "C" void Syscall_CloseAny(uint64_t fd)
 	{
 		(void) fd;

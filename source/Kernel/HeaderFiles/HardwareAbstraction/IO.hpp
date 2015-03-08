@@ -9,14 +9,14 @@ namespace HardwareAbstraction {
 namespace IO
 {
 	void Initialise();
-	void Read(Devices::Storage::StorageDevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes);
-	void Write(Devices::Storage::StorageDevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes);
+	void Read(Devices::IODevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes);
+	void Write(Devices::IODevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes);
 
 
 	// non blocking.
 	// returns void pointer (opaque type essentially) to check status.
-	void* ScheduleRead(Devices::Storage::StorageDevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes);
-	void* ScheduleWrite(Devices::Storage::StorageDevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes);
+	void* ScheduleRead(Devices::IODevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes);
+	void* ScheduleWrite(Devices::IODevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes);
 	bool CheckStatus(void* request);
 }
 }

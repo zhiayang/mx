@@ -203,72 +203,11 @@ namespace Physical
 	{
 		DMAAddr ret;
 		ret.phys = AllocatePage(size, Below4Gb);
-		ret.virt = Virtual::AllocateVirtual(size);
+		ret.virt = Virtual::AllocateVirtual(size, 0, 0, ret.phys);
+
 
 		Virtual::MapRegion(ret.virt, ret.phys, size, 0x3);
 		return ret;
-
-
-
-
-
-		// // allocate a virtual page first
-		// uint64_t virt = Virtual::AllocateVirtual(size);
-		// OpsSinceLastCoalesce++;
-		// auto mut = AutoMutex(mtx);
-
-		// for(size_t i = 0; i < PageList->size(); i++)
-		// {
-		// 	Pair* pair = PageList->front();
-		// 	PageList->erase(PageList->begin());
-
-		// 	// if the virtual address matches a phys page in this range,
-		// 	// and the size matches -- account for the possibility where the base address is not exactly the virt
-		// 	// addr, but the length does encapsulate the entire thing
-		// 	if(pair->BaseAddr <= virt && (Below4Gb ? pair->BaseAddr + (size * 0x1000) < 0xFFFFFFFF : true)
-		// 		&& pair->LengthInPages >= (size + ((virt - pair->BaseAddr) / 0x1000)))
-		// 	{
-		// 		// we got one
-		// 		uint64_t beginOffset = virt - pair->BaseAddr;								// in bytes
-		// 		uint64_t endOffset = pair->LengthInPages - size - (beginOffset / 0x1000);	// in pages
-
-		// 		// Log("Allocating %d pages of DMA: Virt(%x), beginOffset(%x), endOffset(%d)\nPair: (%x, %d)", size, virt, beginOffset, endOffset, pair->BaseAddr, pair->LengthInPages);
-
-		// 		if(beginOffset > 0)
-		// 		{
-		// 			// create a new pair at the beginning
-		// 			Pair* newp = new Pair();
-		// 			newp->BaseAddr = pair->BaseAddr;
-		// 			newp->LengthInPages = beginOffset / 0x1000;
-
-		// 			PageList->push_back(newp);
-		// 			// Log("Created new pair (begin): (%x, %d)", newp->BaseAddr, newp->LengthInPages);
-		// 		}
-
-		// 		if(endOffset > 0)
-		// 		{
-		// 			Pair* newp = new Pair();
-		// 			newp->BaseAddr = virt + (size * 0x1000);
-		// 			newp->LengthInPages = endOffset;
-
-		// 			PageList->push_back(newp);
-		// 			// Log("Created new pair (end): (%x, %d)", newp->BaseAddr, newp->LengthInPages);
-		// 		}
-
-		// 		delete pair;
-
-		// 		Virtual::MapRegion(virt, virt, size, 0x3);
-		// 		return virt;
-		// 	}
-
-		// 	PageList->push_back(pair);
-		// }
-
-		// // if we haven't found anything, this virtual addr can't be matched
-		// uint64_t ret = AllocateDMA(size, Below4Gb);
-		// Virtual::FreeVirtual(virt);		// free after, so we don't go allocating what we just freed
-
-		// return ret;
 	}
 
 	void FreeDMA(DMAAddr addr, uint64_t size)

@@ -425,6 +425,7 @@ namespace Network
 		Devices::NIC::GenericNIC* interface;
 
 		rde::string ipcSocketPath;
+		rde::vector<pid_t> blockingProcs;
 	};
 
 	class SocketVFS : public Filesystems::FSDriver
@@ -452,6 +453,7 @@ namespace Network
 			void Connect(Filesystems::VFS::vnode* node, const char* path);
 			void Bind(Filesystems::VFS::vnode* node, const char* path);
 
+			size_t BlockingRead(Filesystems::VFS::vnode* node, void* buf, size_t bytes);
 			void Close(Filesystems::VFS::vnode* node);
 
 			Devices::NIC::GenericNIC* interface;
@@ -467,6 +469,8 @@ namespace Network
 	err_t ConnectSocket(fd_t socket, const char* path);
 
 	size_t ReadSocket(fd_t socket, void* buf, size_t bytes);
+	size_t ReadSocketBlocking(fd_t socket, void* buf, size_t bytes);
+
 	size_t WriteSocket(fd_t socket, void* buf, size_t bytes);
 	size_t GetSocketBufferFill(fd_t socket);
 }
