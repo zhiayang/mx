@@ -802,6 +802,11 @@ namespace Virtual
 
 	void CopyBetweenAddressSpaces(uint64_t fromAddr, uint64_t toAddr, size_t bytes, VirtualAddressSpace* from, VirtualAddressSpace* to)
 	{
+		(void) fromAddr;
+		(void) toAddr;
+		(void) bytes;
+		(void) from;
+		(void) to;
 	}
 
 	void CopyFromKernel(uint64_t fromAddr, uint64_t toAddr, size_t bytes, VirtualAddressSpace* to)
@@ -837,8 +842,13 @@ namespace Virtual
 		FreeVirtual(toVirtTemp, numPages);
 	}
 
-	void CopyToKernel(uint64_t fromAddr, uint64_t toAddr, size_t bytes, VirtualAddressSpace* from);
-
+	void CopyToKernel(uint64_t fromAddr, uint64_t toAddr, size_t bytes, VirtualAddressSpace* from)
+	{
+		(void) fromAddr;
+		(void) toAddr;
+		(void) bytes;
+		(void) from;
+	}
 
 
 	uint64_t CreateVAS()
