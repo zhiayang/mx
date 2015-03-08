@@ -13,21 +13,31 @@ namespace Kernel
 {
 	namespace Utilities
 	{
-		// void DumpBytes(uint64_t address, uint64_t length)
-		// {
-		// 	Log("Dumping %d bytes at address %x:", length, address);
-		// 	std::string* str = new std::string();
-		// 	for(uint64_t i = 0; i < length; i++)
-		// 	{
-		// 		if(!(i % 16))
-		// 			HardwareAbstraction::Devices::SerialPort::WriteString("\n");
-		// 		PrintToString(str, "%#02x ", *((uint8_t*)(address + i)));
-		// 		HardwareAbstraction::Devices::SerialPort::WriteString(str->c_str());
-		// 		str->clear();
+		static rde::string* str;
+		void appendToString(uint8_t ch)
+		{
+			assert(str);
+			str->append(ch);
+		}
 
-		// 	}
-		// 	Log("Dump complete");
-		// }
+		void DumpBytes(uint64_t address, uint64_t length)
+		{
+			Log("Dumping %d bytes at address %x:", length, address);
+			str = new rde::string();
+			for(uint64_t i = 0; i < length; i++)
+			{
+				if(!(i % 16))
+					HardwareAbstraction::Devices::SerialPort::WriteString("\n");
+
+				PrintFormatted(appendToString, "%#02x ", *((uint8_t*)(address + i)));
+
+				HardwareAbstraction::Devices::SerialPort::WriteString(str->c_str());
+				str->clear();
+			}
+
+			delete str;
+			Log("Dump complete");
+		}
 
 		void StackDump(uint64_t* ptr, int num, bool fromTop)
 		{

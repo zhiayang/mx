@@ -87,8 +87,10 @@ namespace DMA
 		Log("Initialised Busmastering DMA with BaseIO %x", mmio);
 	}
 
-	void ReadBytes(ATADrive* dev, uint64_t Buffer, uint64_t Sector, uint64_t Bytes)
+	IOResult ReadBytes(ATADrive* dev, uint64_t Buffer, uint64_t Sector, uint64_t Bytes)
 	{
+		(void) Buffer;
+
 		uint32_t mmio = (uint32_t) dev->ParentPCI->GetBAR(4);
 
 		// get a prd
@@ -99,8 +101,8 @@ namespace DMA
 			if(!cache.used)
 			{
 				prdCache = cache;
-				cache.used = true;
-				found = 1;
+				cache.used = 1;
+				found = true;
 				break;
 			}
 		}
@@ -126,6 +128,7 @@ namespace DMA
 		// write the bytes of address into register
 		IOPort::Write32((uint16_t) (mmio + (dev->GetBus() ? 8 : 0) + 4), (uint32_t) prdCache.address.phys);
 
+		// todo
 		PreviousDevice = dev;
 		PIO::SendCommandData(dev, Sector, (uint8_t) (Bytes / dev->GetSectorSize()));
 
@@ -137,7 +140,7 @@ namespace DMA
 
 		uint64_t no = Time::Now();
 		uint64_t t1 = 100000000;
-		while((_WaitingDMA14 || _WaitingDMA15) && Time::Now() < no + 100 && t1 > 0)
+		while((_WaitingDMA14 || _WaitingDMA15) && Time::Now() < no + 1000 && t1 > 0)
 			t1--;
 
 		_WaitingDMA14 = false;
@@ -147,9 +150,10 @@ namespace DMA
 		IOPort::WriteByte((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 0), DMA::DMACommandRead | DMA::DMACommandStop);
 
 
+		// todo: release cache
+
 		// copy over
-		Memory::Copy((void*) Buffer, (void*) paddr.virt, Bytes);
-		Physical::FreeDMA(paddr, (Bytes + 0xFFF) / 0x1000);
+		return IOResult(Bytes, paddr, (Bytes + 0xFFF) / 0x1000);
 	}
 
 
@@ -157,8 +161,12 @@ namespace DMA
 
 
 
-	void WriteBytes(ATADrive* dev, uint64_t Buffer, uint64_t Sector, uint64_t Bytes)
+	IOResult WriteBytes(ATADrive* dev, uint64_t Buffer, uint64_t Sector, uint64_t Bytes)
 	{
+		// todo: something
+		HALT("DMA WRITE NOT SUPPORTED");
+		return IOResult();
+
 		uint32_t mmio = (uint32_t) dev->ParentPCI->GetBAR(4);
 
 		// get a prd

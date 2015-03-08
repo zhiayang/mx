@@ -6,7 +6,7 @@
 #include <rdestl/list.h>
 
 using namespace Library;
-using namespace Kernel::HardwareAbstraction::Devices::Storage;
+using namespace Kernel::HardwareAbstraction::Devices;
 
 namespace Kernel {
 namespace HardwareAbstraction {
@@ -18,7 +18,7 @@ namespace IO
 	{
 		IOTransfer() { this->magic = 0xAF; }
 		Multitasking::Thread* owningthread;
-		StorageDevice* device;
+		IODevice* device;
 
 		// args to storagedevice.
 		uint64_t pos = 0;
@@ -60,11 +60,31 @@ namespace IO
 				// both operations should, at the lowest level, block until the operation is done.
 				// it doesn't matter anyway (although this does mean that we can only do ops on one device at a time)
 				// TODO (spawn new thread for each tertiary IO device (hdd)?)
+
+				IOResult iores;
 				if(req.writeop)
-					req.device->Write(req.pos, req.out, req.count);
+					iores = req.device->Write(req.pos, req.out, req.count);
 
 				else
-					req.device->Read(req.pos, req.out, req.count);
+					iores = req.device->Read(req.pos, req.out, req.count);
+
+
+				{
+					using namespace MemoryManager;
+
+					if(req.owningthread->Parent == Multitasking::GetProcess(0))
+					{
+						Memory::Copy((void*) req.out, (void*) iores.allocatedBuffer.virt, req.count);
+					}
+					else
+					{
+						Virtual::CopyFromKernel(iores.allocatedBuffer.virt, req.out, req.count, &req.owningthread->Parent->VAS);
+					}
+
+					Physical::FreeDMA(iores.allocatedBuffer, iores.bufferSizeInPages);
+				}
+
+
 
 				// it's most probably done.
 				req.completed = true;
@@ -96,7 +116,7 @@ namespace IO
 			Multitasking::AddToQueue(Multitasking::CreateKernelThread(Scheduler, 2));
 	}
 
-	void Read(StorageDevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes)
+	void Read(IODevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes)
 	{
 		// only returns when the data is read, therefore is blocking.
 		assert(dev);
@@ -132,7 +152,7 @@ namespace IO
 		}
 	}
 
-	void Write(StorageDevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes)
+	void Write(IODevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes)
 	{
 		// only returns when the data is read, therefore is blocking.
 		assert(dev);
@@ -175,7 +195,7 @@ namespace IO
 
 	// non blocking.
 	// returns void pointer (opaque type essentially) to check status.
-	void* ScheduleRead(StorageDevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes)
+	void* ScheduleRead(IODevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes)
 	{
 		// // only returns when the data is read, therefore is blocking.
 		// assert(dev);
@@ -204,7 +224,7 @@ namespace IO
 		return 0;
 	}
 
-	void* ScheduleWrite(StorageDevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes)
+	void* ScheduleWrite(IODevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes)
 	{
 		// // only returns when the data is read, therefore is blocking.
 		// assert(dev);

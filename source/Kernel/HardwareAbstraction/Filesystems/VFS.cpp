@@ -285,6 +285,7 @@ namespace Filesystems
 			}
 			else
 			{
+				Log("returning nullptr: %s", path);
 				return nullptr;
 			}
 		}

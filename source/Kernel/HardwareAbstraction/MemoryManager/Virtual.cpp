@@ -19,7 +19,7 @@ namespace Virtual
 	static PageMapStructure* CurrentPML4T;
 	static bool IsPaging;
 
-	#define I_RECURSIVE_SLOT	509
+	#define I_RECURSIVE_SLOT	500
 
 	// Convert an address into array index of a structure
 	// E.G. int index = I_PML4_INDEX(0xFFFFFFFFFFFFFFFF); // index = 511
@@ -98,7 +98,7 @@ namespace Virtual
 					found->length = found->length - size;
 				}
 
-				vas->used.push_back(new ALPPair(addr, size, phys));
+				vas->used.push_back(new ALPTuple(addr, size, phys));
 				return addr;
 			}
 
@@ -125,7 +125,7 @@ namespace Virtual
 			uint64_t ret = pair->start;
 			pair->start += (size * 0x1000);
 			pair->length -= size;
-			vas->used.push_back(new ALPPair(ret, size, phys));
+			vas->used.push_back(new ALPTuple(ret, size, phys));
 			return ret;
 		}
 		else if(pair->length == size)
@@ -134,7 +134,7 @@ namespace Virtual
 			delete vas->pairs.front();
 			vas->pairs.erase(vas->pairs.begin());
 
-			vas->used.push_back(new ALPPair(ret, size, phys));
+			vas->used.push_back(new ALPTuple(ret, size, phys));
 			return ret;
 		}
 		else
@@ -164,7 +164,7 @@ namespace Virtual
 					found->length -= size;
 					found->start += (size * 0x1000);
 
-					vas->used.push_back(new ALPPair(ret, size, phys));
+					vas->used.push_back(new ALPTuple(ret, size, phys));
 					return ret;
 				}
 				else
@@ -172,7 +172,7 @@ namespace Virtual
 					uint64_t ret = found->start;
 					delete found;
 
-					vas->used.push_back(new ALPPair(ret, size, phys));
+					vas->used.push_back(new ALPTuple(ret, size, phys));
 					return ret;
 				}
 			}
@@ -192,6 +192,7 @@ namespace Virtual
 
 		uint64_t end = page + (size * 0x1000);
 
+		bool insertNew = true;
 		for(AddressLengthPair* pair : vas->pairs)
 		{
 			// 3 basic conditions
@@ -203,19 +204,33 @@ namespace Virtual
 			{
 				pair->start = page;
 				pair->length += size;
-				return;
+				insertNew = false;
 			}
 			else if(pair->start + (pair->length * 0x1000) == page)
 			{
 				pair->length += (size * 0x1000);
-				return;
+				insertNew = false;
 			}
 		}
 
-		// if we reach here, we haven't found a match.
-		vas->pairs.push_back(new AddressLengthPair(page, size));
 
-		// TODO: remove matching 'used' pair
+		if(insertNew)
+		{
+			vas->pairs.push_back(new AddressLengthPair(page, size));
+		}
+
+		// Log("freeing %x, %d (%x, %x)", page, size, __builtin_return_address(0), __builtin_return_address(1));
+		for(size_t i = 0; i < vas->used.size(); i++)
+		{
+			ALPTuple* pair = vas->used[i];
+			if(pair->start == page)
+			{
+				// Log("freeing (%x, %x, %d) (%x)", pair->start, pair->phys, pair->length, __builtin_return_address(0));
+				vas->used.erase(vas->used.begin() + i);
+				i = 0;
+				continue;
+			}
+		}
 	}
 
 	uint64_t GetVirtualPhysical(uint64_t virt, VirtualAddressSpace* v)
@@ -223,22 +238,25 @@ namespace Virtual
 		VirtualAddressSpace* vas = v ? v : &Multitasking::GetCurrentProcess()->VAS;
 		assert(vas);
 
-		for(ALPPair* pair : vas->used)
+		uint64_t ret = 0;
+		for(ALPTuple* pair : vas->used)
 		{
 			uint64_t end = pair->start + pair->length * 0x1000;
 			if(pair->start >= virt && virt <= end)
 			{
-				return pair->phys + (virt - pair->start);
+				// Log("%x, %x, %d", pair->start, pair->phys, pair->length);
+				ret = pair->phys + (virt - pair->start);
 			}
 		}
 
-		return 0;
+		return ret;
 	}
 
 	uint64_t AllocatePage(uint64_t size, uint64_t addr, uint64_t flags)
 	{
 		uint64_t phys = Physical::AllocatePage(size);
 		uint64_t virt = AllocateVirtual(size, addr, 0, phys);
+		// Log("virt(%x) mapped to phys(%x) in vas %x (%x)", virt, phys, GetCurrentPML4T(), __builtin_return_address(0));
 
 		MapRegion(virt, phys, size, flags);
 
@@ -250,7 +268,7 @@ namespace Virtual
 		// freepage should only be called with a return from allocatepage
 		// we got to do some work here
 		// look through the vas pairs, looking for one that fits our description.
-		ALPPair* pair = 0;
+		ALPTuple* pair = 0;
 
 		Multitasking::Process* proc = Multitasking::GetCurrentProcess();
 		assert(proc);
@@ -258,18 +276,28 @@ namespace Virtual
 		VirtualAddressSpace* vas = &proc->VAS;
 		assert(vas);
 
-		for(ALPPair* p : vas->used)
+		for(ALPTuple* p : vas->used)
 		{
-			if(p->start == addr && p->length == size)
+			if(p->start == addr)
 			{
-				pair = p;
-				break;
+				if(p->length == size)
+				{
+					pair = p;
+					break;
+				}
 			}
 		}
 
 		assert(pair);
 
 		uint64_t phys = pair->phys;
+		if(phys == 0)
+		{
+			Log(1, "Virtual page had no physical page associated; falling back on manual resolution");
+			return;
+
+			phys = GetMapping(addr, vas->PML4);
+		}
 		assert(phys > 0);
 
 		Physical::FreePage(phys, size);
@@ -299,7 +327,7 @@ namespace Virtual
 
 		for(auto _pair : src->used)
 		{
-			ALPPair* pair = new ALPPair(*_pair);
+			ALPTuple* pair = new ALPTuple(*_pair);
 			dest->used.push_back(pair);
 			uint64_t p = Physical::AllocatePage(pair->length);
 
@@ -337,7 +365,7 @@ namespace Virtual
 		// assert(vas->used);
 		// assert(vas->pairs);
 
-		for(ALPPair* pair : vas->used)
+		for(ALPTuple* pair : vas->used)
 		{
 			if(pair->phys > 0)
 				Physical::FreePage(pair->phys, pair->length);
@@ -348,10 +376,6 @@ namespace Virtual
 
 		for(AddressLengthPair* pair : vas->pairs)
 			delete pair;
-
-		// delete vas->pairs;
-		// delete vas->used;
-		delete vas;
 	}
 
 
@@ -460,8 +484,8 @@ namespace Virtual
 
 		if(PML4TIndex == I_RECURSIVE_SLOT)
 		{
-			// We can't map 510, we need that for our recursive mapping.
-			HALT("Tried to map to PML4[510]! (RESTRICTED, KERNEL USE)");
+			// We can't map that, we need that for our recursive mapping.
+			HALT("Tried to map to PML4 (RESTRICTED, KERNEL USE)");
 		}
 
 		(void) DoNotUnmap;
@@ -597,11 +621,6 @@ namespace Virtual
 		uint64_t PageDirectoryPointerTableIndex	= I_PDPT_INDEX(VirtAddr);
 		uint64_t PML4TIndex						= I_PML4_INDEX(VirtAddr);
 
-
-
-		// Log("virt: %x, indices: pt %d, pd %d, pdpt %d, pml4 %d", VirtAddr, PageTableIndex, PageDirectoryIndex, PageDirectoryPointerTableIndex, PML4TIndex);
-
-
 		PageMapStructure* PML = (VAS == 0 ? GetCurrentPML4T() : VAS);
 		bool other = (PML != GetCurrentPML4T());
 
@@ -636,53 +655,11 @@ namespace Virtual
 						*pt = PageTable;
 
 						uint64_t* ret = &PageTable->Entry[PageTableIndex];
-
-						// if(other)
-						// {
-						// 	Virtual::UnmapAddress((uint64_t) PageDirectory);
-						// 	Virtual::UnmapAddress((uint64_t) PDPT);
-						// 	Virtual::UnmapAddress((uint64_t) PML);
-						// }
-
 						return ret;
 					}
 				}
 			}
 		}
-					// else
-					// {
-					// 	if(other)
-					// 	{
-					// 		Virtual::UnmapAddress((uint64_t) PageDirectory);
-					// 		Virtual::UnmapAddress((uint64_t) PDPT);
-					// 		Virtual::UnmapAddress((uint64_t) PML);
-					// 	}
-					// 	return 0;
-					// }
-		// 		}
-		// 		else
-		// 		{
-		// 			if(other)
-		// 			{
-		// 				Virtual::UnmapAddress((uint64_t) PDPT);
-		// 				Virtual::UnmapAddress((uint64_t) PML);
-		// 			}
-		// 			return 0;
-		// 		}
-		// 	}
-		// 	else
-		// 	{
-		// 		if(other)
-		// 		{
-		// 			Virtual::UnmapAddress((uint64_t) PML);
-		// 		}
-		// 		return 0;
-		// 	}
-		// }
-		// else
-		// {
-		// 	return 0;
-		// }
 	}
 
 
@@ -823,8 +800,55 @@ namespace Virtual
 	}
 
 
+	void CopyBetweenAddressSpaces(uint64_t fromAddr, uint64_t toAddr, size_t bytes, VirtualAddressSpace* from, VirtualAddressSpace* to)
+	{
+		(void) fromAddr;
+		(void) toAddr;
+		(void) bytes;
+		(void) from;
+		(void) to;
+	}
 
+	void CopyFromKernel(uint64_t fromAddr, uint64_t toAddr, size_t bytes, VirtualAddressSpace* to)
+	{
+		// this can only be done in the kernel
+		assert(Multitasking::GetProcess(0) == Multitasking::GetCurrentProcess());
 
+		VirtualAddressSpace* from = &Multitasking::GetProcess(0)->VAS;
+
+		uint64_t toAligned		= toAddr & I_AlignMask;
+		uint64_t toPhys			= GetVirtualPhysical(toAligned, to);
+
+		if(toPhys == 0)
+		{
+			Log(1, "Could not fetch physical address for %x in vas %x", toAligned, to->PML4);
+			toPhys = GetMapping(toAligned, to->PML4) & I_AlignMask;
+		}
+
+		size_t numPages			= (bytes + 0xFFF) / 0x1000;
+		uint64_t beginOffset	= toAddr - toAligned;
+
+		assert(toPhys > 0);
+
+		// allocate some temporary virt pages in the local address space
+		// then map the physical pages behind toAddr to our local space
+		uint64_t toVirtTemp		= AllocateVirtual(numPages, 0, from, toPhys);
+		Virtual::MapRegion(toVirtTemp, toPhys, numPages, 0x7);
+
+		// then copy it.
+		Memory::Copy((void*) (toVirtTemp + beginOffset), (void*) fromAddr, bytes);
+		// Log("Copied %d bytes from %x to %x (%x, %x, %x)", bytes, fromAddr, toAddr, beginOffset, toPhys, to->PML4);
+
+		FreeVirtual(toVirtTemp, numPages);
+	}
+
+	void CopyToKernel(uint64_t fromAddr, uint64_t toAddr, size_t bytes, VirtualAddressSpace* from)
+	{
+		(void) fromAddr;
+		(void) toAddr;
+		(void) bytes;
+		(void) from;
+	}
 
 
 	uint64_t CreateVAS()
@@ -868,8 +892,8 @@ namespace Virtual
 			((PageMapStructure*) (PML4->Entry[0]))->Entry[0] = (uint64_t) pt;
 			// that just gives us 1gb lower, now we need 512gb upper.
 
-			PML4->Entry[511] = (uint64_t) kernelpml4->Entry[511] | 0x6;
 			PML4->Entry[510] = (uint64_t) kernelpml4->Entry[510] | 0x6;
+			PML4->Entry[511] = (uint64_t) kernelpml4->Entry[511] | 0x6;
 		}
 
 		Virtual::MapAddress((uint64_t) PML4, (uint64_t) PML4, 0x07, PML4);

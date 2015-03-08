@@ -9,6 +9,8 @@ namespace Kernel
 {
 	struct DMAAddr
 	{
+		DMAAddr() { phys = 0; virt = 0; }
+		DMAAddr(uint64_t p, uint64_t v) : phys(p), virt(v) { }
 		uint64_t phys;
 		uint64_t virt;
 	};

@@ -16,32 +16,6 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace Network
 {
-	/*
-		TODO: unfuck sockets.
-		Sockets shouldn't be FSDrivers! There should be a SocketIPC FSDriver that handles data
-		through vnode->fsref->info
-
-		I always had a lingering suspicion that something was wrong when I wasn't using any of the vnode*s passed
-		to the Socket::* functions.
-
-		the Socket class itself can probably stay the same, with instance methods moving out into functions operating
-		on vnodes. In this case vnode->fsref->info will probably be a Socket* casted as void*.
-
-		contemplate
-	*/
-
-
-
-
-
-
-
-
-
-
-
-
-
 	using namespace Filesystems;
 
 	static IOContext* getctx()
@@ -85,7 +59,13 @@ namespace Network
 		return (Socket*) node->info->data;
 	}
 
-
+	static void addProcToBlockingList(Socket* skt)
+	{
+		assert(skt);
+		pid_t pid = Multitasking::GetCurrentProcess()->ProcessID;
+		if(!skt->blockingProcs.contains(pid))
+			skt->blockingProcs.push_back(pid);
+	}
 
 
 	// file descriptor stuff.
@@ -184,6 +164,14 @@ namespace Network
 		return ((SocketVFS*) node->info->driver)->Read(node, buf, 0, bytes);
 	}
 
+	size_t ReadSocketBlocking(fd_t socket, void* buf, size_t bytes)
+	{
+		vnode* node = getvnode(socket);
+		if(!node) return -1;
+
+		return ((SocketVFS*) node->info->driver)->BlockingRead(node, buf, bytes);
+	}
+
 	size_t WriteSocket(fd_t socket, void* buf, size_t bytes)
 	{
 		vnode* node = getvnode(socket);
@@ -213,7 +201,7 @@ namespace Network
 
 
 	// actual class implementation
-	SocketVFS::SocketVFS() : FSDriver(nullptr, Filesystems::FSDriverType::Socket)
+	SocketVFS::SocketVFS() : FSDriver(nullptr, FSDriverType::Socket)
 	{
 		this->_seekable = false;
 	}
@@ -222,7 +210,7 @@ namespace Network
 	{
 	}
 
-	bool SocketVFS::Create(Filesystems::VFS::vnode*, const char*, uint64_t, uint64_t)
+	bool SocketVFS::Create(VFS::vnode*, const char*, uint64_t, uint64_t)
 	{
 		return false;
 	}
@@ -325,7 +313,7 @@ namespace Network
 	// note: implemented here since they do similar things
 	static rde::hash_map<rde::string, Socket*>* ipcSocketMap = 0;
 
-	void SocketVFS::Bind(Filesystems::VFS::vnode* node, const char* _path)
+	void SocketVFS::Bind(VFS::vnode* node, const char* _path)
 	{
 		Socket* skt = getsockdata(node);
 
@@ -346,7 +334,7 @@ namespace Network
 		(*ipcSocketMap)[path] = skt;
 	}
 
-	void SocketVFS::Connect(Filesystems::VFS::vnode* node, const char* _path)
+	void SocketVFS::Connect(VFS::vnode* node, const char* _path)
 	{
 		if(!ipcSocketMap) ipcSocketMap = new rde::hash_map<rde::string, Socket*>();
 		assert(ipcSocketMap);
@@ -381,7 +369,7 @@ namespace Network
 
 
 
-	void SocketVFS::Close(Filesystems::VFS::vnode* node)
+	void SocketVFS::Close(VFS::vnode* node)
 	{
 		Socket* skt = getsockdata(node);
 
@@ -416,7 +404,7 @@ namespace Network
 			delete skt->tcpconnection;
 	}
 
-	size_t SocketVFS::Read(Filesystems::VFS::vnode* node, void* buf, off_t offset, size_t length)
+	size_t SocketVFS::Read(VFS::vnode* node, void* buf, off_t offset, size_t length)
 	{
 		(void) offset;
 		Socket* skt = getsockdata(node);
@@ -426,7 +414,23 @@ namespace Network
 		return ret;
 	}
 
-	size_t SocketVFS::Write(Filesystems::VFS::vnode* node, const void* buf, off_t offset, size_t length)
+	size_t SocketVFS::BlockingRead(VFS::vnode* node, void* buf, size_t bytes)
+	{
+		Socket* skt = getsockdata(node);
+
+		// only block if we have to
+		if(skt->recvbuffer.ByteCount() == 0)
+		{
+			Log(3, "blocking");
+			addProcToBlockingList(skt);
+			BLOCK();
+		}
+
+		// now we have data.
+		return this->Read(node, buf, 0, bytes);
+	}
+
+	size_t SocketVFS::Write(VFS::vnode* node, const void* buf, off_t offset, size_t length)
 	{
 		(void) offset;
 		Socket* skt = getsockdata(node);
@@ -452,34 +456,42 @@ namespace Network
 		else if(skt->protocol == SocketProtocol::IPC)
 		{
 			skt->recvbuffer.Write((uint8_t*) buf, length);
+
+			// TODO: do we want to wake all processes? if there's more than one, there's a fair chance
+			// that it may have already read everything in the buffer, leaving the others with nothing
+			for(pid_t pid : skt->blockingProcs)
+			{
+				Log(3, "waking pid %d", pid);
+				Multitasking::WakeForMessage(Multitasking::GetProcess(pid));
+			}
 		}
 
 		return length;
 	}
 
-	bool SocketVFS::Delete(Filesystems::VFS::vnode*, const char*)
+	bool SocketVFS::Delete(VFS::vnode*, const char*)
 	{
 		return false;
 	}
 
-	bool SocketVFS::Traverse(Filesystems::VFS::vnode*, const char*, char**)
+	bool SocketVFS::Traverse(VFS::vnode*, const char*, char**)
 	{
 		return false;
 	}
 
-	void SocketVFS::Flush(Filesystems::VFS::vnode*)
+	void SocketVFS::Flush(VFS::vnode*)
 	{
 
 	}
 
-	void SocketVFS::Stat(Filesystems::VFS::vnode*, struct stat*, bool)
+	void SocketVFS::Stat(VFS::vnode*, struct stat*, bool)
 	{
 
 	}
 
-	rde::vector<Filesystems::VFS::vnode*> SocketVFS::ReadDir(Filesystems::VFS::vnode*)
+	rde::vector<VFS::vnode*> SocketVFS::ReadDir(VFS::vnode*)
 	{
-		return rde::vector<Filesystems::VFS::vnode*>();
+		return rde::vector<VFS::vnode*>();
 	}
 }
 }
