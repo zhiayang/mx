@@ -234,6 +234,33 @@ namespace Filesystems
 	{
 	}
 
+	void ls(FSDriver* fs, vnode* node, int nest)
+	{
+		rde::vector<vnode*> nodes = fs->ReadDir(node);
+		if(nodes.size() == 0)
+			return;
+
+		vnode* n = 0;
+		for(size_t k = 1; k < nodes.size(); k++)
+		{
+			n = nodes[k];
+			if(tovnd(n)->name == ".." || tovnd(n)->name == ".")
+				continue;
+
+			rde::string out;
+			for(int i = 0; i < nest; i++)
+				out.append("  ");
+
+			out.append("=> ");
+			out.append(tovnd(n)->name);
+
+			Log(out.c_str());
+
+
+			if(n->type == VNodeType::Folder)
+				ls(fs, n, nest + 1);
+		}
+	}
 
 	bool FSDriverFat32::Traverse(vnode* node, const char* path, char** symlink)
 	{
@@ -244,9 +271,20 @@ namespace Filesystems
 		assert(path);
 		assert(node->info);
 
-
 		vnode_data* vd = new vnode_data;
 		node->info->data = (void*) vd;
+
+
+		// list everything
+		// if(strcmp(path, "/System/Library/LaunchDaemons/displayd.mxa") == 0 || strcmp(path, "/boot/grub/menu.lst") == 0)
+		// {
+		// 	Log("begin list");
+		// 	ls(this, node, 0);
+		// 	Log("end list");
+		// }
+
+
+
 
 		rde::string pth = rde::string(path);
 
@@ -275,12 +313,15 @@ namespace Filesystems
 			assert(cn->info->data);
 
 			rde::vector<VFS::vnode*> cdcontent = this->ReadDir(cn);
+			// Log("trav: [%s, %d, %d]", tovnd(cn)->name.c_str(), tovnd(cn)->entrycluster, tovnd(cn)->clusters.size());
 
 			// check each.
 			for(auto d : cdcontent)
 			{
 				auto vnd = tovnd(d->info->data);
 				assert(vnd);
+
+				// Log("=> %s", vnd->name.c_str());
 
 				rde::string vndlower = vnd->name;
 				vndlower.make_lower();
@@ -427,8 +468,17 @@ namespace Filesystems
 		if(clusters.size() == 0)
 			clusters = this->GetClusterChain(node, &numclus);
 
+		assert(clusters.size() > 0);
+		numclus = clusters.size();
 
-		assert(numclus == clusters.size());
+
+		// Log("begin cluster list");
+		// for(auto c : clusters)
+		// {
+		// 	Log("(%d)", c);
+		// }
+		// Log("end cluster list");
+
 
 		// try and read each cluster into a contiguous buffer.
 		uint64_t bufferPageSize = ((numclus * this->SectorsPerCluster * 512) + 0xFFF) / 0x1000;
@@ -444,12 +494,13 @@ namespace Filesystems
 		}
 		buf = obuf;
 
+
+
+
 		rde::vector<VFS::vnode*> ret;
-		auto count = 0;
 
 		for(uint64_t addr = buf; addr < buf + dirsize; )
 		{
-			count++;
 			rde::string name;
 			uint8_t lfncheck = 0;
 
@@ -574,6 +625,7 @@ namespace Filesystems
 		uint64_t lastsec = 0;
 		auto buf = MemoryManager::Virtual::AllocatePage(2);
 		auto obuf = buf;
+
 		do
 		{
 			uint32_t FatSector = (uint32_t) this->partition->GetStartLBA() + this->ReservedSectors + ((Cluster * 4) / 512);
@@ -608,8 +660,7 @@ namespace Filesystems
 
 		} while((cchain != 0) && !((cchain & 0x0FFFFFFF) >= 0x0FFFFFF8));
 
-		buf = obuf;
-		MemoryManager::Virtual::FreePage(buf, 2);
+		MemoryManager::Virtual::FreePage(obuf, 2);
 		tovnd(node)->clusters = ret;
 
 		return ret;

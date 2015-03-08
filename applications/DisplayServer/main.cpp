@@ -34,17 +34,17 @@ int main(int argc, char** argv)
 
 	printf("Display server online\n");
 	printf("Forking process...\n");
-	int64_t res = Library::SystemCall::ForkProcess();
+	// int64_t res = Library::SystemCall::ForkProcess();
 
-	if(res == 0)
-	{
-		printf("in child\n");
-	}
-	else
-	{
-		printf("parent: child proc has pid %ld, exiting\n", res);
-		exit(0);
-	}
+	// if(res == 0)
+	// {
+	// 	printf("in child, exiting\n");
+	// 	exit(0);
+	// }
+	// else
+	// {
+	// 	printf("parent: child proc has pid %ld, continuing\n", res);
+	// }
 
 	// Library::SystemCall::SpawnProcess("/test.mxa", "test");
 
@@ -54,23 +54,23 @@ int main(int argc, char** argv)
 
 
 
-	// FILE* f = fopen("/test/Main.class", "r");
-	// struct stat s;
+	FILE* f = fopen("/boot/grub/menu.lst", "r");
+	struct stat s;
 
-	// fstat((int) f->__fd, &s);
-	// printf("file is %ld bytes long\n", s.st_size);
+	fstat((int) f->__fd, &s);
+	printf("file is %ld bytes long\n", s.st_size);
 
-	// uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
+	uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
 
-	// fread(x, 1, s.st_size, f);
-	// fclose(f);
+	fread(x, 1, s.st_size, f);
+	fclose(f);
 
-	// for (off_t i = 0; i < s.st_size; i++)
-	// 	printf("%02x ", x[i]);
+	printf("%s", x);
 
-	// fflush(stdout);
+	fflush(stdout);
 
 
+	// printf("file opened: %d...\n", f->__fd);
 
 	// that's really all we need to do, except watch for messages and flush the screen on occasion.
 	return 0;

@@ -398,33 +398,31 @@ namespace Kernel
 		Log("Kernel init complete\n----------------------------\n");
 
 
+		// {
+		// 	using namespace Network;
+		// 	IPv4Address example = DNS::QueryDNSv4(rde::string("www.example.com"));
+		// 	PrintFormatted("example.com is at %d.%d.%d.%d\n", example.b1, example.b2, example.b3, example.b4);
+		// }
 
-		{
-			using namespace Network;
-			IPv4Address example = DNS::QueryDNSv4(rde::string("www.example.com"));
-			PrintFormatted("example.com is at %d.%d.%d.%d\n", example.b1, example.b2, example.b3, example.b4);
-		}
+		// Log("Socket test\n");
+		// {
+		// 	using namespace Network;
 
+		// 	auto other = []()
+		// 	{
+		// 		fd_t skt = OpenSocket(SocketProtocol::IPC, 0);
+		// 		ConnectSocket(skt, "/some/socket");
+		// 		Log("socket connected");
 
-		Log("Socket test\n");
-		{
-			using namespace Network;
+		// 		uint64_t x = 0;
+		// 		while(true)
+		// 		{
+		// 			WriteSocket(skt, (void*) &x, 8);
+		// 			YieldCPU();
 
-			auto other = []()
-			{
-				fd_t skt = OpenSocket(SocketProtocol::IPC, 0);
-				ConnectSocket(skt, "/some/socket");
-				Log("socket connected");
-
-				uint64_t x = 0;
-				while(true)
-				{
-					WriteSocket(skt, (void*) &x, 8);
-					YieldCPU();
-
-					x++;
-				}
-			};
+		// 			x++;
+		// 		}
+		// 	};
 
 
 
@@ -433,26 +431,24 @@ namespace Kernel
 
 
 
-			// open a socket
-			fd_t skt = OpenSocket(SocketProtocol::IPC, 0);
-			Log("socket opened: %d", skt);
+		// 	// open a socket
+		// 	fd_t skt = OpenSocket(SocketProtocol::IPC, 0);
+		// 	Log("socket opened: %d", skt);
 
-			BindSocket(skt, "/some/socket");
-			Log("socket bound");
+		// 	BindSocket(skt, "/some/socket");
+		// 	Log("socket bound");
 
-			Multitasking::AddToQueue(Multitasking::CreateKernelThread(other, 2));
+		// 	Multitasking::AddToQueue(Multitasking::CreateKernelThread(other, 2));
 
-			while(true)
-			{
-				while(GetSocketBufferFill(skt) >= 8)
-				{
-					uint64_t d = 0;
-					ReadSocket(skt, &d, 8);
+		// 	while(true)
+		// 	{
+		// 		uint64_t d = 0;
+		// 		ReadSocket(skt, &d, 8);
 
-					PrintFormatted("%x\n", d);
-				}
-			}
-		}
+		// 		if(d != 0)
+		// 			PrintFormatted("%x\n", d);
+		// 	}
+		// }
 
 
 
@@ -531,10 +527,10 @@ namespace Kernel
 
 	void HaltSystem(const char* message, const char* filename, uint64_t line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%d -- (0: %x, 1: %x, 2: %x, 3: %x, 4: %x)", message, filename, line, __builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2), __builtin_return_address(3), __builtin_return_address(4));
+		Log("System Halted: %s, %s:%d", message, filename, line);
 
 
-		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d, Return Addr (0: %x, 1: %x, 2: %x, 3: %x, 4: %x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2), __builtin_return_address(3), __builtin_return_address(4));
+		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line);
 
 
 		UHALT();

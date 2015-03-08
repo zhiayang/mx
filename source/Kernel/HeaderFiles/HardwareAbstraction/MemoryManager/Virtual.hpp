@@ -23,9 +23,9 @@ namespace Virtual
 		uint64_t length;
 	};
 
-	struct ALPPair
+	struct ALPTuple
 	{
-		ALPPair(uint64_t s, uint64_t l, uint64_t p) : start(s), length(l), phys(p) { }
+		ALPTuple(uint64_t s, uint64_t l, uint64_t p) : start(s), length(l), phys(p) { }
 		uint64_t start;
 		uint64_t length;
 		uint64_t phys;
@@ -40,7 +40,7 @@ namespace Virtual
 
 		// book-keeping for allocations.
 		rde::vector<AddressLengthPair*> pairs;
-		rde::vector<ALPPair*> used;
+		rde::vector<ALPTuple*> used;
 
 		// store the actual address of the pml4.
 		PageMapStructure* PML4;
@@ -84,7 +84,9 @@ namespace Virtual
 	VirtualAddressSpace* CopyVAS(VirtualAddressSpace* src, VirtualAddressSpace* dest);
 	bool HandlePageFault(uint64_t cr2, uint64_t cr3, uint64_t errorcode);
 
-
+	void CopyBetweenAddressSpaces(uint64_t fromAddr, uint64_t toAddr, size_t bytes, VirtualAddressSpace* from, VirtualAddressSpace* to);
+	void CopyFromKernel(uint64_t fromAddr, uint64_t toAddr, size_t bytes, VirtualAddressSpace* to);
+	void CopyToKernel(uint64_t fromAddr, uint64_t toAddr, size_t bytes, VirtualAddressSpace* from);
 
 
 

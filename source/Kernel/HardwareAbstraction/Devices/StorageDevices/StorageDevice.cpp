@@ -8,42 +8,43 @@
 
 namespace Kernel {
 namespace HardwareAbstraction {
-namespace Devices {
-namespace Storage
+namespace Devices
 {
-	StorageDevice::~StorageDevice()
+	IODevice::~IODevice()
 	{
 	}
 
-	void StorageDevice::Read(uint64_t position, uint64_t outbuf, uint64_t bytes)
+	namespace Storage
 	{
-		UNUSED(position);
-		UNUSED(outbuf);
-		UNUSED(bytes);
-	}
-
-	void StorageDevice::Write(uint64_t position, uint64_t outbuf, uint64_t bytes)
-	{
-		UNUSED(position);
-		UNUSED(outbuf);
-		UNUSED(bytes);
-	}
-
-
-	static rde::vector<StorageDevice*>* storageDevices;
-	void AddDevice(StorageDevice* dev)
-	{
-		if(!storageDevices)	 storageDevices = new rde::vector<StorageDevice*>();
-		if(storageDevices->contains(dev))
+		StorageDevice::~StorageDevice()
 		{
-			Log(1, "Ignoring duplicate device");
-			return;
 		}
 
-		dev->diskid = storageDevices->size();
-		storageDevices->push_back(dev);
+		IOResult StorageDevice::Read(uint64_t, uint64_t, uint64_t)
+		{
+			return IOResult();
+		}
+
+		IOResult StorageDevice::Write(uint64_t, uint64_t, uint64_t)
+		{
+			return IOResult();
+		}
+
+
+		static rde::vector<StorageDevice*>* storageDevices;
+		void AddDevice(StorageDevice* dev)
+		{
+			if(!storageDevices)	 storageDevices = new rde::vector<StorageDevice*>();
+			if(storageDevices->contains(dev))
+			{
+				Log(1, "Ignoring duplicate device");
+				return;
+			}
+
+			dev->diskid = storageDevices->size();
+			storageDevices->push_back(dev);
+		}
 	}
-}
 }
 }
 }
