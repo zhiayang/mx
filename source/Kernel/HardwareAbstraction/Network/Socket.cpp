@@ -268,7 +268,6 @@ namespace Network
 			return;
 		}
 
-
 		skt->ip4dest = remote;
 		skt->serverport = remoteport;
 
@@ -332,6 +331,8 @@ namespace Network
 
 		skt->ipcSocketPath = path;
 		(*ipcSocketMap)[path] = skt;
+
+		Log(3, "socket bound, bitches");
 	}
 
 	void SocketVFS::Connect(VFS::vnode* node, const char* _path)

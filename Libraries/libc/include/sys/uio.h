@@ -4,6 +4,11 @@
 
 #include "types.h"
 
+
+#pragma once
+#ifndef __uio_h
+#define __uio_h
+
 __BEGIN_DECLS
 
 struct iovec
@@ -16,3 +21,5 @@ ssize_t readv(int fd, const struct iovec* iov, int iovcnt);
 ssize_t writev(int fd, const struct iovec* iov, int iovcnt);
 
 __END_DECLS
+
+#endif

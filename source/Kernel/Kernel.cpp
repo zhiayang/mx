@@ -530,7 +530,7 @@ namespace Kernel
 		Log("System Halted: %s, %s:%d", message, filename, line);
 
 
-		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line);
+		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 
 
 		UHALT();
@@ -539,7 +539,7 @@ namespace Kernel
 	void HaltSystem(const char* message, const char* filename, const char* line, const char* reason)
 	{
 		Log("System Halted: %s, %s:%s", message, filename, line);
-		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %s\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line);
+		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %s (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 
 		UHALT();
 	}

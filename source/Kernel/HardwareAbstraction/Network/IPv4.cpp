@@ -201,6 +201,9 @@ namespace IP
 
 	void SendIPv4Packet(Devices::NIC::GenericNIC* interface, void* packet, uint16_t length, uint16_t id, Library::IPv4Address dest, ProtocolType prot)
 	{
+		if(!interface)
+			interface = (Devices::NIC::GenericNIC*) Devices::DeviceManager::GetDevice(Devices::DeviceType::EthernetNIC);
+
 		// first check if the dest is valid
 		EUI48Address mac = ARP::SendQuery(interface, dest);
 
@@ -230,6 +233,7 @@ namespace IP
 
 
 		ip->HeaderChecksum = SwapEndian16(CalculateIPChecksum(raw, 20));
+
 		Ethernet::SendPacket(interface, raw, length + 20, Ethernet::EtherType::IPv4, mac);
 	}
 }

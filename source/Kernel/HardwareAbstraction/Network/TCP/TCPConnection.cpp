@@ -32,22 +32,41 @@ namespace TCP
 		WaitingDisconnectACK
 	};
 
-
-	void TCPAckMonitor(TCPConnection* tcp)
+	static Mutex* openConnectionsMtx;
+	static rde::vector<TCPConnection*>* openConnections;
+	void TCPAckMonitor()
 	{
-		uint64_t ppt = tcp->lastpackettime;
-		// uint8_t* buf = new uint8_t[GLOBAL_MTU];
 		while(true)
 		{
-			while(tcp->lastpackettime == 0  || ppt == tcp->lastpackettime || Time::Now() < tcp->lastpackettime + TCP_TIMEOUT)
-				YieldCPU();
+			for(TCPConnection* tcp : *openConnections)
+			{
+				if(tcp->state == ConnectionState::Disconnected || tcp->AlreadyAcked)
+					continue;
 
-			ppt = tcp->lastpackettime;
-			tcp->AlreadyAcked = true;
+				uint64_t ppt = tcp->lastpackettime;
+				while(true)
+				{
+					while(tcp->lastpackettime == 0  || ppt == tcp->lastpackettime || Time::Now() < tcp->lastpackettime + TCP_TIMEOUT)
+						YieldCPU();
 
-			// flush tcp to application.
-			tcp->SendPacket(0, 0, 0x10);
+					ppt = tcp->lastpackettime;
+					tcp->AlreadyAcked = true;
+
+					// flush tcp to application.
+					tcp->SendPacket(0, 0, 0x10);
+				}
+			}
+			YieldCPU();
 		}
+	}
+
+	void InitialiseConnectionQueue()
+	{
+		openConnections = new rde::vector<TCPConnection*>();
+		openConnectionsMtx = new Mutex();
+
+		Multitasking::Thread* th = Multitasking::CreateKernelThread(TCPAckMonitor);
+		Multitasking::AddToQueue(th);
 	}
 
 	TCPConnection::TCPConnection(Socket* skt, uint16_t srcport, uint16_t destport) : packetbuffer(TCP_MAXWINDOW)
@@ -71,10 +90,9 @@ namespace TCP
 		this->AlreadyAcked = false;
 		this->state = ConnectionState::Disconnected;
 
-		Multitasking::Thread* th = Multitasking::CreateKernelThread((void (*)()) (TCPAckMonitor), 1, (void*) (uint64_t) this);
-		Multitasking::AddToQueue(th);
-
-		this->workertid = th->ThreadID;
+		LOCK(openConnectionsMtx);
+		openConnections->push_back(this);
+		UNLOCK(openConnectionsMtx);
 	}
 
 	TCPConnection::TCPConnection(Socket* skt, Library::IPv4Address dest, uint16_t srcport, uint16_t destport) : TCPConnection(skt, srcport, destport)
@@ -102,7 +120,10 @@ namespace TCP
 		this->socket->recvbuffer.Write(buf, GLOBAL_MTU);
 
 		delete[] buf;
-		Multitasking::Kill(Multitasking::GetThread(this->workertid));
+
+		LOCK(openConnectionsMtx);
+		openConnections->remove(this);
+		UNLOCK(openConnectionsMtx);
 	}
 
 
@@ -432,7 +453,6 @@ namespace TCP
 
 		tcp->Checksum = SwapEndian16(IP::CalculateIPChecksum_Finalise(tcpcheck));
 
-		// this->socket->WriteTCP(raw, sizeof(TCPPacket) + length);
 		IP::SendIPv4Packet(this->socket->interface, raw, (uint16_t) (sizeof(TCPPacket) + length), 48131, this->destip4, IP::ProtocolType::TCP);
 		this->AlreadyAcked = true;
 

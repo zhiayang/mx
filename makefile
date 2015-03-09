@@ -26,8 +26,6 @@ WARNINGS			= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-
 
 CXXFLAGS			= -m64 -g -Weverything -msse3 -integrated-as -O2 -fno-omit-frame-pointer -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -mcmodel=kernel -c
 
-# FLXFLAGS			= -O3 -mcmodel kernel -target x86_64-elf -c -sysroot $(SYSROOT)
-
 LDFLAGS				= --gc-sections -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib
 
 
@@ -36,11 +34,9 @@ MEMORY				= 1024
 
 SSRC				= $(shell find source -iname "*.s")
 CXXSRC				= $(shell find source -iname "*.cpp")
-# FLAXMAIN			= source/Kernel/Test.flx
 
 SOBJ				= $(SSRC:.s=.s.o)
 CXXOBJ				= $(CXXSRC:.cpp=.cpp.o)
-# FLAXMAINOBJ			= $(FLAXMAIN:.flx=.flx.o)
 
 CXXDEPS				= $(CXXOBJ:.o=.d)
 

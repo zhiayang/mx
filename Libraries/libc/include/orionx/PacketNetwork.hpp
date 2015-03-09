@@ -25,7 +25,7 @@ namespace Library
 		} __attribute__ ((packed));
 
 		explicit IPv4Address() { this->raw = 0; }
-		IPv4Address(uint32_t r) { this->raw = r; }
+		IPv4Address(uint32_t r) { this->raw = __builtin_bswap32(r); }
 
 		operator uint32_t () const
 		{

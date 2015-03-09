@@ -373,9 +373,10 @@ namespace Filesystems
 		vnode_data* vnd = tovnd(node);
 		uint64_t numclus = 0;
 		if(vnd->clusters.size() == 0)
-		vnd->clusters = this->GetClusterChain(node, &numclus);
+			vnd->clusters = this->GetClusterChain(node, &numclus);
 
-		// assert(vnd->clusters->size() == numclus);
+		assert(vnd->clusters.size() > 0);
+		numclus = vnd->clusters.size();
 
 		// check that offset is not more than size
 		if(offset > vnd->filesize)

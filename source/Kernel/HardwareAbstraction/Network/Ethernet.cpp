@@ -44,6 +44,9 @@ namespace Ethernet
 
 	void SendPacket(Devices::NIC::GenericNIC* interface, void* data, uint16_t length, EtherType type, EUI48Address destmac)
 	{
+		if(!interface)
+			interface = (Devices::NIC::GenericNIC*) Devices::DeviceManager::GetDevice(Devices::DeviceType::EthernetNIC);
+
 		uint32_t buffersize = sizeof(EthernetFrameHeader) + ((length + 3) & ~3) + 4;
 		uint8_t* newbuf = new uint8_t[buffersize];
 

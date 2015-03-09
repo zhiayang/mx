@@ -64,6 +64,8 @@ namespace TCP
 		freeports = new rde::vector<uint16_t>();
 		for(uint16_t i = 49152; i < UINT16_MAX; i++)
 			freeports->push_back(i);
+
+		InitialiseConnectionQueue();
 	}
 
 	void HandleIPv4Packet(Devices::NIC::GenericNIC* interface, void* packet, uint64_t length, IPv4Address source, IPv4Address destip)

@@ -4,12 +4,15 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <signal.h>
 #include <mqueue.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 #include <pthread.h>
 
 static uint64_t framebuffer = 0;
@@ -54,24 +57,71 @@ int main(int argc, char** argv)
 
 
 
-	FILE* f = fopen("/boot/grub/menu.lst", "r");
-	struct stat s;
+	{
+		FILE* f = fopen("/boot/grub/menu.lst", "r");
+		struct stat s;
 
-	fstat((int) f->__fd, &s);
-	printf("file is %ld bytes long\n", s.st_size);
+		fstat((int) f->__fd, &s);
+		printf("file is %ld bytes long\n", s.st_size);
 
-	uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
+		uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
 
-	fread(x, 1, s.st_size, f);
-	fclose(f);
+		fread(x, 1, s.st_size, f);
+		fclose(f);
 
-	printf("%s", x);
+		printf("%s", x);
 
-	fflush(stdout);
+		fflush(stdout);
+	}
 
 
-	// printf("file opened: %d...\n", f->__fd);
+	{
+		// int s = socket(AF_INET, SOCK_STREAM, 0);
+		// struct sockaddr_in addr;
+		// addr.sin_family = AF_INET;
+		// addr.sin_addr.s_addr = 1572395042;
+		// addr.sin_port = 80;
+
+		// connect(s, (struct sockaddr*) &addr, sizeof(addr));
+		// close(s);
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	// that's really all we need to do, except watch for messages and flush the screen on occasion.
 	return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

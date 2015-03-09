@@ -8,6 +8,10 @@
 #include "types.h"
 #include "uio.h"
 
+#pragma once
+#ifndef __socket_h
+#define __socket_h
+
 __BEGIN_DECLS
 
 #ifndef __socklen_t_defined
@@ -24,19 +28,21 @@ typedef unsigned short sa_family_t;
 struct sockaddr
 {
 	sa_family_t sa_family;
-	char sa_data[16 - sizeof(sa_family_t)];
+	char sa_data[14];	// 16 - sizeof(sa_family_t)
 };
 
-#define __ss_aligntype	unsigned long
-#define _SS_SIZE		128
-#define _SS_PADSIZE		(_SS_SIZE - (2 * sizeof(__ss_aligntype)))
-;
+#define	_SS_MAXSIZE		128
+#define	_SS_ALIGNSIZE	(sizeof(int64_t))
+#define	_SS_PAD1SIZE	(_SS_ALIGNSIZE - sizeof(uint8_t) - sizeof(sa_family_t))
+#define	_SS_PAD2SIZE	(_SS_MAXSIZE - sizeof(uint8_t) - sizeof(sa_family_t) - _SS_PAD1SIZE - _SS_ALIGNSIZE)
 
 struct sockaddr_storage
 {
-	sa_family_t ss_family;
-	__ss_aligntype __ss_align;
-	char __ss_padding[_SS_PADSIZE];
+	uint8_t ss_len;						// address length
+	sa_family_t ss_family;				// address family
+	char __ss_pad1[_SS_PAD1SIZE];
+	int64_t __ss_align;					// force structure storage alignment
+	char __ss_pad2[_SS_PAD2SIZE];
 };
 
 struct msghdr
@@ -121,6 +127,11 @@ struct linger
 #define SHUT_WR				(1 << 1)
 #define SHUT_RDWR			(SHUT_RD | SHUT_WR)
 
+#define SOCK_RAW			1
+#define SOCK_DGRAM			2
+#define SOCK_SEQPACKET		3
+#define SOCK_STREAM			4
+
 int listen(int socket, int backlog);
 int socket(int domain, int type, int protocol);
 int accept(int socket, struct sockaddr* addr, socklen_t* addr_len);
@@ -157,4 +168,4 @@ int sockatmark(int socket);
 __END_DECLS
 
 
-
+#endif

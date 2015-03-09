@@ -272,7 +272,7 @@ namespace Network
 
 		class TCPConnection
 		{
-			friend void TCPAckMonitor(TCPConnection*);
+			friend void TCPAckMonitor();
 
 			public:
 				TCPConnection(Socket* socket, Library::IPv4Address dest, uint16_t srcport, uint16_t destport);
@@ -311,7 +311,6 @@ namespace Network
 				uint32_t nextack;
 				uint64_t bufferfill;
 				uint64_t lastpackettime;
-				uint64_t workertid;
 
 				bool AlreadyAcked;
 				bool PacketReceived;
@@ -354,6 +353,7 @@ namespace Network
 		bool IsDuplicatePort(uint16_t port);
 
 		void Initialise();
+		void InitialiseConnectionQueue();
 	}
 
 

@@ -61,6 +61,12 @@ namespace Library
 		int Seek(uint64_t fd, off_t offset, int whence);
 		int Stat(uint64_t fd, struct stat* st, bool statlink);
 		uint64_t GetSeekPos(uint64_t fd);
+		uint64_t OpenSocket(uint64_t domain, uint64_t type, uint64_t protocol);
+		uint64_t BindNetSocket(uint64_t fd, uint32_t ipv4addr, uint16_t port);
+		uint64_t ConnectNetSocket(uint64_t fd, uint32_t ipv4addr, uint16_t port);
+
+		uint64_t BindIPCSocket(uint64_t fd, const char* path);
+		uint64_t ConnectIPCSocket(uint64_t fd, const char* path);
 	}
 }
 #else
