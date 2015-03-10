@@ -82,6 +82,19 @@ int main(int argc, char** argv)
 		addr.sin_port = 80;
 
 		connect(s, (struct sockaddr*) &addr, sizeof(addr));
+
+
+		const char* http = "GET /index.html HTTP/1.1\r\nHost: www.example.com\r\n\r\n";
+
+
+		write(s, http, strlen(http));
+		uint8_t* buf = new uint8_t[2048];
+
+		printf("waiting\n");
+		usleep(1000000);
+		read(s, buf, 2048);
+
+		printf("%s", buf);
 		close(s);
 	}
 
