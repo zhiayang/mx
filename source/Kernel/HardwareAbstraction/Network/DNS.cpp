@@ -211,7 +211,7 @@ namespace DNS
 		if(rtype == RecordType::A)
 		{
 			uint32_t rawip = *((uint32_t*) (raw + offset + 12));
-			DNSMappingv4 map = { IPv4Address { rawip }, ttl };
+			DNSMappingv4 map = { IPv4Address(__builtin_bswap32(rawip)), ttl };
 
 			Log("Found IP for '%s': %d.%d.%d.%d", name.c_str(), map.ip.b1, map.ip.b2, map.ip.b3, map.ip.b4);
 			(*dnsmapv4)[name] = map;

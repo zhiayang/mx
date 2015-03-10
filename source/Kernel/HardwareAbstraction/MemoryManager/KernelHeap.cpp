@@ -26,6 +26,9 @@ static uint64_t SizeOfHeapInPages;
 static uint64_t SizeOfMetadataInPages;
 static uint64_t FirstFreeIndex;
 
+static uint64_t FirstHeapMetadataPhysPage;
+static uint64_t FirstHeapPhysPage;
+
 namespace Kernel {
 namespace HardwareAbstraction {
 namespace MemoryManager {
@@ -40,6 +43,16 @@ namespace KernelHeap
 		uint64_t callerAddr;
 		uint64_t magic;
 	};
+
+	uint64_t GetFirstHeapMetadataPhysPage()
+	{
+		return FirstHeapMetadataPhysPage;
+	}
+
+	uint64_t GetFirstHeapPhysPage()
+	{
+		return FirstHeapPhysPage;
+	}
 
 	uint64_t GetSize(Block* c)
 	{
@@ -178,15 +191,12 @@ namespace KernelHeap
 		// let's start.
 		// allocate one page for the heap.
 		// will be mapped for now.
-		uint64_t h = Physical::AllocatePage();
-		uint64_t d = Physical::AllocatePage();
+		FirstHeapMetadataPhysPage = Physical::AllocatePage();
+		FirstHeapPhysPage = Physical::AllocatePage();
 
 		// also map it.
-		Virtual::MapAddress(KernelHeapMetadata, h, MapFlags);
-		Virtual::MapAddress(KernelHeapAddress, d, MapFlags);
-
-
-
+		Virtual::MapAddress(KernelHeapMetadata, FirstHeapMetadataPhysPage, MapFlags);
+		Virtual::MapAddress(KernelHeapAddress, FirstHeapPhysPage, MapFlags);
 
 		NumberOfChunksInHeap = 1;
 		SizeOfHeapInPages = 1;
@@ -194,7 +204,7 @@ namespace KernelHeap
 		FirstFreeIndex = 0;
 
 
-		Block* fc = (Block*)(KernelHeapMetadata + MetadataSize);
+		Block* fc = (Block*) (KernelHeapMetadata + MetadataSize);
 		fc->Offset = 0;
 
 		// bit zero stores free/not: 1 is free, 0 is not. that means we can only do 2-byte granularity.
@@ -292,8 +302,9 @@ namespace KernelHeap
 
 		// create and map the actual space.
 		uint64_t x = Physical::AllocatePage();
-
 		Virtual::MapAddress(KernelHeapAddress + SizeOfHeapInPages * 0x1000, x, MapFlags, (Virtual::PageMapStructure*) GetKernelCR3());
+		Virtual::ForceInsertALPTuple(KernelHeapAddress + SizeOfHeapInPages * 0x1000, 1, x, &Multitasking::GetProcess(0)->VAS);
+
 		SizeOfHeapInPages++;
 	}
 

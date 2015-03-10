@@ -140,7 +140,6 @@ namespace Kernel
 		// TODO: move to temp mapping scheme, where physical pages can come from anywhere.
 		Log("PMM Reserved Region from %x to %x", Physical::ReservedRegionForVMM, Physical::ReservedRegionForVMM + Physical::LengthOfReservedRegion);
 
-
 		// Start the less crucial but still important services.
 		Interrupts::Initialise();
 		Console80x25::Initialise();
@@ -223,6 +222,16 @@ namespace Kernel
 
 		Log("Kernel online");
 
+		// after everything is done, make sure shit works
+		{
+			uint64_t m = KernelHeap::GetFirstHeapMetadataPhysPage();
+			uint64_t h = KernelHeap::GetFirstHeapPhysPage();
+
+			Virtual::ForceInsertALPTuple(KernelHeapMetadata, 1, m);
+			Virtual::ForceInsertALPTuple(KernelHeapAddress, 1, h);
+		}
+
+
 
 
 		// Initialise the other, less-essential things.
@@ -234,7 +243,7 @@ namespace Kernel
 		Storage::ATA::Initialise();
 		PS2::Initialise();
 		ACPI::Initialise();
-
+		DeviceManager::Initialise();
 
 		// Detect and initialise the appropriate driver for the current machine.
 		Log("ATA & PCI subsystems online");
@@ -398,11 +407,11 @@ namespace Kernel
 		Log("Kernel init complete\n----------------------------\n");
 
 
-		// {
-		// 	using namespace Network;
-		// 	IPv4Address example = DNS::QueryDNSv4(rde::string("www.example.com"));
-		// 	PrintFormatted("example.com is at %d.%d.%d.%d\n", example.b1, example.b2, example.b3, example.b4);
-		// }
+		{
+			using namespace Network;
+			IPv4Address example = DNS::QueryDNSv4(rde::string("www.example.com"));
+			PrintFormatted("example.com is at %d.%d.%d.%d\n", example.b1, example.b2, example.b3, example.b4);
+		}
 
 		// Log("Socket test\n");
 		// {

@@ -12,6 +12,7 @@ namespace HardwareAbstraction {
 namespace Devices
 {
 
+	class IODevice;
 
 	enum class DeviceType
 	{
@@ -45,7 +46,29 @@ namespace Devices
 		void AddDevice(Device* dev, DeviceType type);
 		rde::vector<Device*>* GetDevices(DeviceType type);
 		Device* GetDevice(DeviceType type);
+
+		void AddDeviceDispatchJob(IODevice* device);
+		void Initialise();
 	}
 }
 }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

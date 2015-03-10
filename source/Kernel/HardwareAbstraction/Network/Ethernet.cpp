@@ -61,7 +61,9 @@ namespace Ethernet
 		Memory::Copy((void*) (newbuf + sizeof(EthernetFrameHeader)), data, length);
 
 		*((uint32_t*) (newbuf + buffersize - 4)) = CalculateCRC(newbuf, sizeof(EthernetFrameHeader) + length);
-		interface->SendData(newbuf, buffersize);
+		IO::Write(interface, 0, (uint64_t) newbuf, buffersize);
+
+		// interface->SendData(newbuf, buffersize);
 	}
 
 	void HandlePacket(Devices::NIC::GenericNIC* interface, void* packet, uint64_t length)

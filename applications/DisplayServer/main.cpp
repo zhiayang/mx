@@ -36,7 +36,7 @@ int main(int argc, char** argv)
 	bpp			= (uint64_t) argv[4] / 8;		// kernel gives us BITS per pixel, but we really only care about BYTES per pixel.
 
 	printf("Display server online\n");
-	printf("Forking process...\n");
+	// printf("Forking process...\n");
 	// int64_t res = Library::SystemCall::ForkProcess();
 
 	// if(res == 0)
@@ -58,32 +58,31 @@ int main(int argc, char** argv)
 
 
 	{
-		// FILE* f = fopen("/boot/grub/menu.lst", "r");
-		FILE* f = fopen("/essay.txt", "r");
-		struct stat s;
+		// FILE* f = fopen("/something.txt", "r");
+		// struct stat s;
 
-		fstat((int) f->__fd, &s);
-		printf("file is %ld bytes long\n", s.st_size);
+		// fstat((int) f->__fd, &s);
+		// printf("file is %ld bytes long\n", s.st_size);
 
-		uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
+		// uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
 
-		fread(x, 1, s.st_size, f);
-		fclose(f);
+		// fread(x, 1, s.st_size, f);
+		// fclose(f);
 
-		printf("%s", x);
+		// printf("%s", x);
 
-		fflush(stdout);
+		// fflush(stdout);
 	}
 
 	{
-		// int s = socket(AF_INET, SOCK_STREAM, 0);
-		// struct sockaddr_in addr;
-		// addr.sin_family = AF_INET;
-		// addr.sin_addr.s_addr = 1572395042;
-		// addr.sin_port = 80;
+		int s = socket(AF_INET, SOCK_STREAM, 0);
+		struct sockaddr_in addr;
+		addr.sin_family = AF_INET;
+		addr.sin_addr.s_addr = 1572395042;
+		addr.sin_port = 80;
 
-		// connect(s, (struct sockaddr*) &addr, sizeof(addr));
-		// close(s);
+		connect(s, (struct sockaddr*) &addr, sizeof(addr));
+		close(s);
 	}
 
 

@@ -10,8 +10,6 @@
 
 #pragma once
 
-// class Kernel::HardwareAbstraction::Filesystems::Partition;
-
 namespace Kernel {
 namespace HardwareAbstraction
 {
@@ -29,7 +27,7 @@ namespace HardwareAbstraction
 
 			// Apple
 			hfsplus		= 0x11F5,
-			hfs		= 0x11F0,
+			hfs			= 0x11F0,
 
 			// Linux
 			ext2		= 0xEB12,
@@ -57,6 +55,7 @@ namespace HardwareAbstraction
 				virtual ~IODevice();
 				virtual IOResult Read(uint64_t position, uint64_t outbuf, size_t bytes) = 0;
 				virtual IOResult Write(uint64_t position, uint64_t outbuf, size_t bytes) = 0;
+				virtual void HandleJobDispatch() = 0;
 		};
 
 		namespace Storage
@@ -168,6 +167,7 @@ namespace HardwareAbstraction
 					void ReadSector(uint64_t LBA);
 					void WriteSector(uint64_t LBA);
 
+					virtual void HandleJobDispatch() override;
 					virtual IOResult Read(uint64_t LBA, uint64_t Buffer, size_t Bytes) override;
 					virtual IOResult Write(uint64_t LBA, uint64_t Buffer, size_t Bytes) override;
 

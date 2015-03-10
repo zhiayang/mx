@@ -3,7 +3,9 @@
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
+#include <HardwareAbstraction/Devices.hpp>
 #include <HardwareAbstraction/DeviceManager.hpp>
+#include <HardwareAbstraction/Devices/StorageDevice.hpp>
 
 namespace Kernel {
 namespace HardwareAbstraction {
@@ -12,6 +14,56 @@ namespace DeviceManager
 {
 	static dev_t curid = 0;
 	static rde::hash_map<DeviceType, rde::vector<Device*>>* deviceMap;
+	static rde::deque<IODevice*>* deviceJobDispatchQueue;
+	static Mutex* queueMtx;
+
+	void AddDeviceDispatchJob(IODevice* device)
+	{
+		deviceJobDispatchQueue->push_back(device);
+	}
+
+	void DispatcherThread()
+	{
+		while(true)
+		{
+			LOCK(queueMtx);
+			size_t s = deviceJobDispatchQueue->size();
+			for(size_t i = 0; i < s; i++)
+			{
+				deviceJobDispatchQueue->front()->HandleJobDispatch();
+				deviceJobDispatchQueue->erase(deviceJobDispatchQueue->begin());
+			}
+
+			UNLOCK(queueMtx);
+			YieldCPU();
+		}
+	}
+
+	void Initialise()
+	{
+		deviceJobDispatchQueue = new rde::deque<IODevice*>();
+		queueMtx = new Mutex();
+
+		Multitasking::Thread* th = Multitasking::CreateKernelThread(DispatcherThread);
+		Multitasking::AddToQueue(th);
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	dev_t AllocateDevID()
 	{

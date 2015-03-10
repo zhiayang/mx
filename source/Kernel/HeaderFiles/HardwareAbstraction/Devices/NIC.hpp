@@ -7,7 +7,7 @@
 #include "PCI.hpp"
 #include <GlobalTypes.hpp>
 #include <Synchro.hpp>
-#include <HardwareAbstraction/DeviceManager.hpp>
+#include <HardwareAbstraction/Devices/StorageDevice.hpp>
 #pragma once
 
 namespace Kernel {
@@ -15,17 +15,17 @@ namespace HardwareAbstraction {
 namespace Devices {
 namespace NIC
 {
-	class GenericNIC : public DeviceManager::Device
+	class GenericNIC : public Devices::IODevice
 	{
 		public:
 			GenericNIC();
 			virtual ~GenericNIC();
 
-			virtual void Reset();
-			virtual void SendData(uint8_t* data, uint64_t bytes);
-			virtual uint8_t* GetMAC();
-			virtual uint64_t GetHardwareType();
-			virtual void HandleInterrupt();
+			virtual void Reset() = 0;
+			virtual void SendData(uint8_t* data, uint64_t bytes) = 0;
+			virtual uint8_t* GetMAC() = 0;
+			virtual uint64_t GetHardwareType() = 0;
+			virtual void HandleInterrupt() = 0;
 
 		protected:
 			Devices::PCI::PCIDevice* pcidev;
@@ -42,7 +42,10 @@ namespace NIC
 			virtual void SendData(uint8_t* data, uint64_t bytes) override;
 			virtual uint8_t* GetMAC() override;
 			virtual uint64_t GetHardwareType() override;
+			virtual void HandleJobDispatch() override;
 			virtual void HandleInterrupt() override;
+			virtual IOResult Read(uint64_t position, uint64_t outbuf, size_t bytes) override;
+			virtual IOResult Write(uint64_t position, uint64_t outbuf, size_t bytes) override;
 
 			void HandlePacket();
 

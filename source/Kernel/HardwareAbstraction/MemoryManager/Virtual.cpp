@@ -236,6 +236,23 @@ namespace Virtual
 		}
 	}
 
+	void ForceInsertALPTuple(uint64_t addr, size_t sizeInPages, uint64_t phys, VirtualAddressSpace* v)
+	{
+		VirtualAddressSpace* vas = v ? v : &Multitasking::GetCurrentProcess()->VAS;
+		assert(vas);
+
+		for(ALPTuple* tup : vas->used)
+		{
+			if(tup->start == addr || tup->phys == phys)
+			{
+				Log("Duplicate: %x -> %x, %d", tup->start, tup->phys, tup->length);
+				assert("Duplicate tuple!" && 0);
+			}
+		}
+
+		vas->used.push_back(new ALPTuple(addr, sizeInPages, phys));
+	}
+
 	uint64_t GetVirtualPhysical(uint64_t virt, VirtualAddressSpace* v)
 	{
 		VirtualAddressSpace* vas = v ? v : &Multitasking::GetCurrentProcess()->VAS;
@@ -810,6 +827,45 @@ namespace Virtual
 		(void) bytes;
 		(void) from;
 		(void) to;
+
+		// this can only be done in the kernel
+		// assert(Multitasking::GetProcess(0) == Multitasking::GetCurrentProcess());
+
+		// size_t numPages				= (bytes + 0xFFF) / 0x1000;
+
+		// uint64_t toAligned			= toAddr & I_AlignMask;
+		// uint64_t toBeginOffset		= toAddr - toAligned;
+		// uint64_t toPhys				= GetVirtualPhysical(toAligned, to);
+
+		// uint64_t fromAligned		= fromAddr & I_AlignMask;
+		// uint64_t fromBeginOffset	= fromAddr - fromAligned;
+		// uint64_t fromPhys			= GetVirtualPhysical(fromAligned, from);
+
+		// if(toPhys == 0)		Log(1, "Could not fetch physical address for %x in vas %x (to)", toAligned, to->PML4);
+		// if(fromPhys == 0)	Log(1, "Could not fetch physical address for %x in vas %x (from)", fromAligned, from->PML4);
+
+		// assert(toPhys > 0);
+		// assert(fromPhys > 0);
+
+		// // we need to map two sets, since fromAddr and toAddr might (and probably will)
+		// // have different physical backing pages. Therefore, we map both the fromPhys and toPhys to our own
+		// // address space, then do the memcpy.
+		// uint64_t fromPhysMapped = AllocateVirtual(numPages, 0, from, fromPhys);
+		// Virtual::MapRegion(fromPhysMapped, fromPhys, numPages, 0x3);
+
+		// uint64_t toPhysMapped = AllocateVirtual(numPages, 0, to, toPhys);
+		// Virtual::MapRegion(toPhysMapped, toPhys, numPages, 0x3);
+
+		// // then copy it.
+		// Log("Preparing to copy (%d bytes) from (%x - %x + %x) to (%x - %x + %x)", bytes, fromPhysMapped, fromPhys, fromBeginOffset, toPhysMapped, toPhys, toBeginOffset);
+
+		// Memory::Copy((void*) (toPhysMapped + toBeginOffset), (void*) (fromPhysMapped + fromBeginOffset), bytes);
+
+		// FreeVirtual(fromPhysMapped, numPages);
+		// FreeVirtual(toPhysMapped, numPages);
+
+		// Virtual::UnmapRegion(fromPhysMapped, numPages);
+		// Virtual::UnmapRegion(toPhysMapped, numPages);
 	}
 
 	void CopyFromKernel(uint64_t fromAddr, uint64_t toAddr, size_t bytes, VirtualAddressSpace* to)
@@ -836,22 +892,69 @@ namespace Virtual
 		// allocate some temporary virt pages in the local address space
 		// then map the physical pages behind toAddr to our local space
 		uint64_t toVirtTemp		= AllocateVirtual(numPages, 0, from, toPhys);
-		Virtual::MapRegion(toVirtTemp, toPhys, numPages, 0x7);
+		Virtual::MapRegion(toVirtTemp, toPhys, numPages, 0x3);
 
 		// then copy it.
 		// Log("Copied %d bytes from %x to %x (%x, %x, %x)", bytes, fromAddr, toAddr, beginOffset, toPhys, to->PML4);
 		Memory::Copy((void*) (toVirtTemp + beginOffset), (void*) fromAddr, bytes);
 
 		FreeVirtual(toVirtTemp, numPages);
+		Virtual::UnmapRegion(toVirtTemp, numPages);
 	}
 
 	void CopyToKernel(uint64_t fromAddr, uint64_t toAddr, size_t bytes, VirtualAddressSpace* from)
 	{
-		(void) fromAddr;
-		(void) toAddr;
-		(void) bytes;
-		(void) from;
+		// this can only be done in the kernel
+		assert(Multitasking::GetProcess(0) == Multitasking::GetCurrentProcess());
+
+		VirtualAddressSpace* to = &Multitasking::GetProcess(0)->VAS;
+		size_t numPages			= (bytes + 0xFFF) / 0x1000;
+
+		uint64_t fromAligned	= fromAddr & I_AlignMask;
+		uint64_t beginOffset	= fromAddr - fromAligned;
+		uint64_t fromPhys		= GetVirtualPhysical(fromAligned, from);
+
+		// special exception for kernel heap
+		if(fromPhys == 0 && fromAddr >= KernelHeapAddress)
+			fromPhys = GetVirtualPhysical(fromAligned, to);
+
+		if(fromPhys == 0) Log(1, "Could not fetch physical address for %x in vas %x", fromAligned, from->PML4);
+		assert(fromPhys > 0);
+
+		// allocate some temporary virt pages in the local address space
+		// then map the physical pages behind toAddr to our local space
+		uint64_t fromPhysMapped = AllocateVirtual(numPages, 0, to, fromPhys);
+		Virtual::MapRegion(fromPhysMapped, fromPhys, numPages, 0x3);
+
+		// then copy it.
+		Memory::Copy((void*) toAddr, (void*) (fromPhysMapped + beginOffset), bytes);
+
+		FreeVirtual(fromPhysMapped, numPages);
+		Virtual::UnmapRegion(fromPhysMapped, numPages);
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 	uint64_t CreateVAS()

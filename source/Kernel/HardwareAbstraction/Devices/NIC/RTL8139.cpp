@@ -187,6 +187,27 @@ namespace NIC
 		IOPort::Write32(this->ioaddr + Registers::TxStatus0 + (uint16_t) usebuf * 4, status);
 	}
 
+
+	IOResult RTL8139::Read(uint64_t position, uint64_t outbuf, size_t bytes)
+	{
+		(void) position;
+		(void) outbuf;
+		(void) bytes;
+
+		// does nothing -- you can't read directly from an NIC anyway
+		return IOResult();
+	}
+	IOResult RTL8139::Write(uint64_t position, uint64_t outbuf, size_t bytes)
+	{
+		(void) position;
+		this->SendData((uint8_t*) outbuf, bytes);
+
+		auto ret = IOResult();
+		ret.bytesTransferred = bytes;
+
+		return ret;
+	}
+
 	uint64_t RTL8139::GetHardwareType()
 	{
 		return 0x1;
@@ -239,10 +260,15 @@ namespace NIC
 		this->SeenOfs = ReadOffset;
 	}
 
+	void RTL8139::HandleJobDispatch()
+	{
+		this->HandlePacket();
+	}
+
 	void RTL8139::HandleRxOk()
 	{
 		IOPort::Write16(this->ioaddr + Registers::IntrStatus, 0x1);
-		this->HandlePacket();
+		DeviceManager::AddDeviceDispatchJob(this);
 	}
 
 	void RTL8139::HandleRxErr()

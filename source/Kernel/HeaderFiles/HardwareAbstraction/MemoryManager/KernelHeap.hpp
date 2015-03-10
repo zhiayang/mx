@@ -28,6 +28,9 @@ namespace MemoryManager
 		void* ReallocateChunk(void* ptr, uint64_t size);
 
 		void Print();
+
+		uint64_t GetFirstHeapMetadataPhysPage();
+		uint64_t GetFirstHeapPhysPage();
 	}
 }
 }
