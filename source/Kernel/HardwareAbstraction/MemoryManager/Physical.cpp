@@ -118,7 +118,6 @@ namespace Physical
 			PageList->erase(PageList->begin());
 
 			delete p;
-
 			return raddr;
 		}
 		else
@@ -286,6 +285,7 @@ namespace Physical
 
 				// PageList->push_back(p);
 				PageList->push_back(p);
+				Log("Physical memory pair: (%x, %d -- %x)", p->BaseAddr, p->LengthInPages, p->BaseAddr + (p->LengthInPages * 0x1000));
 			}
 		}
 

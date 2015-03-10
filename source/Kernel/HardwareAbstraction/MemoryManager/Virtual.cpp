@@ -99,6 +99,7 @@ namespace Virtual
 				}
 
 				vas->used.push_back(new ALPTuple(addr, size, phys));
+				// Log("virt(%x) mapped to phys(%x) [%d] in vas %x (%x)", addr, phys, size, GetCurrentPML4T(), __builtin_return_address(0));
 				return addr;
 			}
 
@@ -118,24 +119,22 @@ namespace Virtual
 
 
 
-
+		uint64_t ret = 0;
 		AddressLengthPair* pair = vas->pairs.front();
 		if(pair->length > size)
 		{
-			uint64_t ret = pair->start;
+			ret = pair->start;
 			pair->start += (size * 0x1000);
 			pair->length -= size;
 			vas->used.push_back(new ALPTuple(ret, size, phys));
-			return ret;
 		}
 		else if(pair->length == size)
 		{
-			uint64_t ret = pair->start;
+			ret = pair->start;
 			delete vas->pairs.front();
 			vas->pairs.erase(vas->pairs.begin());
 
 			vas->used.push_back(new ALPTuple(ret, size, phys));
-			return ret;
 		}
 		else
 		{
@@ -160,26 +159,30 @@ namespace Virtual
 			{
 				if(found->length > size)
 				{
-					uint64_t ret = found->start;
+					ret = found->start;
 					found->length -= size;
 					found->start += (size * 0x1000);
 
 					vas->used.push_back(new ALPTuple(ret, size, phys));
-					return ret;
 				}
 				else
 				{
-					uint64_t ret = found->start;
+					ret = found->start;
 					delete found;
 
 					vas->used.push_back(new ALPTuple(ret, size, phys));
-					return ret;
 				}
 			}
 
-			HALT("something went wrong");
-			return 0;
+			if(ret == 0)
+			{
+				HALT("something went wrong");
+				return 0;
+			}
 		}
+
+		// Log("virt(%x) mapped to phys(%x) [%d] in vas %x (%x)", ret, phys, size, GetCurrentPML4T(), __builtin_return_address(0));
+		return ret;
 	}
 
 	void FreeVirtual(uint64_t page, uint64_t size, VirtualAddressSpace* v)
@@ -242,9 +245,9 @@ namespace Virtual
 		for(ALPTuple* pair : vas->used)
 		{
 			uint64_t end = pair->start + pair->length * 0x1000;
-			if(pair->start >= virt && virt <= end)
+			// Log("s: %x, p: %x, v: %x, l: %d -- %x", pair->start, pair->phys, virt, pair->length, vas->PML4);
+			if(virt >= pair->start && virt <= end)
 			{
-				// Log("%x, %x, %d", pair->start, pair->phys, pair->length);
 				ret = pair->phys + (virt - pair->start);
 			}
 		}
@@ -256,7 +259,7 @@ namespace Virtual
 	{
 		uint64_t phys = Physical::AllocatePage(size);
 		uint64_t virt = AllocateVirtual(size, addr, 0, phys);
-		// Log("virt(%x) mapped to phys(%x) in vas %x (%x)", virt, phys, GetCurrentPML4T(), __builtin_return_address(0));
+		// Log("allocated v(%x) to p(%x), %d pages, %x", virt, phys, size, phys + (size * 0x1000));
 
 		MapRegion(virt, phys, size, flags);
 
@@ -816,7 +819,10 @@ namespace Virtual
 
 		VirtualAddressSpace* from = &Multitasking::GetProcess(0)->VAS;
 
+
+		size_t numPages			= (bytes + 0xFFF) / 0x1000;
 		uint64_t toAligned		= toAddr & I_AlignMask;
+		uint64_t beginOffset	= toAddr - toAligned;
 		uint64_t toPhys			= GetVirtualPhysical(toAligned, to);
 
 		if(toPhys == 0)
@@ -824,9 +830,6 @@ namespace Virtual
 			Log(1, "Could not fetch physical address for %x in vas %x", toAligned, to->PML4);
 			toPhys = GetMapping(toAligned, to->PML4) & I_AlignMask;
 		}
-
-		size_t numPages			= (bytes + 0xFFF) / 0x1000;
-		uint64_t beginOffset	= toAddr - toAligned;
 
 		assert(toPhys > 0);
 
@@ -836,8 +839,8 @@ namespace Virtual
 		Virtual::MapRegion(toVirtTemp, toPhys, numPages, 0x7);
 
 		// then copy it.
-		Memory::Copy((void*) (toVirtTemp + beginOffset), (void*) fromAddr, bytes);
 		// Log("Copied %d bytes from %x to %x (%x, %x, %x)", bytes, fromAddr, toAddr, beginOffset, toPhys, to->PML4);
+		Memory::Copy((void*) (toVirtTemp + beginOffset), (void*) fromAddr, bytes);
 
 		FreeVirtual(toVirtTemp, numPages);
 	}

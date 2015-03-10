@@ -58,7 +58,8 @@ int main(int argc, char** argv)
 
 
 	{
-		FILE* f = fopen("/boot/grub/menu.lst", "r");
+		// FILE* f = fopen("/boot/grub/menu.lst", "r");
+		FILE* f = fopen("/essay.txt", "r");
 		struct stat s;
 
 		fstat((int) f->__fd, &s);
