@@ -11,7 +11,7 @@
 #include <mqueue.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
-#include <netinet/in.h>
+#include <sys/un.h>
 #include <sys/socket.h>
 #include <pthread.h>
 
@@ -19,6 +19,31 @@ static uint64_t framebuffer = 0;
 static uint64_t width = 0;
 static uint64_t height = 0;
 static uint64_t bpp = 0;
+
+
+
+
+
+void do_child()
+{
+	printf("in child, sleep(5000ms)\n");
+	usleep(5000000);
+	printf("awake, reading\n");
+
+
+	int s = socket(AF_UNIX, SOCK_DGRAM, 0);
+	struct sockaddr_un addr;
+
+	addr.sun_family = AF_UNIX;
+
+	strcpy(addr.sun_path, "/some/socket");
+	connect(s, (struct sockaddr*) &addr, sizeof(addr));
+
+	char* out = new char[128];
+	read(s, out, 128);
+
+	printf("read: %s\n", out);
+}
 
 int main(int argc, char** argv)
 {
@@ -36,66 +61,59 @@ int main(int argc, char** argv)
 	bpp			= (uint64_t) argv[4] / 8;		// kernel gives us BITS per pixel, but we really only care about BYTES per pixel.
 
 	printf("Display server online\n");
-	// printf("Forking process...\n");
-	// int64_t res = Library::SystemCall::ForkProcess();
+	printf("Forking process...\n");
+	int res = fork();
 
-	// if(res == 0)
-	// {
-	// 	printf("in child, exiting\n");
-	// 	exit(0);
-	// }
-	// else
-	// {
-	// 	printf("parent: child proc has pid %ld, continuing\n", res);
-	// }
-
-	// Library::SystemCall::SpawnProcess("/test.mxa", "test");
-
-	printf("stuff is going on\n");
-
-
-
-
-
+	if(res == 0)
 	{
-		// FILE* f = fopen("/something.txt", "r");
-		// struct stat s;
-
-		// fstat((int) f->__fd, &s);
-		// printf("file is %ld bytes long\n", s.st_size);
-
-		// uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
-
-		// fread(x, 1, s.st_size, f);
-		// fclose(f);
-
-		// printf("%s", x);
-
-		// fflush(stdout);
+		do_child();
+		exit(0);
+	}
+	else
+	{
+		printf("parent: child proc has pid %ld, continuing\n", res);
 	}
 
+	printf("opening shit\n");
 	{
-		int s = socket(AF_INET, SOCK_STREAM, 0);
-		struct sockaddr_in addr;
-		addr.sin_family = AF_INET;
-		addr.sin_addr.s_addr = 1572395042;
-		addr.sin_port = 80;
+		int s = socket(AF_UNIX, SOCK_DGRAM, 0);
+		struct sockaddr_un addr;
 
-		connect(s, (struct sockaddr*) &addr, sizeof(addr));
+		addr.sun_family = AF_UNIX;
 
-
-		const char* http = "GET /index.html HTTP/1.1\r\nHost: www.example.com\r\n\r\n";
+		strcpy(addr.sun_path, "/some/socket");
+		bind(s, (struct sockaddr*) &addr, sizeof(addr));
 
 
-		write(s, http, strlen(http));
-		uint8_t* buf = new uint8_t[2048];
+		const char* msg = "HELLO, WORLD!\n";
+		write(s, msg, strlen(msg) + 1);
 
-		printf("waiting\n");
-		usleep(1000000);
-		read(s, buf, 2048);
+		// close(s);
+	}
 
-		printf("%s", buf);
-		close(s);
+
+
+
+
+	// {
+	// 	FILE* f = fopen("/something.txt", "r");
+	// 	struct stat s;
+
+	// 	fstat((int) f->__fd, &s);
+	// 	printf("file is %ld bytes long\n", s.st_size);
+
+	// 	uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
+
+	// 	fread(x, 1, s.st_size, f);
+	// 	fclose(f);
+
+	// 	printf("%s", x);
+
+	// 	fflush(stdout);
+	// }
+
+	{
+
 	}
 
 
