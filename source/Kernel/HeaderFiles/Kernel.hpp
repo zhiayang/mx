@@ -115,6 +115,7 @@ namespace Kernel
 	void Idle();
 	void KeyboardService();
 	void KernelCore(uint32_t MultibootMagic, uint32_t MBTAddr);
+	void SetupKernelThreads();
 	void KernelCoreThread();
 
 	void AssertCondition(const char* file, int line, const char* func, const char* expr);

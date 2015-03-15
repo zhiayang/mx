@@ -36,6 +36,10 @@ extern "C" void KernelInit(uint32_t MultibootMagic, uint32_t MBTAddr)
 	KernelCore(MultibootMagic, MBTAddr);
 }
 
+extern "C" void KernelThreadInit()
+{
+	Kernel::SetupKernelThreads();
+}
 
 
 namespace Kernel
@@ -183,7 +187,12 @@ namespace Kernel
 
 		PrintFormatted("Loading [mx]...\n");
 		Log("Initialising Kernel subsystem");
+	}
 
+
+
+	void SetupKernelThreads()
+	{
 		// tss on page 337 of manual. (AMD Vol. 3)
 		// Setup the TSS. this will mostly be void once the scheduler initialises.
 		{
@@ -407,11 +416,11 @@ namespace Kernel
 		Log("Kernel init complete\n----------------------------\n");
 
 
-		{
-			using namespace Network;
-			IPv4Address example = DNS::QueryDNSv4(rde::string("www.example.com"));
-			PrintFormatted("example.com is at %d.%d.%d.%d\n", example.b1, example.b2, example.b3, example.b4);
-		}
+		// {
+		// 	using namespace Network;
+		// 	IPv4Address example = DNS::QueryDNSv4(rde::string("www.example.com"));
+		// 	PrintFormatted("example.com is at %d.%d.%d.%d\n", example.b1, example.b2, example.b3, example.b4);
+		// }
 
 		// Log("Socket test\n");
 		// {

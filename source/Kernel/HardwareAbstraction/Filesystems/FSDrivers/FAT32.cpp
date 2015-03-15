@@ -709,6 +709,10 @@ namespace Filesystems
 		*ret_nument = nument;
 		return ret;
 	}
+
+	void FSDriverFat32::Close(VFS::vnode*)
+	{
+	}
 }
 
 

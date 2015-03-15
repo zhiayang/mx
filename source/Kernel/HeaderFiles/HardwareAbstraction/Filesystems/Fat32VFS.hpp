@@ -13,16 +13,17 @@ namespace Filesystems
 	{
 		public:
 			FSDriverFat32(Devices::Storage::Partition* part);
-			~FSDriverFat32() override;
-			bool Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms) override;
-			bool Delete(VFS::vnode* node, const char* path) override;
-			bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
-			size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
-			size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
-			void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
-			void Flush(VFS::vnode* node) override;
+			virtual ~FSDriverFat32() override;
+			virtual bool Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms) override;
+			virtual bool Delete(VFS::vnode* node, const char* path) override;
+			virtual bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
+			virtual size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length) override;
+			virtual size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
+			virtual void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
+			virtual void Flush(VFS::vnode* node) override;
+			virtual void Close(VFS::vnode* node) override;
 
-			rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
+			virtual rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 
 		private:
 			rde::string ReadLFN(uint64_t addr, int* nument);

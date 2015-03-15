@@ -40,9 +40,9 @@ void do_child()
 	connect(s, (struct sockaddr*) &addr, sizeof(addr));
 
 	char* out = new char[128];
-	read(s, out, 128);
+	ssize_t res = read(s, out, 128);
 
-	printf("read: %s\n", out);
+	printf("read (%ld): %s\n", res, out);
 }
 
 int main(int argc, char** argv)
@@ -88,7 +88,7 @@ int main(int argc, char** argv)
 		const char* msg = "HELLO, WORLD!\n";
 		write(s, msg, strlen(msg) + 1);
 
-		// close(s);
+		close(s);
 	}
 
 

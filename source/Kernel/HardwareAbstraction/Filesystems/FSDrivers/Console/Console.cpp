@@ -64,6 +64,10 @@ namespace Filesystems
 	{
 	}
 
+	void FSDriverConsole::Close(VFS::vnode*)
+	{
+	}
+
 	void FSDriverConsole::Flush(VFS::vnode*)
 	{
 	}

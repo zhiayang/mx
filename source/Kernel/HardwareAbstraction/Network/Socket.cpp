@@ -331,8 +331,6 @@ namespace Network
 
 		skt->ipcSocketPath = path;
 		(*ipcSocketMap)[path] = skt;
-
-		Log(3, "socket bound, bitches");
 	}
 
 	void SocketVFS::Connect(VFS::vnode* node, const char* _path)
@@ -346,6 +344,7 @@ namespace Network
 		if(ipcSocketMap->find(path) == ipcSocketMap->end())
 		{
 			Log(1, "No such socket at path '%s'", _path);
+			Multitasking::SetThreadErrno(EBADF);
 			return;
 		}
 
@@ -403,21 +402,37 @@ namespace Network
 		// this will close the TCP connection
 		if(skt->protocol == SocketProtocol::TCP)
 			delete skt->tcpconnection;
+
+		delete skt;
+		node->info->data = 0;
 	}
 
 	size_t SocketVFS::Read(VFS::vnode* node, void* buf, off_t offset, size_t length)
 	{
 		(void) offset;
 		Socket* skt = getsockdata(node);
+		if(!skt)
+		{
+			Log(1, "Invalid vnode");
+			Multitasking::SetThreadErrno(EBADF);
+			return -1;
+		}
 
 		uint64_t ret = __min(skt->recvbuffer.ByteCount(), length);
 		skt->recvbuffer.Read((uint8_t*) buf, length);
+
 		return ret;
 	}
 
 	size_t SocketVFS::BlockingRead(VFS::vnode* node, void* buf, size_t bytes)
 	{
 		Socket* skt = getsockdata(node);
+		if(!skt)
+		{
+			Log(1, "Invalid vnode");
+			Multitasking::SetThreadErrno(EBADF);
+			return -1;
+		}
 
 		// only block if we have to
 		if(skt->recvbuffer.ByteCount() == 0)
@@ -435,6 +450,12 @@ namespace Network
 	{
 		(void) offset;
 		Socket* skt = getsockdata(node);
+		if(!skt)
+		{
+			Log(1, "Invalid vnode");
+			Multitasking::SetThreadErrno(EBADF);
+			return -1;
+		}
 
 		// tcp is special because we need to do stupid things in the TCPConnection class.
 		if(skt->protocol == SocketProtocol::TCP)

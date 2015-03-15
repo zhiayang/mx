@@ -159,6 +159,7 @@ namespace Filesystems
 			virtual size_t Read(VFS::vnode* node, void* buf, off_t offset, size_t length);
 			virtual size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length);
 			virtual void Flush(VFS::vnode* node);
+			virtual void Close(VFS::vnode* node);
 			virtual void Stat(VFS::vnode* node, struct stat* stat, bool statlink);
 
 			// returns a list of items inside the directory, as vnodes.

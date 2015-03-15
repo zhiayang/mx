@@ -441,6 +441,7 @@ namespace Network
 			virtual size_t Write(Filesystems::VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
 			virtual void Flush(Filesystems::VFS::vnode* node) override;
 			virtual void Stat(Filesystems::VFS::vnode* node, struct stat* stat, bool statlink) override;
+			virtual void Close(Filesystems::VFS::vnode* node) override;
 
 			// returns a list of items inside the directory, as vnodes.
 			virtual rde::vector<Filesystems::VFS::vnode*> ReadDir(Filesystems::VFS::vnode* node) override;
@@ -454,7 +455,6 @@ namespace Network
 			void Bind(Filesystems::VFS::vnode* node, const char* path);
 
 			size_t BlockingRead(Filesystems::VFS::vnode* node, void* buf, size_t bytes);
-			void Close(Filesystems::VFS::vnode* node);
 
 			Devices::NIC::GenericNIC* interface;
 	};
