@@ -30,13 +30,13 @@ namespace Memory
 		return PageAlignDown(x + 0xFFF);
 	}
 
-	uint64_t AllocateFromReserved()
+	uint64_t AllocateFromReserved(uint64_t sz)
 	{
 		// we need this 'reserved' region especially to store page tables/directories etc.
 		// if not, we'll end up with a super-screwed mapping.
 		// possibly some overlap as well.
 
-		ReservedRegionIndex += 0x1000;
+		ReservedRegionIndex += (sz * 0x1000);
 		// memset((void*) (ReservedRegionForVMM + ReservedRegionIndex), 0x00, 0x1000);
 		return ReservedRegionForVMM + ReservedRegionIndex;
 	}
@@ -176,7 +176,7 @@ namespace Memory
 		MapAddress(p, p, 0x03);
 
 		// Do us a favour and zero the memory first.
-		memset((void*)p, 0x00, 0x1000);
+		memset((void*) p, 0x00, 0x1000);
 
 		return p;
 	}

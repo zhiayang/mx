@@ -109,6 +109,12 @@ cd ..
 rm -rf build/build-bin
 rm -rf build/build-gcc
 
+
+cd tools
+./build-compression.sh
+cd ..
+
+
 if [ -f build/disk.img ]; then
 	exit
 fi

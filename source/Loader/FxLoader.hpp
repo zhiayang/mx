@@ -35,6 +35,7 @@ namespace Util
 {
 	char* ConvertToString(int64_t num, char* out);
 	int64_t ConvertToInt(char* str, uint8_t base);
+	void DumpBytes(uint64_t address, uint64_t length);
 }
 
 namespace Multiboot
@@ -114,7 +115,7 @@ namespace Memory
 	void InitialisePhys(MemoryMap_type* map);
 	void InitialiseVirt();
 
-	uint64_t AllocateFromReserved();
+	uint64_t AllocateFromReserved(uint64_t sz = 1);
 	uint64_t AllocatePage_NoMap();
 	void FreePage_NoUnmap(uint64_t PageAddr);
 
@@ -128,6 +129,13 @@ namespace Memory
 	void UnmapAddress(uint64_t VirtAddr);
 
 	uint64_t GetCurrentCR3();
+
+
+
+	void Initialise();
+	extern "C" void* malloc(uint64_t s);
+	extern "C" void free(void* Pointer);
+	extern "C" void* realloc(void* ptr, uint64_t size);
 }
 
 extern "C" uint64_t LoaderBootstrap(uint32_t magic, uint32_t mbt);

@@ -73,6 +73,16 @@ extern "C" void __assert(const char* filename, unsigned long line, const char* f
 
 namespace Util
 {
+	void DumpBytes(uint64_t address, uint64_t length)
+	{
+		for(uint64_t i = 0; i < length; i++)
+		{
+			Console::Print("%#02X ", *((uint8_t*)(address + i)));
+			if((i + 1) % 16 == 0)
+				Console::Print("\n");
+		}
+	}
+
 	char* ConvertToString(int64_t num, char* out)
 	{
 		char* dest = out;

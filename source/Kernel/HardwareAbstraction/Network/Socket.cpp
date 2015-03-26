@@ -238,6 +238,9 @@ namespace Network
 			else if(skt->protocol == SocketProtocol::UDP)
 				skt->clientport = UDP::AllocateEphemeralPort();
 
+			else if(skt->protocol == SocketProtocol::RawIPv4)
+				; // nothing to do
+
 			else
 				Log("Unsupported protocol, WTF are you doing?!");
 		}
