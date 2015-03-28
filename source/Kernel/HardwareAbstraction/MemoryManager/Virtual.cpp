@@ -360,6 +360,10 @@ namespace Virtual
 
 		for(auto _pair : src->used)
 		{
+			// todo: workaround... investigate
+			if(!_pair)
+				continue;
+
 			ALPTuple* pair = new ALPTuple(*_pair);
 			dest->used.push_back(pair);
 			uint64_t p = Physical::AllocatePage(pair->length);
@@ -400,6 +404,10 @@ namespace Virtual
 
 		for(ALPTuple* pair : vas->used)
 		{
+			// todo: workaround... investigate
+			if(!pair)
+				continue;
+
 			if(pair->phys > 0)
 				Physical::FreePage(pair->phys, pair->length);
 

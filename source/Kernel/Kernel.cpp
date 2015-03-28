@@ -398,34 +398,34 @@ namespace Kernel
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
 
 		{
-			using namespace Filesystems;
+			// using namespace Filesystems;
 
-			fd_t file = OpenFile("/texts/1984.txt", 0);
-			assert(file > 0);
+			// fd_t file = OpenFile("/texts/1984.txt", 0);
+			// assert(file > 0);
 
-			struct stat s;
-			Stat(file, &s);
+			// struct stat s;
+			// Stat(file, &s);
 
-			Log(3, "s.st_size: %d", s.st_size);
-			uint8_t* fl = new uint8_t[s.st_size];
+			// Log(3, "s.st_size: %d", s.st_size);
+			// uint8_t* fl = new uint8_t[s.st_size];
 
-			Read(file, fl, s.st_size);
+			// Read(file, fl, s.st_size);
 
-			PrintFormatted("%s\n", fl);
+			// PrintFormatted("%s\n", fl);
 
-		// 	// setup args:
-		// 	// 0: prog name (duh)
-		// 	// 1: FB address
-		// 	// 2: width
-		// 	// 3: height
-		// 	// 4: bpp (32)
+			// setup args:
+			// 0: prog name (duh)
+			// 1: FB address
+			// 2: width
+			// 3: height
+			// 4: bpp (32)
 
-		// 	const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
-		// 	auto proc = LoadBinary::Load(path, "displayd",
-		// 		(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
-		// 		GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
+			const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
+			auto proc = LoadBinary::Load(path, "displayd",
+				(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
+				GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
 
-		// 	Multitasking::AddToQueue(proc);
+			Multitasking::AddToQueue(proc);
 		}
 
 		PrintFormatted("[mx] has completed initialisation.\n");
