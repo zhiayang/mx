@@ -204,7 +204,6 @@ namespace Physical
 		ret.phys = AllocatePage(size, Below4Gb);
 		ret.virt = Virtual::AllocateVirtual(size, 0, 0, ret.phys);
 
-
 		Virtual::MapRegion(ret.virt, ret.phys, size, 0x3);
 		return ret;
 	}

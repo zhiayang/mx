@@ -87,6 +87,10 @@ namespace DMA
 		Log("Initialised Busmastering DMA with BaseIO %x", mmio);
 	}
 
+
+
+
+
 	IOResult ReadBytes(ATADrive* dev, uint64_t Buffer, uint64_t Sector, uint64_t Bytes)
 	{
 		(void) Buffer;
@@ -116,6 +120,7 @@ namespace DMA
 			cachedPRDTables->push_back(prdCache);
 		}
 
+
 		PRDEntry* prd = (PRDEntry*) prdCache.address.virt;
 
 		// allocate a buffer that we know is a good deal
@@ -138,16 +143,15 @@ namespace DMA
 		_WaitingDMA14 = !dev->GetBus();
 		_WaitingDMA15 = dev->GetBus();
 
+
 		uint64_t no = Time::Now();
-		uint64_t t1 = 100000000;
-		while((_WaitingDMA14 || _WaitingDMA15) && Time::Now() < no + 1000 && t1 > 0)
-			t1--;
+		while((_WaitingDMA14 || _WaitingDMA15) && Time::Now() < no + 1000);
 
 		_WaitingDMA14 = false;
 		_WaitingDMA15 = false;
 
 		// stop
-		IOPort::WriteByte((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 0), DMA::DMACommandRead | DMA::DMACommandStop);
+		IOPort::WriteByte((uint16_t) (mmio + (dev->GetBus() ? 8 : 0) + 0), DMA::DMACommandRead | DMA::DMACommandStop);
 
 
 		// todo: release cache
@@ -155,6 +159,25 @@ namespace DMA
 		// copy over
 		return IOResult(Bytes, paddr, (Bytes + 0xFFF) / 0x1000);
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

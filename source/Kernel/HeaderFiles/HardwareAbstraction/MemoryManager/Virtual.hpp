@@ -4,9 +4,12 @@
 
 #pragma once
 #include <stdint.h>
-#include <rdestl/rdestl.h>
+#include <Synchro.hpp>
 
 namespace Kernel {
+
+class Mutex;
+
 namespace HardwareAbstraction {
 namespace MemoryManager {
 namespace Virtual
@@ -33,7 +36,7 @@ namespace Virtual
 
 	struct VirtualAddressSpace
 	{
-		VirtualAddressSpace(PageMapStructure* pml4)
+		VirtualAddressSpace(PageMapStructure* pml4) : used(1024)
 		{
 			this->PML4 = pml4;
 		}
@@ -44,6 +47,7 @@ namespace Virtual
 
 		// store the actual address of the pml4.
 		PageMapStructure* PML4;
+		Mutex* mtx;
 	};
 
 

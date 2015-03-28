@@ -403,8 +403,9 @@ namespace Filesystems
 
 		for(auto i = skippedclus; i < skippedclus + cluslen; i++)
 		{
-			// Log(3, "call");
+			// Log(1, "read %d (%d, %d), %x, %x", this->ClusterToLBA(vnd->clusters[i]), i, skippedclus + cluslen, obuf, obuf + bufferPageSize * 0x1000);
 			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA(vnd->clusters[i]), rbuf, this->SectorsPerCluster * 512);
+			// Log(1, "read ok");
 			rbuf += this->SectorsPerCluster * 512;
 		}
 
@@ -674,6 +675,7 @@ namespace Filesystems
 
 		rde::string ret;
 		rde::vector<char>* items = new rde::vector<char>();
+
 		// first seqnum & ~0x40 is the number of entries
 		uint8_t nument = seqnum & ~0x40;
 		for(int i = 0; i < nument; i++)

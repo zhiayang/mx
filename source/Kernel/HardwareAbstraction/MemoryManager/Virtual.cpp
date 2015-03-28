@@ -121,12 +121,17 @@ namespace Virtual
 
 		uint64_t ret = 0;
 		AddressLengthPair* pair = vas->pairs.front();
+		assert(pair);
+
 		if(pair->length > size)
 		{
 			ret = pair->start;
 			pair->start += (size * 0x1000);
 			pair->length -= size;
+
+			LOCK(vas->mtx);
 			vas->used.push_back(new ALPTuple(ret, size, phys));
+			UNLOCK(vas->mtx);
 		}
 		else if(pair->length == size)
 		{
@@ -134,7 +139,9 @@ namespace Virtual
 			delete vas->pairs.front();
 			vas->pairs.erase(vas->pairs.begin());
 
+			LOCK(vas->mtx);
 			vas->used.push_back(new ALPTuple(ret, size, phys));
+			UNLOCK(vas->mtx);
 		}
 		else
 		{
@@ -163,14 +170,18 @@ namespace Virtual
 					found->length -= size;
 					found->start += (size * 0x1000);
 
+					LOCK(vas->mtx);
 					vas->used.push_back(new ALPTuple(ret, size, phys));
+					UNLOCK(vas->mtx);
 				}
 				else
 				{
 					ret = found->start;
 					delete found;
 
+					LOCK(vas->mtx);
 					vas->used.push_back(new ALPTuple(ret, size, phys));
+					UNLOCK(vas->mtx);
 				}
 			}
 
@@ -181,7 +192,7 @@ namespace Virtual
 			}
 		}
 
-		// Log("virt(%x) mapped to phys(%x) [%d] in vas %x (%x)", ret, phys, size, GetCurrentPML4T(), __builtin_return_address(0));
+		// Log("\tvirt(%x) mapped to phys(%x) [%d] in vas %x (%x)", ret, phys, size, GetCurrentPML4T(), __builtin_return_address(0));
 		return ret;
 	}
 
@@ -226,7 +237,7 @@ namespace Virtual
 		for(size_t i = 0; i < vas->used.size(); i++)
 		{
 			ALPTuple* pair = vas->used[i];
-			if(pair->start == page)
+			if(pair->start == page && pair->length == size)
 			{
 				// Log("freeing (%x, %x, %d) (%x)", pair->start, pair->phys, pair->length, __builtin_return_address(0));
 				vas->used.erase(vas->used.begin() + i);
@@ -245,8 +256,9 @@ namespace Virtual
 		{
 			if(tup->start == addr || tup->phys == phys)
 			{
-				Log("Duplicate: %x -> %x, %d", tup->start, tup->phys, tup->length);
-				assert("Duplicate tuple!" && 0);
+				// TODO: investigate
+				// Log("Duplicate: %x -> %x, %d", tup->start, tup->phys, tup->length);
+				// assert("Duplicate tuple!" && 0);
 			}
 		}
 
@@ -337,6 +349,7 @@ namespace Virtual
 		vas->pairs.push_back(new AddressLengthPair(0x01000000, 0xFF000));
 		vas->pairs.push_back(new AddressLengthPair(0xFFFFF00000000000, 0x100000));
 
+		vas->mtx = new Mutex();
 		return vas;
 	}
 

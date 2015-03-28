@@ -82,7 +82,6 @@ namespace IO
 				}
 				else
 				{
-
 					IOResult iores = req.device->Read(req.pos, req.out, req.count);
 
 					// if this is a read from kernel space, just do shit.
