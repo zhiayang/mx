@@ -77,7 +77,9 @@ namespace Network
 			return 0;
 
 		Devices::NIC::GenericNIC* interface = (Devices::NIC::GenericNIC*) Devices::DeviceManager::GetDevice(Devices::DeviceType::EthernetNIC);
-		assert(interface);
+
+		if(prot != SocketProtocol::IPC)
+			assert(interface);
 
 
 		// socket driver init

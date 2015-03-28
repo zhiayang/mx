@@ -39,15 +39,27 @@ namespace Console
 
 	static uint32_t VT_Colour = 0xFFFFFFFF;
 	static bool VT_DidInit = false;
+	static bool HasFramebuffer = false;
 	static uint16_t OffsetLeft = 4;
 
 	static Mutex* mtx;
 
 	void Initialise()
 	{
-		CharsPerLine = (GetResX() - OffsetLeft) / CharWidth - 1;
-		CharsPerPage = CharsPerLine * (GetResY() / CharHeight) - 1;
-		CharsPerColumn = CharsPerPage / CharsPerLine;
+		HasFramebuffer = (VideoOutput::LinearFramebuffer::GetResX() > 0 && VideoOutput::LinearFramebuffer::GetResY() > 0);
+
+		if(HasFramebuffer)
+		{
+			CharsPerLine = (GetResX() - OffsetLeft) / CharWidth - 1;
+			CharsPerPage = CharsPerLine * (GetResY() / CharHeight) - 1;
+			CharsPerColumn = CharsPerPage / CharsPerLine;
+		}
+		else
+		{
+			CharsPerLine = 80 - 1;
+			CharsPerPage = 80 * 25;
+			CharsPerColumn = 25;
+		}
 
 		VT_DidInit = true;
 
@@ -68,7 +80,7 @@ namespace Console
 
 		if(SERIALMIRROR){ HardwareAbstraction::Devices::SerialPort::WriteChar(c); }
 
-		if(!IsInitialised())
+		if(!IsInitialised() || !HasFramebuffer)
 		{
 			Kernel::HardwareAbstraction::VideoOutput::Console80x25::PrintChar(c);
 			return;
@@ -173,21 +185,37 @@ namespace Console
 
 	void ClearScreen()
 	{
-		Memory::Set((uint64_t*) Kernel::GetFramebufferAddress(), 0x00, GetResX() * GetResY() * 4);
-		Memory::Set((uint64_t*) Kernel::GetTrueLFBAddress(), 0x00, GetResX() * GetResY() * 4);
-		VT_CursorX = 0;
-		VT_CursorY = 0;
+		if(!HasFramebuffer)
+		{
+			VideoOutput::Console80x25::ClearScreen();
+		}
+		else
+		{
+			Memory::Set((uint64_t*) Kernel::GetFramebufferAddress(), 0x00, GetResX() * GetResY() * 4);
+			Memory::Set((uint64_t*) Kernel::GetTrueLFBAddress(), 0x00, GetResX() * GetResY() * 4);
+			VT_CursorX = 0;
+			VT_CursorY = 0;
+		}
 	}
 
 	void Scroll()
 	{
-		uint64_t x = GetResX(), y = GetResY();
+		if(!HasFramebuffer)
+		{
+			VideoOutput::Console80x25::Scroll();
+		}
+		else
+		{
+			uint64_t x = GetResX(), y = GetResY();
 
-		// copy up.
-		Memory::Copy((void*) Kernel::GetFramebufferAddress(), (void*)(Kernel::GetFramebufferAddress() + (x * CharHeight * (BitsPerPixel / 8))), (x * y * (BitsPerPixel / 8)) - (x * CharHeight * (BitsPerPixel / 8)));
+			// copy up.
+			Memory::Copy((void*) Kernel::GetFramebufferAddress(), (void*)(Kernel::GetFramebufferAddress()
+				+ (x * CharHeight * (BitsPerPixel / 8))), (x * y * (BitsPerPixel / 8)) - (x * CharHeight * (BitsPerPixel / 8)));
 
-		// delete the last line.
-		Memory::Set((void*)(Kernel::GetFramebufferAddress() + ((x * y * (BitsPerPixel / 8)) - (x * CharHeight * (BitsPerPixel / 8)))), 0x00, x * CharHeight * (BitsPerPixel / 8));
+			// delete the last line.
+			Memory::Set((void*)(Kernel::GetFramebufferAddress() + ((x * y * (BitsPerPixel / 8)) - (x * CharHeight * (BitsPerPixel / 8)))),
+				0x00, x * CharHeight * (BitsPerPixel / 8));
+		}
 	}
 
 	void ScrollDown(uint64_t lines)
@@ -223,11 +251,18 @@ namespace Console
 
 	void MoveCursor(uint16_t x, uint16_t y)
 	{
-		if(x <= CharsPerLine && y <= CharsPerColumn)
+		if(!HasFramebuffer)
 		{
-			AutoMutex lk = AutoMutex(mtx);
-			VT_CursorX = x;
-			VT_CursorY = y;
+			VideoOutput::Console80x25::MoveCursor((uint8_t) x, (uint8_t) y);
+		}
+		else
+		{
+			if(x <= CharsPerLine && y <= CharsPerColumn)
+			{
+				AutoMutex lk = AutoMutex(mtx);
+				VT_CursorX = x;
+				VT_CursorY = y;
+			}
 		}
 	}
 
@@ -248,11 +283,19 @@ namespace Console
 
 	uint16_t GetCursorX()
 	{
-		return VT_CursorX;
+		if(!HasFramebuffer)
+			return VideoOutput::Console80x25::GetCursorX();
+
+		else
+			return VT_CursorX;
 	}
 	uint16_t GetCursorY()
 	{
-		return VT_CursorY;
+		if(!HasFramebuffer)
+			return VideoOutput::Console80x25::GetCursorY();
+
+		else
+			return VT_CursorY;
 	}
 }
 }

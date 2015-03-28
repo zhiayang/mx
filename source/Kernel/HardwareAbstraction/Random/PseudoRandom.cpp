@@ -9,9 +9,13 @@
 namespace Kernel {
 namespace HardwareAbstraction
 {
-	Random_PseudoRandom::Random_PseudoRandom() : Random(this)
+	Random_PseudoRandom::~Random_PseudoRandom()
 	{
-		this->seed = 1;
+	}
+
+	Random_PseudoRandom::Random_PseudoRandom(uint32_t _seed)
+	{
+		this->seed = _seed;
 	}
 
 	uint8_t Random_PseudoRandom::GenerateByte()

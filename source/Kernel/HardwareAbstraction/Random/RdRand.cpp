@@ -9,9 +9,8 @@
 namespace Kernel {
 namespace HardwareAbstraction
 {
-	Random_RdRand::Random_RdRand() : Random(this)
+	Random_RdRand::~Random_RdRand()
 	{
-
 	}
 
 	uint8_t Random_RdRand::GenerateByte()

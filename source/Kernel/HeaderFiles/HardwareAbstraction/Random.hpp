@@ -12,37 +12,33 @@ namespace HardwareAbstraction
 	class Random
 	{
 		public:
-			Random(Random* dev);
 			virtual ~Random();
-			virtual uint8_t GenerateByte();
-			virtual uint16_t Generate16();
-			virtual uint32_t Generate32();
-			virtual uint64_t Generate64();
-
-		protected:
-			Random* ActualGen;
+			virtual uint8_t GenerateByte() = 0;
+			virtual uint16_t Generate16() = 0;
+			virtual uint32_t Generate32() = 0;
+			virtual uint64_t Generate64() = 0;
 	};
 
 	class Random_RdRand : public Random
 	{
 		public:
-			Random_RdRand();
-
-			uint8_t GenerateByte();
-			uint16_t Generate16();
-			uint32_t Generate32();
-			uint64_t Generate64();
+			virtual ~Random_RdRand();
+			virtual uint8_t GenerateByte() override;
+			virtual uint16_t Generate16() override;
+			virtual uint32_t Generate32() override;
+			virtual uint64_t Generate64() override;
 	};
 
 	class Random_PseudoRandom : public Random
 	{
 		public:
-			Random_PseudoRandom();
+			Random_PseudoRandom(uint32_t seed = 1);
 
-			uint8_t GenerateByte();
-			uint16_t Generate16();
-			uint32_t Generate32();
-			uint64_t Generate64();
+			virtual ~Random_PseudoRandom();
+			virtual uint8_t GenerateByte() override;
+			virtual uint16_t Generate16() override;
+			virtual uint32_t Generate32() override;
+			virtual uint64_t Generate64() override;
 
 		private:
 			uint32_t seed;

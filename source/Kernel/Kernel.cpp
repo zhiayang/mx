@@ -283,10 +283,7 @@ namespace Kernel
 				}
 				else
 				{
-					PrintFormatted("Error: No supported video card found.\n");
-					PrintFormatted("[mx] does not support VGA-only video cards.\n");
-					PrintFormatted("Currently, supported systems include: BGA (Bochs, QEMU, VirtualBox) and SVGA II (VMWare)\n");
-					UHALT();
+					Log(1, "No supported video card found, funtionality will be limited");
 				}
 			}
 		}
@@ -303,7 +300,7 @@ namespace Kernel
 			}
 		}
 
-		KernelRandom = new Random(new Random_PseudoRandom());
+		KernelRandom = new Random_PseudoRandom();
 
 		Log("Compatible video card located");
 
@@ -319,36 +316,38 @@ namespace Kernel
 
 			// it better exist
 			GenericVideoDevice* vd = (GenericVideoDevice*) DeviceManager::GetDevice(DeviceType::FramebufferVideoCard);
-			assert(vd);
-
-			LFBAddr = vd->GetFramebufferAddress();
-			LFBBufferAddr = LFBAddr;
-
-			// Set video mode
-			PrintFormatted("\nInitialising Linear Framebuffer at %x...", LFBAddr);
-			vd->SetMode(PrefResX, PrefResY, 32);
-			VideoOutput::LinearFramebuffer::Initialise();
-
-			Log("Requested resolution of %dx%d, LFB at %x", PrefResX, PrefResY, LFBAddr);
-
-
-			// scope this.
+			if(vd)
 			{
-				// Get the set resolution (may be different than our preferred)
-				uint16_t ResX = VideoOutput::LinearFramebuffer::GetResX();
-				uint16_t ResY = VideoOutput::LinearFramebuffer::GetResX();
 
-				// Calculate how many bytes we need. (remember, 4 bytes per pixel)
-				uint32_t bytes = (ResX * ResY) * 4;
+				LFBAddr = vd->GetFramebufferAddress();
+				LFBBufferAddr = LFBAddr;
 
-				// Get that rounded up to the nearest page
-				bytes = (bytes + (4096 - 1)) / 4096;
-				LFBInPages = bytes;
+				// Set video mode
+				PrintFormatted("\nInitialising Linear Framebuffer at %x...", LFBAddr);
+				vd->SetMode(PrefResX, PrefResY, 32);
+				VideoOutput::LinearFramebuffer::Initialise();
 
-				Virtual::MapRegion(LFBAddr, LFBAddr, bytes, 0x07);
+				Log("Requested resolution of %dx%d, LFB at %x", PrefResX, PrefResY, LFBAddr);
+
+
+				// scope this.
+				{
+					// Get the set resolution (may be different than our preferred)
+					uint16_t ResX = VideoOutput::LinearFramebuffer::GetResX();
+					uint16_t ResY = VideoOutput::LinearFramebuffer::GetResX();
+
+					// Calculate how many bytes we need. (remember, 4 bytes per pixel)
+					uint32_t bytes = (ResX * ResY) * 4;
+
+					// Get that rounded up to the nearest page
+					bytes = (bytes + (4096 - 1)) / 4096;
+					LFBInPages = bytes;
+
+					Virtual::MapRegion(LFBAddr, LFBAddr, bytes, 0x07);
+				}
+
+				Log("Video mode set");
 			}
-
-			Log("Video mode set");
 			Console::Initialise();
 		}
 
@@ -509,6 +508,7 @@ namespace Kernel
 
 		// kernel stops here
 		// for now.
+
 		{
 			uint16_t xpos = Console::GetCharsPerLine();
 			uint64_t state = 0;
@@ -545,8 +545,8 @@ namespace Kernel
 
 	void HaltSystem(const char* message, const char* filename, uint64_t line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%d", message, filename, line);
-
+		Log("System Halted: %s, %s:%d, RA(0): %x, RA(1): %x", message, filename, line,
+			__builtin_return_address(0), __builtin_return_address(1));
 
 		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 
@@ -556,7 +556,9 @@ namespace Kernel
 
 	void HaltSystem(const char* message, const char* filename, const char* line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%s", message, filename, line);
+		Log("System Halted: %s, %s:%s, RA(0): %x, RA(1): %x", message, filename, line,
+			__builtin_return_address(0), __builtin_return_address(1));
+
 		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %s (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 
 		UHALT();
