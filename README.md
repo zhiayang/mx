@@ -1,5 +1,8 @@
 # [mx] #
 
+##### PROJECT ON HIATUS #####
+##### [MX] IS NOT DEAD #####
+
 The fifth rewrite of what never was, OrionOS.
 As of version 0.90, [mx] has surpassed Orion-X4 in its featureset.
 
