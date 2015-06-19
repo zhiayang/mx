@@ -24,7 +24,7 @@ CXX_				= clang++
 FLXC				= $(SYSROOT)/usr/local/bin/flaxc
 GCCVERSION			= 4.9.1
 
-WARNINGS			= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-align -Wno-unreachable-code -Wno-gnu -Wno-missing-prototypes -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-sign-conversion -Wno-old-style-cast -Wno-exit-time-destructors -Wno-unused-macros -Wno-global-constructors -Wno-documentation-unknown-command
+WARNINGS			= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-align -Wno-unreachable-code -Wno-gnu -Wno-missing-prototypes -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-sign-conversion -Wno-old-style-cast -Wno-exit-time-destructors -Wno-unused-macros -Wno-global-constructors -Wno-documentation-unknown-command -Wno-reserved-id-macro -Wno-c99-extensions
 
 CXXFLAGS			= -m64 -g -Weverything -msse3 -integrated-as -O3 -fno-omit-frame-pointer -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -mcmodel=kernel -c
 
@@ -56,7 +56,7 @@ OUTPUT				= build/kernel64.elf
 
 
 
-QEMU_FLAGS			= -s -vga std -no-reboot -m $(MEMORY) -hda build/disk.img -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap
+QEMU_FLAGS			= -s -vga std -no-reboot -m $(MEMORY) -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap     -drive file=build/disk.img,format=raw
 
 .PHONY: builduserspace buildlib mountdisk clean all cleandisk copyheader
 

@@ -27,7 +27,7 @@ static uint64_t FirstHeapPhysPage;
 
 namespace Memory
 {
-	bool DidInitialise = false;
+	static bool DidInitialise = false;
 
 	struct Block
 	{

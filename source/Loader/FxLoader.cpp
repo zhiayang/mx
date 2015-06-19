@@ -74,7 +74,7 @@ extern "C" uint64_t LoaderBootstrap(uint32_t MultibootMagic, uint32_t MBTAddr)
 		Console::Print("Decompressing kernel64: compressed %d bytes\n", compressedLength);
 
 		// reference makefile line 96, -w and -l option respectively.
-		heatshrink_decoder* decoder = heatshrink_decoder_alloc(0x1000, 14, 6);
+		heatshrink_decoder* decoder = heatshrink_decoder_alloc(0x1000, 14 /* -w */, 6 /* -l */);
 
 		size_t readed = 0;	// such grammar
 		size_t wrote = 0;
@@ -90,7 +90,7 @@ extern "C" uint64_t LoaderBootstrap(uint32_t MultibootMagic, uint32_t MBTAddr)
 				heatshrink_decoder_poll(decoder, (uint8_t*) (kernelAddress + wrote), kernelLength - wrote, &curWrote);
 				wrote += curWrote;
 
-				Console::Print("(%d/%d)\n", wrote, kernelLength);
+				Console::Print("\r                       \r(%d/%d)\n", wrote, kernelLength);
 			}
 		}
 
@@ -103,7 +103,7 @@ extern "C" uint64_t LoaderBootstrap(uint32_t MultibootMagic, uint32_t MBTAddr)
 				heatshrink_decoder_poll(decoder, (uint8_t*) (kernelAddress + wrote), kernelLength - wrote, &curWrote);
 				wrote += curWrote;
 
-				Console::Print("(%d/%d)\n", wrote, kernelLength);
+				Console::Print("\r                       \r(%d/%d)\n", wrote, kernelLength);
 			}
 		}
 
@@ -116,8 +116,6 @@ extern "C" uint64_t LoaderBootstrap(uint32_t MultibootMagic, uint32_t MBTAddr)
 
 	Console::Print("Entry point: %x\n", entry);
 
-	// Console::ClearScreen(0);
-	// let ASM do it.
 	return entry;
 }
 

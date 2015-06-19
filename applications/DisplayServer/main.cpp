@@ -71,7 +71,7 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		printf("parent: child proc has pid %ld, continuing\n", res);
+		printf("parent: child proc has pid %d, continuing\n", res);
 	}
 
 	printf("opening shit\n");
@@ -88,6 +88,9 @@ int main(int argc, char** argv)
 		const char* msg = "HELLO, WORLD!\n";
 		write(s, msg, strlen(msg) + 1);
 
+		usleep(5500000);
+
+		printf("closing\n");
 		close(s);
 	}
 
