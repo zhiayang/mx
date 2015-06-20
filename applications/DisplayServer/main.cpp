@@ -26,8 +26,8 @@ static uint64_t bpp = 0;
 
 void do_child()
 {
-	printf("in child, sleep(5000ms)\n");
-	usleep(5000000);
+	printf("in child, sleep(1000ms)\n");
+	usleep(1000000);
 	printf("awake, reading\n");
 
 
@@ -88,7 +88,7 @@ int main(int argc, char** argv)
 		const char* msg = "HELLO, WORLD!\n";
 		write(s, msg, strlen(msg) + 1);
 
-		usleep(5500000);
+		usleep(1500000);
 
 		printf("closing\n");
 		close(s);
@@ -98,22 +98,26 @@ int main(int argc, char** argv)
 
 
 
-	// {
-	// 	FILE* f = fopen("/something.txt", "r");
-	// 	struct stat s;
+	{
+		FILE* f = fopen("/something.txt", "r");
+		struct stat s;
 
-	// 	fstat((int) f->__fd, &s);
-	// 	printf("file is %ld bytes long\n", s.st_size);
+		fstat((int) f->__fd, &s);
+		printf("file is %ld bytes long\n", s.st_size);
 
-	// 	uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
+		uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
+		memset(x, 0, s.st_size + 1);
 
-	// 	fread(x, 1, s.st_size, f);
-	// 	fclose(f);
+		fread(x, 1, s.st_size, f);
+		fclose(f);
 
-	// 	printf("%s", x);
+		printf("%p, %p\n", x, x + s.st_size);
 
-	// 	fflush(stdout);
-	// }
+		// x[s.st_size] = 0;
+		printf("%s\n", x);
+
+		fflush(stdout);
+	}
 
 	{
 

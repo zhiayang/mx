@@ -55,5 +55,5 @@ extern "C" void exit(int ret)
 
 extern "C" void abort()
 {
-	exit(-69);
+	exit(-42);
 }

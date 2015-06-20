@@ -237,6 +237,8 @@ namespace Virtual
 		for(size_t i = 0; i < vas->used.size(); i++)
 		{
 			ALPTuple* pair = vas->used[i];
+			if(!pair) continue;
+
 			if(pair->start == page && pair->length == size)
 			{
 				// Log("freeing (%x, %x, %d) (%x)", pair->start, pair->phys, pair->length, __builtin_return_address(0));
@@ -310,6 +312,9 @@ namespace Virtual
 
 		for(ALPTuple* p : vas->used)
 		{
+			if(!p)
+				continue;
+
 			if(p->start == addr)
 			{
 				if(p->length == size)

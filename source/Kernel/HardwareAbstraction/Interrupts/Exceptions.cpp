@@ -375,7 +375,14 @@ namespace Interrupts
 				thr->CrashState->rdi = r->rdi;
 			}
 
-			r->rip = (uint64_t) Multitasking::TerminateCurrentThread;
+
+			uint8_t syscallOpcodes[] = { 0x49, 0xC7, 0xC2, 0x01, 0x00, 0x00, 0x00, 0xCD, 0xF8 };
+			uint8_t* dest = new uint8_t[16];
+
+			memcpy(dest, syscallOpcodes, 9);
+
+			r->rip = (uint64_t) dest;
+
 			return;
 		}
 

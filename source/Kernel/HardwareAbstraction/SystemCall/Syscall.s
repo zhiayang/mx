@@ -140,10 +140,15 @@ Fail:
 	jmp CleanUp
 
 
-
+// page 0
 ExitProc:
 	call Syscall_ExitProc
 	jmp CleanUp
+
+KillCrashedThread:
+	call Syscall_TerminateCrashedThread
+	jmp CleanUp
+
 
 
 
@@ -315,7 +320,7 @@ FailString:
 SyscallTable0:
 	// misc things, page 0+
 	.quad	ExitProc			// 0000
-	.quad	Fail				// 0001
+	.quad	KillCrashedThread	// 0001
 	.quad	Fail				// 0002
 
 EndSyscallTable0:
