@@ -98,26 +98,26 @@ int main(int argc, char** argv)
 
 
 
-	{
-		FILE* f = fopen("/something.txt", "r");
-		struct stat s;
+	// {
+	// 	FILE* f = fopen("/something.txt", "r");
+	// 	struct stat s;
 
-		fstat((int) f->__fd, &s);
-		printf("file is %ld bytes long\n", s.st_size);
+	// 	fstat((int) f->__fd, &s);
+	// 	printf("file is %ld bytes long\n", s.st_size);
 
-		uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
-		memset(x, 0, s.st_size + 1);
+	// 	uint8_t* x = (uint8_t*) malloc(s.st_size + 1);
+	// 	memset(x, 0, s.st_size + 1);
 
-		fread(x, 1, s.st_size, f);
-		fclose(f);
+	// 	fread(x, 1, s.st_size, f);
+	// 	fclose(f);
 
-		printf("%p, %p\n", x, x + s.st_size);
+	// 	printf("%p, %p\n", x, x + s.st_size);
 
-		// x[s.st_size] = 0;
-		printf("%s\n", x);
+	// 	x[s.st_size] = 0;
+	// 	printf("%s\n", x);
 
-		fflush(stdout);
-	}
+	// 	fflush(stdout);
+	// }
 
 	{
 

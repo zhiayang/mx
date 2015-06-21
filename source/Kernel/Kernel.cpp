@@ -280,6 +280,7 @@ namespace Kernel
 				{
 					// QEMU, Bochs and VBox's BGA card.
 					DeviceManager::AddDevice(new BochsGraphicsAdapter(VideoDev), DeviceType::FramebufferVideoCard);
+					Log("Bochs Graphics Adapter (BGA) compatible card found, driver loaded");
 				}
 				else
 				{
@@ -300,14 +301,12 @@ namespace Kernel
 			}
 		}
 
-		KernelRandom = new Random_PseudoRandom();
-
-		Log("Compatible video card located");
-
 		PrintFormatted("Initialising RTC...\n");
 		Devices::RTC::Initialise(+8);
 		Log("RTC Initialised");
 
+
+		KernelRandom = new Random_PseudoRandom((uint32_t) Time::Now());
 
 		// setup framebuffer
 		{
@@ -420,23 +419,37 @@ namespace Kernel
 			// 3: height
 			// 4: bpp (32)
 
-			const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
-			auto proc = LoadBinary::Load(path, "displayd",
-				(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
-				GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
+			// const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
+			// auto proc = LoadBinary::Load(path, "displayd",
+			// 	(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
+			// 	GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
 
-			Multitasking::AddToQueue(proc);
+			// Multitasking::AddToQueue(proc);
 		}
 
 		PrintFormatted("[mx] has completed initialisation.\n");
 		Log("Kernel init complete\n----------------------------\n");
 
 
-		// {
-		// 	using namespace Network;
-		// 	IPv4Address example = DNS::QueryDNSv4(rde::string("www.example.com"));
-		// 	PrintFormatted("example.com is at %d.%d.%d.%d\n", example.b1, example.b2, example.b3, example.b4);
-		// }
+		{
+			using namespace Network;
+			// IPv4Address fn = DNS::QueryDNSv4(rde::string("www.example.com"));
+			// rde::vector<IPv4Address> fns = DNS::QueryDNSv4(rde::string("irc.freenode.net"));
+			// assert(fns.size() > 0);
+
+			IPv4Address fn;
+			fn.b1 = 185;
+			fn.b2 = 30;
+			fn.b3 = 166;
+			fn.b4 = 38;
+
+			PrintFormatted("irc.freenode.net is at %d.%d.%d.%d\n", fn.b1, fn.b2, fn.b3, fn.b4);
+
+			auto sock = OpenSocket(SocketProtocol::TCP, 0);
+			ConnectSocket(sock, fn, 6667);
+
+			// CloseSocket(sock);
+		}
 
 		// Log("Socket test\n");
 		// {

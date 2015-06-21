@@ -136,7 +136,7 @@ namespace ARP
 					return ret;
 			}
 
-			Log("ARP reply not received within timeout");
+			// Log("ARP reply not received within timeout");
 			return EUI48Address();
 		}
 		else

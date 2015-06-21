@@ -372,7 +372,7 @@ namespace Network
 
 		void Initialise();
 		void MonitorThread();
-		Library::IPv4Address QueryDNSv4(rde::string hostname);
+		rde::vector<Library::IPv4Address> QueryDNSv4(rde::string hostname);
 	}
 
 

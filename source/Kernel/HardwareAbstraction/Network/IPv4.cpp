@@ -126,7 +126,7 @@ namespace IP
 		// some checks
 		if(ip->Version != 4)
 		{
-			Log(1, "Invalid IPv4 version number in packet");
+			Log(1, "Invalid IPv4 version number in packet (expected '4', got '%d')", ip->Version);
 			return;
 		}
 

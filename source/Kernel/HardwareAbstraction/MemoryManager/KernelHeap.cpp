@@ -20,6 +20,7 @@ using namespace Library;
 #define Warn						1
 #define MapFlags					0x7
 #define ClearMemory					1
+#define AllowMagicMismatch			1
 
 static uint64_t NumberOfChunksInHeap;
 static uint64_t SizeOfHeapInPages;
@@ -88,7 +89,11 @@ namespace KernelHeap
 		else
 		{
 			Log(1, "Expected 'magic' to be %x, got %x", c->Offset ^ c->Size, c->magic);
+
+			#if !AllowMagicMismatch
 			HALT("");
+			#endif
+
 			return c;
 		}
 	}

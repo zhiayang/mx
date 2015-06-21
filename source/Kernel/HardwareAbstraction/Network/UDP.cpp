@@ -102,6 +102,13 @@ namespace UDP
 		// target.ip = source;
 		// target.port = SwapEndian16(udp->destport);
 
+
+		Log("Received UDP packet from source IP %d.%d.%d.%d", source.b1, source.b2, source.b3, source.b4);
+
+
+		IPv4Address matchAny { 0xFFFFFFFF };
+		IPv4Address zero { 0 };
+
 		bool triedonce = false;
 
 		// feel dirty
@@ -111,20 +118,24 @@ namespace UDP
 		bool found = false;
 		Socket* skt = (*udpsocketmapv4)[SocketFullMappingv4 { IPv4PortAddress { destip, destport }, IPv4PortAddress { source, sourceport } }];
 		if(skt)
+		{
 			found = true;
+		}
 
 		// multiphase search: check for sourceip + sourceport + destport
 		if(!skt && !found)
 		{
-			skt = (*udpsocketmapv4)[SocketFullMappingv4 { IPv4PortAddress { source, sourceport }, IPv4PortAddress { IPv4Address { 0xFFFFFFFF }, destport } }];
+			skt = (*udpsocketmapv4)[SocketFullMappingv4 { IPv4PortAddress { source, sourceport }, IPv4PortAddress { matchAny, destport } }];
 			if(skt)
+			{
 				found = true;
+			}
 		}
 
 		// check for sourceip + destport
 		if(!skt && !found)
 		{
-			skt = (*udpsocketmapv4)[SocketFullMappingv4 { IPv4PortAddress { source, 0 }, IPv4PortAddress { IPv4Address { 0xFFFFFFFF}, destport } }];
+			skt = (*udpsocketmapv4)[SocketFullMappingv4 { IPv4PortAddress { source, 0 }, IPv4PortAddress { matchAny, destport } }];
 			if(skt)
 				found = true;
 		}
@@ -132,7 +143,7 @@ namespace UDP
 		// check for sourceport + destport
 		if(!skt && !found)
 		{
-			skt = (*udpsocketmapv4)[SocketFullMappingv4 { IPv4PortAddress { IPv4Address { 0 }, sourceport }, IPv4PortAddress { IPv4Address { 0xFFFFFFFF }, destport } }];
+			skt = (*udpsocketmapv4)[SocketFullMappingv4 { IPv4PortAddress { zero, sourceport }, IPv4PortAddress { matchAny, destport } }];
 			if(skt)
 				found = true;
 		}
@@ -140,7 +151,7 @@ namespace UDP
 		// finally, only destport.
 		if(!skt && !found)
 		{
-			skt = (*udpsocketmapv4)[SocketFullMappingv4 { IPv4PortAddress { IPv4Address { 0 }, 0 }, IPv4PortAddress { IPv4Address { 0xFFFFFFFF }, destport } }];
+			skt = (*udpsocketmapv4)[SocketFullMappingv4 { IPv4PortAddress { zero, 0 }, IPv4PortAddress { matchAny, destport } }];
 			if(skt)
 				found = true;
 		}
@@ -148,9 +159,9 @@ namespace UDP
 		if(found)
 		{
 			// send into socket buffer.
+			Log("writing received data (%d bytes) (from %d.%d.%d.%d) into socket", actuallength, source.b1, source.b2, source.b3, source.b4);
 			skt->recvbuffer.Write((uint8_t*) packet + sizeof(UDPPacket), actuallength);
-			// skt->packetsizes->Write(actuallength);
-			// skt->packetcount++;
+
 			return;
 		}
 
@@ -159,6 +170,7 @@ namespace UDP
 		{
 			triedonce = true;
 			source = IPv4Address { 0 };
+
 			goto retry;
 		}
 

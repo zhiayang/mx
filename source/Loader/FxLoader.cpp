@@ -59,8 +59,6 @@ extern "C" uint64_t LoaderBootstrap(uint32_t MultibootMagic, uint32_t MBTAddr)
 	{
 		// get length as first 8 bytes, endian swapped.
 		kernelLength = (uint32_t) __builtin_bswap64(*((uint64_t*) compressedAddr));
-		Console::Print("Decompressed: %d bytes\n", kernelLength);
-
 
 		for(uint64_t i = 0; i < (kernelLength + 0xFFF) / 0x1000; i++)
 		{
@@ -90,7 +88,8 @@ extern "C" uint64_t LoaderBootstrap(uint32_t MultibootMagic, uint32_t MBTAddr)
 				heatshrink_decoder_poll(decoder, (uint8_t*) (kernelAddress + wrote), kernelLength - wrote, &curWrote);
 				wrote += curWrote;
 
-				Console::Print("\r                       \r(%d/%d)\n", wrote, kernelLength);
+				// Console::Print("\r                       \r(%d/%d)\n", wrote, kernelLength);
+				Console::Print(".");
 			}
 		}
 
@@ -103,11 +102,12 @@ extern "C" uint64_t LoaderBootstrap(uint32_t MultibootMagic, uint32_t MBTAddr)
 				heatshrink_decoder_poll(decoder, (uint8_t*) (kernelAddress + wrote), kernelLength - wrote, &curWrote);
 				wrote += curWrote;
 
-				Console::Print("\r                       \r(%d/%d)\n", wrote, kernelLength);
+				// Console::Print("\r                       \r(%d/%d)\n", wrote, kernelLength);
+				Console::Print(".");
 			}
 		}
 
-		Console::Print("\nDecompressed kernel\n");
+		Console::Print("\nDecompressed: %d bytes\n", kernelLength);
 	}
 
 
