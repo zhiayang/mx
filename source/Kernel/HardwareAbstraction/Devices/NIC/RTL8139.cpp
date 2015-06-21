@@ -69,6 +69,8 @@ namespace NIC
 
 	void StaticHandleInterrupt(void* nic)
 	{
+		Log("NIC got interrupt");
+
 		assert(nic);
 		((GenericNIC*) nic)->HandleInterrupt();
 	}
@@ -229,6 +231,7 @@ namespace NIC
 
 		uint8_t* recvBuffer = (uint8_t*) this->ReceiveBuffer.virt;
 
+		// this is a circular buffer.
 		if(ReadOffset > EndOffset)
 		{
 			while(ReadOffset < RxBufferSize)
@@ -246,6 +249,8 @@ namespace NIC
 
 			ReadOffset -= RxBufferSize;
 		}
+
+
 		while(ReadOffset < EndOffset)
 		{
 			assert(ReadOffset < RxBufferSize);
@@ -258,6 +263,7 @@ namespace NIC
 		}
 
 		this->SeenOfs = ReadOffset;
+		IOPort::Write16(this->ioaddr + Registers::RxBufPtr, this->SeenOfs - 0x10 /* According to thePowersGang, "i dunno" */);
 	}
 
 	void RTL8139::HandleJobDispatch()
@@ -305,21 +311,42 @@ namespace NIC
 	{
 		// check if the card fired the interrupt
 		uint16_t status = IOPort::Read16(this->ioaddr + Registers::IntrStatus);
+		IOPort::Write16(this->ioaddr + Registers::IntrStatus, 0x0001);
+		IOPort::Write16(this->ioaddr + Registers::IntrStatus, 0x0002);
+		IOPort::Write16(this->ioaddr + Registers::IntrStatus, 0x0004);
+		IOPort::Write16(this->ioaddr + Registers::IntrStatus, 0x0008);
+		IOPort::Write16(this->ioaddr + Registers::IntrStatus, 0x8000);
+
 
 		if(status & 0x1)
+		{
+			Log("Rx Ok");
 			this->HandleRxOk();
+		}
 
 		if(status & 0x2)
+		{
+			Log("Rx Err");
 			this->HandleRxErr();
+		}
 
 		if(status & 0x4)
+		{
+			Log("Tx Ok");
 			this->HandleTxOk();
+		}
 
 		if(status & 0x8)
+		{
+			Log("Tx Err");
 			this->HandleTxErr();
+		}
 
 		if(status & 0x8000)
+		{
+			Log("Sys Err");
 			this->HandleSysErr();
+		}
 	}
 }
 }

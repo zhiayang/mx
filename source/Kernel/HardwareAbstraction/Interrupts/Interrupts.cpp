@@ -75,6 +75,8 @@ namespace Interrupts
 
 	extern "C" void InterruptHandler_C(uint64_t iid)
 	{
+		Log("\n\n\nInterrupt %d received:", iid);
+
 		// get the proper IRQHandlerPlugList.
 		for(uint64_t i = 0; i < IRQHandlerList->size(); i++)
 		{
@@ -85,6 +87,7 @@ namespace Interrupts
 
 				for(uint64_t k = 0; k < pl->HandlerList.size(); k++)
 				{
+					Log("dispatching %d", k);
 					auto handler = pl->HandlerList[k];
 					handler->handle(handler->arg);
 				}
@@ -98,6 +101,7 @@ namespace Interrupts
 			}
 		}
 
+		Log("********* done *********\n");
 
 		// This IRQ is >7, send an EOI to the slave controller too.
 		if(iid >= 40)

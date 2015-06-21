@@ -451,9 +451,6 @@ namespace Kernel
 
 			aSock = sock;
 
-			SLEEP(5000);
-
-
 			auto other = []()
 			{
 				uint8_t* output = new uint8_t[256];
@@ -472,8 +469,6 @@ namespace Kernel
 
 			Multitasking::AddToQueue(Multitasking::CreateKernelThread(other));
 
-			SLEEP(5000);
-
 			uint8_t* data = new uint8_t[256];
 			memset(data, 0, 256);
 
@@ -486,26 +481,49 @@ namespace Kernel
 			WriteSocket(sock, data, strlen((char*) data));
 			PrintFormatted("> %s", data);
 
+			SLEEP(20000);
 
 			memset(data, 0, 256);
-			strncpy((char*) data, "JOIN #osdev\r\n", 256);
+			strncpy((char*) data, "JOIN #flax-lang\r\n", 256);
 			WriteSocket(sock, data, strlen((char*) data));
 			PrintFormatted("> %s", data);
 
-			SLEEP(2000);
 
-			memset(data, 0, 256);
-			strncpy((char*) data, "PRIVMSG #osdev :HELLO, WORLD!!!\r\n", 256);
-			WriteSocket(sock, data, strlen((char*) data));
-			PrintFormatted("> %s", data);
+			SLEEP(5000);
 
-			SLEEP(2000);
+			{
+				static const char* msgs[] =
+				{
+					"PRIVMSG #flax-lang :empty spaces\r\n",
+					"PRIVMSG #flax-lang :what are we living for\r\n",
+					"PRIVMSG #flax-lang :abandoned places\r\n",
+					"PRIVMSG #flax-lang :i guess we know the score\r\n",
+					"PRIVMSG #flax-lang :on and on,\r\n",
+					"PRIVMSG #flax-lang :does anybody know what we are looking for\r\n"
+				};
+
+
+				for(int i = 0; i < 6; i++)
+				{
+					memset(data, 0, 256);
+					strncpy((char*) data, msgs[i], 256);
+					WriteSocket(sock, data, strlen((char*) data));
+					PrintFormatted("> %s", data);
+
+					SLEEP(1000);
+				}
+			}
+
+
+
+
 
 			memset(data, 0, 256);
 			strncpy((char*) data, "QUIT\r\n", 256);
 			WriteSocket(sock, data, strlen((char*) data));
 			PrintFormatted("> %s", data);
 
+			// SLEEP(10000);
 			// CloseSocket(sock);
 		}
 

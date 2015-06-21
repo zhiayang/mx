@@ -11,6 +11,15 @@
 #define TCP_TIMEOUT		1000
 #define TCP_MAXWINDOW	8 * 1024
 
+
+#define FLAG_ACK		0x10
+#define FLAG_PUSH		0x08
+#define FLAG_RESET		0x04
+#define FLAG_SYN		0x02
+#define FLAG_FIN		0x01
+
+
+
 namespace Kernel {
 namespace HardwareAbstraction {
 namespace Network {
@@ -27,8 +36,10 @@ namespace TCP
 
 
 		// disconnection
-		WaitingDisconnectFINACK,
-		WaitingDisconnectACK
+		DisconnectingWaitForFirstACK,
+		DisconnectingCloseWait,
+		DisconnectingWaitForLastACK,
+		DisconnectingWaitForLastFIN
 	};
 
 	TCPConnection::TCPConnection(Socket* skt, uint16_t srcport, uint16_t destport) : packetbuffer(TCP_MAXWINDOW)
@@ -95,7 +106,7 @@ namespace TCP
 		// wait for reply for TCP_TIMEOUT miliseconds.
 		{
 			// flags: SYN.
-			uint8_t flags = 0x02;
+			uint8_t flags = FLAG_SYN;
 
 			this->state = ConnectionState::WatingSYNReply;
 			this->SendPacket(0, 0, flags);
@@ -121,7 +132,7 @@ namespace TCP
 		// stage 2: server responded. HandleIncoming() would have set the server's seqnum in our object,
 		// so we send a corresponding ACK.
 		{
-			uint8_t flags = 0x10;
+			uint8_t flags = FLAG_ACK;
 			this->nextack = this->serversequence + 1;
 
 			this->SendPacket(0, 0, flags);
@@ -137,10 +148,13 @@ namespace TCP
 
 	void TCPConnection::Disconnect()
 	{
-		this->state = ConnectionState::WaitingDisconnectACK;
-		this->SendPacket(0, 0, 0x11);
+		if(this->state != ConnectionState::Disconnected)
+		{
+			this->state = ConnectionState::DisconnectingWaitForFirstACK;
+			this->SendPacket(0, 0, FLAG_ACK | FLAG_FIN);
 
-		this->localcumlsequence++;
+			this->localcumlsequence++;
+		}
 	}
 
 
@@ -151,6 +165,11 @@ namespace TCP
 
 	void TCPConnection::HandleIncoming(uint8_t* packet, uint64_t bytes, uint64_t HeaderSize)
 	{
+		// the state machine reference:
+		// http://www.tcpipguide.com/free/t_TCPOperationalOverviewandtheTCPFiniteStateMachineF-2.htm
+
+
+
 		// at this stage the checksum should be verified (and set to zero), so we can ignore that.
 		TCPPacket* tcp = (TCPPacket*) packet;
 		HeaderSize *= 4;
@@ -176,7 +195,7 @@ namespace TCP
 
 
 		// check if ack.
-		if(!(tcp->Flags & 0x10))
+		if(!(tcp->Flags & FLAG_ACK))
 		{
 			Log(1, "TCP ACK flag not set, discarding.");
 			return;
@@ -188,18 +207,19 @@ namespace TCP
 		this->servercumlsequence += __max(datalength, 1);
 		this->PacketReceived = true;
 
+		Log("**** Received packet, datalen %d", datalength);
 		switch(this->state)
 		{
 			case ConnectionState::Disconnected:
 			{
 				Log(1, "TCP Stack error: Received packet from closed connection");
-				return;
+				break;
 			}
 
 			case ConnectionState::WatingSYNReply:
 			{
 				// check if we're synchronising
-				if(tcp->Flags & 0x2)
+				if(tcp->Flags & FLAG_SYN)
 				{
 					this->serversequence = SwapEndian32(tcp->sequence);
 					this->servercumlsequence = 1;
@@ -210,50 +230,63 @@ namespace TCP
 			}
 
 
-			// disconnections:
-			case ConnectionState::WaitingDisconnectACK:
+
+
+			// next 2 states: if the other end wanted to disconnect
+			case ConnectionState::DisconnectingCloseWait:
 			{
-				// servers will either send an 'ACK', followed by a 'FIN, then ACK', or a 'FIN, ACK' directly.
-				// handle both cases.
-				if(tcp->Flags & 0x1 && tcp->Flags & 0x10)
-				{
-					// this is a FIN, ACK
-					// don't respond.
-					this->state = ConnectionState::Disconnected;
-					return;
-				}
-				else if(tcp->Flags & 0x10)
-				{
-					// server sent an ACK, expect stuff later
-					this->state = ConnectionState::WaitingDisconnectFINACK;
-					return;
-				}
-				else
-				{
-					Log(1, "Invalid TCP response to FIN, ACK; state machine broken.");
-				}
+				Log(1, "Should not be receiving packets while in CLOSE-WAIT state, ignoring!");
 				break;
 			}
 
-			case ConnectionState::WaitingDisconnectFINACK:
+			case ConnectionState::DisconnectingWaitForLastACK:
 			{
-				// well we're expecting a FIN, ACK.
-				if(tcp->Flags & 0x1 && tcp->Flags & 0x10)
+				// we're done.
+				this->state = ConnectionState::Disconnected;
+				break;
+			}
+
+
+
+			// next 2 states: if we initiated the disconnect
+			case ConnectionState::DisconnectingWaitForFirstACK:
+			{
+				// we just sent the initiating FIN, server replies with ACK... or FIN.
+
+				// if we get a FIN, it's the "simultaneous close" scenario: remote end wants to
+				// GTFO as much as we do.
+
+				if(tcp->Flags & FLAG_FIN)
 				{
+					// let's all GTFO.
+					// send an ACK to that.
 					this->nextack++;
-					this->SendPacket(0, 0, 0x10);
+					this->SendPacket(0, 0, FLAG_ACK);
 					this->state = ConnectionState::Disconnected;
-					Log("Disconnected from %d.%d.%d.%d : %d.", this->destip4.b1, this->destip4.b2, this->destip4.b3, this->destip4.b4, this->serverport);
-					return;
 				}
 				else
 				{
-					Log(1, "Invalid TCP response to FIN, ACK; state machine broken.");
+					// normal, remote end just responded with 'ACK'.
+					// give it some time to finish the CLOSE-WAIT process, and expect a FIN.
+					this->state = ConnectionState::DisconnectingWaitForLastFIN;
 				}
+
 				break;
 			}
 
+			case ConnectionState::DisconnectingWaitForLastFIN:
+			{
+				if(!(tcp->Flags & FLAG_FIN))
+				{
+					Log(1, "Expected FIN flag to be set while waiting for last FIN. State machine broken, treating as FIN.");
+				}
 
+				// ack, and gtfo.
+				this->nextack++;
+				this->SendPacket(0, 0, FLAG_ACK);
+				this->state = ConnectionState::Disconnected;
+				break;
+			}
 
 
 
@@ -262,15 +295,33 @@ namespace TCP
 			case ConnectionState::Connected:
 			{
 				// first check if the server wants us to D/C
-				if(tcp->Flags & 0x1)
+				if(tcp->Flags & FLAG_FIN)
 				{
+					Log("Remote end requesting disconnect, sent FIN");
+
 					// damn it, that fucker
 					// send an ACK to that.
 					this->nextack++;
-					this->SendPacket(0, 0, 0x10);
-					this->state = ConnectionState::WaitingDisconnectACK;
-					return;
+					this->SendPacket(0, 0, FLAG_ACK);
+					this->state = ConnectionState::DisconnectingCloseWait;
+
+					auto timeoutCloser = [](TCPConnection* tcon)
+					{
+						// todo: use another value?
+						SLEEP(TCP_TIMEOUT);
+
+						tcon->SendPacket(0, 0, FLAG_FIN);
+						tcon->state = ConnectionState::DisconnectingWaitForLastACK;
+					};
+
+					// ugh, casting
+					void (*fnTimeoutCloser)(TCPConnection*) = timeoutCloser;
+					Multitasking::AddToQueue(Multitasking::CreateKernelThread((void (*)()) fnTimeoutCloser, 1, this));
+
+					break;
 				}
+
+
 
 
 				// todo: make this more optimal. set a timer that will automatically send an ACK-only packet
@@ -282,7 +333,7 @@ namespace TCP
 				// but only if the packet contains actual data.
 				if(datalength > 0)
 				{
-					this->SendPacket(0, 0, 0x10);
+					this->SendPacket(0, 0, FLAG_ACK);
 				}
 
 
@@ -290,7 +341,7 @@ namespace TCP
 				this->AlreadyAcked = false;
 
 				// copy the packet data to the correct place.
-				if(datalength > 0 && tcp->Flags & 0x8)
+				if(datalength > 0 && tcp->Flags & FLAG_PUSH)
 				{
 					// push.
 					uint64_t offset = SwapEndian32(tcp->sequence) - this->serversequence - 1;
@@ -299,7 +350,8 @@ namespace TCP
 
 					Log("pushed %d bytes to offset %d", datalength, offset);
 				}
-				else if(datalength > 0 && (SwapEndian32(tcp->sequence) >= this->servercumlsequence) && (this->bufferfill + datalength) < TCP_MAXWINDOW)
+				else if(datalength > 0 && (SwapEndian32(tcp->sequence) >= this->servercumlsequence)
+					&& (this->bufferfill + datalength) < TCP_MAXWINDOW)
 				{
 					uint64_t offset = SwapEndian32(tcp->sequence) - this->serversequence - 1;
 
@@ -331,7 +383,7 @@ namespace TCP
 
 	void TCPConnection::SendPacket(uint8_t* packet, uint64_t bytes)
 	{
-		uint8_t flags = 0x10;
+		uint8_t flags = FLAG_ACK;
 		this->SendPacket(packet, bytes, flags);
 	}
 

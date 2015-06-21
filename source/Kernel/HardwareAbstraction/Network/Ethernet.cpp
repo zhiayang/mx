@@ -13,7 +13,7 @@ namespace HardwareAbstraction {
 namespace Network {
 namespace Ethernet
 {
-	uint32_t CalculateCRC(uint8_t* message, uint64_t length)
+	static uint32_t CalculateCRC(uint8_t* message, uint64_t length)
 	{
 		uint64_t i = 0;
 		uint32_t byte = 0;
@@ -39,9 +39,6 @@ namespace Ethernet
 		return ~crc;
 	}
 
-
-
-
 	void SendPacket(Devices::NIC::GenericNIC* interface, void* data, uint16_t length, EtherType type, EUI48Address destmac)
 	{
 		if(!interface)
@@ -62,8 +59,6 @@ namespace Ethernet
 
 		*((uint32_t*) (newbuf + buffersize - 4)) = CalculateCRC(newbuf, sizeof(EthernetFrameHeader) + length);
 		IO::Write(interface, 0, (uint64_t) newbuf, buffersize);
-
-		// interface->SendData(newbuf, buffersize);
 	}
 
 	void HandlePacket(Devices::NIC::GenericNIC* interface, void* packet, uint64_t length)
