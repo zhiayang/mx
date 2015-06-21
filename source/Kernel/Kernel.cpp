@@ -54,6 +54,7 @@ namespace Kernel
 	static uint64_t LFBAddr;
 	static uint64_t LFBInPages;
 	static uint64_t CR3Value = 0x3000;
+	static fd_t aSock = 0;
 
 	// things
 	Multitasking::Process* KernelProcess;
@@ -447,6 +448,63 @@ namespace Kernel
 
 			auto sock = OpenSocket(SocketProtocol::TCP, 0);
 			ConnectSocket(sock, fn, 6667);
+
+			aSock = sock;
+
+			SLEEP(5000);
+
+
+			auto other = []()
+			{
+				uint8_t* output = new uint8_t[256];
+				while(true)
+				{
+					if(GetSocketBufferFill(aSock) > 0)
+					{
+						memset(output, 0, 256);
+						size_t read = ReadSocket(aSock, output, 256);
+
+						output[(read == 256) ? (read - 1) : read] = 0;
+						PrintFormatted("%s", output);
+					}
+				}
+			};
+
+			Multitasking::AddToQueue(Multitasking::CreateKernelThread(other));
+
+			SLEEP(5000);
+
+			uint8_t* data = new uint8_t[256];
+			memset(data, 0, 256);
+
+			strncpy((char*) data, "NICK zhiayang|tcp\r\n", 256);
+			WriteSocket(sock, data, strlen((char*) data));
+			PrintFormatted("> %s", data);
+
+			memset(data, 0, 256);
+			strncpy((char*) data, "USER zhiayang 8 * : zhiayang\r\n", 256);
+			WriteSocket(sock, data, strlen((char*) data));
+			PrintFormatted("> %s", data);
+
+
+			memset(data, 0, 256);
+			strncpy((char*) data, "JOIN #osdev\r\n", 256);
+			WriteSocket(sock, data, strlen((char*) data));
+			PrintFormatted("> %s", data);
+
+			SLEEP(2000);
+
+			memset(data, 0, 256);
+			strncpy((char*) data, "PRIVMSG #osdev :HELLO, WORLD!!!\r\n", 256);
+			WriteSocket(sock, data, strlen((char*) data));
+			PrintFormatted("> %s", data);
+
+			SLEEP(2000);
+
+			memset(data, 0, 256);
+			strncpy((char*) data, "QUIT\r\n", 256);
+			WriteSocket(sock, data, strlen((char*) data));
+			PrintFormatted("> %s", data);
 
 			// CloseSocket(sock);
 		}

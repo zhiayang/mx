@@ -272,8 +272,6 @@ namespace Network
 
 		class TCPConnection
 		{
-			friend void TCPAckMonitor();
-
 			public:
 				TCPConnection(Socket* socket, Library::IPv4Address dest, uint16_t srcport, uint16_t destport);
 				TCPConnection(Socket* socket, Library::IPv6Address dest, uint16_t srcport, uint16_t destport);
@@ -353,7 +351,6 @@ namespace Network
 		bool IsDuplicatePort(uint16_t port);
 
 		void Initialise();
-		void InitialiseConnectionQueue();
 	}
 
 
@@ -376,27 +373,6 @@ namespace Network
 	}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	// // overall network stuff.
-	// // Network.cpp
-
-	// void Initialise();
 
 
 

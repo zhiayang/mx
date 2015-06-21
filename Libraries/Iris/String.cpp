@@ -23,6 +23,17 @@ namespace String
 		return (char*) Memory::Copy(destination, source, String::Length(source) + 1);
 	}
 
+	char* CopyLength(char* destination, const char* source, size_t len)
+	{
+		size_t slen = String::Length(source);
+		char* ret = (char*) Memory::Copy(destination, source, slen > len ? len : slen);
+
+		ret[(slen > len ? len : slen) - 1] = 0;
+
+		return ret;
+	}
+
+
 	int Compare(const char* str1, const char* str2)
 	{
 		size_t len1 = String::Length(str1);
@@ -75,6 +86,10 @@ extern "C" uint64_t strlen(const char* str)
 extern "C" char* strcpy(char* destination, const char* source)
 {
 	return String::Copy(destination, source);
+}
+extern "C" char* strncpy(char* destination, const char* source, size_t len)
+{
+	return String::CopyLength(destination, source, len);
 }
 
 extern "C" int strcmp(const char* str1, const char* str2)
