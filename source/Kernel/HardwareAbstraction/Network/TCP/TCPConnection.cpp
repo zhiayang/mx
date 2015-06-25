@@ -8,7 +8,7 @@
 #include <Utility.hpp>
 
 // in ms
-#define TCP_TIMEOUT		1000
+#define TCP_TIMEOUT		2000
 #define TCP_MAXWINDOW	8 * 1024
 
 
@@ -29,7 +29,7 @@ namespace TCP
 	{
 		// connection
 		Disconnected,
-		WatingSYNReply,
+		WaitingSYNReply,
 
 		// in operation
 		Connected,
@@ -57,11 +57,11 @@ namespace TCP
 		this->servercumlsequence = 0;
 		this->nextack = 0;
 		this->maxsegsize = 1000;
-		this->PacketReceived = false;
 		this->bufferfill = 0;
 		this->lastpackettime = 0;
-		this->AlreadyAcked = false;
 		this->state = ConnectionState::Disconnected;
+
+		this->mtx = new Mutex();
 	}
 
 	TCPConnection::TCPConnection(Socket* skt, Library::IPv4Address dest, uint16_t srcport, uint16_t destport) : TCPConnection(skt, srcport, destport)
@@ -108,7 +108,7 @@ namespace TCP
 			// flags: SYN.
 			uint8_t flags = FLAG_SYN;
 
-			this->state = ConnectionState::WatingSYNReply;
+			this->state = ConnectionState::WaitingSYNReply;
 			this->SendPacket(0, 0, flags);
 
 			Log("Trying to connect to %d.%d.%d.%d : %d", this->destip4.b1, this->destip4.b2, this->destip4.b3, this->destip4.b4, this->serverport);
@@ -126,9 +126,6 @@ namespace TCP
 			}
 		}
 
-		Log("Stage 1 TCP connect complete -- sent SYN, received SYN + ACK");
-
-
 		// stage 2: server responded. HandleIncoming() would have set the server's seqnum in our object,
 		// so we send a corresponding ACK.
 		{
@@ -139,8 +136,8 @@ namespace TCP
 
 			this->state = ConnectionState::Connected;
 
-			Log("Established connection to %d.%d.%d.%d : %d; Relative local seq: %d, Relative server seq: %d", this->destip4.b1,
-				this->destip4.b2, this->destip4.b3, this->destip4.b4, this->serverport, this->localcumlsequence, this->servercumlsequence);
+			Log("Established connection to %d.%d.%d.%d : %d", this->destip4.b1,
+				this->destip4.b2, this->destip4.b3, this->destip4.b4, this->serverport);
 		}
 
 		return ConnectionError::NoError;
@@ -162,12 +159,66 @@ namespace TCP
 
 
 
+	void TCPConnection::ProcessPacketData(uint8_t* packet, size_t bytes, size_t HeaderSize)
+	{
+		TCPPacket* tcp = (TCPPacket*) packet;
+		uint64_t datalength = bytes - HeaderSize;
+
+
+		// copy the packet data to the correct place.
+		Log("Received %d bytes from remote end", datalength);
+		if(datalength > 0 && tcp->Flags & FLAG_PUSH)
+		{
+			// push.
+			uint64_t offset = SwapEndian32(tcp->sequence) - this->serversequence - 1;
+			this->socket->recvbuffer.MoveWritePointer(offset);
+			this->socket->recvbuffer.Write(packet + HeaderSize, datalength);
+
+			// Log("pushed %d bytes to offset %d", datalength, offset);
+		}
+		else if(datalength > 0 && (SwapEndian32(tcp->sequence) >= this->servercumlsequence)
+			&& (this->bufferfill + datalength) < TCP_MAXWINDOW)
+		{
+			uint64_t offset = SwapEndian32(tcp->sequence) - this->serversequence - 1;
+
+			// Log("Copying %d bytes to offset %d", datalength, offset);
+			this->socket->recvbuffer.MoveWritePointer(offset);
+			this->socket->recvbuffer.Write(packet + HeaderSize, datalength);
+
+			this->bufferfill += datalength;
+		}
+		else if((this->bufferfill + (bytes - HeaderSize)) >= TCP_MAXWINDOW)
+		{
+			// shit.
+			// push data to application,
+			// send collective ACK.
+
+			HALT("TCP BUFFER FILLED UP???");
+
+			uint8_t* buf = new uint8_t[GLOBAL_MTU];
+			this->packetbuffer.Read(buf, GLOBAL_MTU);
+			this->socket->recvbuffer.Write(buf, GLOBAL_MTU);
+
+			delete[] buf;
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+
 
 	void TCPConnection::HandleIncoming(uint8_t* packet, uint64_t bytes, uint64_t HeaderSize)
 	{
 		// the state machine reference:
 		// http://www.tcpipguide.com/free/t_TCPOperationalOverviewandtheTCPFiniteStateMachineF-2.htm
-
 
 
 		// at this stage the checksum should be verified (and set to zero), so we can ignore that.
@@ -205,9 +256,8 @@ namespace TCP
 		this->lastpackettime = Time::Now();
 		this->nextack = SwapEndian32(tcp->sequence) + (uint32_t) datalength;
 		this->servercumlsequence += __max(datalength, 1);
-		this->PacketReceived = true;
 
-		Log("**** Received packet, datalen %d", datalength);
+
 		switch(this->state)
 		{
 			case ConnectionState::Disconnected:
@@ -216,7 +266,7 @@ namespace TCP
 				break;
 			}
 
-			case ConnectionState::WatingSYNReply:
+			case ConnectionState::WaitingSYNReply:
 			{
 				// check if we're synchronising
 				if(tcp->Flags & FLAG_SYN)
@@ -242,6 +292,7 @@ namespace TCP
 			case ConnectionState::DisconnectingWaitForLastACK:
 			{
 				// we're done.
+				Log("Disconnected, last ack recv");
 				this->state = ConnectionState::Disconnected;
 				break;
 			}
@@ -262,14 +313,22 @@ namespace TCP
 					// send an ACK to that.
 					this->nextack++;
 					this->SendPacket(0, 0, FLAG_ACK);
+
+					Log("Disconnected, FIN + ACK combo");
 					this->state = ConnectionState::Disconnected;
 				}
 				else
 				{
 					// normal, remote end just responded with 'ACK'.
 					// give it some time to finish the CLOSE-WAIT process, and expect a FIN.
+					Log("CLOSE-WAIT, waiting for last FIN.");
+
 					this->state = ConnectionState::DisconnectingWaitForLastFIN;
 				}
+
+
+				if(datalength > 0)
+					this->ProcessPacketData(packet, bytes, HeaderSize);
 
 				break;
 			}
@@ -285,6 +344,10 @@ namespace TCP
 				this->nextack++;
 				this->SendPacket(0, 0, FLAG_ACK);
 				this->state = ConnectionState::Disconnected;
+
+				if(datalength > 0)
+					this->ProcessPacketData(packet, bytes, HeaderSize);
+
 				break;
 			}
 
@@ -294,6 +357,7 @@ namespace TCP
 
 			case ConnectionState::Connected:
 			{
+				bool didAck = false;
 				// first check if the server wants us to D/C
 				if(tcp->Flags & FLAG_FIN)
 				{
@@ -301,6 +365,8 @@ namespace TCP
 
 					// damn it, that fucker
 					// send an ACK to that.
+
+					didAck = true;
 					this->nextack++;
 					this->SendPacket(0, 0, FLAG_ACK);
 					this->state = ConnectionState::DisconnectingCloseWait;
@@ -308,19 +374,20 @@ namespace TCP
 					auto timeoutCloser = [](TCPConnection* tcon)
 					{
 						// todo: use another value?
+						Log("pre sleep");
 						SLEEP(TCP_TIMEOUT);
 
+						Log("tcp con (inside): %x", tcon);
 						tcon->SendPacket(0, 0, FLAG_FIN);
 						tcon->state = ConnectionState::DisconnectingWaitForLastACK;
 					};
 
 					// ugh, casting
 					void (*fnTimeoutCloser)(TCPConnection*) = timeoutCloser;
+
+					Log("tcp con: %x", this);
 					Multitasking::AddToQueue(Multitasking::CreateKernelThread((void (*)()) fnTimeoutCloser, 1, this));
-
-					break;
 				}
-
 
 
 
@@ -329,53 +396,15 @@ namespace TCP
 				// (like 1 second or whatever the retransmit timer on the server is), then bundle the ACK with that
 				// packet.
 
-				// for now, just ACK everything individually.
-				// but only if the packet contains actual data.
 				if(datalength > 0)
 				{
-					this->SendPacket(0, 0, FLAG_ACK);
+					// for now, just ACK everything individually.
+					// but only if the packet contains actual data.
+					if(!didAck) this->SendPacket(0, 0, FLAG_ACK);
+
+					this->ProcessPacketData(packet, bytes, HeaderSize);
 				}
 
-
-
-				this->AlreadyAcked = false;
-
-				// copy the packet data to the correct place.
-				if(datalength > 0 && tcp->Flags & FLAG_PUSH)
-				{
-					// push.
-					uint64_t offset = SwapEndian32(tcp->sequence) - this->serversequence - 1;
-					this->socket->recvbuffer.MoveWritePointer(offset);
-					this->socket->recvbuffer.Write(packet + HeaderSize, datalength);
-
-					Log("pushed %d bytes to offset %d", datalength, offset);
-				}
-				else if(datalength > 0 && (SwapEndian32(tcp->sequence) >= this->servercumlsequence)
-					&& (this->bufferfill + datalength) < TCP_MAXWINDOW)
-				{
-					uint64_t offset = SwapEndian32(tcp->sequence) - this->serversequence - 1;
-
-					Log("Copying %d bytes to offset %d", datalength, offset);
-					this->socket->recvbuffer.MoveWritePointer(offset);
-					this->socket->recvbuffer.Write(packet + HeaderSize, datalength);
-
-					this->bufferfill += datalength;
-				}
-				else if((this->bufferfill + (bytes - HeaderSize)) >= TCP_MAXWINDOW)
-				{
-					// shit.
-					// push data to application,
-					// send collective ACK.
-
-					HALT("TCP BUFFER FILLED UP???");
-
-					// flush tcp to application.
-					uint8_t* buf = new uint8_t[GLOBAL_MTU];
-					this->packetbuffer.Read(buf, GLOBAL_MTU);
-					this->socket->recvbuffer.Write(buf, GLOBAL_MTU);
-
-					delete[] buf;
-				}
 				break;
 			}
 		}
@@ -400,7 +429,7 @@ namespace TCP
 
 	void TCPConnection::SendUserPacket(uint8_t* packet, uint64_t bytes)
 	{
-		Log("Sending %d total bytes to %d.%d.%d.%d : %d", bytes, this->destip4.b1, this->destip4.b2, this->destip4.b3, this->destip4.b4, this->serverport);
+		// Log("Sending %d total bytes to %d.%d.%d.%d : %d", bytes, this->destip4.b1, this->destip4.b2, this->destip4.b3, this->destip4.b4, this->serverport);
 		uint64_t bytesleft = bytes;
 		uint64_t offset = 0;
 		while(bytesleft > 0)
@@ -458,7 +487,6 @@ namespace TCP
 		tcp->Checksum = SwapEndian16(IP::CalculateIPChecksum_Finalise(tcpcheck));
 
 		IP::SendIPv4Packet(this->socket->interface, raw, (uint16_t) (sizeof(TCPPacket) + length), 48131, this->destip4, IP::ProtocolType::TCP);
-		this->AlreadyAcked = true;
 
 		delete pseudo;
 		delete tcp;

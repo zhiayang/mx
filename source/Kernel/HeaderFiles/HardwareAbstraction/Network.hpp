@@ -80,14 +80,6 @@ namespace Network
 			IPv6	= 0x86DD
 		};
 
-		struct EthernetFrameHeader
-		{
-			EUI48Address destmac;
-			EUI48Address sourcemac;
-			uint16_t ethertype;
-
-		} __attribute__((packed));
-
 		void SendPacket(Devices::NIC::GenericNIC* interface, void* data, uint16_t length, EtherType type, EUI48Address destmac);
 		void HandlePacket(Devices::NIC::GenericNIC* interface, void* packet, uint64_t length);
 	}
@@ -270,6 +262,23 @@ namespace Network
 
 		enum class ConnectionState;
 
+		struct TCPPacket
+		{
+			uint16_t clientport;
+			uint16_t serverport;
+			uint32_t sequence;
+			uint32_t ackid;
+
+			uint8_t HeaderLength;
+			uint8_t Flags;
+			uint16_t WindowSize;
+
+			uint16_t Checksum;
+			uint16_t UrgentPointer;
+
+		} __attribute__ ((packed));
+
+
 		class TCPConnection
 		{
 			public:
@@ -289,9 +298,10 @@ namespace Network
 				Library::IPv6Address destip6;
 
 				void SendUserPacket(uint8_t* packet, uint64_t bytes);
+				void SendPacket(uint8_t* packet, uint64_t bytes);
 
 				void HandleIncoming(uint8_t* packet, uint64_t bytes, uint64_t HeaderSize);
-				void SendPacket(uint8_t* packet, uint64_t bytes);
+				void ProcessPacketData(uint8_t* packet, size_t bytes, size_t HeaderSize);
 
 				ConnectionError Connect();
 				void Disconnect();
@@ -310,8 +320,8 @@ namespace Network
 				uint64_t bufferfill;
 				uint64_t lastpackettime;
 
-				bool AlreadyAcked;
-				bool PacketReceived;
+				Mutex* mtx;
+
 
 				ConnectionState state;
 				Library::CircularMemoryBuffer packetbuffer;
@@ -320,22 +330,6 @@ namespace Network
 				void SendIPv4Packet(uint8_t* packet, uint64_t length, uint8_t flags);
 				void SendIPv6Packet(uint8_t* packet, uint64_t length, uint8_t flags);
 		};
-
-		struct TCPPacket
-		{
-			uint16_t clientport;
-			uint16_t serverport;
-			uint32_t sequence;
-			uint32_t ackid;
-
-			uint8_t HeaderLength;
-			uint8_t Flags;
-			uint16_t WindowSize;
-
-			uint16_t Checksum;
-			uint16_t UrgentPointer;
-
-		} __attribute__ ((packed));
 
 		// much simpler, because much of it is abstracted behind TCPConnection.
 		void SendIPv4Packet(TCPConnection* connection, uint8_t* packet, uint64_t length);

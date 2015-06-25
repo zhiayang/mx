@@ -439,17 +439,16 @@ namespace Kernel
 			// assert(fns.size() > 0);
 
 			IPv4Address fn;
-			fn.b1 = 185;
-			fn.b2 = 30;
-			fn.b3 = 166;
-			fn.b4 = 38;
+			fn.b1 = 38;
+			fn.b2 = 229;
+			fn.b3 = 70;
+			fn.b4 = 22;
 
 			PrintFormatted("irc.freenode.net is at %d.%d.%d.%d\n", fn.b1, fn.b2, fn.b3, fn.b4);
 
-			auto sock = OpenSocket(SocketProtocol::TCP, 0);
-			ConnectSocket(sock, fn, 6667);
-
-			aSock = sock;
+			fd_t thesock = OpenSocket(SocketProtocol::TCP, 0);
+			ConnectSocket(thesock, fn, 6667);
+			aSock = thesock;
 
 			auto other = []()
 			{
@@ -467,50 +466,51 @@ namespace Kernel
 				}
 			};
 
-			Multitasking::AddToQueue(Multitasking::CreateKernelThread(other));
+			Multitasking::Thread* thr = 0;
+			Multitasking::AddToQueue(thr = Multitasking::CreateKernelThread(other));
 
 			uint8_t* data = new uint8_t[256];
 			memset(data, 0, 256);
 
 			strncpy((char*) data, "NICK zhiayang|tcp\r\n", 256);
-			WriteSocket(sock, data, strlen((char*) data));
+			WriteSocket(thesock, data, strlen((char*) data));
 			PrintFormatted("> %s", data);
 
 			memset(data, 0, 256);
 			strncpy((char*) data, "USER zhiayang 8 * : zhiayang\r\n", 256);
-			WriteSocket(sock, data, strlen((char*) data));
+			WriteSocket(thesock, data, strlen((char*) data));
 			PrintFormatted("> %s", data);
 
-			SLEEP(20000);
+			SLEEP(15000);
 
 			memset(data, 0, 256);
 			strncpy((char*) data, "JOIN #flax-lang\r\n", 256);
-			WriteSocket(sock, data, strlen((char*) data));
+			WriteSocket(thesock, data, strlen((char*) data));
 			PrintFormatted("> %s", data);
 
 
-			SLEEP(5000);
+			SLEEP(1000);
 
 			{
 				static const char* msgs[] =
 				{
-					"PRIVMSG #flax-lang :empty spaces\r\n",
-					"PRIVMSG #flax-lang :what are we living for\r\n",
-					"PRIVMSG #flax-lang :abandoned places\r\n",
-					"PRIVMSG #flax-lang :i guess we know the score\r\n",
-					"PRIVMSG #flax-lang :on and on,\r\n",
-					"PRIVMSG #flax-lang :does anybody know what we are looking for\r\n"
+					"PRIVMSG #flax-lang :urgh\r\n",
+					// "PRIVMSG #flax-lang :another mindless crime.\r\n",
+					// "PRIVMSG #flax-lang :behind the curtain,\r\n",
+					// "PRIVMSG #flax-lang :in the pantomime.\r\n",
+					// "PRIVMSG #flax-lang :hold the line,\r\n",
+					// "PRIVMSG #flax-lang :does anybody want to take it anymore\r\n"
 				};
 
 
-				for(int i = 0; i < 6; i++)
+				for(int i = 0; i < 1; i++)
 				{
 					memset(data, 0, 256);
 					strncpy((char*) data, msgs[i], 256);
-					WriteSocket(sock, data, strlen((char*) data));
+					WriteSocket(thesock, data, strlen((char*) data));
 					PrintFormatted("> %s", data);
 
-					SLEEP(1000);
+					SLEEP(800);
 				}
 			}
 
@@ -520,11 +520,12 @@ namespace Kernel
 
 			memset(data, 0, 256);
 			strncpy((char*) data, "QUIT\r\n", 256);
-			WriteSocket(sock, data, strlen((char*) data));
+			WriteSocket(thesock, data, strlen((char*) data));
 			PrintFormatted("> %s", data);
 
-			// SLEEP(10000);
-			// CloseSocket(sock);
+			SLEEP(500);
+			Kill(thr);
+			CloseSocket(thesock);
 		}
 
 		// Log("Socket test\n");

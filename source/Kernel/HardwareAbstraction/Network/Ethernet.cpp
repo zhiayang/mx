@@ -13,6 +13,16 @@ namespace HardwareAbstraction {
 namespace Network {
 namespace Ethernet
 {
+
+	struct EthernetFrameHeader
+	{
+		EUI48Address destmac;
+		EUI48Address sourcemac;
+		uint16_t ethertype;
+
+	} __attribute__((packed));
+
+
 	static uint32_t CalculateCRC(uint8_t* message, uint64_t length)
 	{
 		uint64_t i = 0;
@@ -44,6 +54,7 @@ namespace Ethernet
 		if(!interface)
 			interface = (Devices::NIC::GenericNIC*) Devices::DeviceManager::GetDevice(Devices::DeviceType::EthernetNIC);
 
+		assert(interface);
 		uint32_t buffersize = sizeof(EthernetFrameHeader) + ((length + 3) & ~3) + 4;
 		uint8_t* newbuf = new uint8_t[buffersize];
 

@@ -409,6 +409,7 @@ namespace Network
 			delete skt->tcpconnection;
 
 		delete skt;
+
 		node->info->data = 0;
 	}
 
