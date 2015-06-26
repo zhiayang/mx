@@ -47,7 +47,7 @@ namespace GPT
 			}
 		}
 
-		Devices::Storage::AddDevice(atadev);
+		Devices::Storage::AddStorageDevice(atadev);
 		Log("/dev/disk%d has %d partition%s", atadev->diskid, atadev->Partitions.size(), atadev->Partitions.size() != 1 ? "s" : "");
 		MemoryManager::Virtual::FreePage(b, 1);
 	}

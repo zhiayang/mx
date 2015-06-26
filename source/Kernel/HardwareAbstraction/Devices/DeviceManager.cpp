@@ -17,7 +17,7 @@ namespace DeviceManager
 	static rde::deque<IODevice*>* deviceJobDispatchQueue;
 	static Mutex* queueMtx;
 
-	void AddDeviceDispatchJob(IODevice* device)
+	void EnqueueDriverDispatchJob(IODevice* device)
 	{
 		deviceJobDispatchQueue->push_back(device);
 	}
@@ -86,13 +86,10 @@ namespace DeviceManager
 		(*deviceMap)[type].push_back(dev);
 	}
 
-	rde::vector<Device*>* GetDevices(DeviceType type)
+	rde::vector<Device*> GetDevices(DeviceType type)
 	{
 		assert(deviceMap);
-		rde::vector<Device*>* ret = new rde::vector<Device*>();
-		ret->copy((*deviceMap)[type]);
-
-		return ret;
+		return (*deviceMap)[type];
 	}
 
 	Device* GetDevice(DeviceType type)
@@ -103,6 +100,17 @@ namespace DeviceManager
 			return vec.front();
 
 		return 0;
+	}
+
+	void SetActiveDevice(Device* dev, DeviceType type)
+	{
+		rde::vector<Device*>& vec = (*deviceMap)[type];
+
+		if(vec.size() > 0 && vec.contains(dev))
+		{
+			vec.remove(dev);
+			vec.insert(vec.begin(), dev);
+		}
 	}
 }
 }

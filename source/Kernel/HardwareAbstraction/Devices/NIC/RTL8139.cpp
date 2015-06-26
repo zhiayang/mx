@@ -273,7 +273,7 @@ namespace NIC
 	void RTL8139::HandleRxOk()
 	{
 		IOPort::Write16(this->ioaddr + Registers::IntrStatus, 0x1);
-		DeviceManager::AddDeviceDispatchJob(this);
+		DeviceManager::EnqueueDriverDispatchJob(this);
 	}
 
 	void RTL8139::HandleRxErr()

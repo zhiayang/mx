@@ -101,8 +101,6 @@ namespace Kernel
 	// global objects, in Kernel.cpp.
 	extern Time::TimeStruct* SystemTime;
 	extern HardwareAbstraction::Multitasking::Process* KernelProcess;
-	extern HardwareAbstraction::Devices::PS2Controller* KernelPS2Controller;
-	extern HardwareAbstraction::Devices::Keyboard* KernelKeyboard;
 	extern HardwareAbstraction::ACPI::RootTable* RootACPITable;
 	extern HardwareAbstraction::MemoryManager::MemoryMap::MemoryMap_type* K_MemoryMap;
 	extern HardwareAbstraction::CPUID::CPUIDData* KernelCPUID;

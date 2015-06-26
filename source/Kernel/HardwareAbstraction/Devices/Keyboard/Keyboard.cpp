@@ -15,16 +15,6 @@ namespace Devices
 	void Keyboard::HandleKeypress()
 	{
 	}
-
-	uint8_t Keyboard::ReadBuffer()
-	{
-		return 0;
-	}
-
-	bool Keyboard::ItemsInBuffer()
-	{
-		return 0;
-	}
 }
 }
 }

@@ -188,7 +188,7 @@ namespace HardwareAbstraction
 			};
 
 
-			void AddDevice(StorageDevice* dev);
+			void AddStorageDevice(StorageDevice* dev);
 
 
 

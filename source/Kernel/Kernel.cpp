@@ -64,8 +64,6 @@ namespace Kernel
 
 
 	// devices
-	Devices::PS2Controller* KernelPS2Controller;
-	Devices::Keyboard* KernelKeyboard;
 	Random* KernelRandom;
 
 	bool __debug_flag__ = false;
@@ -251,7 +249,6 @@ namespace Kernel
 		IO::Initialise();
 
 		Storage::ATA::Initialise();
-		PS2::Initialise();
 		ACPI::Initialise();
 		DeviceManager::Initialise();
 
@@ -390,7 +387,7 @@ namespace Kernel
 			DNS::Initialise();
 		}
 
-		KernelKeyboard = new PS2Keyboard();
+		PS2::Initialise();
 		TTY::Initialise();
 		Console::ClearScreen();
 
@@ -432,6 +429,10 @@ namespace Kernel
 		Log("Kernel init complete\n----------------------------\n");
 
 
+
+
+
+		if(0)
 		{
 			using namespace Network;
 			// IPv4Address fn = DNS::QueryDNSv4(rde::string("www.example.com"));

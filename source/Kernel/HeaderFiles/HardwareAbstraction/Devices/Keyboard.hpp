@@ -13,6 +13,12 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace Devices
 {
+	enum class KeyboardInterface
+	{
+		PS2,
+		USB
+	};
+
 	class Keyboard : public DeviceManager::Device
 	{
 		public:
@@ -20,8 +26,8 @@ namespace Devices
 			virtual ~Keyboard();
 
 			virtual void HandleKeypress();
-			virtual uint8_t ReadBuffer();
-			virtual bool ItemsInBuffer();
+
+			KeyboardInterface type;
 
 		protected:
 			bool Enabled;
@@ -32,16 +38,13 @@ namespace Devices
 		public:
 			PS2Keyboard();
 
-			void HandleKeypress() override;
-			uint8_t ReadBuffer() override;
-			bool ItemsInBuffer() override;
+			virtual void HandleKeypress() override;
 
 			void DecodeScancode();
 			uint8_t Translate(uint8_t sc);
 
 		private:
-			Library::CircularMemoryBuffer* Buffer;
-			Library::CircularMemoryBuffer* ByteBuffer;
+			Library::CircularMemoryBuffer ByteBuffer;
 			uint8_t TranslateE0(uint8_t sc);
 	};
 }
