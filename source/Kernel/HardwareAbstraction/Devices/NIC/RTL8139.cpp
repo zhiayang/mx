@@ -284,15 +284,15 @@ namespace NIC
 		IOPort::Write16(this->ioaddr + Registers::RxBufPtr, (uint16_t) this->SeenOfs - 0x10);
 	}
 
-	void RTL8139::HandleJobDispatch()
+	static void JobHandler(void* nic)
 	{
-		this->HandlePacket();
+		((RTL8139*) nic)->HandlePacket();
 	}
 
 	void RTL8139::HandleRxOk()
 	{
 		IOPort::Write16(this->ioaddr + Registers::IntrStatus, 0x1);
-		DeviceManager::EnqueueDriverDispatchJob(this);
+		JobDispatch::AddJob(JobDispatch::Job(&JobHandler, this, 0));
 	}
 
 	void RTL8139::HandleRxErr()

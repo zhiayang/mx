@@ -56,7 +56,6 @@ namespace Storage
 	void ATADrive::SetSectorSize(uint16_t s)	{ this->SectorSize = s; }
 	uint32_t ATADrive::GetSectorSize()			{ return this->SectorSize; }
 	uint16_t ATADrive::GetBaseIO()				{ return this->BaseIO; }
-	void ATADrive::HandleJobDispatch()			{ }
 
 	IOResult ATADrive::Read(uint64_t LBA, uint64_t Buffer, uint64_t Bytes)
 	{

@@ -13,14 +13,6 @@ namespace Devices
 {
 	class IODevice;
 
-	class DispatchableDevice
-	{
-		public:
-			virtual ~DispatchableDevice();
-			virtual void HandleJobDispatch() = 0;
-	};
-
-
 	enum class DeviceType
 	{
 		// Timers
@@ -58,9 +50,6 @@ namespace Devices
 		void AddDevice(Device* dev, DeviceType type);
 		rde::vector<Device*> GetDevices(DeviceType type);
 		Device* GetDevice(DeviceType type);
-
-		void EnqueueDriverDispatchJob(DispatchableDevice* device);
-		void Initialise();
 	}
 }
 }

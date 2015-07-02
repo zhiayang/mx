@@ -250,7 +250,8 @@ namespace Kernel
 
 		Storage::ATA::Initialise();
 		ACPI::Initialise();
-		DeviceManager::Initialise();
+		JobDispatch::Initialise();
+		// DeviceManager::Initialise();
 
 		// Detect and initialise the appropriate driver for the current machine.
 		Log("ATA & PCI subsystems online");

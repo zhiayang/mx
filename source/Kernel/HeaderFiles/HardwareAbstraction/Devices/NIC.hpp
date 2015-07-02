@@ -42,7 +42,6 @@ namespace NIC
 			virtual void SendData(uint8_t* data, uint64_t bytes) override;
 			virtual uint8_t* GetMAC() override;
 			virtual uint64_t GetHardwareType() override;
-			virtual void HandleJobDispatch() override;
 			virtual void HandleInterrupt() override;
 			virtual IOResult Read(uint64_t position, uint64_t outbuf, size_t bytes) override;
 			virtual IOResult Write(uint64_t position, uint64_t outbuf, size_t bytes) override;

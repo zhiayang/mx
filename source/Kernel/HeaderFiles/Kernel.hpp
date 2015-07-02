@@ -22,6 +22,8 @@
 #include "HardwareAbstraction/CPUID.hpp"
 #include "HardwareAbstraction/Random.hpp"
 #include "HardwareAbstraction/Devices/NIC.hpp"
+
+#include "JobDispatcher.hpp"
 #include <assert.h>
 
 

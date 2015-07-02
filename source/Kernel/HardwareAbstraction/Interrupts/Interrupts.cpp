@@ -85,7 +85,7 @@ namespace Interrupts
 
 				for(uint64_t k = 0; k < pl->HandlerList.size(); k++)
 				{
-					auto handler = pl->HandlerList[k];
+					IRQHandlerPlug* handler = pl->HandlerList[k];
 					handler->handle(handler->arg);
 				}
 			}

@@ -49,7 +49,7 @@ namespace HardwareAbstraction
 			size_t bufferSizeInPages;
 		};
 
-		class IODevice : public DeviceManager::Device, public DispatchableDevice
+		class IODevice : public DeviceManager::Device
 		{
 			public:
 				virtual ~IODevice();
@@ -166,7 +166,6 @@ namespace HardwareAbstraction
 					void ReadSector(uint64_t LBA);
 					void WriteSector(uint64_t LBA);
 
-					virtual void HandleJobDispatch() override;
 					virtual IOResult Read(uint64_t LBA, uint64_t Buffer, size_t Bytes) override;
 					virtual IOResult Write(uint64_t LBA, uint64_t Buffer, size_t Bytes) override;
 

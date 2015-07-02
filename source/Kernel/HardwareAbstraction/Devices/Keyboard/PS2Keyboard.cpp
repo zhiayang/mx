@@ -27,6 +27,11 @@ namespace Devices
 		// IOPort::ReadByte(PS2::DataPort);
 	}
 
+	static void JobHandler(void* kb)
+	{
+		((PS2Keyboard*) kb)->DecodeKey();
+	}
+
 	void PS2Keyboard::HandleKeypress()
 	{
 		// wait for ready
@@ -41,7 +46,7 @@ namespace Devices
 
 		if(thing != 0xE1 && thing != 0xF0 && thing != 0xE0)
 		{
-			DeviceManager::EnqueueDriverDispatchJob(this);
+			JobDispatch::AddJob(JobDispatch::Job(&JobHandler, this, 0));
 		}
 	}
 
@@ -69,7 +74,7 @@ namespace Devices
 		return (uint8_t) ScanCode2_US_E0_HID[scancode];
 	}
 
-	void PS2Keyboard::HandleJobDispatch()
+	void PS2Keyboard::DecodeKey()
 	{
 		uint8_t buf = 0;
 		this->ByteBuffer.Read(&buf, 1);
