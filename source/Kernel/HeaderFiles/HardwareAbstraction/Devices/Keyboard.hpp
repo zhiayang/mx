@@ -19,7 +19,7 @@ namespace Devices
 		USB
 	};
 
-	class Keyboard : public DeviceManager::Device
+	class Keyboard : public DeviceManager::Device, public DispatchableDevice
 	{
 		public:
 			Keyboard() { }
@@ -39,8 +39,9 @@ namespace Devices
 			PS2Keyboard();
 
 			virtual void HandleKeypress() override;
+			virtual void HandleJobDispatch() override;
 
-			void DecodeScancode();
+
 			uint8_t Translate(uint8_t sc);
 
 		private:

@@ -21,9 +21,6 @@ namespace Devices
 		const uint8_t DataPort = 0x60;
 		const uint8_t CommandPort = 0x64;
 
-		uint8_t Device1Buffer = 0;
-		uint8_t Device2Buffer = 0;
-
 		using namespace Kernel::HardwareAbstraction::Devices;
 
 		extern "C" void HandleIRQ1()
@@ -56,7 +53,8 @@ namespace Devices
 
 		extern "C" void HandleIRQ12()
 		{
-			Device2Buffer = IOPort::ReadByte(DataPort);
+			uint8_t x = IOPort::ReadByte(DataPort);
+			(void) x;
 		}
 
 

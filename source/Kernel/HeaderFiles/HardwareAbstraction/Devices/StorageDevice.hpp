@@ -49,13 +49,12 @@ namespace HardwareAbstraction
 			size_t bufferSizeInPages;
 		};
 
-		class IODevice : public DeviceManager::Device
+		class IODevice : public DeviceManager::Device, public DispatchableDevice
 		{
 			public:
 				virtual ~IODevice();
 				virtual IOResult Read(uint64_t position, uint64_t outbuf, size_t bytes) = 0;
 				virtual IOResult Write(uint64_t position, uint64_t outbuf, size_t bytes) = 0;
-				virtual void HandleJobDispatch() = 0;
 		};
 
 		namespace Storage

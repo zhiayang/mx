@@ -14,10 +14,10 @@ namespace DeviceManager
 {
 	static dev_t curid = 0;
 	static rde::hash_map<DeviceType, rde::vector<Device*>>* deviceMap;
-	static rde::deque<IODevice*>* deviceJobDispatchQueue;
+	static rde::deque<DispatchableDevice*>* deviceJobDispatchQueue;
 	static Mutex* queueMtx;
 
-	void EnqueueDriverDispatchJob(IODevice* device)
+	void EnqueueDriverDispatchJob(DispatchableDevice* device)
 	{
 		deviceJobDispatchQueue->push_back(device);
 	}
@@ -41,7 +41,7 @@ namespace DeviceManager
 
 	void Initialise()
 	{
-		deviceJobDispatchQueue = new rde::deque<IODevice*>();
+		deviceJobDispatchQueue = new rde::deque<DispatchableDevice*>();
 		queueMtx = new Mutex();
 
 		Multitasking::Thread* th = Multitasking::CreateKernelThread(DispatcherThread);
@@ -113,6 +113,11 @@ namespace DeviceManager
 		}
 	}
 }
+
+DispatchableDevice::~DispatchableDevice() { }
+
+
+
 }
 }
 }

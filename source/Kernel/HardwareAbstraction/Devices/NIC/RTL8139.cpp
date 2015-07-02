@@ -166,6 +166,7 @@ namespace NIC
 	{
 		if(bytes > 1500)
 		{
+			// todo: split this up.
 			Log(1, "Tried to transmit packet larger than 1500 bytes long, exceeds MTU -- aborting transmit");
 			return;
 		}
@@ -261,7 +262,25 @@ namespace NIC
 		}
 
 		this->SeenOfs = ReadOffset;
+
 		// According to thePowersGang, "i dunno" -> "- 0x10"
+		// EDIT: well. exerpt from QEMU source (copyright as necessary)
+
+		// static void rtl8139_RxBufPtr_write(RTL8139State *s, uint32_t val)
+		// {
+		// 	DPRINTF("RxBufPtr write val=0x%04x\n", val);
+
+		// 	// this value is off by 16
+		// 	s->RxBufPtr = MOD2(val + 0x10, s->RxBufferSize);
+
+		// 	...
+		// }
+
+
+		// read: "this value is off by 16"
+		// BUT NOBODY TELLS ME WHY
+		// it's probably a firmware problem nobody bothered to fix.
+
 		IOPort::Write16(this->ioaddr + Registers::RxBufPtr, (uint16_t) this->SeenOfs - 0x10);
 	}
 

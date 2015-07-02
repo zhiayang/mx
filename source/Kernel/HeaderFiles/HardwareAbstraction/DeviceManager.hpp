@@ -11,8 +11,15 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace Devices
 {
-
 	class IODevice;
+
+	class DispatchableDevice
+	{
+		public:
+			virtual ~DispatchableDevice();
+			virtual void HandleJobDispatch() = 0;
+	};
+
 
 	enum class DeviceType
 	{
@@ -52,7 +59,7 @@ namespace Devices
 		rde::vector<Device*> GetDevices(DeviceType type);
 		Device* GetDevice(DeviceType type);
 
-		void EnqueueDriverDispatchJob(IODevice* device);
+		void EnqueueDriverDispatchJob(DispatchableDevice* device);
 		void Initialise();
 	}
 }

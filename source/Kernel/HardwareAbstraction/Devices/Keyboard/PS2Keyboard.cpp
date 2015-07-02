@@ -33,15 +33,15 @@ namespace Devices
 		while(!(IOPort::ReadByte(PS2::CommandPort) & (1 << 0)))
 			;
 
-		PS2::Device1Buffer = IOPort::ReadByte(PS2::DataPort);
-		if(PS2::Device1Buffer == 0xFA || PS2::Device1Buffer == 0xFE)
+		uint8_t thing = IOPort::ReadByte(PS2::DataPort);
+		if(thing == 0xFA || thing == 0xFE)
 			return;
 
-		this->ByteBuffer.Write(&PS2::Device1Buffer, 1);
+		this->ByteBuffer.Write(&thing, 1);
 
-		if(PS2::Device1Buffer != 0xE1 && PS2::Device1Buffer != 0xF0 && PS2::Device1Buffer != 0xE0)
+		if(thing != 0xE1 && thing != 0xF0 && thing != 0xE0)
 		{
-			this->DecodeScancode();
+			DeviceManager::EnqueueDriverDispatchJob(this);
 		}
 	}
 
@@ -69,7 +69,7 @@ namespace Devices
 		return (uint8_t) ScanCode2_US_E0_HID[scancode];
 	}
 
-	void PS2Keyboard::DecodeScancode()
+	void PS2Keyboard::HandleJobDispatch()
 	{
 		uint8_t buf = 0;
 		this->ByteBuffer.Read(&buf, 1);
@@ -120,7 +120,7 @@ namespace Devices
 		}
 		else if(!isF0 && !isE0)
 		{
-			uint8_t x = this->Translate(PS2::Device1Buffer);
+			uint8_t x = this->Translate(buf);
 			TTY::WriteTTY(0, &x, 1);
 		}
 		else if(!isF0 && isE0)
@@ -129,7 +129,7 @@ namespace Devices
 			// forward the HID code, ORed with 0x80 to prevent conflict
 			// with printable ASCII.
 
-			uint8_t x = this->TranslateE0(PS2::Device1Buffer) | 0x80;
+			uint8_t x = this->TranslateE0(buf) | 0x80;
 			TTY::WriteTTY(0, &x, 1);
 		}
 	}

@@ -88,13 +88,6 @@ namespace Interrupts
 					auto handler = pl->HandlerList[k];
 					handler->handle(handler->arg);
 				}
-
-				// send a message to central dispatch, informing of this IRQ.
-				// don't send for timer interrupts, aka IRQ0 and IRQ8.
-				if(iid != 32 + 0 && iid != 32 + 8)
-				{
-					// IPC::SendSimpleMessage(0, IPC::MessageTypes::RequestServiceDispatch, 0, 0, iid - 32, 0);
-				}
 			}
 		}
 
