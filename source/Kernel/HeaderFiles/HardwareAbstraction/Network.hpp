@@ -80,14 +80,6 @@ namespace Network
 			IPv6	= 0x86DD
 		};
 
-		struct EthernetFrameHeader
-		{
-			EUI48Address destmac;
-			EUI48Address sourcemac;
-			uint16_t ethertype;
-
-		} __attribute__((packed));
-
 		void SendPacket(Devices::NIC::GenericNIC* interface, void* data, uint16_t length, EtherType type, EUI48Address destmac);
 		void HandlePacket(Devices::NIC::GenericNIC* interface, void* packet, uint64_t length);
 	}
@@ -270,10 +262,25 @@ namespace Network
 
 		enum class ConnectionState;
 
+		struct TCPPacket
+		{
+			uint16_t clientport;
+			uint16_t serverport;
+			uint32_t sequence;
+			uint32_t ackid;
+
+			uint8_t HeaderLength;
+			uint8_t Flags;
+			uint16_t WindowSize;
+
+			uint16_t Checksum;
+			uint16_t UrgentPointer;
+
+		} __attribute__ ((packed));
+
+
 		class TCPConnection
 		{
-			friend void TCPAckMonitor(TCPConnection*);
-
 			public:
 				TCPConnection(Socket* socket, Library::IPv4Address dest, uint16_t srcport, uint16_t destport);
 				TCPConnection(Socket* socket, Library::IPv6Address dest, uint16_t srcport, uint16_t destport);
@@ -291,9 +298,10 @@ namespace Network
 				Library::IPv6Address destip6;
 
 				void SendUserPacket(uint8_t* packet, uint64_t bytes);
+				void SendPacket(uint8_t* packet, uint64_t bytes);
 
 				void HandleIncoming(uint8_t* packet, uint64_t bytes, uint64_t HeaderSize);
-				void SendPacket(uint8_t* packet, uint64_t bytes);
+				void ProcessPacketData(uint8_t* packet, size_t bytes, size_t HeaderSize);
 
 				ConnectionError Connect();
 				void Disconnect();
@@ -311,10 +319,9 @@ namespace Network
 				uint32_t nextack;
 				uint64_t bufferfill;
 				uint64_t lastpackettime;
-				uint64_t workertid;
 
-				bool AlreadyAcked;
-				bool PacketReceived;
+				Mutex* mtx;
+
 
 				ConnectionState state;
 				Library::CircularMemoryBuffer packetbuffer;
@@ -323,22 +330,6 @@ namespace Network
 				void SendIPv4Packet(uint8_t* packet, uint64_t length, uint8_t flags);
 				void SendIPv6Packet(uint8_t* packet, uint64_t length, uint8_t flags);
 		};
-
-		struct TCPPacket
-		{
-			uint16_t clientport;
-			uint16_t serverport;
-			uint32_t sequence;
-			uint32_t ackid;
-
-			uint8_t HeaderLength;
-			uint8_t Flags;
-			uint16_t WindowSize;
-
-			uint16_t Checksum;
-			uint16_t UrgentPointer;
-
-		} __attribute__ ((packed));
 
 		// much simpler, because much of it is abstracted behind TCPConnection.
 		void SendIPv4Packet(TCPConnection* connection, uint8_t* packet, uint64_t length);
@@ -372,31 +363,10 @@ namespace Network
 
 		void Initialise();
 		void MonitorThread();
-		Library::IPv4Address QueryDNSv4(rde::string hostname);
+		rde::vector<Library::IPv4Address> QueryDNSv4(rde::string hostname);
 	}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	// // overall network stuff.
-	// // Network.cpp
-
-	// void Initialise();
 
 
 
@@ -441,6 +411,7 @@ namespace Network
 			virtual size_t Write(Filesystems::VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
 			virtual void Flush(Filesystems::VFS::vnode* node) override;
 			virtual void Stat(Filesystems::VFS::vnode* node, struct stat* stat, bool statlink) override;
+			virtual void Close(Filesystems::VFS::vnode* node) override;
 
 			// returns a list of items inside the directory, as vnodes.
 			virtual rde::vector<Filesystems::VFS::vnode*> ReadDir(Filesystems::VFS::vnode* node) override;
@@ -454,7 +425,6 @@ namespace Network
 			void Bind(Filesystems::VFS::vnode* node, const char* path);
 
 			size_t BlockingRead(Filesystems::VFS::vnode* node, void* buf, size_t bytes);
-			void Close(Filesystems::VFS::vnode* node);
 
 			Devices::NIC::GenericNIC* interface;
 	};

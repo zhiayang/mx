@@ -85,19 +85,11 @@ namespace Interrupts
 
 				for(uint64_t k = 0; k < pl->HandlerList.size(); k++)
 				{
-					auto handler = pl->HandlerList[k];
+					IRQHandlerPlug* handler = pl->HandlerList[k];
 					handler->handle(handler->arg);
-				}
-
-				// send a message to central dispatch, informing of this IRQ.
-				// don't send for timer interrupts, aka IRQ0 and IRQ8.
-				if(iid != 32 + 0 && iid != 32 + 8)
-				{
-					// IPC::SendSimpleMessage(0, IPC::MessageTypes::RequestServiceDispatch, 0, 0, iid - 32, 0);
 				}
 			}
 		}
-
 
 		// This IRQ is >7, send an EOI to the slave controller too.
 		if(iid >= 40)

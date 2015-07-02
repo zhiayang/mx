@@ -10,16 +10,8 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace Devices
 {
-	class __attribute__((packed)) PS2Controller
-	{
-		public:
-			PS2Controller();
-	};
-
 	namespace PS2
 	{
-		extern uint8_t Device1Buffer;
-		extern uint8_t Device2Buffer;
 		extern const uint8_t DataPort;
 		extern const uint8_t CommandPort;
 

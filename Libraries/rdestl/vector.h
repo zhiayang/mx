@@ -525,7 +525,7 @@ private:
 	}
 	inline void grow()
 	{
-		RDE_ASSERT(m_end == m_capacityEnd);	// size == capacity!
+		// RDE_ASSERT(m_end == m_capacityEnd);	// size == capacity!
 		const size_type c = capacity();
 		reallocate((m_capacityEnd == 0 ? kInitialCapacity : c * 2), c);
 	}

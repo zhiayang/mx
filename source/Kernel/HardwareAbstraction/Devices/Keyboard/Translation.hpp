@@ -10,144 +10,144 @@ namespace Devices {
 namespace KeyboardTranslations
 {
 	// PS/2 Scancodes
-	static constexpr uint32_t ScanCode2_US[2 * 132] =
+	static const uint32_t ScanCode2_US[2 * 132] =
 	{
-		0,	0,		//			0
-		0,	0,		// f9		1
-		0,	0,		// 			2
-		0,	0,		// f5		3
-		0,	0,		// f3		4
-		0,	0,		// f1		5
-		0,	0,		// f2		6
-		0,	0,		// f12		7
-		0,	0,		// 		8
-		0,	0,		// f10		9
-		0,	0,		// f8		10
-		0,	0,		// f6		11
-		0,	0,		// f4		12
+		0,	0,				//			0
+		0,	0,				// f9		1
+		0,	0,				// 			2
+		0,	0,				// f5		3
+		0,	0,				// f3		4
+		0,	0,				// f1		5
+		0,	0,				// f2		6
+		0,	0,				// f12		7
+		0,	0,				// 			8
+		0,	0,				// f10		9
+		0,	0,				// f8		10
+		0,	0,				// f6		11
+		0,	0,				// f4		12
 		'\t', '\t',			// \t		13
 		'`', '`',			// `		14
-		0,	0,		//		15
-		0,	0,		//		16
-		0,	0,		// lalt		17
-		0,	0,		// lshft		18
-		0,	0,		// 		19
-		0,	0,		// lctrl		20
+		0,	0,				//			15
+		0,	0,				//			16
+		0,	0,				// lalt		17
+		0,	0,				// lshft	18
+		0,	0,				// 			19
+		0,	0,				// lctrl	20
 		'q', 'Q',			// q		21
 		'1', '!',			// 1		22
-		0,	0,		// 		23
-		0,	0,		//		24
-		0,	0,		//		25
+		0,	0,				//	 		23
+		0,	0,				//			24
+		0,	0,				//			25
 		'z', 'Z',			// z		26
 		's', 'S',			// s		27
 		'a', 'A',			// a		28
-		'w', 'W',		// w		29
+		'w', 'W',			// w		29
 		'2', '@',			// 2		30
-		0,	0,		// 		31
-		0,	0,		//		32
+		0,	0,				//	 		31
+		0,	0,				//			32
 		'c', 'C',			// c		33
 		'x', 'X',			// x		34
 		'd', 'D',			// d		35
 		'e', 'E',			// e		36
 		'4', '$',			// 4		37
 		'3', '#',			// 3		38
-		0,	0,		//		39
-		0,	0,		//		40
+		0,	0,				//			39
+		0,	0,				//			40
 		' ', ' ',			// spce		41
 		'v', 'V',			// v		42
 		'f', 'F',			// f		43
 		't', 'T',			// t		44
 		'r', 'R',			// r		45
 		'5', '%',			// 5		46
-		0,	0,		//		47
-		0,	0,		//		48
+		0,	0,				//			47
+		0,	0,				//			48
 		'n', 'N',			// n		49
 		'b', 'B',			// b		50
 		'h', 'H',			// h		51
 		'g', 'G',			// g		52
 		'y', 'Y',			// y		53
 		'6', '^',			// 6		54
-		0,	0,		// 		55
-		0,	0,		// 		56
-		0,	0,		//		57
+		0,	0,				//	 		55
+		0,	0,				//	 		56
+		0,	0,				//			57
 		'm', 'M',			// m		58
 		'j', 'J',			// j		59
 		'u', 'U',			// u		60
 		'7', '&',			// 7		61
 		'8', '*',			// 8		62
-		0,	0,		// 		63
-		0,	0,		// 		64
+		0,	0,				//	 		63
+		0,	0,				//	 		64
 		',', '<',			// ,		65
 		'k', 'K',			// k		66
 		'i', 'I',			// i		67
 		'o', 'O',			// o		68
 		'0', ')',			// 0		69
 		'9', '(',			// 9		70
-		0,	0,		// 		71
-		0,	0,		// 		72
+		0,	0,				//	 		71
+		0,	0,				//	 		72
 		'.', '>',			// .		73
 		'/', '?',			// /		74
 		'l', 'L',			// l		75
 		';', ':',			// ;		76
 		'p', 'P',			// p		77
 		'-', '_',			// -		78
-		0,	0,		//		79
-		0,	0,		//		80
-		0,	0,		//		81
+		0,	0,				//			79
+		0,	0,				//			80
+		0,	0,				//			81
 		'\'', '"',			// '		82
-		0,	0,		//		83
+		0,	0,				//			83
 		'[', '{',			// [		84
 		'=', '+',			// =		85
-		0,	0,		//		86
-		0,	0,		//		87
-		0,	0,		// caps		88
-		0,	0,		// rshft		89
-		'\n', '\n',			// enter		90
+		0,	0,				//			86
+		0,	0,				//			87
+		0,	0,				// caps		88
+		0,	0,				// rshft	89
+		'\n', '\n',			// enter	90
 		']', '}',			// ]		91
-		0,	0,		// 		92
+		0,	0,				//	 		92
 		'\\', '|',			// \		93
-		0,	0,		//		94
-		0,	0,		//		95
-		0,	0,		//		96
-		0,	0,		//		97
-		0,	0,		//		98
-		0,	0,		//		99
-		0,	0,		//		100
-		0,	0,		//		101
+		0,	0,				//			94
+		0,	0,				//			95
+		0,	0,				//			96
+		0,	0,				//			97
+		0,	0,				//			98
+		0,	0,				//			99
+		0,	0,				//			100
+		0,	0,				//			101
 		'\b', '\b',			// back		102
-		0,	0,		//		103
-		0,	0,		//		104
+		0,	0,				//			103
+		0,	0,				//			104
 		'1', '!',			// k1		105
-		0,	0,		//		106
+		0,	0,				//			106
 		'4', '$',			// k4		107
 		'7', '&',			// k7		108
-		0,	0,		//		109
-		0,	0,		//		110
-		0,	0,		//		111
+		0,	0,				//			109
+		0,	0,				//			110
+		0,	0,				//			111
 		'0', ')',			// k0		112
 		'.', '>',			// k.		113
 		'2', '@',			// k2		114
 		'5', '%',			// k5		115
 		'6', '^',			// k6		116
 		'8', '*',			// k8		117
-		0,	0,		// esc		118
-		0,	0,		// nlock		119
-		0,	0,		// f11		120
+		0,	0,				// esc		118
+		0,	0,				// nlock	119
+		0,	0,				// f11		120
 		'+', '+',			// k+		121
 		'3', '#',			// k3		122
 		'-', '_',			// k-		123
 		'*', '*',			// k*		124
 		'9', '(',			// k9		125
-		0,	0,		// slock		126
-		0,	0,		//		127
-		0,	0,		//		128
-		0,	0,		//		129
-		0,	0,		// 		130
-		0,	0		// f7		131
+		0,	0,				// slock	126
+		0,	0,				//			127
+		0,	0,				//			128
+		0,	0,				//			129
+		0,	0,				// 			130
+		0,	0				// f7		131
 	};
 
 	// PS/2 Scancodes, with 0xE0 prefix
-	static constexpr uint32_t ScanCode2_US_E0[2 * 128] =
+	static const uint32_t ScanCode2_US_E0[2 * 128] =
 	{
 		0,		//			1
 		0,		//			2
@@ -277,7 +277,7 @@ namespace KeyboardTranslations
 	};
 
 	// Ordered array to translate PS/2 Scancodes to USB HID Scancodes
-	static constexpr uint32_t ScanCode2_US_PS2_HID[2 * 128] =
+	static const uint32_t ScanCode2_US_PS2_HID[2 * 128] =
 	{
 		0x00,	// NULL
 		0x42,	// F9
@@ -454,7 +454,7 @@ namespace KeyboardTranslations
 	};
 
 	// Ordered array to translate PS/2 Scancodes (With 0xE0 prefix) to USB HID Scancodes
-	static constexpr uint32_t ScanCode2_US_E0_HID[2 * 256] =
+	static const uint32_t ScanCode2_US_E0_HID[2 * 256] =
 	{
 		0x00,	// NULL
 		0x00,	// NULL
@@ -633,7 +633,7 @@ namespace KeyboardTranslations
 		0x4B,	// PageUp
 	};
 
-	static constexpr uint32_t ScanCode2_US_E0_F0[2 * 128] =
+	static const uint32_t ScanCode2_US_E0_F0[2 * 128] =
 	{
 		0,		// 				0
 		0,		// 				1
@@ -769,15 +769,15 @@ namespace KeyboardTranslations
 
 
 
-	static constexpr uint32_t USB_HID[4 * 0xFF] =
+	static const uint32_t USB_HID[4 * 0xFF] =
 	{
-		0x81,	0,	0,	0,		// SystemPower
-		0x82,	0,	0,	0,		// SystemSleep
-		0x83,	0,	0,	0,		// SystemWake
-		0x00,	0,	0,	0,		// Nothing
-		0x01,	0,	0,	0,		// OverrunError
-		0x02,	0,	0,	0,		// POSTError
-		0x03,	0,	0,	0,		// Undefined
+		0x81,	0,	0,	0,				// SystemPower
+		0x82,	0,	0,	0,				// SystemSleep
+		0x83,	0,	0,	0,				// SystemWake
+		0x00,	0,	0,	0,				// Nothing
+		0x01,	0,	0,	0,				// OverrunError
+		0x02,	0,	0,	0,				// POSTError
+		0x03,	0,	0,	0,				// Undefined
 		0x04,	'a',	'A',	0,		// A
 		0x05,	'b',	'B',	0,		// B
 		0x06,	'c',	'C',	0,		// C
@@ -815,7 +815,7 @@ namespace KeyboardTranslations
 		0x26,	'9',	'(',	0,		// 9
 		0x27,	'0',	')',	0,		// 0
 		0x28,	'\n',	'\n',	0,		// Enter
-		0x29,	0,	0,	0,		// Escape
+		0x29,	0,	0,	0,				// Escape
 		0x2A,	'\b',	'\b',	0,		// backspace
 		0x2B,	'\t',	'\t',	0,		// Tab
 		0x2C,	' ',	' ',	0,		// Space
@@ -824,41 +824,41 @@ namespace KeyboardTranslations
 		0x2F,	'[',	'{',	0,		// [
 		0x30,	']',	'}',	0,		// ]
 		0x31,	'\\',	'|',	0,		// '\'
-		0x32,	0,	0,	0,		// Europe1
+		0x32,	0,	0,	0,				// Europe1
 		0x33,	';',	':',	0,		// ;
 		0x34,	'\'',	'"',	0,		// '
 		0x35,	'`',	'~',	0,		// `
 		0x36,	',',	'<',	0,		// ,
 		0x37,	'.',	'>',	0,		// .
 		0x38,	'/',	'?',	0,		// /
-		0x39,	0,	0,	0,		// CapsLock
-		0x3A,	0,	0,	0,		// F1
-		0x3B,	0,	0,	0,		// F2
-		0x3C,	0,	0,	0,		// F3
-		0x3D,	0,	0,	0,		// F4
-		0x3E,	0,	0,	0,		// F5
-		0x3F,	0,	0,	0,		// F6
-		0x40,	0,	0,	0,		// F7
-		0x41,	0,	0,	0,		// F8
-		0x42,	0,	0,	0,		// F9
-		0x43,	0,	0,	0,		// F10
-		0x44,	0,	0,	0,		// F11
-		0x45,	0,	0,	0,		// F12
-		0x46,	0,	0,	0,		// PrintScreen
-		0x47,	0,	0,	0,		// ScrollLock
-		0x48,	0,	0,	0,		// Break/Pause
+		0x39,	0,	0,	0,				// CapsLock
+		0x3A,	0,	0,	0,				// F1
+		0x3B,	0,	0,	0,				// F2
+		0x3C,	0,	0,	0,				// F3
+		0x3D,	0,	0,	0,				// F4
+		0x3E,	0,	0,	0,				// F5
+		0x3F,	0,	0,	0,				// F6
+		0x40,	0,	0,	0,				// F7
+		0x41,	0,	0,	0,				// F8
+		0x42,	0,	0,	0,				// F9
+		0x43,	0,	0,	0,				// F10
+		0x44,	0,	0,	0,				// F11
+		0x45,	0,	0,	0,				// F12
+		0x46,	0,	0,	0,				// PrintScreen
+		0x47,	0,	0,	0,				// ScrollLock
+		0x48,	0,	0,	0,				// Break/Pause
 
-		0x49,	0,	0,	0,		// Insert
-		0x4A,	0,	0,	0,		// Home
-		0x4B,	0,	0,	0,		// PageUp
-		0x4C,	0,	0,	0,		// Delete
-		0x4D,	0,	0,	0,		// End
-		0x4E,	0,	0,	0,		// PageDown
-		0x4F,	0,	0,	0,		// RightArrow
-		0x50,	0,	0,	0,		// LeftArrow
-		0x51,	0,	0,	0,		// DownArrow
-		0x52,	0,	0,	0,		// UpArrow
-		0x53,	0,	0,	0,		// NumLock
+		0x49,	0,	0,	0,				// Insert
+		0x4A,	0,	0,	0,				// Home
+		0x4B,	0,	0,	0,				// PageUp
+		0x4C,	0,	0,	0,				// Delete
+		0x4D,	0,	0,	0,				// End
+		0x4E,	0,	0,	0,				// PageDown
+		0x4F,	0,	0,	0,				// RightArrow
+		0x50,	0,	0,	0,				// LeftArrow
+		0x51,	0,	0,	0,				// DownArrow
+		0x52,	0,	0,	0,				// UpArrow
+		0x53,	0,	0,	0,				// NumLock
 		0x54,	'/',	'/',	0,		// Keypad /
 		0x55,	'*',	'*',	0,		// Keypad *
 		0x56,	'-',	'-',	0,		// Keypad -
@@ -875,139 +875,139 @@ namespace KeyboardTranslations
 		0x61,	'9',	'9',	0,		// Keypad 9
 		0x62,	'0',	'0',	0,		// Keypad 0
 		0x63,	'.',	'.',	0,		// Keypad .
-		0x64,	0,	0,	0,		// Europe 2
-		0x65,	0,	0,	0,		// App
-		0x66,	0,	0,	0,		// KeyboardPower
+		0x64,	0,	0,	0,				// Europe 2
+		0x65,	0,	0,	0,				// App
+		0x66,	0,	0,	0,				// KeyboardPower
 		0x67,	'=',	'=',	0,		// Keypad =
-		0x68,	0,	0,	0,		// F13
-		0x69,	0,	0,	0,		// F14
-		0x6A,	0,	0,	0,		// F15
-		0x6B,	0,	0,	0,		// F16
-		0x6C,	0,	0,	0,		// F17
-		0x6D,	0,	0,	0,		// F18
-		0x6E,	0,	0,	0,		// F19
-		0x6F,	0,	0,	0,		// F20
-		0x70,	0,	0,	0,		// F21
-		0x71,	0,	0,	0,		// F22
-		0x72,	0,	0,	0,		// F23
-		0x73,	0,	0,	0,		// F24
+		0x68,	0,	0,	0,				// F13
+		0x69,	0,	0,	0,				// F14
+		0x6A,	0,	0,	0,				// F15
+		0x6B,	0,	0,	0,				// F16
+		0x6C,	0,	0,	0,				// F17
+		0x6D,	0,	0,	0,				// F18
+		0x6E,	0,	0,	0,				// F19
+		0x6F,	0,	0,	0,				// F20
+		0x70,	0,	0,	0,				// F21
+		0x71,	0,	0,	0,				// F22
+		0x72,	0,	0,	0,				// F23
+		0x73,	0,	0,	0,				// F24
 
-		0x74,	0,	0,	0,		// KeyboardExe
-		0x75,	0,	0,	0,		// KeyboardHelp
-		0x76,	0,	0,	0,		// KeyboardMenu
-		0x77,	0,	0,	0,		// KeyboardSelect
-		0x78,	0,	0,	0,		// KeyboardStop
-		0x79,	0,	0,	0,		// KeyboardAgain
-		0x7A,	0,	0,	0,		// KeyboardUndo
-		0x7B,	0,	0,	0,		// KeyboardCut
-		0x7C,	0,	0,	0,		// KeyboardCopy
-		0x7D,	0,	0,	0,		// KeyboardPaste
-		0x7E,	0,	0,	0,		// KeyboardFind
-		0x7F,	0,	0,	0,		// KeybordMute
-		0x80,	0,	0,	0,		// KeyboardVolUp
-		0x81,	0,	0,	0,		// KeyboardVolDown
-		0x82,	0,	0,	0,		// KeyboardCapsLock
-		0x83,	0,	0,	0,		// KeyboardNumLock
-		0x84,	0,	0,	0,		// KeyboardScrollLock
+		0x74,	0,	0,	0,				// KeyboardExe
+		0x75,	0,	0,	0,				// KeyboardHelp
+		0x76,	0,	0,	0,				// KeyboardMenu
+		0x77,	0,	0,	0,				// KeyboardSelect
+		0x78,	0,	0,	0,				// KeyboardStop
+		0x79,	0,	0,	0,				// KeyboardAgain
+		0x7A,	0,	0,	0,				// KeyboardUndo
+		0x7B,	0,	0,	0,				// KeyboardCut
+		0x7C,	0,	0,	0,				// KeyboardCopy
+		0x7D,	0,	0,	0,				// KeyboardPaste
+		0x7E,	0,	0,	0,				// KeyboardFind
+		0x7F,	0,	0,	0,				// KeybordMute
+		0x80,	0,	0,	0,				// KeyboardVolUp
+		0x81,	0,	0,	0,				// KeyboardVolDown
+		0x82,	0,	0,	0,				// KeyboardCapsLock
+		0x83,	0,	0,	0,				// KeyboardNumLock
+		0x84,	0,	0,	0,				// KeyboardScrollLock
 		0x85,	',',	',',	0,		// Keypad ,
 		0x86,	'=',	'=',	0,		// Keyboard =
-		0x87,	0,	0,	0,		// NULL
-		0x88,	0,	0,	0,		// NULL
-		0x89,	0,	0,	0,		// NULL
-		0x8A,	0,	0,	0,		// NULL
-		0x8B,	0,	0,	0,		// NULL
-		0x8C,	0,	0,	0,		// NULL
-		0x8D,	0,	0,	0,		// NULL
-		0x8E,	0,	0,	0,		// NULL
-		0x8F,	0,	0,	0,		// NULL
-		0x90,	0,	0,	0,		// NULL
-		0x91,	0,	0,	0,		// NULL
-		0x92,	0,	0,	0,		// NULL
-		0x93,	0,	0,	0,		// NULL
-		0x94,	0,	0,	0,		// NULL
-		0x95,	0,	0,	0,		// NULL
-		0x96,	0,	0,	0,		// NULL
-		0x97,	0,	0,	0,		// NULL
-		0x98,	0,	0,	0,		// NULL
-		0x99,	0,	0,	0,		// KeyboardAltErase
-		0x9A,	0,	0,	0,		// KeyboardSysReq
-		0x9B,	0,	0,	0,		// KeyboardCancel
-		0x9C,	0,	0,	0,		// KeyboardClear
-		0x9D,	0,	0,	0,		// KeyboardPrior
-		0x9E,	0,	0,	0,		// KeyboardReturn
-		0x9F,	0,	0,	0,		// KeyboardSeparator
-		0xA0,	0,	0,	0,		// KeyboardOut
-		0xA1,	0,	0,	0,		// KeyboardOperate
-		0xA2,	0,	0,	0,		// KeyboardClear
-		0xA3,	0,	0,	0,		// KeyboardProps
-		0xA4,	0,	0,	0,		// KeyboardExSel
-		0xA5,	0,	0,	0,		// NULL
-		0xA6,	0,	0,	0,		// NULL
-		0xA7,	0,	0,	0,		// NULL
-		0xA8,	0,	0,	0,		// NULL
-		0xA9,	0,	0,	0,		// NULL
-		0xAA,	0,	0,	0,		// NULL
-		0xAB,	0,	0,	0,		// NULL
-		0xAC,	0,	0,	0,		// NULL
-		0xAD,	0,	0,	0,		// NULL
-		0xAE,	0,	0,	0,		// NULL
-		0xAF,	0,	0,	0,		// NULL
-		0xB0,	0,	0,	0,		// NULL
-		0xB1,	0,	0,	0,		// NULL
-		0xB2,	0,	0,	0,		// NULL
-		0xB3,	0,	0,	0,		// NULL
-		0xB4,	0,	0,	0,		// NULL
-		0xB5,	0,	0,	0,		// NULL
-		0xB6,	0,	0,	0,		// NULL
-		0xB7,	0,	0,	0,		// NULL
-		0xB8,	0,	0,	0,		// NULL
-		0xB9,	0,	0,	0,		// NULL
-		0xBA,	0,	0,	0,		// NULL
-		0xBB,	0,	0,	0,		// NULL
-		0xBC,	0,	0,	0,		// NULL
-		0xBD,	0,	0,	0,		// NULL
-		0xBE,	0,	0,	0,		// NULL
-		0xBF,	0,	0,	0,		// NULL
-		0xC0,	0,	0,	0,		// NULL
-		0xC1,	0,	0,	0,		// NULL
-		0xC2,	0,	0,	0,		// NULL
-		0xC3,	0,	0,	0,		// NULL
-		0xC4,	0,	0,	0,		// NULL
-		0xC5,	0,	0,	0,		// NULL
-		0xC6,	0,	0,	0,		// NULL
-		0xC7,	0,	0,	0,		// NULL
-		0xC8,	0,	0,	0,		// NULL
-		0xC9,	0,	0,	0,		// NULL
-		0xCA,	0,	0,	0,		// NULL
-		0xCB,	0,	0,	0,		// NULL
-		0xCC,	0,	0,	0,		// NULL
-		0xCD,	0,	0,	0,		// NULL
-		0xCE,	0,	0,	0,		// NULL
-		0xCF,	0,	0,	0,		// NULL
-		0xD0,	0,	0,	0,		// NULL
-		0xD1,	0,	0,	0,		// NULL
-		0xD2,	0,	0,	0,		// NULL
-		0xD3,	0,	0,	0,		// NULL
-		0xD4,	0,	0,	0,		// NULL
-		0xD5,	0,	0,	0,		// NULL
-		0xD6,	0,	0,	0,		// NULL
-		0xD7,	0,	0,	0,		// NULL
-		0xD8,	0,	0,	0,		// NULL
-		0xD9,	0,	0,	0,		// NULL
-		0xDA,	0,	0,	0,		// NULL
-		0xDB,	0,	0,	0,		// NULL
-		0xDC,	0,	0,	0,		// NULL
-		0xDD,	0,	0,	0,		// NULL
-		0xDE,	0,	0,	0,		// NULL
-		0xDF,	0,	0,	0,		// NULL
-		0xE0,	0,	0,	0,		// LeftControl
-		0xE1,	0,	0,	0,		// LeftShift
-		0xE2,	0,	0,	0,		// LeftAlt
-		0xE3,	0,	0,	0,		// LeftSuper
-		0xE4,	0,	0,	0,		// RightControl
-		0xE5,	0,	0,	0,		// RightShift
-		0xE6,	0,	0,	0,		// RightAlt
-		0xE7,	0,	0,	0		// RightSuper
+		0x87,	0,	0,	0,				// NULL
+		0x88,	0,	0,	0,				// NULL
+		0x89,	0,	0,	0,				// NULL
+		0x8A,	0,	0,	0,				// NULL
+		0x8B,	0,	0,	0,				// NULL
+		0x8C,	0,	0,	0,				// NULL
+		0x8D,	0,	0,	0,				// NULL
+		0x8E,	0,	0,	0,				// NULL
+		0x8F,	0,	0,	0,				// NULL
+		0x90,	0,	0,	0,				// NULL
+		0x91,	0,	0,	0,				// NULL
+		0x92,	0,	0,	0,				// NULL
+		0x93,	0,	0,	0,				// NULL
+		0x94,	0,	0,	0,				// NULL
+		0x95,	0,	0,	0,				// NULL
+		0x96,	0,	0,	0,				// NULL
+		0x97,	0,	0,	0,				// NULL
+		0x98,	0,	0,	0,				// NULL
+		0x99,	0,	0,	0,				// KeyboardAltErase
+		0x9A,	0,	0,	0,				// KeyboardSysReq
+		0x9B,	0,	0,	0,				// KeyboardCancel
+		0x9C,	0,	0,	0,				// KeyboardClear
+		0x9D,	0,	0,	0,				// KeyboardPrior
+		0x9E,	0,	0,	0,				// KeyboardReturn
+		0x9F,	0,	0,	0,				// KeyboardSeparator
+		0xA0,	0,	0,	0,				// KeyboardOut
+		0xA1,	0,	0,	0,				// KeyboardOperate
+		0xA2,	0,	0,	0,				// KeyboardClear
+		0xA3,	0,	0,	0,				// KeyboardProps
+		0xA4,	0,	0,	0,				// KeyboardExSel
+		0xA5,	0,	0,	0,				// NULL
+		0xA6,	0,	0,	0,				// NULL
+		0xA7,	0,	0,	0,				// NULL
+		0xA8,	0,	0,	0,				// NULL
+		0xA9,	0,	0,	0,				// NULL
+		0xAA,	0,	0,	0,				// NULL
+		0xAB,	0,	0,	0,				// NULL
+		0xAC,	0,	0,	0,				// NULL
+		0xAD,	0,	0,	0,				// NULL
+		0xAE,	0,	0,	0,				// NULL
+		0xAF,	0,	0,	0,				// NULL
+		0xB0,	0,	0,	0,				// NULL
+		0xB1,	0,	0,	0,				// NULL
+		0xB2,	0,	0,	0,				// NULL
+		0xB3,	0,	0,	0,				// NULL
+		0xB4,	0,	0,	0,				// NULL
+		0xB5,	0,	0,	0,				// NULL
+		0xB6,	0,	0,	0,				// NULL
+		0xB7,	0,	0,	0,				// NULL
+		0xB8,	0,	0,	0,				// NULL
+		0xB9,	0,	0,	0,				// NULL
+		0xBA,	0,	0,	0,				// NULL
+		0xBB,	0,	0,	0,				// NULL
+		0xBC,	0,	0,	0,				// NULL
+		0xBD,	0,	0,	0,				// NULL
+		0xBE,	0,	0,	0,				// NULL
+		0xBF,	0,	0,	0,				// NULL
+		0xC0,	0,	0,	0,				// NULL
+		0xC1,	0,	0,	0,				// NULL
+		0xC2,	0,	0,	0,				// NULL
+		0xC3,	0,	0,	0,				// NULL
+		0xC4,	0,	0,	0,				// NULL
+		0xC5,	0,	0,	0,				// NULL
+		0xC6,	0,	0,	0,				// NULL
+		0xC7,	0,	0,	0,				// NULL
+		0xC8,	0,	0,	0,				// NULL
+		0xC9,	0,	0,	0,				// NULL
+		0xCA,	0,	0,	0,				// NULL
+		0xCB,	0,	0,	0,				// NULL
+		0xCC,	0,	0,	0,				// NULL
+		0xCD,	0,	0,	0,				// NULL
+		0xCE,	0,	0,	0,				// NULL
+		0xCF,	0,	0,	0,				// NULL
+		0xD0,	0,	0,	0,				// NULL
+		0xD1,	0,	0,	0,				// NULL
+		0xD2,	0,	0,	0,				// NULL
+		0xD3,	0,	0,	0,				// NULL
+		0xD4,	0,	0,	0,				// NULL
+		0xD5,	0,	0,	0,				// NULL
+		0xD6,	0,	0,	0,				// NULL
+		0xD7,	0,	0,	0,				// NULL
+		0xD8,	0,	0,	0,				// NULL
+		0xD9,	0,	0,	0,				// NULL
+		0xDA,	0,	0,	0,				// NULL
+		0xDB,	0,	0,	0,				// NULL
+		0xDC,	0,	0,	0,				// NULL
+		0xDD,	0,	0,	0,				// NULL
+		0xDE,	0,	0,	0,				// NULL
+		0xDF,	0,	0,	0,				// NULL
+		0xE0,	0,	0,	0,				// LeftControl
+		0xE1,	0,	0,	0,				// LeftShift
+		0xE2,	0,	0,	0,				// LeftAlt
+		0xE3,	0,	0,	0,				// LeftSuper
+		0xE4,	0,	0,	0,				// RightControl
+		0xE5,	0,	0,	0,				// RightShift
+		0xE6,	0,	0,	0,				// RightAlt
+		0xE7,	0,	0,	0				// RightSuper
 	};
 }
 }

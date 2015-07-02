@@ -140,10 +140,15 @@ Fail:
 	jmp CleanUp
 
 
-
+// page 0
 ExitProc:
 	call Syscall_ExitProc
 	jmp CleanUp
+
+KillCrashedThread:
+	call Syscall_TerminateCrashedThread
+	jmp CleanUp
+
 
 
 
@@ -243,8 +248,8 @@ OpenFile:
 	// call Syscall_OpenFile
 	jmp CleanUp
 
-OpenIPCSocket:
-	// call IPC_OpenSocket
+OpenSocket:
+	call Syscall_OpenSocket
 	jmp CleanUp
 
 OpenAnyFD:
@@ -287,6 +292,23 @@ GetSeekPos:
 	call Syscall_GetSeekPos
 	jmp CleanUp
 
+BindNetSocket:
+	call Syscall_BindNetSocket
+	jmp CleanUp
+
+ConnectNetSocket:
+	call Syscall_ConnectNetSocket
+	jmp CleanUp
+
+BindIPCSocket:
+	call Syscall_BindIPCSocket
+	jmp CleanUp
+
+ConnectIPCSocket:
+	call Syscall_ConnectIPCSocket
+	jmp CleanUp
+
+
 .section .data
 
 .align 8
@@ -298,7 +320,7 @@ FailString:
 SyscallTable0:
 	// misc things, page 0+
 	.quad	ExitProc			// 0000
-	.quad	Fail				// 0001
+	.quad	KillCrashedThread	// 0001
 	.quad	Fail				// 0002
 
 EndSyscallTable0:
@@ -337,7 +359,7 @@ SyscallTable2:
 
 	// file io things, page 8000+
 	.quad	OpenFile			// 8000
-	.quad	OpenIPCSocket		// 8001
+	.quad	OpenSocket			// 8001
 	.quad	OpenAnyFD			// 8002
 	.quad	CloseAnyFD			// 8003
 	.quad	ReadAnyFD			// 8004
@@ -348,6 +370,10 @@ SyscallTable2:
 	.quad	SeekAnyFD			// 8009
 	.quad	StatAnyFD			// 8010
 	.quad	GetSeekPos			// 8011
+	.quad	BindNetSocket		// 8012
+	.quad	ConnectNetSocket	// 8013
+	.quad	BindIPCSocket		// 8014
+	.quad	ConnectIPCSocket	// 8015
 EndSyscallTable2:
 
 

@@ -117,14 +117,15 @@ namespace Filesystems
 			virtual size_t Write(VFS::vnode* node, const void* buf, off_t offset, size_t length) override;
 			virtual void Flush(VFS::vnode* node) override;
 			virtual void Stat(VFS::vnode* node, struct stat* stat, bool statlink) override;
+			virtual void Close(VFS::vnode* node) override;
 
 			// returns a list of items inside the directory, as vnodes.
 			virtual rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 
 
 		private:
-			bool					caseSensitive;
-			HFSPlusVolumeHeader		volumeHeader;
+			// bool					caseSensitive;
+			// HFSPlusVolumeHeader		volumeHeader;
 	};
 }
 }

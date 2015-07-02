@@ -63,7 +63,8 @@ make -j$THREADS install > /dev/null
 echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Configuring gcc${_NORMAL}"
 cd ../build-gcc
 export PATH="$PREFIX/bin:$PATH"
-../gcc/configure --target=x86_64-orionx --prefix=$PREFIX --with-sysroot=$SYSROOT --disable-werror --disable-nls --enable-languages=c,c++ > /dev/null
+../gcc/configure --target=x86_64-orionx --prefix=$PREFIX --with-sysroot=$SYSROOT \
+	--disable-werror --disable-nls --enable-languages=c,c++ > /dev/null
 
 echo "${_BOLD}${_BLUE}=> ${_NORMAL}${_BOLD}Building gcc${_NORMAL}"
 make -j$THREADS all-gcc > /dev/null
@@ -108,6 +109,16 @@ cd ..
 
 rm -rf build/build-bin
 rm -rf build/build-gcc
+
+# todo: change this when (if) we upgrade gcc
+cp $PREFIX/lib/gcc/x86_64-orionx/4.9.1/include/*.h $SYSROOT/usr/include/
+
+
+
+cd tools
+./build-compression.sh
+cd ..
+
 
 if [ -f build/disk.img ]; then
 	exit

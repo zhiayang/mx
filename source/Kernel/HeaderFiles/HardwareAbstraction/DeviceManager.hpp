@@ -11,7 +11,7 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace Devices
 {
-
+	class IODevice;
 
 	enum class DeviceType
 	{
@@ -27,8 +27,12 @@ namespace Devices
 		EthernetNIC,
 
 
+		// Input
+		Keyboard,
+
+
 		// Misc
-		AdvancedPIC,
+		AdvancedPIC
 	};
 
 	namespace DeviceManager
@@ -42,10 +46,30 @@ namespace Devices
 		dev_t AllocateDevID();
 		void FreeDevID(dev_t id);
 
+		void SetActiveDevice(Device* dev, DeviceType type);
 		void AddDevice(Device* dev, DeviceType type);
-		rde::vector<Device*>* GetDevices(DeviceType type);
+		rde::vector<Device*> GetDevices(DeviceType type);
 		Device* GetDevice(DeviceType type);
 	}
 }
 }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

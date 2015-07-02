@@ -52,6 +52,10 @@ namespace Filesystems
 		TTY::FlushTTY(0);
 	}
 
+	void FSDriverStdin::Close(VFS::vnode*)
+	{
+	}
+
 	void FSDriverStdin::Stat(VFS::vnode*, struct stat*, bool)
 	{
 	}

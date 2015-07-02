@@ -6,6 +6,8 @@
 #include "FxLoader.hpp"
 #include "Elf.hpp"
 
+#include "heatshrink/heatshrink_decoder.h"
+
 extern "C" uint64_t StartBSS;
 extern "C" uint64_t EndBSS;
 
@@ -37,9 +39,9 @@ extern "C" uint64_t LoaderBootstrap(uint32_t MultibootMagic, uint32_t MBTAddr)
 	Memory::Initialise((Multiboot::Info_type*) (uint64_t) MBTAddr, &MemoryMap);
 	Console::Print("Memory map initialised\n");
 
-	uint64_t kstart = 0;
-	uint64_t klength = 0;
-	LoadKernelModule((Multiboot::Info_type*) (uint64_t) MBTAddr, &kstart, &klength);
+	uint64_t compressedAddr = 0;
+	uint64_t compressedLength = 0;
+	LoadKernelModule((Multiboot::Info_type*) (uint64_t) MBTAddr, &compressedAddr, &compressedLength);
 
 	Memory::InitialiseVirt();
 	Console::Print("Virtual memory online\n");
@@ -47,13 +49,73 @@ extern "C" uint64_t LoaderBootstrap(uint32_t MultibootMagic, uint32_t MBTAddr)
 	Memory::InitialisePhys(&MemoryMap);
 	Console::Print("Physical memory online\n");
 
+	Memory::Initialise();
+	Console::Print("Dynamic memory online\n");
+
+	uint64_t kernelAddress = 0xFFFFFF3000000000;
+	uint32_t kernelLength = 0;
+
+
+	{
+		// get length as first 8 bytes, endian swapped.
+		kernelLength = (uint32_t) __builtin_bswap64(*((uint64_t*) compressedAddr));
+
+		for(uint64_t i = 0; i < (kernelLength + 0xFFF) / 0x1000; i++)
+		{
+			uint64_t p = Memory::AllocatePage();
+			Memory::MapAddress(kernelAddress + (i * 0x1000), p, 0x03);
+		}
+
+		compressedAddr += 8;
+		compressedLength -= 8;
+
+		Console::Print("Decompressing kernel64: compressed %d bytes\n", compressedLength);
+
+		// reference makefile line 96, -w and -l option respectively.
+		heatshrink_decoder* decoder = heatshrink_decoder_alloc(0x1000, 14 /* -w */, 6 /* -l */);
+
+		size_t readed = 0;	// such grammar
+		size_t wrote = 0;
+		while(readed < compressedLength && wrote < kernelLength)
+		{
+			size_t curRead = 0;
+			heatshrink_decoder_sink(decoder, (uint8_t*) (compressedAddr + readed), compressedLength - readed, &curRead);
+			readed += curRead;
+
+			// if(res == HSDR_SINK_FULL)
+			{
+				size_t curWrote = 0;
+				heatshrink_decoder_poll(decoder, (uint8_t*) (kernelAddress + wrote), kernelLength - wrote, &curWrote);
+				wrote += curWrote;
+
+				// Console::Print("\r                       \r(%d/%d)\n", wrote, kernelLength);
+				Console::Print(".");
+			}
+		}
+
+		auto finish_res = heatshrink_decoder_finish(decoder);
+		if(finish_res == HSDR_FINISH_MORE)
+		{
+			while(wrote < kernelLength)
+			{
+				size_t curWrote = 0;
+				heatshrink_decoder_poll(decoder, (uint8_t*) (kernelAddress + wrote), kernelLength - wrote, &curWrote);
+				wrote += curWrote;
+
+				// Console::Print("\r                       \r(%d/%d)\n", wrote, kernelLength);
+				Console::Print(".");
+			}
+		}
+
+		Console::Print("\nDecompressed: %d bytes\n", kernelLength);
+	}
+
+
 	Console::Print("Loading kernel...\n");
-	uint64_t entry = LoadKernelELF(kstart, klength);
+	uint64_t entry = LoadKernelELF(kernelAddress, kernelLength);
 
 	Console::Print("Entry point: %x\n", entry);
 
-	// Console::ClearScreen(0);
-	// let ASM do it.
 	return entry;
 }
 
@@ -72,9 +134,6 @@ void LoadKernelModule(Multiboot::Info_type* mbt, uint64_t* start, uint64_t* leng
 	*start = mod->ModuleStart;
 	*length = mod->ModuleEnd - mod->ModuleStart;
 }
-
-
-
 
 uint64_t LoadKernelELF(uint64_t start, uint64_t length)
 {

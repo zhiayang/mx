@@ -57,6 +57,10 @@ namespace Filesystems
 	{
 	}
 
+	void FSDriverStdlog::Close(VFS::vnode*)
+	{
+	}
+
 	void FSDriverStdlog::Flush(VFS::vnode*)
 	{
 		TTY::FlushTTY(1);

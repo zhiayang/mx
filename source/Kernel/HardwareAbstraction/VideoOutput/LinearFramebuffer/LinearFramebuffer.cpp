@@ -20,8 +20,8 @@ namespace LinearFramebuffer
 	#define _BLU(color) ((color & 0x000000FF) / 0x1)
 	#define _ALP(color) ((color & 0xFF000000) / 0x1000000)
 
-	static uint16_t ResX;
-	static uint16_t ResY;
+	static uint16_t ResX = 0;
+	static uint16_t ResY = 0;
 
 	uint32_t backColour = 0;
 	uint32_t frontColour = 0xFFFFFFFF;

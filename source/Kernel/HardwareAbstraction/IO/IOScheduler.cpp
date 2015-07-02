@@ -61,17 +61,30 @@ namespace IO
 				// it doesn't matter anyway (although this does mean that we can only do ops on one device at a time)
 				// TODO (spawn new thread for each tertiary IO device (hdd)?)
 
-				IOResult iores;
+				using namespace MemoryManager;
 				if(req.writeop)
-					iores = req.device->Write(req.pos, req.out, req.count);
-
-				else
-					iores = req.device->Read(req.pos, req.out, req.count);
-
-
 				{
-					using namespace MemoryManager;
+					uint64_t outbuf = req.out;
+					if(req.owningthread->Parent != Multitasking::GetProcess(0))
+					{
+						// if we're writing from userspace, we need to copy the buffer to kernel space *before* the write.
+						outbuf = Virtual::AllocatePage((req.count + 0xFFF) / 0x1000);
+						Virtual::CopyToKernel(req.out, outbuf, req.count, &req.owningthread->Parent->VAS);
+					}
 
+					IOResult iores = req.device->Write(req.pos, outbuf, req.count);
+					(void) iores;
+
+					if(outbuf != req.out)
+					{
+						Virtual::FreePage(outbuf, (req.count + 0xFFF) / 0x1000);
+					}
+				}
+				else
+				{
+					IOResult iores = req.device->Read(req.pos, req.out, req.count);
+
+					// if this is a read from kernel space, just do shit.
 					if(req.owningthread->Parent == Multitasking::GetProcess(0))
 					{
 						Memory::Copy((void*) req.out, (void*) iores.allocatedBuffer.virt, req.count);
@@ -81,7 +94,12 @@ namespace IO
 						Virtual::CopyFromKernel(iores.allocatedBuffer.virt, req.out, req.count, &req.owningthread->Parent->VAS);
 					}
 
-					Physical::FreeDMA(iores.allocatedBuffer, iores.bufferSizeInPages);
+					// if the bufferSizeInPages is zero, then we don't free anything
+					// these buffers may be device specific, like NIC Rx/Tx buffers.
+					if(iores.bufferSizeInPages > 0)
+					{
+						Physical::FreeDMA(iores.allocatedBuffer, iores.bufferSizeInPages);
+					}
 				}
 
 

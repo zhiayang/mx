@@ -32,9 +32,10 @@ namespace Devices
 
 
 		static rde::vector<StorageDevice*>* storageDevices;
-		void AddDevice(StorageDevice* dev)
+		void AddStorageDevice(StorageDevice* dev)
 		{
-			if(!storageDevices)	 storageDevices = new rde::vector<StorageDevice*>();
+			if(!storageDevices)	storageDevices = new rde::vector<StorageDevice*>();
+
 			if(storageDevices->contains(dev))
 			{
 				Log(1, "Ignoring duplicate device");

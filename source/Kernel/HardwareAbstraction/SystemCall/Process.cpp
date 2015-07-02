@@ -45,9 +45,6 @@ namespace SystemCalls
 		if(prot & PROT_WRITE)
 			finalflag |= 0x2;
 
-		if(prot & PROT_WRITE)
-			;
-
 		if(prot & PROT_EXEC)
 			;
 
@@ -56,10 +53,11 @@ namespace SystemCalls
 
 		finalflag |= 0x4;
 
-		// fetch a physical page.
+
 		size = (size + 0xFFF) / 0x1000;
 
-		auto ret = Virtual::AllocatePage(size, addr, finalflag);
+		// request it from the kernel
+		uint64_t ret = Virtual::AllocatePage(size, addr, finalflag);
 		return ret;
 	}
 

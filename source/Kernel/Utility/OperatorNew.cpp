@@ -10,12 +10,12 @@ static const char* __file__ = "?";
 static const char* __line__ = "0";
 
 using namespace Kernel::HardwareAbstraction::MemoryManager;
-void operator delete(void* p)
+void operator delete(void* p) noexcept
 {
 	KernelHeap::FreeChunk(p);
 }
 
-void operator delete[](void* p)
+void operator delete[](void* p) noexcept
 {
 	KernelHeap::FreeChunk(p);
 }

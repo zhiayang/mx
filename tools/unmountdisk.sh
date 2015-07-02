@@ -1,7 +1,8 @@
 #/bin/bash
 
 if [ `uname` = "Darwin" ]; then
-	hdiutil detach -quiet /Volumes/mx
+	# hdiutil unmount -force -quiet -timeout 1 /Volumes/mx
+	echo
 
 elif [ `uname` = "Linux" ]; then
 	umount build/mnt/mx

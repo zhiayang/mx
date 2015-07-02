@@ -16,65 +16,78 @@ namespace Devices
 {
 	namespace PS2
 	{
+		using namespace DeviceManager;
+
 		const uint8_t DataPort = 0x60;
 		const uint8_t CommandPort = 0x64;
-
-		uint8_t Device1Buffer = 0;
-		uint8_t Device2Buffer = 0;
 
 		using namespace Kernel::HardwareAbstraction::Devices;
 
 		extern "C" void HandleIRQ1()
 		{
-			Kernel::KernelKeyboard->HandleKeypress();
+			// not sure if this is a good idea, but...
+			// if we get an IRQ1, it means that we have a PS/2 keyboard.
+			// before this, we don't exactly know for sure. So it's kinda like a
+			// "keyboard on demand" thing.
+
+			rde::vector<Device*> kbs = GetDevices(DeviceType::Keyboard);
+			Keyboard* thekb = 0;
+
+			for(auto kb : kbs)
+			{
+				if(kb && ((Keyboard*) kb)->type == KeyboardInterface::PS2)
+				{
+					thekb = (Keyboard*) kb;
+					break;
+				}
+			}
+
+			if(thekb == 0)
+			{
+				thekb = new PS2Keyboard();
+				AddDevice(thekb, DeviceType::Keyboard);
+			}
+
+			thekb->HandleKeypress();
 		}
 
 		extern "C" void HandleIRQ12()
 		{
-			Device2Buffer = IOPort::ReadByte(DataPort);
+			uint8_t x = IOPort::ReadByte(DataPort);
+			(void) x;
 		}
+
+
 
 		void Initialise()
 		{
-			Kernel::KernelPS2Controller = new PS2Controller();
+			// flush the buffer.
+			IOPort::ReadByte(PS2::DataPort);
+
+			// read the config byte.
+			uint8_t ConfigByte = 0;
+
+			IOPort::WriteByte(PS2::CommandPort, 0x20);
+
+			while(!(IOPort::ReadByte(PS2::CommandPort) & 0x1));
+
+			ConfigByte = IOPort::ReadByte(PS2::DataPort);
+			ConfigByte &= ~(1 << 6);
+
+			// write the value back
+			IOPort::WriteByte(PS2::CommandPort, 0x60);
+
+			while(IOPort::ReadByte(PS2::CommandPort) & 0x2);
+
+			IOPort::WriteByte(PS2::DataPort, ConfigByte);
+
+
+			Kernel::HardwareAbstraction::Interrupts::SetGate(32 + 1, (uint64_t) ASM_HandlePS2IRQ1, 0x8, 0xEE);
+			Kernel::HardwareAbstraction::Interrupts::SetGate(32 + 12, (uint64_t) ASM_HandlePS2IRQ12, 0x8, 0xEE);
+
+			// should be ready to use.
 		}
 	}
-
-	PS2Controller::PS2Controller()
-	{
-		// flush the buffer.
-		IOPort::ReadByte(PS2::DataPort);
-
-		// read the config byte.
-		uint8_t ConfigByte = 0;
-
-		IOPort::WriteByte(PS2::CommandPort, 0x20);
-
-		while(!(IOPort::ReadByte(PS2::CommandPort) & 0x1));
-
-		ConfigByte = IOPort::ReadByte(PS2::DataPort);
-		ConfigByte &= ~(1 << 6);
-
-		// write the value back
-		IOPort::WriteByte(PS2::CommandPort, 0x60);
-
-		while(IOPort::ReadByte(PS2::CommandPort) & 0x2);
-
-		IOPort::WriteByte(PS2::DataPort, ConfigByte);
-
-
-
-		// while(IOPort::ReadByte(PS2::CommandPort) & (1 << 1));
-		// IOPort::WriteByte(PS2::DataPort, 0xF3);
-		// IOPort::WriteByte(PS2::DataPort, 0x00);
-
-
-		Kernel::HardwareAbstraction::Interrupts::SetGate(32 + 1, (uint64_t) ASM_HandlePS2IRQ1, 0x8, 0xEE);
-		Kernel::HardwareAbstraction::Interrupts::SetGate(32 + 12, (uint64_t) ASM_HandlePS2IRQ12, 0x8, 0xEE);
-
-		// should be ready to use.
-	}
-
 }
 
 }

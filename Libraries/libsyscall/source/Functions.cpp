@@ -41,7 +41,7 @@ namespace SystemCall
 
 		// file io things, page 8000+
 		.quad	OpenFile			// 8000
-		.quad	OpenIPCSocket		// 8001
+		.quad	OpenSocket			// 8001
 		.quad	OpenAnyFD			// 8002
 		.quad	CloseAnyFD			// 8003
 		.quad	ReadAnyFD			// 8004
@@ -52,6 +52,10 @@ namespace SystemCall
 		.quad	SeekAnyFD			// 8009
 		.quad	StatAnyFD			// 8010
 		.quad	GetSeekPos			// 8011
+		.quad	BindNetSocket		// 8012
+		.quad	ConnectNetSocket	// 8013
+		.quad	BindIPCSocket		// 8014
+		.quad	ConnectIPCSocket	// 8015
 	*/
 
 
@@ -195,7 +199,12 @@ namespace SystemCall
 
 
 
-	// 8000, 8001
+	// 8000
+
+	uint64_t OpenSocket(uint64_t domain, uint64_t type, uint64_t protocol)
+	{
+		return Syscall3Param(domain, type, protocol, 8001);
+	}
 
 	uint64_t Open(const char* path, uint64_t flags)
 	{
@@ -243,6 +252,27 @@ namespace SystemCall
 	{
 		return Syscall1Param(fd, 8011);
 	}
+
+	uint64_t BindNetSocket(uint64_t fd, uint32_t ipv4addr, uint16_t port)
+	{
+		return Syscall3Param(fd, ipv4addr, port, 8012);
+	}
+
+	uint64_t ConnectNetSocket(uint64_t fd, uint32_t ipv4addr, uint16_t port)
+	{
+		return Syscall3Param(fd, ipv4addr, port, 8013);
+	}
+
+	uint64_t BindIPCSocket(uint64_t fd, const char* path)
+	{
+		return Syscall2Param(fd, (uint64_t) path, 8014);
+	}
+
+	uint64_t ConnectIPCSocket(uint64_t fd, const char* path)
+	{
+		return Syscall2Param(fd, (uint64_t) path, 8015);
+	}
+
 }
 }
 

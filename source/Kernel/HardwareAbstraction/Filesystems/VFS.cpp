@@ -225,6 +225,11 @@ namespace Filesystems
 		{
 			assert(ioctx);
 			assert(fe);
+			assert(fe->node);
+			assert(fe->node->info);
+			assert(fe->node->info->driver);
+
+			fe->node->info->driver->Close(fe->node);
 
 			ioctx->fdarray.fds.remove(fe);
 			Dereference(fe->node);
@@ -421,11 +426,14 @@ namespace Filesystems
 		auto ctx = getctx();
 		auto fe = VFS::FileEntryFromFD(ctx, fd);
 		if(fe == nullptr)
-			return 0;
+			return -1;
 
 		assert(fe->node);
 		auto read = VFS::Read(ctx, fe->node, buf, fe->offset, len);
-		fe->offset += read;
+
+		if(read > 0)
+			fe->offset += read;
+
 		return read;
 	}
 

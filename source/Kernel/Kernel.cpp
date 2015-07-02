@@ -36,6 +36,10 @@ extern "C" void KernelInit(uint32_t MultibootMagic, uint32_t MBTAddr)
 	KernelCore(MultibootMagic, MBTAddr);
 }
 
+extern "C" void KernelThreadInit()
+{
+	Kernel::SetupKernelThreads();
+}
 
 
 namespace Kernel
@@ -50,6 +54,7 @@ namespace Kernel
 	static uint64_t LFBAddr;
 	static uint64_t LFBInPages;
 	static uint64_t CR3Value = 0x3000;
+	static fd_t aSock = 0;
 
 	// things
 	Multitasking::Process* KernelProcess;
@@ -59,8 +64,6 @@ namespace Kernel
 
 
 	// devices
-	Devices::PS2Controller* KernelPS2Controller;
-	Devices::Keyboard* KernelKeyboard;
 	Random* KernelRandom;
 
 	bool __debug_flag__ = false;
@@ -140,7 +143,6 @@ namespace Kernel
 		// TODO: move to temp mapping scheme, where physical pages can come from anywhere.
 		Log("PMM Reserved Region from %x to %x", Physical::ReservedRegionForVMM, Physical::ReservedRegionForVMM + Physical::LengthOfReservedRegion);
 
-
 		// Start the less crucial but still important services.
 		Interrupts::Initialise();
 		Console80x25::Initialise();
@@ -184,7 +186,12 @@ namespace Kernel
 
 		PrintFormatted("Loading [mx]...\n");
 		Log("Initialising Kernel subsystem");
+	}
 
+
+
+	void SetupKernelThreads()
+	{
 		// tss on page 337 of manual. (AMD Vol. 3)
 		// Setup the TSS. this will mostly be void once the scheduler initialises.
 		{
@@ -223,6 +230,16 @@ namespace Kernel
 
 		Log("Kernel online");
 
+		// after everything is done, make sure shit works
+		{
+			uint64_t m = KernelHeap::GetFirstHeapMetadataPhysPage();
+			uint64_t h = KernelHeap::GetFirstHeapPhysPage();
+
+			Virtual::ForceInsertALPTuple(KernelHeapMetadata, 1, m);
+			Virtual::ForceInsertALPTuple(KernelHeapAddress, 1, h);
+		}
+
+
 
 
 		// Initialise the other, less-essential things.
@@ -232,9 +249,9 @@ namespace Kernel
 		IO::Initialise();
 
 		Storage::ATA::Initialise();
-		PS2::Initialise();
 		ACPI::Initialise();
-
+		JobDispatch::Initialise();
+		// DeviceManager::Initialise();
 
 		// Detect and initialise the appropriate driver for the current machine.
 		Log("ATA & PCI subsystems online");
@@ -262,13 +279,11 @@ namespace Kernel
 				{
 					// QEMU, Bochs and VBox's BGA card.
 					DeviceManager::AddDevice(new BochsGraphicsAdapter(VideoDev), DeviceType::FramebufferVideoCard);
+					Log("Bochs Graphics Adapter (BGA) compatible card found, driver loaded");
 				}
 				else
 				{
-					PrintFormatted("Error: No supported video card found.\n");
-					PrintFormatted("[mx] does not support VGA-only video cards.\n");
-					PrintFormatted("Currently, supported systems include: BGA (Bochs, QEMU, VirtualBox) and SVGA II (VMWare)\n");
-					UHALT();
+					Log(1, "No supported video card found, funtionality will be limited");
 				}
 			}
 		}
@@ -285,14 +300,12 @@ namespace Kernel
 			}
 		}
 
-		KernelRandom = new Random(new Random_PseudoRandom());
-
-		Log("Compatible video card located");
-
 		PrintFormatted("Initialising RTC...\n");
 		Devices::RTC::Initialise(+8);
 		Log("RTC Initialised");
 
+
+		KernelRandom = new Random_PseudoRandom((uint32_t) Time::Now());
 
 		// setup framebuffer
 		{
@@ -301,36 +314,38 @@ namespace Kernel
 
 			// it better exist
 			GenericVideoDevice* vd = (GenericVideoDevice*) DeviceManager::GetDevice(DeviceType::FramebufferVideoCard);
-			assert(vd);
-
-			LFBAddr = vd->GetFramebufferAddress();
-			LFBBufferAddr = LFBAddr;
-
-			// Set video mode
-			PrintFormatted("\nInitialising Linear Framebuffer at %x...", LFBAddr);
-			vd->SetMode(PrefResX, PrefResY, 32);
-			VideoOutput::LinearFramebuffer::Initialise();
-
-			Log("Requested resolution of %dx%d, LFB at %x", PrefResX, PrefResY, LFBAddr);
-
-
-			// scope this.
+			if(vd)
 			{
-				// Get the set resolution (may be different than our preferred)
-				uint16_t ResX = VideoOutput::LinearFramebuffer::GetResX();
-				uint16_t ResY = VideoOutput::LinearFramebuffer::GetResX();
 
-				// Calculate how many bytes we need. (remember, 4 bytes per pixel)
-				uint32_t bytes = (ResX * ResY) * 4;
+				LFBAddr = vd->GetFramebufferAddress();
+				LFBBufferAddr = LFBAddr;
 
-				// Get that rounded up to the nearest page
-				bytes = (bytes + (4096 - 1)) / 4096;
-				LFBInPages = bytes;
+				// Set video mode
+				PrintFormatted("\nInitialising Linear Framebuffer at %x...", LFBAddr);
+				vd->SetMode(PrefResX, PrefResY, 32);
+				VideoOutput::LinearFramebuffer::Initialise();
 
-				Virtual::MapRegion(LFBAddr, LFBAddr, bytes, 0x07);
+				Log("Requested resolution of %dx%d, LFB at %x", PrefResX, PrefResY, LFBAddr);
+
+
+				// scope this.
+				{
+					// Get the set resolution (may be different than our preferred)
+					uint16_t ResX = VideoOutput::LinearFramebuffer::GetResX();
+					uint16_t ResY = VideoOutput::LinearFramebuffer::GetResX();
+
+					// Calculate how many bytes we need. (remember, 4 bytes per pixel)
+					uint32_t bytes = (ResX * ResY) * 4;
+
+					// Get that rounded up to the nearest page
+					bytes = (bytes + (4096 - 1)) / 4096;
+					LFBInPages = bytes;
+
+					Virtual::MapRegion(LFBAddr, LFBAddr, bytes, 0x07);
+				}
+
+				Log("Video mode set");
 			}
-
-			Log("Video mode set");
 			Console::Initialise();
 		}
 
@@ -353,6 +368,7 @@ namespace Kernel
 				VFS::Mount(f1->Partitions.front(), fs, "/");
 				Log("Root FS Mounted at /");
 			}
+
 		}
 
 
@@ -372,13 +388,29 @@ namespace Kernel
 			DNS::Initialise();
 		}
 
-		KernelKeyboard = new PS2Keyboard();
+		PS2::Initialise();
 		TTY::Initialise();
 		Console::ClearScreen();
 
 
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
+
 		{
+			// using namespace Filesystems;
+
+			// fd_t file = OpenFile("/texts/1984.txt", 0);
+			// assert(file > 0);
+
+			// struct stat s;
+			// Stat(file, &s);
+
+			// Log(3, "s.st_size: %d", s.st_size);
+			// uint8_t* fl = new uint8_t[s.st_size];
+
+			// Read(file, fl, s.st_size);
+
+			// PrintFormatted("%s\n", fl);
+
 			// setup args:
 			// 0: prog name (duh)
 			// 1: FB address
@@ -386,23 +418,117 @@ namespace Kernel
 			// 3: height
 			// 4: bpp (32)
 
-			const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
-			auto proc = LoadBinary::Load(path, "displayd",
-				(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
-				GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
+			// const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
+			// auto proc = LoadBinary::Load(path, "displayd",
+			// 	(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
+			// 	GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
 
-			Multitasking::AddToQueue(proc);
+			// Multitasking::AddToQueue(proc);
 		}
 
 		PrintFormatted("[mx] has completed initialisation.\n");
 		Log("Kernel init complete\n----------------------------\n");
 
 
-		// {
-		// 	using namespace Network;
-		// 	IPv4Address example = DNS::QueryDNSv4(rde::string("www.example.com"));
-		// 	PrintFormatted("example.com is at %d.%d.%d.%d\n", example.b1, example.b2, example.b3, example.b4);
-		// }
+
+
+
+		if(0)
+		{
+			using namespace Network;
+			// IPv4Address fn = DNS::QueryDNSv4(rde::string("www.example.com"));
+			// rde::vector<IPv4Address> fns = DNS::QueryDNSv4(rde::string("irc.freenode.net"));
+			// assert(fns.size() > 0);
+
+			IPv4Address fn;
+			fn.b1 = 38;
+			fn.b2 = 229;
+			fn.b3 = 70;
+			fn.b4 = 22;
+
+			PrintFormatted("irc.freenode.net is at %d.%d.%d.%d\n", fn.b1, fn.b2, fn.b3, fn.b4);
+
+			fd_t thesock = OpenSocket(SocketProtocol::TCP, 0);
+			ConnectSocket(thesock, fn, 6667);
+			aSock = thesock;
+
+			auto other = []()
+			{
+				uint8_t* output = new uint8_t[256];
+				while(true)
+				{
+					if(GetSocketBufferFill(aSock) > 0)
+					{
+						memset(output, 0, 256);
+						size_t read = ReadSocket(aSock, output, 256);
+
+						output[(read == 256) ? (read - 1) : read] = 0;
+						PrintFormatted("%s", output);
+					}
+				}
+			};
+
+			Multitasking::Thread* thr = 0;
+			Multitasking::AddToQueue(thr = Multitasking::CreateKernelThread(other));
+
+			uint8_t* data = new uint8_t[256];
+			memset(data, 0, 256);
+
+			strncpy((char*) data, "NICK zhiayang|tcp\r\n", 256);
+			WriteSocket(thesock, data, strlen((char*) data));
+			PrintFormatted("> %s", data);
+
+			memset(data, 0, 256);
+			strncpy((char*) data, "USER zhiayang 8 * : zhiayang\r\n", 256);
+			WriteSocket(thesock, data, strlen((char*) data));
+			PrintFormatted("> %s", data);
+
+			SLEEP(15000);
+
+			memset(data, 0, 256);
+			strncpy((char*) data, "JOIN #flax-lang\r\n", 256);
+			WriteSocket(thesock, data, strlen((char*) data));
+			PrintFormatted("> %s", data);
+
+
+			SLEEP(1000);
+
+			{
+				static const char* msgs[] =
+				{
+					"PRIVMSG #flax-lang :urgh\r\n",
+					// "PRIVMSG #flax-lang :another mindless crime.\r\n",
+					// "PRIVMSG #flax-lang :behind the curtain,\r\n",
+					// "PRIVMSG #flax-lang :in the pantomime.\r\n",
+					// "PRIVMSG #flax-lang :hold the line,\r\n",
+					// "PRIVMSG #flax-lang :does anybody want to take it anymore\r\n"
+				};
+
+
+				for(int i = 0; i < 1; i++)
+				{
+					memset(data, 0, 256);
+					strncpy((char*) data, msgs[i], 256);
+					WriteSocket(thesock, data, strlen((char*) data));
+					PrintFormatted("> %s", data);
+
+					SLEEP(800);
+				}
+			}
+
+
+
+
+
+			memset(data, 0, 256);
+			strncpy((char*) data, "QUIT\r\n", 256);
+			WriteSocket(thesock, data, strlen((char*) data));
+			PrintFormatted("> %s", data);
+
+			SLEEP(500);
+			Kill(thr);
+			CloseSocket(thesock);
+		}
 
 		// Log("Socket test\n");
 		// {
@@ -491,6 +617,7 @@ namespace Kernel
 
 		// kernel stops here
 		// for now.
+
 		{
 			uint16_t xpos = Console::GetCharsPerLine();
 			uint64_t state = 0;
@@ -527,10 +654,10 @@ namespace Kernel
 
 	void HaltSystem(const char* message, const char* filename, uint64_t line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%d", message, filename, line);
+		Log("System Halted: %s, %s:%d, RA(0): %x, RA(1): %x", message, filename, line,
+			__builtin_return_address(0), __builtin_return_address(1));
 
-
-		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line);
+		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 
 
 		UHALT();
@@ -538,8 +665,10 @@ namespace Kernel
 
 	void HaltSystem(const char* message, const char* filename, const char* line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%s", message, filename, line);
-		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %s\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line);
+		Log("System Halted: %s, %s:%s, RA(0): %x, RA(1): %x", message, filename, line,
+			__builtin_return_address(0), __builtin_return_address(1));
+
+		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %s (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 
 		UHALT();
 	}

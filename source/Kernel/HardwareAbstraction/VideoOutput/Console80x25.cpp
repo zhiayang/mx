@@ -13,12 +13,11 @@ namespace HardwareAbstraction {
 namespace VideoOutput {
 namespace Console80x25
 {
-	static uint8_t CursorX = 0, CursorY = 0;
+	static uint16_t CursorX = 0;
+	static uint16_t CursorY = 0;
+
 	const uint32_t Space = ((uint16_t)(' ') | (0x0F << 8) | (((uint32_t)(uint16_t)(' ') | (0x0F << 8)) << 16));
 	const uint8_t TabWidth = 4;
-
-
-	void ScrollUp();
 
 	void Initialise()
 	{
@@ -108,10 +107,10 @@ namespace Console80x25
 			CursorY++;
 		}
 
-		ScrollUp();
+		Scroll();
 	}
 
-	void ScrollUp()
+	void Scroll()
 	{
 		if(CursorY >= 25)
 		{
@@ -120,7 +119,36 @@ namespace Console80x25
 			CursorY = 24;
 		}
 	}
+
+	void MoveCursor(uint16_t x, uint16_t y)
+	{
+		CursorX = x;
+		CursorY = y;
+	}
+
+	uint16_t GetCursorX()
+	{
+		return CursorX;
+	}
+
+	uint16_t GetCursorY()
+	{
+		return CursorY;
+	}
 }
 }
 }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

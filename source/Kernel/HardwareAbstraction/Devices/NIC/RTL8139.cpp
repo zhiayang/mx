@@ -166,6 +166,7 @@ namespace NIC
 	{
 		if(bytes > 1500)
 		{
+			// todo: split this up.
 			Log(1, "Tried to transmit packet larger than 1500 bytes long, exceeds MTU -- aborting transmit");
 			return;
 		}
@@ -185,6 +186,27 @@ namespace NIC
 		status |= (0 & 0x3F) << 16;	// 16-21: Early TX threshold (zero, transmit immediately)
 
 		IOPort::Write32(this->ioaddr + Registers::TxStatus0 + (uint16_t) usebuf * 4, status);
+	}
+
+
+	IOResult RTL8139::Read(uint64_t position, uint64_t outbuf, size_t bytes)
+	{
+		(void) position;
+		(void) outbuf;
+		(void) bytes;
+
+		// does nothing -- you can't read directly from an NIC anyway
+		return IOResult();
+	}
+	IOResult RTL8139::Write(uint64_t position, uint64_t outbuf, size_t bytes)
+	{
+		(void) position;
+		this->SendData((uint8_t*) outbuf, bytes);
+
+		auto ret = IOResult();
+		ret.bytesTransferred = bytes;
+
+		return ret;
 	}
 
 	uint64_t RTL8139::GetHardwareType()
@@ -208,6 +230,7 @@ namespace NIC
 
 		uint8_t* recvBuffer = (uint8_t*) this->ReceiveBuffer.virt;
 
+		// this is a circular buffer.
 		if(ReadOffset > EndOffset)
 		{
 			while(ReadOffset < RxBufferSize)
@@ -225,6 +248,8 @@ namespace NIC
 
 			ReadOffset -= RxBufferSize;
 		}
+
+
 		while(ReadOffset < EndOffset)
 		{
 			assert(ReadOffset < RxBufferSize);
@@ -237,12 +262,37 @@ namespace NIC
 		}
 
 		this->SeenOfs = ReadOffset;
+
+		// According to thePowersGang, "i dunno" -> "- 0x10"
+		// EDIT: well. exerpt from QEMU source (copyright as necessary)
+
+		// static void rtl8139_RxBufPtr_write(RTL8139State *s, uint32_t val)
+		// {
+		// 	DPRINTF("RxBufPtr write val=0x%04x\n", val);
+
+		// 	// this value is off by 16
+		// 	s->RxBufPtr = MOD2(val + 0x10, s->RxBufferSize);
+
+		// 	...
+		// }
+
+
+		// read: "this value is off by 16"
+		// BUT NOBODY TELLS ME WHY
+		// it's probably a firmware problem nobody bothered to fix.
+
+		IOPort::Write16(this->ioaddr + Registers::RxBufPtr, (uint16_t) this->SeenOfs - 0x10);
+	}
+
+	static void JobHandler(void* nic)
+	{
+		((RTL8139*) nic)->HandlePacket();
 	}
 
 	void RTL8139::HandleRxOk()
 	{
 		IOPort::Write16(this->ioaddr + Registers::IntrStatus, 0x1);
-		this->HandlePacket();
+		JobDispatch::AddJob(JobDispatch::Job(&JobHandler, this, 0));
 	}
 
 	void RTL8139::HandleRxErr()
@@ -280,20 +330,11 @@ namespace NIC
 		// check if the card fired the interrupt
 		uint16_t status = IOPort::Read16(this->ioaddr + Registers::IntrStatus);
 
-		if(status & 0x1)
-			this->HandleRxOk();
-
-		if(status & 0x2)
-			this->HandleRxErr();
-
-		if(status & 0x4)
-			this->HandleTxOk();
-
-		if(status & 0x8)
-			this->HandleTxErr();
-
-		if(status & 0x8000)
-			this->HandleSysErr();
+		if(status & 0x1)	this->HandleRxOk();
+		if(status & 0x2)	this->HandleRxErr();
+		if(status & 0x4)	this->HandleTxOk();
+		if(status & 0x8)	this->HandleTxErr();
+		if(status & 0x8000) this->HandleSysErr();
 	}
 }
 }

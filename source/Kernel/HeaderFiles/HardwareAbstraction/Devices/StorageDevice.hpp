@@ -10,8 +10,6 @@
 
 #pragma once
 
-// class Kernel::HardwareAbstraction::Filesystems::Partition;
-
 namespace Kernel {
 namespace HardwareAbstraction
 {
@@ -29,7 +27,7 @@ namespace HardwareAbstraction
 
 			// Apple
 			hfsplus		= 0x11F5,
-			hfs		= 0x11F0,
+			hfs			= 0x11F0,
 
 			// Linux
 			ext2		= 0xEB12,
@@ -188,7 +186,7 @@ namespace HardwareAbstraction
 			};
 
 
-			void AddDevice(StorageDevice* dev);
+			void AddStorageDevice(StorageDevice* dev);
 
 
 

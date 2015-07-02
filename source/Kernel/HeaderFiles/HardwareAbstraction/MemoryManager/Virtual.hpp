@@ -4,9 +4,12 @@
 
 #pragma once
 #include <stdint.h>
-#include <rdestl/rdestl.h>
+#include <Synchro.hpp>
 
 namespace Kernel {
+
+class Mutex;
+
 namespace HardwareAbstraction {
 namespace MemoryManager {
 namespace Virtual
@@ -33,7 +36,7 @@ namespace Virtual
 
 	struct VirtualAddressSpace
 	{
-		VirtualAddressSpace(PageMapStructure* pml4)
+		VirtualAddressSpace(PageMapStructure* pml4) : used(1024)
 		{
 			this->PML4 = pml4;
 		}
@@ -44,6 +47,7 @@ namespace Virtual
 
 		// store the actual address of the pml4.
 		PageMapStructure* PML4;
+		Mutex* mtx;
 	};
 
 
@@ -70,6 +74,7 @@ namespace Virtual
 	uint64_t AllocateVirtual(uint64_t size = 1, uint64_t addr = 0, VirtualAddressSpace* vas = 0, uint64_t phys = 0);
 	void FreeVirtual(uint64_t addr, uint64_t size = 1, VirtualAddressSpace* vas = 0);
 	uint64_t GetVirtualPhysical(uint64_t virt, VirtualAddressSpace* vas = 0);
+	void ForceInsertALPTuple(uint64_t addr, size_t sizeInPages, uint64_t phys, VirtualAddressSpace* vas = 0);
 
 	uint64_t AllocatePage(uint64_t size = 1, uint64_t addr = 0, uint64_t flags = 0x7);
 	void FreePage(uint64_t addr, uint64_t size = 1);

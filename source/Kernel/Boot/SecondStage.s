@@ -24,17 +24,6 @@ KernelBootstrap:
 	mov $0, %rbp
 
 
-	mov $StartConstructors, %rbx
-	jmp 2f
-
-1:
-	call *(%rbx)
-	add $8, %rbx
-2:
-	cmp $EndConstructors, %rbx
-	jb 1b
-
-
 	// in boot.s we memcpy()'d the boot struct to 0x40000 to avoid trashing it
 	mov $0x40000, %ebx
 	mov 0x0500, %eax		// magic number
@@ -117,8 +106,28 @@ KernelBootstrap:
 	mov %ax, %fs
 
 
-	// Call our kernel.
+
+
+
+	// Call our kernel init -- this sets up the most basic services, but doesn't
+	// initialise the threads.
 	call KernelInit
+
+
+	// now with the heap and everything setup, we can call the constructors.
+	mov $StartConstructors, %rbx
+	jmp 2f
+
+1:
+	call *(%rbx)
+	add $8, %rbx
+2:
+	cmp $EndConstructors, %rbx
+	jb 1b
+
+
+	// call the kernel thread setup.
+	call KernelThreadInit
 
 
 	mov $EndDestructors, %rbx

@@ -248,6 +248,11 @@ namespace Multitasking
 		getRunQueue()->unlock();
 	}
 
+	extern "C" void Syscall_TerminateCrashedThread()
+	{
+		TerminateCurrentThread(0);
+	}
+
 
 	void TerminateCurrentThread(ThreadRegisterState_type* r)
 	{

@@ -16,6 +16,11 @@ namespace VideoOutput
 		void ClearScreen(uint8_t Colour = 0x00);
 		void PrintChar(uint8_t Char, uint32_t Colour);
 		void PrintChar(uint8_t Char);
+		void Scroll();
+
+		void MoveCursor(uint16_t x, uint16_t y);
+		uint16_t GetCursorX();
+		uint16_t GetCursorY();
 	}
 }
 }

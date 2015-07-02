@@ -118,7 +118,6 @@ namespace Physical
 			PageList->erase(PageList->begin());
 
 			delete p;
-
 			return raddr;
 		}
 		else
@@ -205,7 +204,6 @@ namespace Physical
 		ret.phys = AllocatePage(size, Below4Gb);
 		ret.virt = Virtual::AllocateVirtual(size, 0, 0, ret.phys);
 
-
 		Virtual::MapRegion(ret.virt, ret.phys, size, 0x3);
 		return ret;
 	}
@@ -286,6 +284,7 @@ namespace Physical
 
 				// PageList->push_back(p);
 				PageList->push_back(p);
+				Log("Physical memory pair: (%x, %d -- %x)", p->BaseAddr, p->LengthInPages, p->BaseAddr + (p->LengthInPages * 0x1000));
 			}
 		}
 

@@ -13,6 +13,15 @@ namespace Console
 	const uint8_t TabWidth = 4;
 
 
+	#define Port		0x3F8		// Serial port 1
+
+	void WriteCharToSerial(uint8_t Ch)
+	{
+		while(!(IOPort::ReadByte(Port + 5) & 0x20));
+		IOPort::WriteByte(Port, Ch);
+	}
+
+
 	void Initialise()
 	{
 		// Hide the stupid cursor
@@ -20,6 +29,15 @@ namespace Console
 		IOPort::Write16(0x3D4, 0xB);
 
 		ClearScreen(0x00);
+
+
+		IOPort::WriteByte(Port + 1, 0x00);    // Disable all interrupts
+		IOPort::WriteByte(Port + 3, 0x80);    // Enable DLAB (set baud rate divisor)
+		IOPort::WriteByte(Port + 0, 0x01);    // Set divisor to 1 (lo byte) max baud
+		IOPort::WriteByte(Port + 1, 0x00);    //			(hi byte)
+		IOPort::WriteByte(Port + 3, 0x03);    // 8 bits, no parity, one stop bit
+		IOPort::WriteByte(Port + 2, 0xC7);    // Enable FIFO, clear them, with 14-byte threshold
+		IOPort::WriteByte(Port + 4, 0x0B);    // IRQs enabled, RTS/DSR set
 	}
 
 	static void* memset32(void* dst, uint32_t val, uint64_t len)
@@ -48,6 +66,7 @@ namespace Console
 
 	static void PrintChar(uint8_t Char, uint32_t Colour)
 	{
+		WriteCharToSerial(Char);
 		uint16_t* Location;
 
 		if(Char == '\b')

@@ -22,6 +22,8 @@
 #include "HardwareAbstraction/CPUID.hpp"
 #include "HardwareAbstraction/Random.hpp"
 #include "HardwareAbstraction/Devices/NIC.hpp"
+
+#include "JobDispatcher.hpp"
 #include <assert.h>
 
 
@@ -101,8 +103,6 @@ namespace Kernel
 	// global objects, in Kernel.cpp.
 	extern Time::TimeStruct* SystemTime;
 	extern HardwareAbstraction::Multitasking::Process* KernelProcess;
-	extern HardwareAbstraction::Devices::PS2Controller* KernelPS2Controller;
-	extern HardwareAbstraction::Devices::Keyboard* KernelKeyboard;
 	extern HardwareAbstraction::ACPI::RootTable* RootACPITable;
 	extern HardwareAbstraction::MemoryManager::MemoryMap::MemoryMap_type* K_MemoryMap;
 	extern HardwareAbstraction::CPUID::CPUIDData* KernelCPUID;
@@ -115,6 +115,7 @@ namespace Kernel
 	void Idle();
 	void KeyboardService();
 	void KernelCore(uint32_t MultibootMagic, uint32_t MBTAddr);
+	void SetupKernelThreads();
 	void KernelCoreThread();
 
 	void AssertCondition(const char* file, int line, const char* func, const char* expr);

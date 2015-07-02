@@ -133,15 +133,6 @@ namespace Multitasking
 		CurrentThread->currenterrno = *((int64_t*) 0x2610);
 		CurrentThread = GetNextThread();
 
-		// if(isfork)
-		// {
-		// 	while(CurrentThread->Parent->Name[0] == 'a')
-		// 	{
-		// 		CurrentThread = GetNextThread();
-		// 		// Log(3, "A");
-		// 	}
-		// }
-
 		if(CurrentThread->Parent->Flags & 0x1)
 		{
 			// this tells switch.s (on return) that we need to return to user-mode.
@@ -175,7 +166,7 @@ namespace Multitasking
 
 	extern "C" void VerifySchedule()
 	{
-		if(CurrentThread->Parent->Name[0] == 'b')
+		// if(CurrentThread->Parent->Name[0] == 'b')
 		{
 			// Utilities::StackDump((uint64_t*) CurrentThread->StackPointer, 20);
 			// HALT("");

@@ -48,6 +48,10 @@ namespace Filesystems
 	{
 	}
 
+	void FSDriver::Close(VFS::vnode*)
+	{
+	}
+
 	rde::vector<VFS::vnode*> FSDriver::ReadDir(VFS::vnode*)
 	{
 		return rde::vector<VFS::vnode*>();
