@@ -1,4 +1,4 @@
-// IPC.cpp
+// Signals.cpp
 // Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under Creative Commons Attribution ShareAlike 3.0 Unported.
 
@@ -16,14 +16,7 @@ using namespace Kernel::HardwareAbstraction;
 namespace Kernel {
 namespace IPC
 {
-	struct defaultmsg
-	{
-		long type;
-		char data[1];
-	};
-
 	// message queue array
-
 
 	sighandler_t GetHandler(int sig);
 	extern "C" void _sighandler();
@@ -122,10 +115,10 @@ namespace IPC
 		{
 			uint64_t oldrip					= *((uint64_t*) (ptr + 120));
 
-			*((uint64_t*) (ptr + 120))			= (uint64_t) handler;
-			*((uint64_t*) (ptr + 0))				= signum;		// signum
+			*((uint64_t*) (ptr + 120))		= (uint64_t) handler;
+			*((uint64_t*) (ptr + 0))		= signum;		// signum
 
-			*((uint64_t*) (ptr + 144))			-= 0x8;
+			*((uint64_t*) (ptr + 144))		-= 0x8;
 			*((uint64_t*) (*((uint64_t*) (ptr + 144))))	= oldrip;
 
 
@@ -151,10 +144,12 @@ namespace IPC
 
 			uint64_t* rbp = (uint64_t*) stackptr;
 
-			while(*rbp != 0xFFFFFFFFDEADBEEF)
+			#define STACK_MAGIC_CANARY 0xFFFFFFFFDEADBEEF
+
+			while(*rbp != STACK_MAGIC_CANARY)
 				rbp++;
 
-			assert(*rbp == 0xFFFFFFFFDEADBEEF);
+			assert(*rbp == STACK_MAGIC_CANARY);
 
 			/*
 				from syscall.s:
@@ -180,6 +175,14 @@ namespace IPC
 				// push a constant, so we know where to stop on stack backtrace.
 				pushq $0xFADD00D15CAFED06
 
+			*/
+
+
+
+
+			/*
+				*** steps to undertake ***
+
 				rbp now points to the -1 constant.
 				rbp + 1 is %r9
 				rbp + 7 is %r10.
@@ -196,26 +199,28 @@ namespace IPC
 
 				after the handler calls 'return', it goes to _sighandler.
 				so, just push the actual return address, then push %rdi, then push the address of _sighandler.
+
+				note: this might be unsafe if the user stack in question doesn't have
+				0x18 extra bytes to spare.
 			*/
 
 			// store where we were interrupted.
-			uint64_t oldrip			= *(rbp + 9);
+			uint64_t oldrip					= *(rbp + 9);
 
 			// modify.
-			*(rbp + 9)			= (uint64_t) handler;
+			*(rbp + 9)						= (uint64_t) handler;
 
-			*(rbp + 12)			-= 0x8;
+			*(rbp + 12)						-= 0x8;
 			*((uint64_t*) (*(rbp + 12)))	= oldrip;
 
-			*(rbp + 12)			-= 0x8;
+			*(rbp + 12)						-= 0x8;
 			*((uint64_t*) (*(rbp + 12)))	= *(rbp + 6);
 
-			*(rbp + 12)			-= 0x8;
+			*(rbp + 12)						-= 0x8;
 			*((uint64_t*) (*(rbp + 12)))	= (uint64_t) _sighandler;
 
-
 			// modify rdi (signum)
-			*(rbp + 6)			= signum;
+			*(rbp + 6) = signum;
 		}
 	}
 

@@ -26,7 +26,7 @@ namespace Console80x25
 		Write16(0x3D4, 0x200A);
 		Write16(0x3D4, 0xB);
 
-		ClearScreen(0x00);
+		// ClearScreen(0x00);
 	}
 
 	static void* memset32(void* dst, uint32_t val, uint64_t len)

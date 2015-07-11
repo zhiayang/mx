@@ -39,8 +39,9 @@ namespace IO
 		while(true)
 		{
 			if(Transfers->size() == 0)
+			{
 				YieldCPU();
-
+			}
 			else
 			{
 				// get a lock

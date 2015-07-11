@@ -38,17 +38,6 @@ namespace HardwareAbstraction
 
 	namespace Devices
 	{
-		struct IOResult
-		{
-			IOResult() : bytesTransferred(0), allocatedBuffer(0, 0), bufferSizeInPages(0) { }
-			IOResult(size_t bytes, DMAAddr buf, size_t bufSize) : bytesTransferred(bytes), allocatedBuffer(buf), bufferSizeInPages(bufSize) { }
-
-			size_t bytesTransferred;
-
-			DMAAddr allocatedBuffer;
-			size_t bufferSizeInPages;
-		};
-
 		class IODevice : public DeviceManager::Device
 		{
 			public:

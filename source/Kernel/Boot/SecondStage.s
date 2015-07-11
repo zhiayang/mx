@@ -111,6 +111,13 @@ KernelBootstrap:
 
 	// Call our kernel init -- this sets up the most basic services, but doesn't
 	// initialise the threads.
+
+
+	// some time ago, %r14 contains cursorX, %r15 contains cursorY
+	// make these the third and fourth args.
+	mov %r14, %rdx
+	mov %r15, %rcx
+
 	call KernelInit
 
 

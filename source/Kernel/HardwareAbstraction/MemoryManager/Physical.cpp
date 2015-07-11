@@ -282,9 +282,8 @@ namespace Physical
 				p->BaseAddr = PageAlignUp(MemoryMap->Entries[i].BaseAddress);
 				p->LengthInPages = (PageAlignDown(MemoryMap->Entries[i].Length) / 0x1000) - 1;
 
-				// PageList->push_back(p);
 				PageList->push_back(p);
-				Log("Physical memory pair: (%x, %d -- %x)", p->BaseAddr, p->LengthInPages, p->BaseAddr + (p->LengthInPages * 0x1000));
+				// Log("Physical memory pair: (%x, %d -- %x)", p->BaseAddr, p->LengthInPages, p->BaseAddr + (p->LengthInPages * 0x1000));
 			}
 		}
 

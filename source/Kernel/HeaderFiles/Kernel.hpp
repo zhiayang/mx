@@ -42,7 +42,7 @@
 
 // Configurable sizes
 // As above, try not to mess with these
-#define DefaultRing3StackSize	0x4000
+#define DefaultRing3StackSize	0x10000
 
 // Global IRQ0 tickrate.
 #define GlobalTickRate		20

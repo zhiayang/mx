@@ -8,7 +8,7 @@
 
 namespace Console
 {
-	static uint8_t CursorX = 0, CursorY = 0;
+	uint8_t CursorX = 0, CursorY = 0;
 	const uint32_t Space = ((uint16_t)(' ') | (0x0F << 8) | (((uint32_t)(uint16_t)(' ') | (0x0F << 8)) << 16));
 	const uint8_t TabWidth = 4;
 

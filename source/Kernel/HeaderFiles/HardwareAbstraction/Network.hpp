@@ -353,7 +353,7 @@ namespace Network
 	namespace DHCP
 	{
 		void MonitorThread();
-		void Initialise(Devices::NIC::GenericNIC* interface);
+		void Initialise();
 	}
 
 	namespace DNS

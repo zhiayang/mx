@@ -17,7 +17,7 @@ using namespace Library;
 #define MaximumHeapSizeInPages		0xFFFFFFFF
 #define Alignment					32
 #define MetadataSize				32
-#define Warn						1
+#define Warn						0
 #define MapFlags					0x7
 #define ClearMemory					1
 #define AllowMagicMismatch			1
@@ -471,8 +471,8 @@ namespace KernelHeap
 		{
 			if(Warn)
 			{
-				Log(1, "Tried to free nonexistent chunk at address %x, RA: %x, ignoring...",
-					offset, __builtin_return_address(1));
+				Log(1, "Tried to free nonexistent chunk at address %x, RA(0): %x, RA(1): %x, ignoring...",
+					offset, __builtin_return_address(1), __builtin_return_address(2));
 			}
 
 			return 0;

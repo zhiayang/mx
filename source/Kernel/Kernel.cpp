@@ -28,12 +28,18 @@ extern "C" uint64_t KernelEnd;
 extern "C" uint64_t StartBSS;
 extern "C" uint64_t EndBSS;
 
+static uint64_t LoadedCursorX = 1;
+static uint64_t LoadedCursorY = 1;
+
 extern "C" void TaskSwitcherCoOp();
 extern "C" void ProcessTimerInterrupt();
 extern "C" void HandleSyscall();
-extern "C" void KernelInit(uint32_t MultibootMagic, uint32_t MBTAddr)
+extern "C" void KernelInit(uint64_t MultibootMagic, uint64_t MBTAddr, uint64_t cx, uint64_t cy)
 {
-	KernelCore(MultibootMagic, MBTAddr);
+	LoadedCursorX = cx;
+	LoadedCursorY = cy;
+
+	KernelCore((uint32_t) MultibootMagic, (uint32_t) MBTAddr);
 }
 
 extern "C" void KernelThreadInit()
@@ -112,6 +118,8 @@ namespace Kernel
 		// Initalise various subsystems.
 		SerialPort::Initialise();			// most important.
 
+		Log("[mx] kernel has control");
+
 		// Read GRUB memory map and init memory managers
 		MemoryMap::Initialise(MBTStruct);
 		Virtual::Initialise();
@@ -128,7 +136,6 @@ namespace Kernel
 			Virtual::SwitchPML4T((Virtual::PageMapStructure*) newcr3);
 			Virtual::ChangeRawCR3(newcr3);
 
-			// asm volatile("mov %0, %%cr3" :: "r"(newcr3));
 			asm volatile("invlpg (%0)" : : "a" (newcr3));
 			asm volatile("invlpg (%0)" : : "a" (oldcr3));
 
@@ -137,7 +144,8 @@ namespace Kernel
 
 		Physical::Initialise();
 		Multitasking::Initialise();
-		Log("[mx] is initialising...");
+
+		PrintVersion();
 
 		// we use this to store page mappings.
 		// TODO: move to temp mapping scheme, where physical pages can come from anywhere.
@@ -146,6 +154,7 @@ namespace Kernel
 		// Start the less crucial but still important services.
 		Interrupts::Initialise();
 		Console80x25::Initialise();
+		Console80x25::MoveCursor((uint16_t) LoadedCursorX, (uint16_t) LoadedCursorY);
 		PIT::Initialise();
 
 		// detect and print SSE support.
@@ -203,17 +212,21 @@ namespace Kernel
 
 		// Setup the kernel core as a thread.
 		{
+			// handles timer interrupt from PIT
 			HardwareAbstraction::Interrupts::SetGate(0x20, (uint64_t) ProcessTimerInterrupt, 0x08, 0xEE);
+
+			// handles YieldCPU()
 			HardwareAbstraction::Interrupts::SetGate(0xF7, (uint64_t) TaskSwitcherCoOp, 0x08, 0xEE);
 
+			// handles... syscalls, duh.
 			HardwareAbstraction::Interrupts::SetGate(SyscallNumber, (uint64_t) HandleSyscall, 0x08, 0xEF);
-			Log("Syscall Handler installed at IDT entry %2x", SyscallNumber);
+			Log("Syscalls are available on interrupt %2x", SyscallNumber);
 
 
 			using Kernel::HardwareAbstraction::Multitasking::Thread;
 			using Kernel::HardwareAbstraction::Multitasking::Process;
 
-			KernelProcess = Multitasking::CreateProcess("Kernel", 0x0, KernelCoreThread, 2);
+			KernelProcess = Multitasking::CreateProcess("mx_kernel", 0x0, KernelCoreThread, 2);
 			Multitasking::AddToQueue(Multitasking::CreateKernelThread(Idle, 0));
 			Multitasking::AddToQueue(KernelProcess);
 
@@ -228,7 +241,7 @@ namespace Kernel
 		using namespace Kernel::HardwareAbstraction::Devices;
 		using namespace Kernel::HardwareAbstraction::VideoOutput;
 
-		Log("Kernel online");
+		Log("[mx] kernel online, initialising subsystems");
 
 		// after everything is done, make sure shit works
 		{
@@ -244,47 +257,48 @@ namespace Kernel
 
 		// Initialise the other, less-essential things.
 		PCI::Initialise();
+		Log("PCI devices enumerated");
 
-		// needs to be up before we start doing any file I/O
+		// needs to be up before we start doing any I/O
 		IO::Initialise();
+		Log("IO scheduler online");
 
 		Storage::ATA::Initialise();
+		Log("ATA driver online");
+
 		ACPI::Initialise();
+		Log("ACPI enumeration complete");
+
 		JobDispatch::Initialise();
-		// DeviceManager::Initialise();
+		Log("Central Job Dispatcher started");
 
 		// Detect and initialise the appropriate driver for the current machine.
-		Log("ATA & PCI subsystems online");
 		{
 			PCI::PCIDevice* VideoDev;
 			VideoDev = PCI::GetDeviceByClassSubclass(0x3, 0xFF);
 
-			if(!VideoDev)
-			{
-				PrintFormatted("Error: No VGA compatible video card found.\n");
-				PrintFormatted("[mx] requires such a device to work.\n");
-				PrintFormatted("Check your system and try again.\n\n");
-				PrintFormatted("Currently, supported systems include: BGA (Bochs, QEMU, VirtualBox) and SVGA (VMWare)\n");
-				UHALT();
-			}
-			else
+			bool found = false;
+			if(VideoDev)
 			{
 				if(PCI::MatchVendorDevice(VideoDev, 0x15AD, 0x0405))
 				{
 					// VMWare's SVGA II Card. (Also available on QEMU)
 					// Prefer this, since it has hardware acceleration.
 					HALT("VMWare SVGA II Graphics card not implemented");
+					found = true;
 				}
 				else if(PCI::MatchVendorDevice(VideoDev, 0x1234, 0x1111) || PCI::MatchVendorDevice(VideoDev, 0x80EE, 0xBEEF))
 				{
 					// QEMU, Bochs and VBox's BGA card.
 					DeviceManager::AddDevice(new BochsGraphicsAdapter(VideoDev), DeviceType::FramebufferVideoCard);
 					Log("Bochs Graphics Adapter (BGA) compatible card found, driver loaded");
+					found = true;
 				}
-				else
-				{
-					Log(1, "No supported video card found, funtionality will be limited");
-				}
+			}
+
+			if(!found)
+			{
+				Log(1, "Warning: no compatible video card found, functionality will be limited.");
 			}
 		}
 
@@ -314,10 +328,20 @@ namespace Kernel
 
 			// it better exist
 			GenericVideoDevice* vd = (GenericVideoDevice*) DeviceManager::GetDevice(DeviceType::FramebufferVideoCard);
+
+			try_again:
 			if(vd)
 			{
 
 				LFBAddr = vd->GetFramebufferAddress();
+				if(LFBAddr == 0)
+				{
+					vd = 0;
+					Log(1, "Video card returned framebuffer address of 0x0, aborting initialisation");
+
+					goto try_again;	// eewwww
+				}
+
 				LFBBufferAddr = LFBAddr;
 
 				// Set video mode
@@ -350,11 +374,12 @@ namespace Kernel
 		}
 
 
-		// manual jump start.
+		// manually jump start the vfs system
 		{
 			using namespace Filesystems;
 
 			VFS::Initialise();
+			Log("VFS created");
 
 			// open fds for stdin, stdout and stderr.
 			VFS::InitIO();
@@ -366,7 +391,7 @@ namespace Kernel
 
 				// mount root fs from partition 0 at /
 				VFS::Mount(f1->Partitions.front(), fs, "/");
-				Log("Root FS Mounted at /");
+				Log("Root FS (fat32) Mounted at /");
 			}
 
 		}
@@ -377,39 +402,49 @@ namespace Kernel
 		// if we have an nic, that is
 		if(DeviceManager::GetDevice(DeviceType::EthernetNIC) != 0)
 		{
-			NIC::GenericNIC* nic = (NIC::GenericNIC*) DeviceManager::GetDevice(DeviceType::EthernetNIC);
 			using namespace Network;
 			ARP::Initialise();
 			IP::Initialise();
 			TCP::Initialise();
 			UDP::Initialise();
-			DHCP::Initialise(nic);
+			DHCP::Initialise();
 
 			DNS::Initialise();
 		}
 
 		PS2::Initialise();
 		TTY::Initialise();
-		Console::ClearScreen();
+		Log("StandardIO initialised");
+
+		// Console::ClearScreen();
 
 
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
 
 		{
-			// using namespace Filesystems;
+			using namespace Filesystems;
 
-			// fd_t file = OpenFile("/texts/1984.txt", 0);
-			// assert(file > 0);
+			fd_t file = OpenFile("/texts/1984.txt", 0);
+			assert(file > 0);
 
-			// struct stat s;
-			// Stat(file, &s);
+			struct stat s;
+			Stat(file, &s);
 
-			// Log(3, "s.st_size: %d", s.st_size);
-			// uint8_t* fl = new uint8_t[s.st_size];
+			const uint64_t blocksz = 65536;
 
-			// Read(file, fl, s.st_size);
+			Log(3, "s.st_size: %d", s.st_size);
+			uint8_t* fl = new uint8_t[blocksz + 1];
 
-			// PrintFormatted("%s\n", fl);
+			uint64_t total = s.st_size;
+			for(uint64_t cur = 0; cur < total; )
+			{
+				uint64_t read = Read(file, fl, blocksz);
+
+				SerialPort::WriteString((const char*) fl);
+				cur += read;
+
+				// Log("%d/%d", cur, total);
+			}
 
 			// setup args:
 			// 0: prog name (duh)
@@ -647,7 +682,7 @@ namespace Kernel
 	{
 		while(true)
 		{
-			// Physical::CoalesceFPLs();
+			asm volatile("pause; hlt");
 			YieldCPU();
 		}
 	}
@@ -713,7 +748,7 @@ namespace Kernel
 
 	void PrintVersion()
 	{
-		PrintFormatted("[mx] Version %d.%d.%d r%02d -- Build %d\n", VER_MAJOR, VER_MINOR, VER_REVSN, VER_MINRV, X_BUILD_NUMBER);
+		Log("[mx] Version %d.%d.%d r%02d -- Build %d\n", VER_MAJOR, VER_MINOR, VER_REVSN, VER_MINRV, X_BUILD_NUMBER);
 	}
 
 	uint64_t GetKernelCR3()

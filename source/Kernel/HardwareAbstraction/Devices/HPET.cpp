@@ -61,8 +61,9 @@ namespace Devices
 		Log("%d HPET timer%s present", table->compCount, table->compCount == 1 ? "" : "s");
 
 		if(table->isLegacy)
+		{
 			Log("HPET has Legacy Replacement bit set");
-
+		}
 		else
 		{
 			Log(1, "HPET does not have the Legacy Replacement bit set, setting.");

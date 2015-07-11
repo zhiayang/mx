@@ -58,7 +58,7 @@ namespace NIC
 		NWayLPAR		= 0x68,
 		NWayExpansion	= 0x6A,
 
-		// Undocumented registers, but required for proper operation
+		// Undocumented registers, but required for proper operation (orly?)
 		FIFOTMS			= 0x70,		// FIFO Control and test
 		CSCR			= 0x74,		// Chip Status and Configuration Register
 		PARA78			= 0x78,
@@ -102,7 +102,7 @@ namespace NIC
 
 		Log("Initialised RTL8139 NIC with MAC address %#02x:%#02x:%#02x:%#02x:%#02x:%#02x", this->MAC[0], this->MAC[1], this->MAC[2], this->MAC[3], this->MAC[4], this->MAC[5]);
 
-		Log("Using IRQ number %d and Interrupt Pin #%c", this->pcidev->GetInterruptLine(), this->pcidev->GetInterruptPin() + 'A' - 1);
+		Log("Using IRQ number %d and Interrupt Pin #%c", this->pcidev->GetInterruptLine(), this->pcidev->GetInterruptPin() + 'A');
 
 		// init rx buffer.
 		// setup 8K + 1500 + 16
@@ -110,7 +110,6 @@ namespace NIC
 
 		this->ReceiveBuffer = MemoryManager::Physical::AllocateDMA(3);
 		Log("Configured 12kb buffer for RX at %x", this->ReceiveBuffer.virt);
-		// Memory::Set(this->ReceiveBuffer, 0xAA, 0x1000 * 3);
 
 		IOPort::Write32(this->ioaddr + Registers::RxBuf, (uint32_t) this->ReceiveBuffer.phys);
 		IOPort::Write16(this->ioaddr + Registers::RxBufPtr, 0);
@@ -119,7 +118,7 @@ namespace NIC
 
 
 		// setup transmit buffers.
-		// 1500 bytes each, 4 buffers
+		// 1500 bytes each, 4 buffers -- 0x800 is 2048 bytes, large enough.
 		// 2 pages, non contiguous.
 
 		this->TransmitBuffers[0] = MemoryManager::Physical::AllocateDMA(1);
@@ -152,6 +151,14 @@ namespace NIC
 
 	RTL8139::~RTL8139()
 	{
+		delete this->transmitbuffermtx[0];
+		delete this->transmitbuffermtx[1];
+		delete this->transmitbuffermtx[2];
+		delete this->transmitbuffermtx[3];
+
+		MemoryManager::Physical::FreeDMA(this->TransmitBuffers[0], 1);
+		MemoryManager::Physical::FreeDMA(this->TransmitBuffers[2], 1);
+		MemoryManager::Physical::FreeDMA(this->ReceiveBuffer, 3);
 	}
 
 	void RTL8139::Reset()
@@ -279,7 +286,7 @@ namespace NIC
 
 		// read: "this value is off by 16"
 		// BUT NOBODY TELLS ME WHY
-		// it's probably a firmware problem nobody bothered to fix.
+		// it's probably a firmware problem someone (read: realtek) never bothered to fix.
 
 		IOPort::Write16(this->ioaddr + Registers::RxBufPtr, (uint16_t) this->SeenOfs - 0x10);
 	}

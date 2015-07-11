@@ -24,8 +24,8 @@ namespace PIO
 	const uint8_t ATA_ReadSectors28		= 0x20;
 	const uint8_t ATA_ReadSectors48		= 0x24;
 
-	const uint8_t ATA_WriteSectors28		= 0x30;
-	const uint8_t ATA_WriteSectors48		= 0x34;
+	const uint8_t ATA_WriteSectors28	= 0x30;
+	const uint8_t ATA_WriteSectors48	= 0x34;
 
 
 	volatile static bool IsWaiting14 = false;
@@ -33,9 +33,6 @@ namespace PIO
 
 	void ReadSector(ATADrive* dev, uint64_t Sector)
 	{
-		Log(3, "%x", __builtin_return_address(0));
-		HALT("pio");
-
 		SendCommandData(dev, Sector, 1);
 
 		IsWaiting14 = !dev->GetBus();

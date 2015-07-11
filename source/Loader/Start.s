@@ -200,10 +200,22 @@ Realm64:
 	movq $StackEnd, %rsp
 	movq $0x0, %rbp
 
-
 	// Jump to kernel bootstrap!
 	call LoaderBootstrap
 
+	// trash r14 and r15.
+	mov %rax, %r14
+	mov %rax, %r15
+
+	shrq $32, %r14
+	andq $0xFF, %r14
+
+	shrq $40, %r15
+	andq $0xFF, %r15
+
+	movslq %eax, %rax
+
+	// entry point is returned by LoaderBootstrap.
 	jmp *%rax
 
 	cli

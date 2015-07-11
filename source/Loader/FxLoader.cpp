@@ -16,7 +16,7 @@ uint64_t KernelEnd = 0x00400000;
 // set in start.s
 static uint64_t CurrentCR3 = 0x3000;
 
-extern "C" uint64_t LoaderBootstrap(uint32_t MultibootMagic, uint32_t MBTAddr)
+extern "C" uint64_t LoaderBootstrap(uint64_t MultibootMagic, uint64_t MBTAddr)
 {
 	// clear the bss
 	{
@@ -74,13 +74,13 @@ extern "C" uint64_t LoaderBootstrap(uint32_t MultibootMagic, uint32_t MBTAddr)
 		// reference makefile line 96, -w and -l option respectively.
 		heatshrink_decoder* decoder = heatshrink_decoder_alloc(0x1000, 14 /* -w */, 6 /* -l */);
 
-		size_t readed = 0;	// such grammar
+		size_t readBytes = 0;	// such grammar
 		size_t wrote = 0;
-		while(readed < compressedLength && wrote < kernelLength)
+		while(readBytes < compressedLength && wrote < kernelLength)
 		{
 			size_t curRead = 0;
-			heatshrink_decoder_sink(decoder, (uint8_t*) (compressedAddr + readed), compressedLength - readed, &curRead);
-			readed += curRead;
+			heatshrink_decoder_sink(decoder, (uint8_t*) (compressedAddr + readBytes), compressedLength - readBytes, &curRead);
+			readBytes += curRead;
 
 			// if(res == HSDR_SINK_FULL)
 			{
@@ -115,8 +115,18 @@ extern "C" uint64_t LoaderBootstrap(uint32_t MultibootMagic, uint32_t MBTAddr)
 	uint64_t entry = LoadKernelELF(kernelAddress, kernelLength);
 
 	Console::Print("Entry point: %x\n", entry);
+	Console::Print("Handling control to [mx] kernel\n-------------------------------\n\n");
 
-	return entry;
+
+	// bottom 32 bits: entry point.
+	// next 8 bits: cursor X
+	// next 8 bits: cursor Y
+	// top 16 bits: nothing
+
+	uint64_t cx = Console::CursorX;
+	uint64_t cy = Console::CursorY;
+
+	return (cy << 40) | (cx << 32) | (entry & 0xFFFFFFFF);
 }
 
 
@@ -127,7 +137,7 @@ void LoadKernelModule(Multiboot::Info_type* mbt, uint64_t* start, uint64_t* leng
 
 	Multiboot::Module_type* mod = (Multiboot::Module_type*) (uint64_t) mbt->mods_addr;
 	Console::Print("mods_addr: %x\n", mbt->mods_addr);
-	Console::Print("[mx] kernel loaded at %x, ends at %x, %d bytes long\n", mod->ModuleStart, mod->ModuleEnd, mod->ModuleEnd - mod->ModuleStart);
+	Console::Print("[mx] kernel executable loaded at %x, %d bytes long\n", mod->ModuleStart, mod->ModuleEnd - mod->ModuleStart);
 
 	KernelEnd = Memory::PageAlignUp(mod->ModuleEnd);
 

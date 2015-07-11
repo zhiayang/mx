@@ -264,9 +264,13 @@ namespace DHCP
 	}
 
 
-	void Initialise(Devices::NIC::GenericNIC* interface)
+	void Initialise()
 	{
+		using namespace Devices;
 		Log("Initialising DHCP...");
+
+		NIC::GenericNIC* interface = (NIC::GenericNIC*) DeviceManager::GetDevice(DeviceType::EthernetNIC);
+		assert(interface);
 
 		// setup our socket.
 		socket = OpenSocket(SocketProtocol::UDP, 0);

@@ -370,6 +370,8 @@ namespace Filesystems
 		assert(node->info->data);
 		assert(node->info->driver == this);
 
+		Memory::Set(buf, 0, length);
+
 		vnode_data* vnd = tovnd(node);
 		uint64_t numclus = 0;
 		if(vnd->clusters.size() == 0)
@@ -401,9 +403,11 @@ namespace Filesystems
 		uint64_t rbuf = MemoryManager::Virtual::AllocatePage(bufferPageSize);
 		uint64_t obuf = rbuf;
 
-		for(auto i = skippedclus; i < skippedclus + cluslen; i++)
+		for(auto i = skippedclus; i < skippedclus + cluslen && i < vnd->clusters.size(); i++)
 		{
-			// Log(1, "read %d (%d, %d), %x, %x", this->ClusterToLBA(vnd->clusters[i]), i, skippedclus + cluslen, obuf, obuf + bufferPageSize * 0x1000);
+			// Log(1, "read %d (%d, %d), %x, %x", this->ClusterToLBA(vnd->clusters[i]), i,
+				// skippedclus + cluslen, obuf, obuf + bufferPageSize * 0x1000);
+
 			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA(vnd->clusters[i]), rbuf, this->SectorsPerCluster * 512);
 			// Log(1, "read ok");
 			rbuf += this->SectorsPerCluster * 512;

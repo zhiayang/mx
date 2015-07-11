@@ -126,14 +126,17 @@ namespace RTC
 
 		const uint64_t tt = 50;
 		uint64_t timeout = tt;
-		while(!IsUpdateInProgress() && timeout > 0){ timeout--; }		// wait until it's updating
-		while(IsUpdateInProgress() && timeout < tt){ timeout++; }	// wait until it's done.
+		while(!IsUpdateInProgress() && timeout > 0)
+			timeout--;		// wait until it's updating
+
+		while(IsUpdateInProgress() && timeout < tt)
+			timeout++;		// wait until it's done.
 
 
 		second	= ReadRegister(0x00);
 		minute	= ReadRegister(0x02);
 		hour	= ReadRegister(0x04);
-		day	= ReadRegister(0x07);
+		day		= ReadRegister(0x07);
 		month	= ReadRegister(0x08);
 		year	= ReadRegister(0x09);
 

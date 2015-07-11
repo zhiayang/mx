@@ -35,7 +35,7 @@ namespace IPC
 
 	void CoreDump(int sig)
 	{
-		// create core dump here
+		// todo: create core dump here
 		TerminateProcess(sig);
 	}
 

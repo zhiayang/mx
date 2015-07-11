@@ -28,6 +28,9 @@ namespace Console
 
 	void Print(const char* string, va_list args);
 	void Print(const char* string, ...);
+
+	extern uint8_t CursorX;
+	extern uint8_t CursorY;
 }
 
 
@@ -138,7 +141,7 @@ namespace Memory
 	extern "C" void* realloc(void* ptr, uint64_t size);
 }
 
-extern "C" uint64_t LoaderBootstrap(uint32_t magic, uint32_t mbt);
+extern "C" uint64_t LoaderBootstrap(uint64_t magic, uint64_t mbt);
 void LoadKernelModule(Multiboot::Info_type* mbt, uint64_t* start, uint64_t* length);
 uint64_t LoadKernelELF(uint64_t start, uint64_t length);
 

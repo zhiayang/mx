@@ -56,7 +56,7 @@ OUTPUT				= build/kernel64.elf
 
 
 
-QEMU_FLAGS			= -s -vga std -no-reboot -m $(MEMORY) -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap     -drive file=build/disk.img,format=raw
+QEMU_FLAGS			= -s -vga cirrus -no-reboot -m $(MEMORY) -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap     -drive file=build/disk.img,format=raw
 
 .PHONY: builduserspace buildlib mountdisk clean all cleandisk copyheader
 

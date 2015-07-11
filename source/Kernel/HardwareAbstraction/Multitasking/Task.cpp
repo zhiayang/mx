@@ -167,7 +167,9 @@ namespace Multitasking
 			Memory::Set(attr, 0, sizeof(Thread_attr));
 		}
 		else
+		{
 			attr = oattr;
+		}
 
 		// allocate user stack.
 		uint64_t u = 0;
