@@ -15,6 +15,7 @@
 #include <rdestl/vector.h>
 #include <sys/stat.h>
 
+#include <StandardIO.hpp>
 #include <HardwareAbstraction/Filesystems.hpp>
 
 using namespace Library;
@@ -411,6 +412,8 @@ namespace Filesystems
 			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA(vnd->clusters[i]), rbuf, this->SectorsPerCluster * 512);
 			// Log(1, "read ok");
 			rbuf += this->SectorsPerCluster * 512;
+
+			StandardIO::PrintFormatted("\r                               \r%10d bytes read", rbuf - obuf);
 		}
 
 		rbuf = obuf;
@@ -628,7 +631,7 @@ namespace Filesystems
 		uint32_t cchain = 0;
 		rde::vector<uint32_t> ret;
 
-		uint64_t lastsec = 0;
+		// uint64_t lastsec = 0;
 		auto buf = MemoryManager::Virtual::AllocatePage(2);
 		auto obuf = buf;
 
@@ -637,10 +640,15 @@ namespace Filesystems
 			uint32_t FatSector = (uint32_t) this->partition->GetStartLBA() + this->ReservedSectors + ((Cluster * 4) / 512);
 			uint32_t FatOffset = (Cluster * 4) % 512;
 
+
+
+			// todo: this isn't going to work if the clusters aren't sequential!!!!
+			#if 0
+
 			// check if we even need to read.
 			// since we read 8K, we get 15 more free sectors
 			// optimisation.
-			if(lastsec == 0 || FatSector > lastsec + 15)
+			if(lastsec == 0 || FatSector > lastsec + 10)
 			{
 				// reset the internal offset
 				buf = obuf;
@@ -652,8 +660,13 @@ namespace Filesystems
 				buf += (FatSector - lastsec) * 512;
 			}
 
-
 			lastsec = FatSector;
+			#else
+			buf = obuf;
+			IO::Read(this->partition->GetStorageDevice(), FatSector, buf, 512);
+			StandardIO::PrintFormatted("\r         \r%d clusters read", *numclus);
+			#endif
+
 
 			uint8_t* clusterchain = (uint8_t*) buf;
 			cchain = *((uint32_t*) &clusterchain[FatOffset]) & 0x0FFFFFFF;
@@ -669,6 +682,7 @@ namespace Filesystems
 		MemoryManager::Virtual::FreePage(obuf, 2);
 		tovnd(node)->clusters = ret;
 
+		Log(3, "%d clusters read.", *numclus);
 		return ret;
 	}
 

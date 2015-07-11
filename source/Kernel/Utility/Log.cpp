@@ -11,6 +11,7 @@
 using namespace Library;
 using namespace Library::StandardIO;
 
+
 namespace Kernel
 {
 	// 0 = Info

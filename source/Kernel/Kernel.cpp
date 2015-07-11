@@ -424,7 +424,7 @@ namespace Kernel
 		{
 			using namespace Filesystems;
 
-			fd_t file = OpenFile("/texts/1984.txt", 0);
+			fd_t file = OpenFile("/texts/big.txt", 0);
 			assert(file > 0);
 
 			struct stat s;
@@ -448,7 +448,7 @@ namespace Kernel
 
 			Log(3, "s.st_size: %d", s.st_size);
 
-			const uint64_t blocksz = 1024;
+			const uint64_t blocksz = 256;
 			uint8_t* fl = new uint8_t[blocksz + 1];
 
 			uint64_t total = s.st_size;
@@ -462,10 +462,12 @@ namespace Kernel
 				// SerialPort::WriteString((const char*) fl);
 				cur += read;
 
-				PrintFormatted("\r                         \r%6d/%d", cur, total);
-				// Log("%d/%d", cur, total);
+				// PrintFormatted(" %6d/%d", cur, total);
+				Log("%d/%d", cur, total);
 			}
 
+			// SerialPort::WriteString((const char*) fl);
+			PrintString((const char*) fl);
 
 			Log(3, "end: %d ms", et = Time::Now());
 			Log(3, "time taken: %d ms", et - st);
