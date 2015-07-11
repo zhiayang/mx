@@ -373,9 +373,12 @@ namespace Interrupts
 				thr->CrashState->rbp = r->rbp;
 				thr->CrashState->rsi = r->rsi;
 				thr->CrashState->rdi = r->rdi;
+				thr->CrashState->__rsp = r->rsp;
 			}
 
 
+			// this is quite fucking bad...
+			// basically, create opcodes in memory to do a syscall that does Syscall_TerminateCrashedThread
 			uint8_t syscallOpcodes[] = { 0x49, 0xC7, 0xC2, 0x01, 0x00, 0x00, 0x00, 0xCD, 0xF8 };
 			uint8_t* dest = new uint8_t[16];
 

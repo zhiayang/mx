@@ -49,7 +49,7 @@ namespace DMA
 		uint32_t used;
 	};
 
-	#define MaxCachedTables 2
+	#define MaxCachedTables 16
 	static rde::vector<PRDTableCache>* cachedPRDTables;
 
 	void Initialise()
@@ -95,16 +95,16 @@ namespace DMA
 	{
 		(void) Buffer;
 
-		if(Bytes <= 512)
-		{
-			uint8_t* devdata = (uint8_t*) &dev->Data[0];
-			PIO::ReadSector(dev, Sector);
+		// if(Bytes <= 512)
+		// {
+		// 	uint8_t* devdata = (uint8_t*) &dev->Data[0];
+		// 	PIO::ReadSector(dev, Sector);
 
-			Memory::Copy((uint8_t*) Buffer, devdata, Bytes);
+		// 	Memory::Copy((uint8_t*) Buffer, devdata, Bytes);
 
-			auto d = DMAAddr(0, (uint64_t) devdata);
-			return IOResult(Bytes, d, 0);
-		}
+		// 	auto d = DMAAddr(0, (uint64_t) devdata);
+		// 	return IOResult(Bytes, d, 0);
+		// }
 
 
 		uint32_t mmio = (uint32_t) dev->ParentPCI->GetBAR(4);

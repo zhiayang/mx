@@ -39,7 +39,7 @@ struct standard_vector_storage
 		T* newBegin = static_cast<T*>(m_allocator.allocate(newCapacity * sizeof(T)));
 		const base_vector::size_type newSize = oldSize < newCapacity ? oldSize : newCapacity;
 		// Copy old data if needed.
-		if (m_begin)
+		if(m_begin)
 		{
 			rde::copy_construct_n(m_begin, newSize, newBegin);
 			destroy(m_begin, oldSize);
@@ -56,7 +56,7 @@ struct standard_vector_storage
 		RDE_ASSERT(newCapacity > base_vector::size_type(m_capacityEnd - m_begin));
 		T* newBegin = static_cast<T*>(m_allocator.allocate(newCapacity * sizeof(T)));
 		const base_vector::size_type currSize((base_vector::size_type)(m_end - m_begin));
-		if (m_begin)
+		if(m_begin)
 			destroy(m_begin, currSize);
 		m_begin = newBegin;
 		m_end = m_begin + currSize;
@@ -70,7 +70,7 @@ struct standard_vector_storage
 	}
 	void reset()
 	{
-		if (m_begin)
+		if(m_begin)
 			m_allocator.deallocate(m_begin, (m_end - m_begin) * sizeof(T));
 
 		m_begin = m_end = 0;
@@ -116,7 +116,7 @@ public:
 	explicit vector(const allocator_type& allocator = allocator_type())
 	:	TStorage(allocator)
 	{
-		/**/
+		/* */
 	}
 	explicit vector(size_type initialSize, const allocator_type& allocator = allocator_type())
 	:	TStorage(allocator)
@@ -128,6 +128,7 @@ public:
 	{
 		assign(first, last);
 	}
+
 	// @note: allocator is not copied from rhs.
 	// @note: will not perform default constructor for newly created objects.
 	vector(const vector& rhs, const allocator_type& allocator = allocator_type())
@@ -135,6 +136,7 @@ public:
 	{
         if(rhs.size() == 0) // nothing to do
             return;
+
 		this->reallocate_discard_old(rhs.capacity());
 		rde::copy_construct_n(rhs.m_begin, rhs.size(), m_begin);
 		m_end = m_begin + rhs.size();
@@ -147,7 +149,7 @@ public:
 	}
 	~vector()
 	{
-		if (TStorage::m_begin != 0)
+		if(TStorage::m_begin != 0)
 			TStorage::destroy(TStorage::m_begin, size());
 	}
 
@@ -163,7 +165,7 @@ public:
     void copy(const vector& rhs)
     {
 		const size_type newSize = rhs.size();
-		if (newSize > capacity())
+		if(newSize > capacity())
 		{
 			this->reallocate_discard_old(rhs.capacity());
 		}
@@ -183,8 +185,8 @@ public:
 	bool empty() const				{ return m_begin == m_end; }
 	size_type capacity() const		{ return size_type(m_capacityEnd - m_begin); }
 
-	T* data()				{ return empty() ? 0 : m_begin; }
-	const T* data() const	{ return empty() ? 0 : m_begin; }
+	T* data()						{ return empty() ? 0 : m_begin; }
+	const T* data() const			{ return empty() ? 0 : m_begin; }
 
 	T& front()
 	{
@@ -231,7 +233,7 @@ public:
 
 	void push_back(const T& v)
 	{
-		if (m_end < m_capacityEnd)
+		if(m_end < m_capacityEnd)
 		{
 			rde::copy_construct(m_end++, v);
 		}
@@ -242,15 +244,18 @@ public:
 		}
 		TStorage::record_high_watermark();
 	}
+
 	// @note: extension. Use instead of push_back(T()) or resize(size() + 1).
 	void push_back()
 	{
-		if (m_end == m_capacityEnd)
+		if(m_end == m_capacityEnd)
 			grow();
+
 		rde::construct(m_end);
 		++m_end;
 		TStorage::record_high_watermark();
 	}
+
 	void pop_back()
 	{
 		RDE_ASSERT(!empty());
@@ -267,7 +272,7 @@ public:
 		const size_type count = size_type(last - first);
 		RDE_ASSERT(count > 0);
 		clear();
-		if (m_begin + count > m_capacityEnd)
+		if(m_begin + count > m_capacityEnd)
 			reallocate_discard_old(compute_new_capacity(count));
 
 		rde::copy_n(first, count, m_begin);
@@ -281,23 +286,23 @@ public:
 		RDE_ASSERT(invariant());
 		const size_type indexEnd = index + n;
 		const size_type prevSize = size();
-		if (m_end + n > m_capacityEnd)
+		if(m_end + n > m_capacityEnd)
 		{
 			reallocate(compute_new_capacity(prevSize + n), prevSize);
 		}
 
 		// Past 'end', needs to copy construct.
-		if (indexEnd > prevSize)
+		if(indexEnd > prevSize)
 		{
 			const size_type numCopy		= prevSize - index;
 			const size_type numAppend	= indexEnd - prevSize;
 			RDE_ASSERT(numCopy >= 0 && numAppend >= 0);
 			RDE_ASSERT(numAppend + numCopy == n);
 			iterator itOut = m_begin + prevSize;
-			for (size_type i = 0; i < numAppend; ++i, ++itOut)
+			for(size_type i = 0; i < numAppend; ++i, ++itOut)
 				rde::copy_construct(itOut, val);
 			rde::copy_construct_n(m_begin + index, numCopy, itOut);
-			for (size_type i = 0; i < numCopy; ++i)
+			for(size_type i = 0; i < numCopy; ++i)
 				m_begin[index + i] = val;
 		}
 		else
@@ -305,12 +310,13 @@ public:
 			rde::copy_construct_n(m_end - n, n, m_end);
 			iterator insertPos = m_begin + index;
 			rde::move_n(insertPos, prevSize - indexEnd, insertPos + n);
-			for (size_type i = 0; i < n; ++i)
+			for(size_type i = 0; i < n; ++i)
 				insertPos[i] = val;
 		}
 		m_end += n;
 		TStorage::record_high_watermark();
 	}
+
 	// @pre validate_iterator(it)
 	// @note use push_back for maximum efficiency if it == end()!
 	void insert(iterator it, size_type n, const T& val)
@@ -319,13 +325,14 @@ public:
 		RDE_ASSERT(invariant());
 		insert(size_type(it - m_begin), n, val);
 	}
+
 	iterator insert(iterator it, const T& val)
 	{
 		RDE_ASSERT(validate_iterator(it));
 		RDE_ASSERT(invariant());
 		// @todo: optimize for toMove==0 --> push_back here?
 		const size_type index = (size_type)(it - m_begin);
-		if (m_end == m_capacityEnd)
+		if(m_end == m_capacityEnd)
 		{
 			grow();
 			it = m_begin + index;
@@ -336,7 +343,7 @@ public:
 		}
 
 		// @note: conditional vs empty loop, what's better?
-		if (m_end > it)
+		if(m_end > it)
 		{
 			if(!has_trivial_copy<T>::value)
 			{
@@ -369,7 +376,7 @@ public:
 		RDE_ASSERT(invariant());
 
 		// Move everything down, overwriting *it
-		if (it + 1 < m_end)
+		if(it + 1 < m_end)
 		{
 			move_down_1(it, int_to_type<has_trivial_copy<T>::value>());
 		}
@@ -382,12 +389,12 @@ public:
 		RDE_ASSERT(validate_iterator(first));
 		RDE_ASSERT(validate_iterator(last));
 		RDE_ASSERT(invariant());
-		if (last <= first)
+		if(last <= first)
 			return end();
 
 		const size_type indexFirst = size_type(first - m_begin);
 		const size_type toRemove = size_type(last - first);
-		if (toRemove > 0)
+		if(toRemove > 0)
 		{
 			move_down(last, first, int_to_type<has_trivial_copy<T>::value>());
 			shrink(size() - toRemove);
@@ -402,7 +409,7 @@ public:
 		RDE_ASSERT(it != end());
 		RDE_ASSERT(invariant());
 		const iterator itNewEnd = end() - 1;
-		if (it != itNewEnd)
+		if(it != itNewEnd)
 			*it = *itNewEnd;
 		pop_back();
 	}
@@ -447,7 +454,7 @@ public:
 
 	void resize(size_type n)
 	{
-		if (n > size())
+		if(n > size())
 			insert(m_end, n - size(), value_type());
 		else
 			shrink(n);
@@ -457,7 +464,7 @@ public:
 	}
 	void reserve(size_type n)
 	{
-		if (n > capacity())
+		if(n > capacity())
 			reallocate(n, size());
 	}
 
@@ -486,8 +493,8 @@ public:
 	size_type index_of(const T& item, size_type index = 0) const
 	{
 		RDE_ASSERT(index >= 0 && index < size());
-		for ( ; index < size(); ++index)
-			if (m_begin[index] == item)
+		for(; index < size(); ++index)
+			if(m_begin[index] == item)
 				return index;
 		return npos;
 	}

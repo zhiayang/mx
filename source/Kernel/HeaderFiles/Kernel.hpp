@@ -133,6 +133,7 @@ namespace Kernel
 	{
 		void DumpBytes(uint64_t address, uint64_t length);
 		void StackDump(uint64_t* ptr, int num, bool fromTop = false);
+		void GenerateStackTrace(uint64_t stack, int frames);
 	}
 }
 

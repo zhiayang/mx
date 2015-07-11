@@ -46,5 +46,38 @@ namespace Kernel
 			for(int i = 0; i < num; i++)
 				Log("%d: %x", i, fromTop ? *--ptr : *ptr++);
 		}
+
+		void GenerateStackTrace(uint64_t stack, int frames)
+		{
+			(void) stack;
+			(void) frames;
+
+			// assumptions, everywhere.
+			uint64_t* rbp = (uint64_t*) stack;
+
+			Log("Beginning stack trace: (rbp = %x)", rbp);
+
+			for(int i = 0; i < frames && rbp != 0 && *rbp != 0; i++)
+			{
+				Log("(%2d/%x/%x): %x", i, rbp, *rbp, *(rbp + 1));
+				rbp = (uint64_t*) *rbp;
+			}
+		}
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

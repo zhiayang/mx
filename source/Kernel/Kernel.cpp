@@ -430,21 +430,46 @@ namespace Kernel
 			struct stat s;
 			Stat(file, &s);
 
-			const uint64_t blocksz = 65536;
+			// 				(256 bytes):	20850
+			// 				(512 bytes):	10450
+			// 				(1024 bytes):	7800
+			// 				(2048 bytes):	6550
+			// 				(4096 bytes):	5850
+			// 				(8192 bytes):	5550
+			// 				(16384 bytes):	5400
+			// 				(32768 bytes):	6200
+			// 				(65536 bytes):	6150
+			// 				(one shot):		6500
+
+
+
+			uint64_t st = 0;
+			uint64_t et = 0;
 
 			Log(3, "s.st_size: %d", s.st_size);
+
+			const uint64_t blocksz = 1024;
 			uint8_t* fl = new uint8_t[blocksz + 1];
 
 			uint64_t total = s.st_size;
+			Log(3, "start: %d ms", st = Time::Now());
+
 			for(uint64_t cur = 0; cur < total; )
 			{
 				uint64_t read = Read(file, fl, blocksz);
 
-				SerialPort::WriteString((const char*) fl);
+				// PrintString((const char*) fl);
+				// SerialPort::WriteString((const char*) fl);
 				cur += read;
 
+				PrintFormatted("\r                         \r%6d/%d", cur, total);
 				// Log("%d/%d", cur, total);
 			}
+
+
+			Log(3, "end: %d ms", et = Time::Now());
+			Log(3, "time taken: %d ms", et - st);
+
 
 			// setup args:
 			// 0: prog name (duh)

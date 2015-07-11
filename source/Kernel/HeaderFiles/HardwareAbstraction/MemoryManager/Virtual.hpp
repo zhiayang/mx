@@ -5,6 +5,7 @@
 #pragma once
 #include <stdint.h>
 #include <Synchro.hpp>
+#include <rdestl/rdestl.h>
 
 namespace Kernel {
 
@@ -21,14 +22,28 @@ namespace Virtual
 
 	struct AddressLengthPair
 	{
+		AddressLengthPair() : start(0), length(0) { }
 		AddressLengthPair(uint64_t s, uint64_t l) : start(s), length(l) { }
+
+		bool operator==(const AddressLengthPair& rhs)
+		{
+			return this->start == rhs.start && this->length == rhs.length;
+		}
+
 		uint64_t start;
 		uint64_t length;
 	};
 
 	struct ALPTuple
 	{
+		ALPTuple() : start(0), length(0), phys(0) { }
 		ALPTuple(uint64_t s, uint64_t l, uint64_t p) : start(s), length(l), phys(p) { }
+
+		bool operator==(const ALPTuple& rhs)
+		{
+			return this->start == rhs.start && this->length == rhs.length && this->phys == rhs.phys;
+		}
+
 		uint64_t start;
 		uint64_t length;
 		uint64_t phys;
@@ -42,8 +57,8 @@ namespace Virtual
 		}
 
 		// book-keeping for allocations.
-		rde::vector<AddressLengthPair*> pairs;
-		rde::vector<ALPTuple*> used;
+		rde::vector<AddressLengthPair> pairs;
+		rde::vector<ALPTuple> used;
 
 		// store the actual address of the pml4.
 		PageMapStructure* PML4;

@@ -19,10 +19,10 @@ namespace internal
 		case 0:
 			while (first != last)
 			{
-				*result++ = *first++;
-		case 3:	*result++ = *first++;
-		case 2: *result++ = *first++;
-		case 1: *result++ = *first++;
+								*result++ = *first++;
+		[[clang::fallthrough]];	case 3:	*result++ = *first++;
+		[[clang::fallthrough]];	case 2: *result++ = *first++;
+		[[clang::fallthrough]];	case 1: *result++ = *first++;
 			}
 		}
 	}
