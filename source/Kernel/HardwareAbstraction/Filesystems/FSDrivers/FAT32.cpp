@@ -360,6 +360,52 @@ namespace Filesystems
 		return false;
 	}
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	static rde::vector<rde::pair<uint64_t, uint64_t>> ConsolidateClusterChain(rde::vector<uint32_t> cchain)
+	{
+		typedef rde::pair<uint64_t, uint64_t> pair_t;
+
+		rde::vector<pair_t> ret;
+		rde::quick_sort(cchain.begin(), cchain.end());
+
+		for(size_t i = 0; i < cchain.size(); i++)
+		{
+			pair_t p = { cchain[i], 1 };
+			while(i + 1 < cchain.size())
+			{
+				i++;
+				if(cchain[i] == (p.first + p.second))
+				{
+					p.second++;
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			ret.push_back(p);
+		}
+
+		return ret;
+	}
+
 	size_t FSDriverFat32::Read(vnode* node, void* buf, off_t offset, size_t length)
 	{
 		assert(node);
@@ -404,17 +450,68 @@ namespace Filesystems
 		uint64_t rbuf = MemoryManager::Virtual::AllocatePage(bufferPageSize);
 		uint64_t obuf = rbuf;
 
-		for(auto i = skippedclus; i < skippedclus + cluslen && i < vnd->clusters.size(); i++)
+
+		auto clusterpairs = ConsolidateClusterChain(vnd->clusters);
+
+		uint64_t skipped = 0;
+		uint64_t have = 0;
+		for(auto pair : clusterpairs)
 		{
-			// Log(1, "read %d (%d, %d), %x, %x", this->ClusterToLBA(vnd->clusters[i]), i,
-				// skippedclus + cluslen, obuf, obuf + bufferPageSize * 0x1000);
+			// completely consume the pair if we need to skip
+			if(skippedclus > skipped && pair.second <= (skippedclus - skipped))
+			{
+				skipped += pair.second;
+				continue;
+			}
+			else if(skippedclus > skipped)
+			{
+				// 'partially' consume the pair.
+				pair.first += (skippedclus - skipped);
+			}
 
-			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA(vnd->clusters[i]), rbuf, this->SectorsPerCluster * 512);
-			// Log(1, "read ok");
-			rbuf += this->SectorsPerCluster * 512;
 
-			StandardIO::PrintFormatted("\r                               \r%10d bytes read", rbuf - obuf);
+
+			// completely read the clusters in the pair
+			if(cluslen > have)
+			{
+
+				uint64_t spc = this->SectorsPerCluster;
+				uint64_t toread = ((cluslen - have) > pair.second) ? (pair.second) : (cluslen - have);
+
+				IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA((uint32_t) pair.first), rbuf, toread * spc * 512);
+				rbuf += (toread * spc * 512);
+				have += toread;
+
+				StandardIO::PrintFormatted("\r                               \r%8d bytes read", rbuf - obuf);
+			}
+
+			// exit condition
+			if(have == cluslen)
+				break;
 		}
+
+
+
+
+
+
+		// 95100
+
+
+
+
+
+		// for(auto i = skippedclus; i < skippedclus + cluslen && i < vnd->clusters.size(); i++)
+		// {
+		// 	// todo: optimise for sequential clusters.
+		// 	// need a way to sort the list of clusters first, then probably create a
+		// 	// start + length set.
+
+		// 	IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA(vnd->clusters[i]), rbuf, this->SectorsPerCluster * 512);
+		// 	rbuf += this->SectorsPerCluster * 512;
+
+		// 	StandardIO::PrintFormatted("\r                               \r%10d bytes read", rbuf - obuf);
+		// }
 
 		rbuf = obuf;
 		Memory::Copy(buf, (void*) (rbuf + clusoffset), length);
@@ -629,43 +726,40 @@ namespace Filesystems
 
 		uint32_t Cluster = tovnd(node)->entrycluster;
 		uint32_t cchain = 0;
+		uint32_t lastsec = 0;
+		const uint32_t lookahead = 0x10;
 		rde::vector<uint32_t> ret;
 
-		// uint64_t lastsec = 0;
-		auto buf = MemoryManager::Virtual::AllocatePage(2);
+		auto buf = MemoryManager::Virtual::AllocatePage((512 * lookahead) / 0x1000);
 		auto obuf = buf;
 
 		do
 		{
 			uint32_t FatSector = (uint32_t) this->partition->GetStartLBA() + this->ReservedSectors + ((Cluster * 4) / 512);
 			uint32_t FatOffset = (Cluster * 4) % 512;
+			// bool needToRead = true;
 
+			// if(lastsec == 0 || FatSector > lastsec + (lookahead - 1))
+			// {
+			// 	needToRead = true;
+			// }
+			// else
+			// {
+			// 	// buf += (FatSector - lastsec) * 512;
+			// }
 
-
-			// todo: this isn't going to work if the clusters aren't sequential!!!!
-			#if 0
-
-			// check if we even need to read.
-			// since we read 8K, we get 15 more free sectors
-			// optimisation.
-			if(lastsec == 0 || FatSector > lastsec + 10)
-			{
-				// reset the internal offset
+			// if(needToRead)
+			// {
 				buf = obuf;
-				IO::Read(this->partition->GetStorageDevice(), FatSector, buf, 0x2000);
-			}
-			else
-			{
-				// but if it is 'cached' in a sense, we need to update the 'buf' value to point to the actual place.
-				buf += (FatSector - lastsec) * 512;
-			}
+				lastsec = FatSector;
+				IO::Read(this->partition->GetStorageDevice(), FatSector, buf, 512);
+			// }
 
-			lastsec = FatSector;
-			#else
-			buf = obuf;
-			IO::Read(this->partition->GetStorageDevice(), FatSector, buf, 512);
-			StandardIO::PrintFormatted("\r         \r%d clusters read", *numclus);
-			#endif
+
+
+
+
+
 
 
 			uint8_t* clusterchain = (uint8_t*) buf;
@@ -677,12 +771,13 @@ namespace Filesystems
 			Cluster = cchain;
 			(*numclus)++;
 
+			Log("%d", *numclus);
+
 		} while((cchain != 0) && !((cchain & 0x0FFFFFFF) >= 0x0FFFFFF8));
 
 		MemoryManager::Virtual::FreePage(obuf, 2);
 		tovnd(node)->clusters = ret;
 
-		Log(3, "%d clusters read.", *numclus);
 		return ret;
 	}
 

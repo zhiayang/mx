@@ -421,6 +421,7 @@ namespace Kernel
 
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
 
+		if(1)
 		{
 			using namespace Filesystems;
 
@@ -448,7 +449,7 @@ namespace Kernel
 
 			Log(3, "s.st_size: %d", s.st_size);
 
-			const uint64_t blocksz = 256;
+			const uint64_t blocksz = s.st_size;
 			uint8_t* fl = new uint8_t[blocksz + 1];
 
 			uint64_t total = s.st_size;
@@ -467,7 +468,7 @@ namespace Kernel
 			}
 
 			// SerialPort::WriteString((const char*) fl);
-			PrintString((const char*) fl);
+			// PrintString((const char*) fl);
 
 			Log(3, "end: %d ms", et = Time::Now());
 			Log(3, "time taken: %d ms", et - st);
@@ -548,7 +549,7 @@ namespace Kernel
 			SLEEP(15000);
 
 			memset(data, 0, 256);
-			strncpy((char*) data, "JOIN #flax-lang\r\n", 256);
+			strncpy((char*) data, "JOIN #ark-lang\r\n", 256);
 			WriteSocket(thesock, data, strlen((char*) data));
 			PrintFormatted("> %s", data);
 
@@ -558,7 +559,7 @@ namespace Kernel
 			{
 				static const char* msgs[] =
 				{
-					"PRIVMSG #flax-lang :urgh\r\n",
+					"PRIVMSG #ark-lang :testing\r\n",
 					// "PRIVMSG #flax-lang :another mindless crime.\r\n",
 					// "PRIVMSG #flax-lang :behind the curtain,\r\n",
 					// "PRIVMSG #flax-lang :in the pantomime.\r\n",
