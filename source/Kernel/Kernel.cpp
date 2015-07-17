@@ -387,7 +387,7 @@ namespace Kernel
 			// todo: detect fs type.
 			{
 				Devices::Storage::ATADrive* f1 = Devices::Storage::ATADrive::ATADrives->front();
-				FSDriverFat32* fs = new FSDriverFat32(f1->Partitions.front());
+				FSDriverFAT* fs = new FSDriverFAT(f1->Partitions.front());
 
 				// mount root fs from partition 0 at /
 				VFS::Mount(f1->Partitions.front(), fs, "/");

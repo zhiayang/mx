@@ -29,6 +29,15 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace Filesystems
 {
+
+
+
+
+
+	// ********************************************
+	// *********** BOTH FAT16 and FAT32 ***********
+	// ********************************************
+
 	struct DirectoryEntry
 	{
 		char name[8];
@@ -75,6 +84,9 @@ namespace Filesystems
 
 	#define FIRSTCHAR_DELETED	0xE5
 
+	#define FAT16	16
+	#define FAT32	32
+
 	struct vnode_data
 	{
 		rde::string name;
@@ -109,20 +121,20 @@ namespace Filesystems
 	{
 		uint8_t year	= (dosdate & 0xFE00) >> 9;
 		uint8_t month	= (dosdate & 0x1E0) >> 5;
-		uint8_t day		= dosdate & 0x1F;
+		uint8_t day		= (dosdate & 0x1F);
 
 		uint8_t hour	= (dostime & 0xF800) >> 11;
 		uint8_t minute	= (dostime & 0x7E0) >> 5;
 		uint8_t sec2	= (dostime & 0x1F);
 
 		tm ts;
-		ts.tm_year	= year;
-		ts.tm_mon	= month;
-		ts.tm_mday	= day;
+		ts.tm_year		= year;
+		ts.tm_mon		= month;
+		ts.tm_mday		= day;
 
-		ts.tm_hour	= hour;
-		ts.tm_min	= minute;
-		ts.tm_sec	= sec2 * 2;
+		ts.tm_hour		= hour;
+		ts.tm_min		= minute;
+		ts.tm_sec		= sec2 * 2;
 
 		return 0;
 		// return mktime(&ts);
@@ -164,12 +176,28 @@ namespace Filesystems
 
 
 
-	uint64_t FSDriverFat32::ClusterToLBA(uint32_t cluster)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	uint64_t FSDriverFAT::ClusterToLBA(uint32_t cluster)
 	{
-		return this->FirstUsableCluster + cluster * this->SectorsPerCluster - (2 * this->SectorsPerCluster);
+		return this->FirstUsableSector + (cluster * this->SectorsPerCluster - (2 * this->SectorsPerCluster));
 	}
 
-	FSDriverFat32::FSDriverFat32(Partition* _part) : FSDriver(_part, FSDriverType::Physical)
+	FSDriverFAT::FSDriverFAT(Partition* _part) : FSDriver(_part, FSDriverType::Physical)
 	{
 		COMPILE_TIME_ASSERT(sizeof(DirectoryEntry) == sizeof(LFNEntry));
 
@@ -188,50 +216,133 @@ namespace Filesystems
 		this->SectorsPerCluster		= *((uint8_t*)((uintptr_t) fat + 13));
 		this->ReservedSectors		= *((uint16_t*)((uintptr_t) fat + 14));
 		this->NumberOfFATs			= *((uint8_t*)((uintptr_t) fat + 16));
-		this->NumberOfDirectories	= *((uint16_t*)((uintptr_t) fat + 17));
-
-		if((uint16_t)(*((uint16_t*)(fat + 17))) > 0)
-			this->TotalSectors		= *((uint16_t*)((uintptr_t) fat + 17));
-
-		else
-			this->TotalSectors		= *((uint32_t*)((uintptr_t) fat + 32));
-
 		this->HiddenSectors			= *((uint32_t*)((uintptr_t) fat + 28));
-		this->FATSectorSize			= *((uint32_t*)((uintptr_t) fat + 36));
-		this->RootDirectoryCluster	= *((uint32_t*)((uintptr_t) fat + 44));
-		this->FSInfoCluster			= *((uint16_t*)((uintptr_t) fat + 48));
-		this->backupBootCluster		= *((uint16_t*)((uintptr_t) fat + 50));
-		this->FirstUsableCluster	= this->partition->GetStartLBA() + this->ReservedSectors + (this->NumberOfFATs * this->FATSectorSize);
 
 
-		char* name = new char[256];
-		name[0] = (char) fat[71];
-		name[1] = (char) fat[72];
-		name[2] = (char) fat[73];
-		name[3] = (char) fat[74];
-		name[4] = (char) fat[75];
-		name[5] = (char) fat[76];
-		name[6] = (char) fat[77];
-		name[7] = (char) fat[78];
-		name[8] = (char) fat[79];
-		name[9] = (char) fat[80];
-		name[10] = (char) fat[81];
+		// NOTE: Fat16 and Fat32 differences follow.
+		// refer to one "fat103" document.
 
-		name = String::TrimWhitespace(name);
+		// here, we determine the size of the fat: 16 or 32.
+		{
+			uint16_t RootEntryCount = *((uint16_t*)((uintptr_t) fat + 17));
+			this->RootDirectorySize = ((RootEntryCount * 32) + 511) / 512;
+
+			uint32_t FATSize = 0;
+
+			if(*((uint16_t*)((uintptr_t) fat + 22)) == 0)
+			{
+				FATSize = *((uint32_t*)((uintptr_t) fat + 36));
+			}
+			else
+			{
+				FATSize = *((uint16_t*)((uintptr_t) fat + 22));
+			}
+
+			uint64_t TotalSectors = 0;
+			if(*((uint16_t*)((uintptr_t) fat + 19)) == 0)
+			{
+				TotalSectors = *((uint32_t*)((uintptr_t) fat + 32));
+			}
+			else
+			{
+				TotalSectors = *((uint16_t*)((uintptr_t) fat + 19));
+			}
+
+			uint64_t DataSec = TotalSectors - (this->ReservedSectors + (this->NumberOfFATs * FATSize) + this->RootDirectorySize);
+			uint64_t NumClusters = DataSec / this->SectorsPerCluster;
+
+			if(NumClusters < 4085)
+			{
+				HALT("FAT12 not supported");
+			}
+			else if(NumClusters < 65525)
+			{
+				this->FATKind = FAT16;
+			}
+			else
+			{
+				this->FATKind = FAT32;
+			}
+		}
+
+
+
+
+		if(this->FATKind == FAT32)
+		{
+			this->FATSectorSize			= *((uint32_t*)((uintptr_t) fat + 36));
+			this->RootDirectoryCluster	= *((uint32_t*)((uintptr_t) fat + 44));
+			this->FSInfoCluster			= *((uint16_t*)((uintptr_t) fat + 48));
+			this->backupBootCluster		= *((uint16_t*)((uintptr_t) fat + 50));
+			this->FirstUsableSector 	= this->partition->GetStartLBA() + this->ReservedSectors
+											+ (this->NumberOfFATs * this->FATSectorSize);
+
+			char* name = new char[16];
+			name[0] = (char) fat[71];
+			name[1] = (char) fat[72];
+			name[2] = (char) fat[73];
+			name[3] = (char) fat[74];
+			name[4] = (char) fat[75];
+			name[5] = (char) fat[76];
+			name[6] = (char) fat[77];
+			name[7] = (char) fat[78];
+			name[8] = (char) fat[79];
+			name[9] = (char) fat[80];
+			name[10] = (char) fat[81];
+
+			name = String::TrimWhitespace(name);
+
+			Log("fat32 root directory cluster: %d", this->RootDirectoryCluster);
+			Log("** reserved: %d", this->ReservedSectors);
+			Log("** numfats:  %d", this->NumberOfFATs);
+			Log("** fatsecsz: %d", this->FATSectorSize);
+			Log("** secprcls: %d", this->SectorsPerCluster);
+		}
+		else
+		{
+			this->FATSectorSize			= *((uint16_t*)((uintptr_t) fat + 22));
+			this->RootDirectoryCluster	= (uint32_t) this->partition->GetStartLBA() + (this->ReservedSectors
+											+ (this->NumberOfFATs * this->FATSectorSize));
+
+			this->FirstUsableSector		= this->RootDirectoryCluster + this->RootDirectorySize;
+
+			Log("fat16 root directory sector: %d", this->RootDirectoryCluster);
+			Log("** reserved: %d", this->ReservedSectors);
+			Log("** numfats:  %d", this->NumberOfFATs);
+			Log("** fatsecsz: %d", this->FATSectorSize);
+			Log("** secprcls: %d", this->SectorsPerCluster);
+
+			char* name = new char[16];
+			name[0] = (char) fat[43];
+			name[1] = (char) fat[44];
+			name[2] = (char) fat[45];
+			name[3] = (char) fat[46];
+			name[4] = (char) fat[47];
+			name[5] = (char) fat[48];
+			name[6] = (char) fat[49];
+			name[7] = (char) fat[50];
+			name[8] = (char) fat[51];
+			name[9] = (char) fat[52];
+			name[10] = (char) fat[53];
+
+			name = String::TrimWhitespace(name);
+		}
+
+
+
 		MemoryManager::Virtual::FreePage(buf, 1);
-
 		this->_seekable = true;
-
 
 
 		// todo: handle not 512-byte sectors
 		assert(this->BytesPerSector == 512);
 		assert(((Devices::Storage::ATADrive*) atadev)->GetSectorSize() == 512);
 
-		Log("FAT32 Driver on disk%ds%d has been initialised, FS appears to conform to specifications.", atadev->diskid, this->partition->GetPartitionNumber());
+		Log("FAT%d Driver on disk%ds%d has been initialised (Cluster size %d bytes)", this->FATKind, atadev->diskid,
+			this->partition->GetPartitionNumber(), this->SectorsPerCluster * 512);
 	}
 
-	FSDriverFat32::~FSDriverFat32()
+	FSDriverFAT::~FSDriverFAT()
 	{
 	}
 
@@ -263,7 +374,7 @@ namespace Filesystems
 		}
 	}
 
-	bool FSDriverFat32::Traverse(vnode* node, const char* path, char** symlink)
+	bool FSDriverFAT::Traverse(vnode* node, const char* path, char** symlink)
 	{
 		(void) symlink;
 
@@ -277,13 +388,12 @@ namespace Filesystems
 
 
 		// list everything
-		// if(strcmp(path, "/System/Library/LaunchDaemons/displayd.mxa") == 0 || strcmp(path, "/boot/grub/menu.lst") == 0)
-		// {
-		// 	Log("begin list");
-		// 	ls(this, node, 0);
-		// 	Log("end list");
-		// }
-
+		if(strcmp(path, "/texts/big.txt") == 0)
+		{
+			Log("*** begin list");
+			ls(this, node, 0);
+			Log("*** end list");
+		}
 
 
 
@@ -314,15 +424,12 @@ namespace Filesystems
 			assert(cn->info->data);
 
 			rde::vector<VFS::vnode*> cdcontent = this->ReadDir(cn);
-			// Log("trav: [%s, %d, %d]", tovnd(cn)->name.c_str(), tovnd(cn)->entrycluster, tovnd(cn)->clusters.size());
 
 			// check each.
 			for(auto d : cdcontent)
 			{
 				auto vnd = tovnd(d->info->data);
 				assert(vnd);
-
-				// Log("=> %s", vnd->name.c_str());
 
 				rde::string vndlower = vnd->name;
 				vndlower.make_lower();
@@ -406,7 +513,8 @@ namespace Filesystems
 		return ret;
 	}
 
-	size_t FSDriverFat32::Read(vnode* node, void* buf, off_t offset, size_t length)
+
+	size_t FSDriverFAT::Read(vnode* node, void* buf, off_t offset, size_t length)
 	{
 		assert(node);
 		assert(buf);
@@ -470,7 +578,6 @@ namespace Filesystems
 			}
 
 
-
 			// completely read the clusters in the pair
 			if(cluslen > have)
 			{
@@ -490,36 +597,15 @@ namespace Filesystems
 				break;
 		}
 
-
-
-
-
-
-		// 95100
-
-
-
-
-
-		// for(auto i = skippedclus; i < skippedclus + cluslen && i < vnd->clusters.size(); i++)
-		// {
-		// 	// todo: optimise for sequential clusters.
-		// 	// need a way to sort the list of clusters first, then probably create a
-		// 	// start + length set.
-
-		// 	IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA(vnd->clusters[i]), rbuf, this->SectorsPerCluster * 512);
-		// 	rbuf += this->SectorsPerCluster * 512;
-
-		// 	StandardIO::PrintFormatted("\r                               \r%10d bytes read", rbuf - obuf);
-		// }
-
 		rbuf = obuf;
 		Memory::Copy(buf, (void*) (rbuf + clusoffset), length);
 		MemoryManager::Virtual::FreePage(rbuf, bufferPageSize);
 		return length;
 	}
 
-	size_t FSDriverFat32::Write(vnode* node, const void* buf, off_t offset, size_t length)
+
+
+	size_t FSDriverFAT::Write(vnode* node, const void* buf, off_t offset, size_t length)
 	{
 		(void) node;
 		(void) buf;
@@ -528,7 +614,7 @@ namespace Filesystems
 		return 0;
 	}
 
-	void FSDriverFat32::Stat(vnode* node, struct stat* stat, bool statlink)
+	void FSDriverFAT::Stat(vnode* node, struct stat* stat, bool statlink)
 	{
 		// we really just need the dirent.
 		assert(node);
@@ -555,57 +641,68 @@ namespace Filesystems
 		stat->st_ctime		= datetounix(dirent->createdate, dirent->createtime);
 	}
 
-	rde::vector<VFS::vnode*> FSDriverFat32::ReadDir(VFS::vnode* node)
+
+
+	rde::vector<VFS::vnode*> FSDriverFAT::ReadDir(VFS::vnode* node)
 	{
 		assert(node);
 		assert(node->info);
 		assert(node->info->data);
 		assert(node->info->driver == this);
 
+		uint64_t buf = 0;
+		uint64_t dirsize = 0;
+		uint64_t bufferPageSize = 0;
 
 		if(tovnd(node)->entrycluster == 0)
-			tovnd(node)->entrycluster = this->RootDirectoryCluster;
-
-
-		// grab its clusters.
-		auto clusters = tovnd(node)->clusters;
-		uint64_t numclus = 0;
-
-		if(clusters.size() == 0)
-			clusters = this->GetClusterChain(node, &numclus);
-
-		assert(clusters.size() > 0);
-		numclus = clusters.size();
-
-
-		// Log("begin cluster list");
-		// for(auto c : clusters)
-		// {
-		// 	Log("(%d)", c);
-		// }
-		// Log("end cluster list");
-
-
-		// try and read each cluster into a contiguous buffer.
-		uint64_t bufferPageSize = ((numclus * this->SectorsPerCluster * 512) + 0xFFF) / 0x1000;
-
-		uint64_t dirsize = numclus * this->SectorsPerCluster * 512;
-		uint64_t buf = MemoryManager::Virtual::AllocatePage(bufferPageSize);
-		auto obuf = buf;
-
-		for(auto v : clusters)
 		{
-			IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA(v), buf, this->SectorsPerCluster * 512);
-			buf += this->SectorsPerCluster * 512;
-		}
-		buf = obuf;
+			if(this->FATKind == FAT16)
+			{
+				bufferPageSize = ((this->RootDirectorySize * 512) + 0xFFF) / 0x1000;
+				dirsize = this->RootDirectorySize * 512;
 
+				buf = MemoryManager::Virtual::AllocatePage(bufferPageSize);
+
+				// in fat16, "this->RootDirectoryCluster" is actually the SECTOR of the root directory
+				IO::Read(this->partition->GetStorageDevice(), this->RootDirectoryCluster, buf, this->RootDirectorySize * 512);
+			}
+			else
+			{
+				tovnd(node)->entrycluster = this->RootDirectoryCluster;
+			}
+		}
+		else
+		{
+			// grab its clusters.
+			auto clusters = tovnd(node)->clusters;
+			uint64_t numclus = 0;
+
+			if(clusters.size() == 0)
+				clusters = this->GetClusterChain(node, &numclus);
+
+			assert(clusters.size() > 0);
+			numclus = clusters.size();
+
+			// try and read each cluster into a contiguous buffer.
+			bufferPageSize = ((numclus * this->SectorsPerCluster * 512) + 0xFFF) / 0x1000;
+
+			dirsize = numclus * this->SectorsPerCluster * 512;
+			buf = MemoryManager::Virtual::AllocatePage(bufferPageSize);
+			auto obuf = buf;
+
+			for(auto v : clusters)
+			{
+				IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA(v), buf, this->SectorsPerCluster * 512);
+				buf += this->SectorsPerCluster * 512;
+			}
+			buf = obuf;
+		}
 
 
 
 		rde::vector<VFS::vnode*> ret;
 
-		for(uint64_t addr = buf; addr < buf + dirsize; )
+		for(uint64_t addr = buf; addr < buf + dirsize;)
 		{
 			rde::string name;
 			uint8_t lfncheck = 0;
@@ -671,7 +768,12 @@ namespace Filesystems
 				Memory::Set(fsd, 0, sizeof(vnode_data));
 
 				fsd->name = name;
-				fsd->entrycluster = ((uint32_t) (dirent->clusterhigh << 16)) | dirent->clusterlow;
+
+
+				if(this->FATKind == FAT32)	fsd->entrycluster = ((uint32_t) (dirent->clusterhigh << 16)) | dirent->clusterlow;
+				else						fsd->entrycluster = dirent->clusterlow;
+
+
 				fsd->filesize = dirent->filesize;
 
 				Memory::Copy(&fsd->dirent, dirent, sizeof(DirectoryEntry));
@@ -690,7 +792,7 @@ namespace Filesystems
 
 
 
-	bool FSDriverFat32::Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms)
+	bool FSDriverFAT::Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms)
 	{
 		(void) node;
 		(void) path;
@@ -700,7 +802,7 @@ namespace Filesystems
 		return false;
 	}
 
-	bool FSDriverFat32::Delete(VFS::vnode* node, const char* path)
+	bool FSDriverFAT::Delete(VFS::vnode* node, const char* path)
 	{
 		(void) node;
 		(void) path;
@@ -708,14 +810,14 @@ namespace Filesystems
 		return false;
 	}
 
-	void FSDriverFat32::Flush(VFS::vnode*)
+	void FSDriverFAT::Flush(VFS::vnode*)
 	{
 	}
 
 
 
 
-	rde::vector<uint32_t> FSDriverFat32::GetClusterChain(VFS::vnode* node, uint64_t* numclus)
+	rde::vector<uint32_t> FSDriverFAT::GetClusterChain(VFS::vnode* node, uint64_t* numclus)
 	{
 		// read the cluster chain
 
@@ -724,64 +826,54 @@ namespace Filesystems
 		assert(node->info->data);
 		assert(node->info->driver == this);
 
+		bool condition = false;
 		uint32_t Cluster = tovnd(node)->entrycluster;
 		uint32_t cchain = 0;
-		uint32_t lastsec = 0;
-		const uint32_t lookahead = 0x10;
+		const uint32_t lookahead = 0;
 		rde::vector<uint32_t> ret;
 
-		auto buf = MemoryManager::Virtual::AllocatePage((512 * lookahead) / 0x1000);
+		auto buf = MemoryManager::Virtual::AllocatePage(lookahead == 0 ? 1 : (512 * lookahead) / 0x1000);
 		auto obuf = buf;
 
+		int ClusterMultFactor = (this->FATKind == FAT16 ? 2 : 4);
 		do
 		{
-			uint32_t FatSector = (uint32_t) this->partition->GetStartLBA() + this->ReservedSectors + ((Cluster * 4) / 512);
-			uint32_t FatOffset = (Cluster * 4) % 512;
-			// bool needToRead = true;
+			uint32_t FatSector = (uint32_t) this->partition->GetStartLBA() + this->ReservedSectors + ((Cluster * ClusterMultFactor) / 512);
+			uint32_t FatOffset = (Cluster * ClusterMultFactor) % 512;
 
-			// if(lastsec == 0 || FatSector > lastsec + (lookahead - 1))
-			// {
-			// 	needToRead = true;
-			// }
-			// else
-			// {
-			// 	// buf += (FatSector - lastsec) * 512;
-			// }
+			buf = obuf;
 
-			// if(needToRead)
-			// {
-				buf = obuf;
-				lastsec = FatSector;
-				IO::Read(this->partition->GetStorageDevice(), FatSector, buf, 512);
-			// }
-
-
-
-
-
-
-
+			IO::Read(this->partition->GetStorageDevice(), FatSector, obuf, lookahead == 0 ? 512 : lookahead * 512);
 
 			uint8_t* clusterchain = (uint8_t*) buf;
-			cchain = *((uint32_t*) &clusterchain[FatOffset]) & 0x0FFFFFFF;
 
-			// cchain is the next cluster in the list.
+			if(this->FATKind == FAT32)
+			{
+				cchain = *((uint32_t*) &clusterchain[FatOffset]) & 0x0FFFFFFF;
+				condition = (cchain != 0x0) && (cchain != 0x1) && !((cchain & 0x0FFFFFFF) >= 0x0FFFFFF7);
+			}
+			else
+			{
+				cchain = *((uint16_t*) &clusterchain[FatOffset]) & 0xFFFF;
+				condition = (cchain != 0x0) && (cchain != 0x1) && !((cchain & 0xFFFF) >= 0xFFF7);
+			}
+
 			ret.push_back(Cluster);
 
+			// cchain is the next cluster in the list.
 			Cluster = cchain;
 			(*numclus)++;
 
-			Log("%d", *numclus);
+		} while(condition);
 
-		} while((cchain != 0) && !((cchain & 0x0FFFFFFF) >= 0x0FFFFFF8));
-
-		MemoryManager::Virtual::FreePage(obuf, 2);
+		MemoryManager::Virtual::FreePage(obuf, lookahead == 0 ? 1 : (512 * lookahead) / 0x1000);
 		tovnd(node)->clusters = ret;
 
+		// Log(3, "read %d clusters", *numclus);
 		return ret;
 	}
 
-	rde::string FSDriverFat32::ReadLFN(uint64_t addr, int* ret_nument)
+	rde::string FSDriverFAT::ReadLFN(uint64_t addr, int* ret_nument)
 	{
 		LFNEntry* ent = (LFNEntry*) addr;
 		uint8_t seqnum = ent->seqnum;
@@ -825,10 +917,30 @@ namespace Filesystems
 		return ret;
 	}
 
-	void FSDriverFat32::Close(VFS::vnode*)
+	void FSDriverFAT::Close(VFS::vnode*)
 	{
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -55,12 +55,12 @@ namespace MBR
 		{
 			if(*((uint32_t*)(mbr + o + 12)) > 0)
 			{
-				FSTypes fstype = FSTypes::fat32;
+				FSTypes fstype = FSTypes::vfat;
 				switch(*(mbr + o + 4))
 				{
 					case 0xB:
 					case 0xC:
-						fstype = FSTypes::fat32;
+						fstype = FSTypes::vfat;
 						break;
 
 					case 0xAF:

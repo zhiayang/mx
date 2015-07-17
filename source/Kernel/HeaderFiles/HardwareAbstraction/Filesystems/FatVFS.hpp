@@ -1,4 +1,4 @@
-// Fat32VFS.hpp
+// FatVFS.hpp
 // Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
@@ -9,11 +9,11 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace Filesystems
 {
-	class FSDriverFat32 : public FSDriver
+	class FSDriverFAT : public FSDriver
 	{
 		public:
-			FSDriverFat32(Devices::Storage::Partition* part);
-			virtual ~FSDriverFat32() override;
+			FSDriverFAT(Devices::Storage::Partition* part);
+			virtual ~FSDriverFAT() override;
 			virtual bool Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms) override;
 			virtual bool Delete(VFS::vnode* node, const char* path) override;
 			virtual bool Traverse(VFS::vnode* node, const char* path, char** symlink) override;
@@ -26,6 +26,8 @@ namespace Filesystems
 			virtual rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 
 		private:
+			uint8_t FATKind;
+
 			rde::string ReadLFN(uint64_t addr, int* nument);
 			uint64_t ClusterToLBA(uint32_t clus);
 			rde::vector<uint32_t> GetClusterChain(VFS::vnode* node, uint64_t* numclus);
@@ -34,9 +36,7 @@ namespace Filesystems
 			uint8_t SectorsPerCluster;
 			uint16_t ReservedSectors;
 			uint8_t NumberOfFATs;
-			uint16_t NumberOfDirectories;
 
-			uint32_t TotalSectors;
 			uint32_t HiddenSectors;
 
 			uint32_t FATSectorSize;
@@ -44,7 +44,9 @@ namespace Filesystems
 			uint16_t FSInfoCluster;
 			uint16_t backupBootCluster;
 
-			uint64_t FirstUsableCluster;
+			uint64_t FirstUsableSector;
+
+			uint32_t RootDirectorySize;
 	};
 }
 }
