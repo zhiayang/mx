@@ -10,7 +10,7 @@
 
 #include "Filesystems/ConsoleVFS.hpp"
 #include "Filesystems/HFSPlusVFS.hpp"
-#include "Filesystems/Fat32VFS.hpp"
+#include "Filesystems/FatVFS.hpp"
 
 namespace Kernel
 {

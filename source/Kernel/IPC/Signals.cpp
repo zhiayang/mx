@@ -84,9 +84,9 @@ namespace IPC
 			{
 				// map.
 				uint64_t s = thread->StackPointer;
-				uint64_t diff = s - (s & ~0xFFF);
+				uint64_t diff = s - (s & ((uint64_t) ~0xFFF));
 
-				uint64_t p1 = Virtual::GetMapping(s & ~0xFFF, thread->Parent->VAS.PML4);
+				uint64_t p1 = Virtual::GetMapping(s & ((uint64_t) ~0xFFF), thread->Parent->VAS.PML4);
 				ptr = Virtual::AllocateVirtual();
 				Virtual::MapAddress(ptr, p1, 0x7);
 
@@ -97,9 +97,9 @@ namespace IPC
 			{
 				// map.
 				uint64_t s = *((uint64_t*) (ptr + 144));
-				uint64_t diff = s - (s & ~0xFFF);
+				uint64_t diff = s - (s & ((uint64_t) ~0xFFF));
 
-				uint64_t p1 = Virtual::GetMapping(s & ~0xFFF, thread->Parent->VAS.PML4);
+				uint64_t p1 = Virtual::GetMapping(s & ((uint64_t) ~0xFFF), thread->Parent->VAS.PML4);
 				ustack = Virtual::AllocateVirtual();
 				Virtual::MapAddress(ustack, p1, 0x7);
 
@@ -116,7 +116,7 @@ namespace IPC
 			uint64_t oldrip					= *((uint64_t*) (ptr + 120));
 
 			*((uint64_t*) (ptr + 120))		= (uint64_t) handler;
-			*((uint64_t*) (ptr + 0))		= signum;		// signum
+			*((uint64_t*) (ptr + 0))		= (uint64_t) signum;		// signum
 
 			*((uint64_t*) (ptr + 144))		-= 0x8;
 			*((uint64_t*) (*((uint64_t*) (ptr + 144))))	= oldrip;
@@ -126,11 +126,11 @@ namespace IPC
 			// should be done, time to clean up.
 			if(thread->Parent != Multitasking::GetCurrentProcess())
 			{
-				Virtual::FreeVirtual(ustack & ~0xFFF);
-				Virtual::FreeVirtual(ptr & ~0xFFF);
+				Virtual::FreeVirtual(ustack & ((uint64_t) ~0xFFF));
+				Virtual::FreeVirtual(ptr & ((uint64_t) ~0xFFF));
 
-				Virtual::UnmapAddress(ptr & ~0xFFF);
-				Virtual::UnmapAddress(ustack & ~0xFFF);
+				Virtual::UnmapAddress(ptr & ((uint64_t) ~0xFFF));
+				Virtual::UnmapAddress(ustack & ((uint64_t) ~0xFFF));
 			}
 
 			Multitasking::WakeForMessage(thread);
@@ -220,7 +220,7 @@ namespace IPC
 			*((uint64_t*) (*(rbp + 12)))	= (uint64_t) _sighandler;
 
 			// modify rdi (signum)
-			*(rbp + 6) = signum;
+			*(rbp + 6) = (uint64_t) signum;
 		}
 	}
 

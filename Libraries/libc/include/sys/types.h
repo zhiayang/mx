@@ -130,7 +130,7 @@ typedef int err_t;
 // pthreads
 #ifndef __pthread_t
 #define __pthread_t
-typedef uint64_t pthread_t;
+typedef pid_t pthread_t;
 #endif
 
 #ifndef __pthread_attr_t

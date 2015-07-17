@@ -152,9 +152,9 @@ namespace Storage
 
 		ATADrive* IdentifyDevice(uint16_t BaseIO, bool IsMaster)
 		{
-			bool fl = false;
-			if(BaseIO == PrimaryBaseIO && IsMaster == false)
-				fl = true;
+			// bool fl = false;
+			// if(BaseIO == PrimaryBaseIO && IsMaster == false)
+			// 	fl = true;
 
 			// Identify the drives on the primary bus
 

@@ -57,7 +57,7 @@ extern "C" size_t strlen(const char* str)
 	size_t len = 0;
 	const char* endPtr = str;
 	asm("repne scasb" : "+D"(endPtr) : "a"(0), "c"(~0) : "cc");
-	len = (endPtr - str) - 1;
+	len = ((uintptr_t) endPtr - (uintptr_t) str) - 1;
 	return len;
 }
 

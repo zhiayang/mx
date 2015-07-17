@@ -49,7 +49,7 @@ namespace DMA
 		uint32_t used;
 	};
 
-	#define MaxCachedTables 2
+	#define MaxCachedTables 16
 	static rde::vector<PRDTableCache>* cachedPRDTables;
 
 	void Initialise()
@@ -167,6 +167,7 @@ namespace DMA
 
 
 		// todo: release cache
+		// todo: !!! ^^^ !!!
 
 		// copy over
 		return IOResult(Bytes, paddr, (Bytes + 0xFFF) / 0x1000);

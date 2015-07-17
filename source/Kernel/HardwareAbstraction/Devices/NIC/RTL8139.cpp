@@ -79,7 +79,7 @@ namespace NIC
 
 		// enable bus mastering
 		uint32_t f = this->pcidev->GetRegisterData(0x4, 0, 2);
-		this->pcidev->WriteRegisterData(0x4, 0, 2, (f | 0x4) & ~0x400);
+		this->pcidev->WriteRegisterData(0x4, 0, 2, (f | 0x4) & ((uint32_t) ~0x400));
 
 
 		uint32_t mmio = (uint32_t) this->pcidev->GetBAR(0);
@@ -250,7 +250,7 @@ namespace NIC
 					HALT("What");
 
 				ReadOffset += length + 4;
-				ReadOffset = (ReadOffset + 3) & ~3;	// align to 4 bytes
+				ReadOffset = (ReadOffset + 3) & ((uint64_t) ~3);	// align to 4 bytes
 			}
 
 			ReadOffset -= RxBufferSize;
@@ -265,7 +265,7 @@ namespace NIC
 			Ethernet::HandlePacket(this, &recvBuffer[ReadOffset + 4], length - 4);
 
 			ReadOffset += length + 4;
-			ReadOffset = (ReadOffset + 3) & ~3;	// align to 4 bytes
+			ReadOffset = (ReadOffset + 3) & ((uint64_t) ~3);	// align to 4 bytes
 		}
 
 		this->SeenOfs = ReadOffset;

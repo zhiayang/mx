@@ -41,7 +41,7 @@ namespace Storage
 
 		// 48465300-0000-11AA-AA11-00306543ECAC
 
-		if(PartitionType == Filesystems::FSTypes::fat32 ||
+		if(PartitionType == Filesystems::FSTypes::vfat ||
 			(this->Drive->PartitionTable == PartitionTableType::GuidPartitionTable &&
 			this->GetTypeGUID_S1() == 0xEBD0A0A2 &&
 			this->GetTypeGUID_S2() == 0xB9E5 &&

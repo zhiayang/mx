@@ -122,7 +122,7 @@ public:
 	}
 	void append(const value_type* str)
 	{
-		append(str, strlen(str));
+		append(str, (size_type) strlen(str));
 	}
 	void append(const value_type ch)
 	{
@@ -137,10 +137,12 @@ public:
 	int compare(const value_type* str) const
 	{
 		const size_type thisLen = length();
-		const size_type strLen = strlen(str);
-		if (thisLen < strLen)
+		const size_type strLen = (size_type) strlen(str);
+
+		if(thisLen < strLen)
 			return -1;
-		if (thisLen > strLen)
+
+		if(thisLen > strLen)
 			return 1;
 
 		return strcompare(c_str(), str, thisLen);

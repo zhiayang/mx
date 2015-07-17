@@ -21,9 +21,7 @@ namespace HardwareAbstraction
 		{
 			// FAT family
 			exFAT		= 0xF1EF,
-			fat32		= 0xF132,
-			fat16		= 0xF116,
-			fat12		= 0xF112,
+			vfat		= 0xFAAA,
 
 			// Apple
 			hfsplus		= 0x11F5,

@@ -62,11 +62,11 @@ namespace Virtual
 		{
 			uint64_t end = addr + (size * 0x1000);
 			AddressLengthPair* found = 0;
-			for(auto pair : vas->pairs)
+			for(auto& pair : vas->pairs)
 			{
-				if(pair->start <= addr && pair->start + (pair->length * 0x1000) >= end)
+				if(pair.start <= addr && pair.start + (pair.length * 0x1000) >= end)
 				{
-					found = pair;
+					found = &pair;
 					break;
 				}
 			}
@@ -76,29 +76,30 @@ namespace Virtual
 				// exact match
 				if(found->start == addr && found->length == size)
 				{
-					vas->pairs.remove(found);
+					vas->pairs.remove(*found);
 					delete found;
 				}
 				else if(found->start == addr)
 				{
 					// longer than what we need, create a new pair
 
-					AddressLengthPair* np = new AddressLengthPair(end, found->length - size);
-					vas->pairs.remove(found);
+					AddressLengthPair np = AddressLengthPair(end, found->length - size);
+					vas->pairs.remove(*found);
 					vas->pairs.push_back(np);
+
 					delete found;
 				}
 				else
 				{
 					// make a new pair at the beginning
-					AddressLengthPair* np = new AddressLengthPair(found->start, (addr - found->start) / 0x1000);
+					AddressLengthPair np = AddressLengthPair(found->start, (addr - found->start) / 0x1000);
 					vas->pairs.push_back(np);
 
 					found->start = end;
 					found->length = found->length - size;
 				}
 
-				vas->used.push_back(new ALPTuple(addr, size, phys));
+				vas->used.push_back(ALPTuple(addr, size, phys));
 				// Log("virt(%x) mapped to phys(%x) [%d] in vas %x (%x)", addr, phys, size, GetCurrentPML4T(), __builtin_return_address(0));
 				return addr;
 			}
@@ -120,38 +121,38 @@ namespace Virtual
 
 
 		uint64_t ret = 0;
-		AddressLengthPair* pair = vas->pairs.front();
-		assert(pair);
+		AddressLengthPair& pair = vas->pairs.front();
+		// assert(pair);
 
-		if(pair->length > size)
+		if(pair.length > size)
 		{
-			ret = pair->start;
-			pair->start += (size * 0x1000);
-			pair->length -= size;
+			ret = pair.start;
+			pair.start += (size * 0x1000);
+			pair.length -= size;
 
 			LOCK(vas->mtx);
-			vas->used.push_back(new ALPTuple(ret, size, phys));
+			vas->used.push_back(ALPTuple(ret, size, phys));
 			UNLOCK(vas->mtx);
 		}
-		else if(pair->length == size)
+		else if(pair.length == size)
 		{
-			ret = pair->start;
-			delete vas->pairs.front();
+			ret = pair.start;
+			// delete vas->pairs.front();
 			vas->pairs.erase(vas->pairs.begin());
 
 			LOCK(vas->mtx);
-			vas->used.push_back(new ALPTuple(ret, size, phys));
+			vas->used.push_back(ALPTuple(ret, size, phys));
 			UNLOCK(vas->mtx);
 		}
 		else
 		{
 			// we need to use the next pair.
 			AddressLengthPair* found = 0;
-			for(AddressLengthPair* p : vas->pairs)
+			for(AddressLengthPair& p : vas->pairs)
 			{
-				if(p->length >= size)
+				if(p.length >= size)
 				{
-					found = p;
+					found = &p;
 					break;
 				}
 			}
@@ -171,7 +172,7 @@ namespace Virtual
 					found->start += (size * 0x1000);
 
 					LOCK(vas->mtx);
-					vas->used.push_back(new ALPTuple(ret, size, phys));
+					vas->used.push_back(ALPTuple(ret, size, phys));
 					UNLOCK(vas->mtx);
 				}
 				else
@@ -180,7 +181,7 @@ namespace Virtual
 					delete found;
 
 					LOCK(vas->mtx);
-					vas->used.push_back(new ALPTuple(ret, size, phys));
+					vas->used.push_back(ALPTuple(ret, size, phys));
 					UNLOCK(vas->mtx);
 				}
 			}
@@ -207,22 +208,22 @@ namespace Virtual
 		uint64_t end = page + (size * 0x1000);
 
 		bool insertNew = true;
-		for(AddressLengthPair* pair : vas->pairs)
+		for(AddressLengthPair& pair : vas->pairs)
 		{
 			// 3 basic conditions
 			// 1. we find a match below a pair's baseaddr
 			// 2. we find a match above a pair's baseaddr
 			// 3. we don't find a match
 
-			if(end == pair->start)
+			if(end == pair.start)
 			{
-				pair->start = page;
-				pair->length += size;
+				pair.start = page;
+				pair.length += size;
 				insertNew = false;
 			}
-			else if(pair->start + (pair->length * 0x1000) == page)
+			else if(pair.start + (pair.length * 0x1000) == page)
 			{
-				pair->length += (size * 0x1000);
+				pair.length += (size * 0x1000);
 				insertNew = false;
 			}
 		}
@@ -230,16 +231,16 @@ namespace Virtual
 
 		if(insertNew)
 		{
-			vas->pairs.push_back(new AddressLengthPair(page, size));
+			vas->pairs.push_back(AddressLengthPair(page, size));
 		}
 
 		// Log("freeing %x, %d (%x, %x)", page, size, __builtin_return_address(0), __builtin_return_address(1));
 		for(size_t i = 0; i < vas->used.size(); i++)
 		{
-			ALPTuple* pair = vas->used[i];
-			if(!pair) continue;
+			ALPTuple& pair = vas->used[i];
+			// if(!pair) continue;
 
-			if(pair->start == page && pair->length == size)
+			if(pair.start == page && pair.length == size)
 			{
 				// Log("freeing (%x, %x, %d) (%x)", pair->start, pair->phys, pair->length, __builtin_return_address(0));
 				vas->used.erase(vas->used.begin() + i);
@@ -254,9 +255,9 @@ namespace Virtual
 		VirtualAddressSpace* vas = v ? v : &Multitasking::GetCurrentProcess()->VAS;
 		assert(vas);
 
-		for(ALPTuple* tup : vas->used)
+		for(ALPTuple& tup : vas->used)
 		{
-			if(tup->start == addr || tup->phys == phys)
+			if(tup.start == addr || tup.phys == phys)
 			{
 				// TODO: investigate
 				// Log("Duplicate: %x -> %x, %d", tup->start, tup->phys, tup->length);
@@ -264,7 +265,7 @@ namespace Virtual
 			}
 		}
 
-		vas->used.push_back(new ALPTuple(addr, sizeInPages, phys));
+		vas->used.push_back(ALPTuple(addr, sizeInPages, phys));
 	}
 
 	uint64_t GetVirtualPhysical(uint64_t virt, VirtualAddressSpace* v)
@@ -273,13 +274,13 @@ namespace Virtual
 		assert(vas);
 
 		uint64_t ret = 0;
-		for(ALPTuple* pair : vas->used)
+		for(ALPTuple& pair : vas->used)
 		{
-			uint64_t end = pair->start + pair->length * 0x1000;
+			uint64_t end = pair.start + pair.length * 0x1000;
 			// Log("s: %x, p: %x, v: %x, l: %d -- %x", pair->start, pair->phys, virt, pair->length, vas->PML4);
-			if(virt >= pair->start && virt <= end)
+			if(virt >= pair.start && virt <= end)
 			{
-				ret = pair->phys + (virt - pair->start);
+				ret = pair.phys + (virt - pair.start);
 			}
 		}
 
@@ -310,16 +311,16 @@ namespace Virtual
 		VirtualAddressSpace* vas = &proc->VAS;
 		assert(vas);
 
-		for(ALPTuple* p : vas->used)
+		for(ALPTuple& p : vas->used)
 		{
-			if(!p)
-				continue;
+			// if(!p)
+			// 	continue;
 
-			if(p->start == addr)
+			if(p.start == addr)
 			{
-				if(p->length == size)
+				if(p.length == size)
 				{
-					pair = p;
+					pair = &p;
 					break;
 				}
 			}
@@ -351,8 +352,8 @@ namespace Virtual
 	VirtualAddressSpace* SetupVAS(VirtualAddressSpace* vas)
 	{
 		// Max 48-bit virtual address space (current implementations)
-		vas->pairs.push_back(new AddressLengthPair(0x01000000, 0xFF000));
-		vas->pairs.push_back(new AddressLengthPair(0xFFFFF00000000000, 0x100000));
+		vas->pairs.push_back(AddressLengthPair(0x01000000, 0xFF000));
+		vas->pairs.push_back(AddressLengthPair(0xFFFFF00000000000, 0x100000));
 
 		vas->mtx = new Mutex();
 		return vas;
@@ -361,26 +362,29 @@ namespace Virtual
 	VirtualAddressSpace* CopyVAS(VirtualAddressSpace* src, VirtualAddressSpace* dest)
 	{
 		for(auto p : src->pairs)
-			dest->pairs.push_back(new AddressLengthPair(*p));
+			dest->pairs.push_back(p);
 
 		for(auto _pair : src->used)
 		{
 			// todo: workaround... investigate
-			if(!_pair)
-				continue;
+			// if(!_pair)
+			// 	continue;
 
-			ALPTuple* pair = new ALPTuple(*_pair);
+			ALPTuple pair = ALPTuple(_pair);
+
+			// dest->used.push_back(pair);
+
+			uint64_t p = Physical::AllocatePage(pair.length);
+
+			Virtual::MapRegion(pair.start, /*pair->phys*/ p, pair.length, 0x07, dest->PML4);
+			Virtual::MapRegion(TemporaryVirtualMapping, p, pair.length, 0x07);
+			Memory::CopyOverlap((void*) TemporaryVirtualMapping, (void*) pair.start, pair.length * 0x1000);
+
+
+			Virtual::UnmapRegion(TemporaryVirtualMapping, pair.length);
+			pair.phys = p;
+
 			dest->used.push_back(pair);
-			uint64_t p = Physical::AllocatePage(pair->length);
-
-			Virtual::MapRegion(pair->start, /*pair->phys*/ p, pair->length, 0x07, dest->PML4);
-			Virtual::MapRegion(TemporaryVirtualMapping, p, pair->length, 0x07);
-			Memory::CopyOverlap((void*) TemporaryVirtualMapping, (void*) pair->start, pair->length * 0x1000);
-
-
-			Virtual::UnmapRegion(TemporaryVirtualMapping, pair->length);
-			pair->phys = p;
-
 
 
 
@@ -407,21 +411,21 @@ namespace Virtual
 		// assert(vas->used);
 		// assert(vas->pairs);
 
-		for(ALPTuple* pair : vas->used)
+		for(ALPTuple& pair : vas->used)
 		{
 			// todo: workaround... investigate
-			if(!pair)
-				continue;
+			// if(!pair)
+			// 	continue;
 
-			if(pair->phys > 0)
-				Physical::FreePage(pair->phys, pair->length);
+			if(pair.phys > 0)
+				Physical::FreePage(pair.phys, pair.length);
 
-			delete pair;
+			// delete pair;
 		}
 
 
-		for(AddressLengthPair* pair : vas->pairs)
-			delete pair;
+		// for(AddressLengthPair* pair : vas->pairs)
+		// 	delete pair;
 	}
 
 
@@ -747,29 +751,29 @@ namespace Virtual
 		if(cow)
 		{
 			*pdptv |= I_CopyOnWrite;
-			*pdptv &= ~I_ReadWrite;
+			*pdptv &= ((uint64_t) ~I_ReadWrite);
 
 			*pdv |= I_CopyOnWrite;
-			*pdv &= ~I_ReadWrite;
+			*pdv &= ((uint64_t) ~I_ReadWrite);
 
 			*ptv |= I_CopyOnWrite;
-			*ptv &= ~I_ReadWrite;
+			*ptv &= ((uint64_t) ~I_ReadWrite);
 
 			*pg |= I_CopyOnWrite;
-			*pg &= ~I_ReadWrite;
+			*pg &= ((uint64_t) ~I_ReadWrite);
 		}
 		else
 		{
-			*pdptv &= ~I_CopyOnWrite;
+			*pdptv &= ((uint64_t) ~I_CopyOnWrite);
 			*pdptv |= I_ReadWrite;
 
-			*pdv &= ~I_CopyOnWrite;
+			*pdv &= ((uint64_t) ~I_CopyOnWrite);
 			*pdv |= I_ReadWrite;
 
-			*ptv &= ~I_CopyOnWrite;
+			*ptv &= ((uint64_t) ~I_CopyOnWrite);
 			*ptv |= I_ReadWrite;
 
-			*pg &= ~I_CopyOnWrite;
+			*pg &= ((uint64_t) ~I_CopyOnWrite);
 			*pg |= I_ReadWrite;
 		}
 

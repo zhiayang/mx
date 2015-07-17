@@ -99,7 +99,7 @@ namespace LinearFramebuffer
 
 		if(c == ' ')
 		{
-			for(uint64_t i = y; i < y + CharHeight; i++)
+			for(uint64_t i = y; i < (uint64_t) (y + CharHeight); i++)
 				memset32((void*) (Kernel::GetFramebufferAddress() + (i * GetResX() + x) * 4), backColour, 4);
 		}
 

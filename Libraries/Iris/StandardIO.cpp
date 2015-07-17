@@ -36,16 +36,17 @@ namespace StandardIO
 	{
 	}
 
-	uint64_t PrintString(const char* string, int64_t length, void (*pf)(uint8_t))
+	uint64_t PrintString(const char* string, size_t length, void (*pf)(uint8_t))
 	{
-		uint64_t ret = 0;
-		for(uint64_t i = 0; i < (length < 0 ? strlen(string) : (uint64_t) length); i++)
+		uint64_t _len = ((length == (size_t) -1 || length == 0) ? strlen(string) : length);
+
+		uint64_t i = 0;
+		for(; i < _len; i++)
 		{
 			PrintChar((uint8_t) string[i], pf);
-			ret++;
 		}
 
-		return ret;
+		return i;
 	}
 
 

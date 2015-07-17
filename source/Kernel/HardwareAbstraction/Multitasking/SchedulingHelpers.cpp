@@ -243,7 +243,6 @@ namespace Multitasking
 	void AddToQueue(Thread* t)
 	{
 		getRunQueue()->lock();
-		// getRunQueue()->queue[t->Priority]->insert(getRunQueue()->queue[t->Priority]->begin(), t);
 		getRunQueue()->queue[t->Priority]->push_back(t);
 		getRunQueue()->unlock();
 	}
@@ -263,9 +262,11 @@ namespace Multitasking
 		Log("Killed thread %d, name: %s", p->ThreadID, p->Parent->Name);
 		Kill(p);
 
-		(void) r;
+		r = p->CrashState;
 
 		// this is where we would say do a core dump.
+		// Utilities::StackDump((uint64_t*) r->__rsp, 10);
+		// Utilities::GenerateStackTrace(r->__rsp, 10);
 		YieldCPU();
 
 		while(true);
@@ -389,7 +390,7 @@ namespace Multitasking
 		return false;
 	}
 
-	Process* GetProcess(uint64_t pid)
+	Process* GetProcess(pid_t pid)
 	{
 		// for(uint64_t i = 0; i < ProcessList->size(); i++)
 		// {
@@ -406,7 +407,7 @@ namespace Multitasking
 		return 0;
 	}
 
-	Thread* GetThread(uint64_t tid)
+	Thread* GetThread(pid_t tid)
 	{
 		auto queue = getRunQueue();
 		queue->lock();

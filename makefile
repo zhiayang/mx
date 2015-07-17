@@ -21,12 +21,20 @@ export COMPRESS_UTIL	:= $(shell pwd)/tools/heatshrink
 
 # we use clang only for the kernel, don't pollute makefiles
 CXX_				= clang++
+GXX_			 	= $(CXX)
 FLXC				= $(SYSROOT)/usr/local/bin/flaxc
 GCCVERSION			= 4.9.1
 
-WARNINGS			= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-align -Wno-unreachable-code -Wno-gnu -Wno-missing-prototypes -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-sign-conversion -Wno-old-style-cast -Wno-exit-time-destructors -Wno-unused-macros -Wno-global-constructors -Wno-documentation-unknown-command -Wno-reserved-id-macro -Wno-c99-extensions
+WARNINGS			= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-align -Wno-unreachable-code -Wno-gnu -Wno-missing-prototypes -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-old-style-cast -Wno-exit-time-destructors -Wno-unused-macros -Wno-global-constructors -Wno-documentation-unknown-command -Wno-reserved-id-macro -Wno-c99-extensions
 
-CXXFLAGS			= -m64 -g -Weverything -msse3 -integrated-as -O3 -fno-omit-frame-pointer -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -mcmodel=kernel -c
+
+GWARNINGS			= -Wno-padded -Wno-cast-align -Wno-unreachable-code -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-old-style-cast -Wno-unused-macros -Wno-unknown-pragmas -Wno-attributes
+
+
+CXXFLAGS			= -m64 -g -Weverything -msse3 -integrated-as -O1 -fno-omit-frame-pointer -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -mcmodel=kernel -c
+
+GXXFLAGS			= -m64 -g -Wall -msse3 -O1 -fno-omit-frame-pointer -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -mcmodel=kernel -c
+
 
 LDFLAGS				= --gc-sections -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib
 
@@ -136,22 +144,10 @@ $(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) $(FLAXM
 	@touch build/.dmf
 
 	@$(CXX_) $(CXXFLAGS) $(WARNINGS) -MMD -MP -o $@ $<
+	@# $(GXX_) $(GXXFLAGS) $(GWARNINGS) -MMD -MP -o $@ $<
 
 	@$(eval DONEFILES += "CPP")
 	@printf "\r                                               \r$(words $(DONEFILES)) / $(NUMFILES) ($(notdir $<))"
-
-# %.flx:
-# 	@
-
-# %.flx.o: %.flx
-# 	@if [ ! -a build.dmf ]; then tools/updatebuild.sh; fi;
-# 	@touch build/.dmf
-
-# 	@$(FLXC) $(FLXFLAGS) -o $@ $<
-
-# 	@$(eval DONEFILES += "FLX")
-# 	@printf "\r                                               \r$(words $(DONEFILES)) / $(NUMFILES) ($(notdir $<))"
-
 
 
 builduserspace:

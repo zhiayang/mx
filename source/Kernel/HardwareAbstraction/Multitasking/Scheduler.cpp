@@ -46,13 +46,13 @@ namespace Multitasking
 
 	Process* GetCurrentProcess()		{ return CurrentThread ? CurrentThread->Parent : Kernel::KernelProcess; }
 	Thread* GetCurrentThread()			{ return CurrentThread; }
-	uint64_t GetCurrentThreadID()		{ return CurrentThread->ThreadID; }
-	uint64_t GetCurrentProcessID()		{ return CurrentThread->Parent->ProcessID; }
+	pid_t GetCurrentThreadID()		{ return CurrentThread->ThreadID; }
+	pid_t GetCurrentProcessID()		{ return CurrentThread->Parent->ProcessID; }
 	RunQueue* getRunQueue()				{ return mainRunQueue; }
 
 	// if, after N number of switches, processes in the low/norm queue don't get to run, run them all to completion.
 	// todo: fix scheduler. starvation still happens (unable to prevent cross-starvation)
-	static int StarvationThresholds[NUM_PRIO] = { 64, 16, 1, 1 };
+	static size_t StarvationThresholds[NUM_PRIO] = { 64, 16, 1, 1 };
 
 	Thread* GetNextThread()
 	{
