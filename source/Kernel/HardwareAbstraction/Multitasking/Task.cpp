@@ -295,7 +295,8 @@ namespace Multitasking
 		String::Copy(process->Name, name);
 
 		NumProcesses++;
-		(void) CreateThread(process, Function, Priority, a1, a2, a3, a4, a5, a6);
+		auto k = CreateThread(process, Function, Priority, a1, a2, a3, a4, a5, a6);
+		(void) k;
 
 		if(FirstProc)
 			FirstProc = false;

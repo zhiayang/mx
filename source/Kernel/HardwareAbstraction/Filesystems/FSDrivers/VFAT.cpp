@@ -29,9 +29,7 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace Filesystems
 {
-
-
-
+	static time_t datetounix(uint16_t dosdate, uint16_t dostime);
 
 
 	// ********************************************
@@ -78,7 +76,7 @@ namespace Filesystems
 	#define ATTR_SYSTEM		0x4
 	#define ATTR_VOLLABEL	0x8
 	#define ATTR_FOLDER		0x10
-	// #define ATTR_ARCHIVE		0x20
+	#define ATTR_ARCHIVE	0x20
 
 	#define ATTR_LFN		(ATTR_READONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLLABEL)
 
@@ -117,28 +115,6 @@ namespace Filesystems
 		return ret;
 	}
 
-	static time_t datetounix(uint16_t dosdate, uint16_t dostime)
-	{
-		uint8_t year	= (dosdate & 0xFE00) >> 9;
-		uint8_t month	= (dosdate & 0x1E0) >> 5;
-		uint8_t day		= (dosdate & 0x1F);
-
-		uint8_t hour	= (dostime & 0xF800) >> 11;
-		uint8_t minute	= (dostime & 0x7E0) >> 5;
-		uint8_t sec2	= (dostime & 0x1F);
-
-		tm ts;
-		ts.tm_year		= year;
-		ts.tm_mon		= month;
-		ts.tm_mday		= day;
-
-		ts.tm_hour		= hour;
-		ts.tm_min		= minute;
-		ts.tm_sec		= sec2 * 2;
-
-		return 0;
-		// return mktime(&ts);
-	}
 
 	static rde::vector<rde::string*> split(rde::string& s, char delim)
 	{
@@ -291,12 +267,6 @@ namespace Filesystems
 			name[10] = (char) fat[81];
 
 			name = String::TrimWhitespace(name);
-
-			Log("fat32 root directory cluster: %d", this->RootDirectoryCluster);
-			Log("** reserved: %d", this->ReservedSectors);
-			Log("** numfats:  %d", this->NumberOfFATs);
-			Log("** fatsecsz: %d", this->FATSectorSize);
-			Log("** secprcls: %d", this->SectorsPerCluster);
 		}
 		else
 		{
@@ -305,12 +275,6 @@ namespace Filesystems
 											+ (this->NumberOfFATs * this->FATSectorSize));
 
 			this->FirstUsableSector		= this->RootDirectoryCluster + this->RootDirectorySize;
-
-			Log("fat16 root directory sector: %d", this->RootDirectoryCluster);
-			Log("** reserved: %d", this->ReservedSectors);
-			Log("** numfats:  %d", this->NumberOfFATs);
-			Log("** fatsecsz: %d", this->FATSectorSize);
-			Log("** secprcls: %d", this->SectorsPerCluster);
 
 			char* name = new char[16];
 			name[0] = (char) fat[43];
@@ -387,13 +351,13 @@ namespace Filesystems
 		node->info->data = (void*) vd;
 
 
-		// list everything
-		if(strcmp(path, "/texts/big.txt") == 0)
-		{
-			Log("*** begin list");
-			ls(this, node, 0);
-			Log("*** end list");
-		}
+		// // list everything
+		// if(strcmp(path, "/texts/big.txt") == 0)
+		// {
+		// 	Log("*** begin list");
+		// 	ls(this, node, 0);
+		// 	Log("*** end list");
+		// }
 
 
 
@@ -919,6 +883,191 @@ namespace Filesystems
 
 	void FSDriverFAT::Close(VFS::vnode*)
 	{
+	}
+
+
+
+	static const int DAYS_JANUARY = 31;
+	static const int DAYS_FEBRUARY = 28;
+	static const int DAYS_MARCH = 31;
+	static const int DAYS_APRIL = 30;
+	static const int DAYS_MAY = 31;
+	static const int DAYS_JUNE = 30;
+	static const int DAYS_JULY = 31;
+	static const int DAYS_AUGUST = 31;
+	static const int DAYS_SEPTEMBER = 30;
+	static const int DAYS_OCTOBER = 31;
+	static const int DAYS_NOVEMBER = 30;
+	static const int DAYS_DECEMBER = 31;
+
+	#define DECL_LEAP_SECOND(year, jun, dec) \
+		{0, 0, 0, 0, 0, jun, 0, 0, 0, 0, 0, dec}
+
+	static int8_t leap_seconds[][12] =
+	{
+		DECL_LEAP_SECOND(1970, 0, 0),
+		DECL_LEAP_SECOND(1971, 0, 0),
+		DECL_LEAP_SECOND(1972, 0, 0),
+		DECL_LEAP_SECOND(1972, 1, 1),
+		DECL_LEAP_SECOND(1973, 0, 1),
+		DECL_LEAP_SECOND(1974, 0, 1),
+		DECL_LEAP_SECOND(1975, 0, 1),
+		DECL_LEAP_SECOND(1976, 0, 1),
+		DECL_LEAP_SECOND(1977, 0, 1),
+		DECL_LEAP_SECOND(1978, 0, 1),
+		DECL_LEAP_SECOND(1979, 0, 1),
+		DECL_LEAP_SECOND(1980, 0, 0),
+		DECL_LEAP_SECOND(1981, 1, 0),
+		DECL_LEAP_SECOND(1982, 1, 0),
+		DECL_LEAP_SECOND(1983, 1, 0),
+		DECL_LEAP_SECOND(1984, 0, 0),
+		DECL_LEAP_SECOND(1985, 1, 0),
+		DECL_LEAP_SECOND(1986, 0, 0),
+		DECL_LEAP_SECOND(1987, 0, 1),
+		DECL_LEAP_SECOND(1988, 0, 0),
+		DECL_LEAP_SECOND(1989, 0, 1),
+		DECL_LEAP_SECOND(1990, 0, 1),
+		DECL_LEAP_SECOND(1991, 0, 0),
+		DECL_LEAP_SECOND(1992, 1, 0),
+		DECL_LEAP_SECOND(1993, 1, 0),
+		DECL_LEAP_SECOND(1994, 1, 0),
+		DECL_LEAP_SECOND(1995, 0, 1),
+		DECL_LEAP_SECOND(1996, 0, 0),
+		DECL_LEAP_SECOND(1997, 1, 0),
+		DECL_LEAP_SECOND(1998, 0, 1),
+		DECL_LEAP_SECOND(1999, 0, 0),
+		DECL_LEAP_SECOND(2000, 0, 0),
+		DECL_LEAP_SECOND(2001, 0, 0),
+		DECL_LEAP_SECOND(2002, 0, 0),
+		DECL_LEAP_SECOND(2003, 0, 0),
+		DECL_LEAP_SECOND(2004, 0, 0),
+		DECL_LEAP_SECOND(2005, 0, 1),
+		DECL_LEAP_SECOND(2006, 0, 0),
+		DECL_LEAP_SECOND(2007, 0, 0),
+		DECL_LEAP_SECOND(2008, 0, 1),
+		DECL_LEAP_SECOND(2009, 0, 0),
+		DECL_LEAP_SECOND(2010, 0, 0),
+		DECL_LEAP_SECOND(2011, 0, 0),
+		DECL_LEAP_SECOND(2012, 1, 0),
+		DECL_LEAP_SECOND(2013, 0, 0),
+	};
+
+
+	static time_t get_leap_second(int year, int month)
+	{
+		const time_t num_years = sizeof(leap_seconds) / sizeof(leap_seconds[0]);
+		if(year < 1970)
+			return 0;
+
+		if((int) num_years <= year - 1970)
+			return 0;
+
+		return leap_seconds[year-1970][month];
+	}
+
+	static time_t leap_seconds_in_year(int year)
+	{
+		time_t ret = 0;
+		for(int i = 0; i < 12; i++)
+			ret += get_leap_second(year, i);
+
+		return ret;
+	}
+
+	static bool is_leap_year(int year)
+	{
+		return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
+	}
+
+	static time_t days_in_year(int year)
+	{
+		return DAYS_JANUARY +
+		       DAYS_FEBRUARY + (is_leap_year(year) ? 1 : 0) +
+		       DAYS_MARCH +
+		       DAYS_APRIL +
+		       DAYS_MAY +
+		       DAYS_JUNE +
+		       DAYS_JULY +
+		       DAYS_AUGUST +
+		       DAYS_SEPTEMBER +
+		       DAYS_OCTOBER +
+		       DAYS_NOVEMBER +
+		       DAYS_DECEMBER;
+	}
+
+
+	static time_t convertTime(tm* tm)
+	{
+		time_t year = tm->tm_year + 1900;
+		time_t month = tm->tm_mon;
+		time_t day = tm->tm_mday - 1;
+		time_t hour = tm->tm_hour;
+		time_t minute = tm->tm_min;
+		time_t second = tm->tm_sec;
+
+		time_t ret = 0;
+		for(time_t y = 1970; y < year; y++)
+		{
+			time_t year_leaps = leap_seconds_in_year((int) y);
+			time_t year_days = days_in_year((int) y);
+			time_t year_seconds = year_days * 24 * 60 * 60 + year_leaps;
+			ret += year_seconds;
+		}
+
+		int month_days_list[12] =
+		{
+			DAYS_JANUARY,
+			DAYS_FEBRUARY + (is_leap_year((int) year) ? 1 : 0),
+			DAYS_MARCH,
+			DAYS_APRIL,
+			DAYS_MAY,
+			DAYS_JUNE,
+			DAYS_JULY,
+			DAYS_AUGUST,
+			DAYS_SEPTEMBER,
+			DAYS_OCTOBER,
+			DAYS_NOVEMBER,
+			DAYS_DECEMBER,
+		};
+
+		for(uint8_t m = 0; m < month; m++)
+		{
+			int month_leaps = (int) get_leap_second((int) year, m);
+			int month_days = month_days_list[m];
+			int month_seconds = month_days * 24 * 60 * 60 + month_leaps;
+			ret += month_seconds;
+		}
+
+		ret += (time_t) day * 24 * 60 * 60;
+		ret += (time_t) hour * 60 * 60;
+		ret += (time_t) minute * 60;
+		ret += (time_t) second * 1;
+
+		return ret;
+	}
+
+
+	static time_t datetounix(uint16_t dosdate, uint16_t dostime)
+	{
+		uint8_t year	= (dosdate & 0xFE00) >> 9;
+		uint8_t month	= (dosdate & 0x1E0) >> 5;
+		uint8_t day		= (dosdate & 0x1F);
+
+		uint8_t hour	= (dostime & 0xF800) >> 11;
+		uint8_t minute	= (dostime & 0x7E0) >> 5;
+		uint8_t sec2	= (dostime & 0x1F);
+
+		tm ts;
+		ts.tm_year		= year;
+		ts.tm_mon		= month;
+		ts.tm_mday		= day;
+
+		ts.tm_hour		= hour;
+		ts.tm_min		= minute;
+		ts.tm_sec		= sec2 * 2;
+
+		// return 0;
+		return convertTime(&ts);
 	}
 }
 

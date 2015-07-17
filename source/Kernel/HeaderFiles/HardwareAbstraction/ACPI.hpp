@@ -44,7 +44,7 @@ namespace HardwareAbstraction
 
 			rde::vector<SystemDescriptionTable*> tables;
 
-		} __attribute__ ((packed));
+		};
 
 		struct SDTable;
 		struct SystemDescriptionTable
@@ -63,6 +63,7 @@ namespace HardwareAbstraction
 			uint64_t	address;
 
 			SDTable*	table;
+
 		} __attribute__ ((packed));
 
 		// specific tables
@@ -92,7 +93,7 @@ namespace HardwareAbstraction
 			uint8_t		hpetNumber;
 			uint16_t	minTick;
 			uint8_t		pageProt;
-		} __attribute__ ((packed));
+		};
 
 		namespace APICStructs
 		{
