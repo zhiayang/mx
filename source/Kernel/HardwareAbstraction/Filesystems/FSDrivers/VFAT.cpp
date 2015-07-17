@@ -112,7 +112,7 @@ namespace Filesystems
 		uint8_t ret = 0;
 		for(int i = 0; i < 11; i++ )
 		{
-			ret = ((ret & 1) ? 0x80 : 0x00) + (ret >> 1) + ShortName[i];
+			ret = ((ret & 1) ? 0x80 : 0x00) + (ret >> 1) + (uint8_t) ShortName[i];
 		}
 		return ret;
 	}
@@ -721,7 +721,7 @@ namespace Filesystems
 			}
 			else if(dirent->attrib == ATTR_LFN && dirent->clusterlow == 0)
 			{
-				int nument = 0;
+				uint64_t nument = 0;
 				name = this->ReadLFN(addr, &nument);
 				lfncheck = ((LFNEntry*) dirent)->checksum;
 
@@ -835,7 +835,7 @@ namespace Filesystems
 		auto buf = MemoryManager::Virtual::AllocatePage(lookahead == 0 ? 1 : (512 * lookahead) / 0x1000);
 		auto obuf = buf;
 
-		int ClusterMultFactor = (this->FATKind == FAT16 ? 2 : 4);
+		uint32_t ClusterMultFactor = (this->FATKind == FAT16 ? 2 : 4);
 		do
 		{
 			uint32_t FatSector = (uint32_t) this->partition->GetStartLBA() + this->ReservedSectors + ((Cluster * ClusterMultFactor) / 512);
@@ -873,7 +873,7 @@ namespace Filesystems
 		return ret;
 	}
 
-	rde::string FSDriverFAT::ReadLFN(uint64_t addr, int* ret_nument)
+	rde::string FSDriverFAT::ReadLFN(uint64_t addr, uint64_t* ret_nument)
 	{
 		LFNEntry* ent = (LFNEntry*) addr;
 		uint8_t seqnum = ent->seqnum;
@@ -883,7 +883,7 @@ namespace Filesystems
 
 		// first seqnum & ~0x40 is the number of entries
 		uint8_t nument = seqnum & ~0x40;
-		for(int i = 0; i < nument; i++)
+		for(uint64_t i = 0; i < nument; i++)
 		{
 			ent = (LFNEntry*) addr;
 			assert(ent->attrib == 0xF);

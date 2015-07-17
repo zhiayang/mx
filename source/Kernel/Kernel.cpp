@@ -741,7 +741,7 @@ namespace Kernel
 	{
 		(void) line;
 		(void) func;
-		HaltSystem("assert() Failed!", file, line, expr);
+		HaltSystem("assert() Failed!", file, (uint64_t) line, expr);
 	}
 
 

@@ -79,7 +79,7 @@ namespace DNS
 	static rde::hash_map<rde::string, rde::vector<DNSMappingv4>>* dnsmapv4 = 0;
 
 	static IPv4Address DNSServer;
-	static uint64_t socket = 0;
+	static fd_t socket = 0;
 	static uint16_t udpport = 0;
 
 	IPv4Address GetDNSServer()
@@ -120,7 +120,7 @@ namespace DNS
 			uint8_t curlen = 0;
 			while(query[i] != '.')
 			{
-				name[i] = query[i];
+				name[i] = (uint8_t) query[i];
 				curlen++;
 				i++;
 
@@ -197,7 +197,7 @@ namespace DNS
 						name.append('.');
 
 					else if(isalpha(chars[i]))
-						name.append(chars[i]);
+						name.append((char) chars[i]);
 				}
 			}
 			else

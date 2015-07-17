@@ -7,12 +7,13 @@
 
 #include <stdint.h>
 #include <stdarg.h>
+#include <stddef.h>
 
 namespace Library
 {
 	namespace StandardIO
 	{
-		uint64_t PrintString(const char* string, int64_t length = -1, void (*pf)(uint8_t) = 0);
+		uint64_t PrintString(const char* string, size_t length = (size_t) -1, void (*pf)(uint8_t) = 0);
 		void PrintGUID(uint64_t High64, uint64_t Low64);
 
 

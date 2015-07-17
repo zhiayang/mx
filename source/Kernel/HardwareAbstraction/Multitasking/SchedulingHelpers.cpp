@@ -390,7 +390,7 @@ namespace Multitasking
 		return false;
 	}
 
-	Process* GetProcess(uint64_t pid)
+	Process* GetProcess(pid_t pid)
 	{
 		// for(uint64_t i = 0; i < ProcessList->size(); i++)
 		// {
@@ -407,7 +407,7 @@ namespace Multitasking
 		return 0;
 	}
 
-	Thread* GetThread(uint64_t tid)
+	Thread* GetThread(pid_t tid)
 	{
 		auto queue = getRunQueue();
 		queue->lock();

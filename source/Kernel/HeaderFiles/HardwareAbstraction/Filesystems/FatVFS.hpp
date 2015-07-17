@@ -28,7 +28,7 @@ namespace Filesystems
 		private:
 			uint8_t FATKind;
 
-			rde::string ReadLFN(uint64_t addr, int* nument);
+			rde::string ReadLFN(uint64_t addr, uint64_t* nument);
 			uint64_t ClusterToLBA(uint32_t clus);
 			rde::vector<uint32_t> GetClusterChain(VFS::vnode* node, uint64_t* numclus);
 

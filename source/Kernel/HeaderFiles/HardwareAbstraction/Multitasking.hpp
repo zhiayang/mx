@@ -24,7 +24,7 @@ namespace HardwareAbstraction
 
 		struct Thread
 		{
-			uint64_t ThreadID;
+			pid_t ThreadID;
 			uint64_t StackPointer;
 			uint64_t TopOfStack;
 			uint64_t StackSize;
@@ -54,7 +54,7 @@ namespace HardwareAbstraction
 		{
 			Process(MemoryManager::Virtual::PageMapStructure* pml) : VAS(pml) { }
 
-			uint64_t ProcessID;			// Process ID
+			pid_t ProcessID;			// Process ID
 			uint8_t Flags;
 			char Name[64];				// Task's name
 			size_t tlssize;
@@ -118,13 +118,13 @@ namespace HardwareAbstraction
 		RunQueue* getRunQueue();
 		uint64_t GetNumberOfThreads();
 		uint64_t GetCurrentCR3();
-		Thread* GetThread(uint64_t id);
-		Process* GetProcess(uint64_t id);
+		Thread* GetThread(pid_t id);
+		Process* GetProcess(pid_t id);
 
 		void SetTLS(uint64_t tlsptr);
 
-		uint64_t GetCurrentThreadID();
-		uint64_t GetCurrentProcessID();
+		pid_t GetCurrentThreadID();
+		pid_t GetCurrentProcessID();
 
 		bool CurrentProcessInRing3();
 		Thread* GetCurrentThread();

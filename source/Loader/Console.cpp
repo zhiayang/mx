@@ -251,7 +251,7 @@ namespace Console
 			for(int8_t d = 0; d < leadingzeroes; d++)
 				PrintString("0", -1);
 
-			return leadingzeroes;
+			return (uint64_t) leadingzeroes;
 		}
 
 
@@ -595,7 +595,7 @@ namespace Console
 			}
 			else
 			{
-				PrintChar(c);
+				PrintChar((uint8_t) c);
 			}
 		}
 	}

@@ -161,7 +161,7 @@ namespace Network
 	size_t ReadSocket(fd_t socket, void* buf, size_t bytes)
 	{
 		vnode* node = getvnode(socket);
-		if(!node) return -1;
+		if(!node) return (size_t) -1;
 
 		return ((SocketVFS*) node->info->driver)->Read(node, buf, 0, bytes);
 	}
@@ -169,7 +169,7 @@ namespace Network
 	size_t ReadSocketBlocking(fd_t socket, void* buf, size_t bytes)
 	{
 		vnode* node = getvnode(socket);
-		if(!node) return -1;
+		if(!node) return (size_t) -1;
 
 		return ((SocketVFS*) node->info->driver)->BlockingRead(node, buf, bytes);
 	}
@@ -177,7 +177,7 @@ namespace Network
 	size_t WriteSocket(fd_t socket, void* buf, size_t bytes)
 	{
 		vnode* node = getvnode(socket);
-		if(!node) return -1;
+		if(!node) return (size_t) -1;
 
 		return ((SocketVFS*) node->info->driver)->Write(node, buf, 0, bytes);
 	}
@@ -185,7 +185,7 @@ namespace Network
 	size_t GetSocketBufferFill(fd_t socket)
 	{
 		vnode* node = getvnode(socket);
-		if(!node) return -1;
+		if(!node) return (size_t) -1;
 
 		return ((Socket*) node->info->data)->recvbuffer.ByteCount();
 	}
@@ -421,7 +421,7 @@ namespace Network
 		{
 			Log(1, "Invalid vnode");
 			Multitasking::SetThreadErrno(EBADF);
-			return -1;
+			return (size_t) -1;
 		}
 
 		uint64_t ret = __min(skt->recvbuffer.ByteCount(), length);
@@ -437,7 +437,7 @@ namespace Network
 		{
 			Log(1, "Invalid vnode");
 			Multitasking::SetThreadErrno(EBADF);
-			return -1;
+			return (size_t) -1;
 		}
 
 		// only block if we have to
@@ -460,7 +460,7 @@ namespace Network
 		{
 			Log(1, "Invalid vnode");
 			Multitasking::SetThreadErrno(EBADF);
-			return -1;
+			return (size_t) -1;
 		}
 
 		// tcp is special because we need to do stupid things in the TCPConnection class.
@@ -475,7 +475,7 @@ namespace Network
 			{
 				Log(1, "Tried to send a UDP packet larger than the MTU, which is illegal");
 				Multitasking::SetThreadErrno(EMSGSIZE);
-				return -1;
+				return (size_t) -1;
 			}
 
 			UDP::SendIPv4Packet(skt->interface, (uint8_t*) buf, (uint16_t) length, skt->ip4dest,

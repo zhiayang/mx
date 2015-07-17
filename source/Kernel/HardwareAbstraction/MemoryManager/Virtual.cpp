@@ -751,29 +751,29 @@ namespace Virtual
 		if(cow)
 		{
 			*pdptv |= I_CopyOnWrite;
-			*pdptv &= ~I_ReadWrite;
+			*pdptv &= ((uint64_t) ~I_ReadWrite);
 
 			*pdv |= I_CopyOnWrite;
-			*pdv &= ~I_ReadWrite;
+			*pdv &= ((uint64_t) ~I_ReadWrite);
 
 			*ptv |= I_CopyOnWrite;
-			*ptv &= ~I_ReadWrite;
+			*ptv &= ((uint64_t) ~I_ReadWrite);
 
 			*pg |= I_CopyOnWrite;
-			*pg &= ~I_ReadWrite;
+			*pg &= ((uint64_t) ~I_ReadWrite);
 		}
 		else
 		{
-			*pdptv &= ~I_CopyOnWrite;
+			*pdptv &= ((uint64_t) ~I_CopyOnWrite);
 			*pdptv |= I_ReadWrite;
 
-			*pdv &= ~I_CopyOnWrite;
+			*pdv &= ((uint64_t) ~I_CopyOnWrite);
 			*pdv |= I_ReadWrite;
 
-			*ptv &= ~I_CopyOnWrite;
+			*ptv &= ((uint64_t) ~I_CopyOnWrite);
 			*ptv |= I_ReadWrite;
 
-			*pg &= ~I_CopyOnWrite;
+			*pg &= ((uint64_t) ~I_CopyOnWrite);
 			*pg |= I_ReadWrite;
 		}
 

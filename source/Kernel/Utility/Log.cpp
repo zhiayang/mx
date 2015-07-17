@@ -51,28 +51,28 @@ namespace Kernel
 				PrintFormatted(pfso, "[INFO]: ");
 
 				PrintFormatted(pfso, str, args);
-				PrintString("\n", -1, pfso);
+				PrintString("\n", 0, pfso);
 				break;
 
 			case 1:
 				PrintFormatted(pfso, "[WARN]: ");
 
 				PrintFormatted(pfso, str, args);
-				PrintString("\n", -1, pfso);
+				PrintString("\n", 0, pfso);
 				break;
 
 			case 2:
 				PrintFormatted(pfsc, "[SEVR]: ");
 
 				PrintFormatted(pfsc, str, args);
-				PrintString("\n", -1, pfsc);
+				PrintString("\n", 0, pfsc);
 				break;
 
 			case 3:
 				PrintFormatted(pfsc, "[CRIT]: ");
 
 				PrintFormatted(pfsc, str, args);
-				PrintString("\n", -1, pfsc);
+				PrintString("\n", 0, pfsc);
 				break;
 		}
 	}

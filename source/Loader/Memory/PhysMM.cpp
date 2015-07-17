@@ -17,12 +17,12 @@ namespace Memory
 	// Define a region of memory in which the VMM gets it's memory from, to create page strucures.
 	static uint64_t ReservedRegionForVMM;
 	static uint64_t LengthOfReservedRegion;
-	static uint64_t ReservedRegionIndex = -0x1000;
+	static uint64_t ReservedRegionIndex = (uint64_t) -0x1000;
 
 
 	uint64_t PageAlignDown(uint64_t x)
 	{
-		return x & ~(0xFFF);
+		return x & ((uint64_t) ~0xFFF);
 	}
 
 	uint64_t PageAlignUp(uint64_t x)

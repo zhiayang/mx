@@ -212,8 +212,8 @@ namespace Filesystems
 			auto fe		= new fileentry;
 			fe->node	= node;
 			fe->offset	= 0;
-			fe->flags	= flags;
-			fe->fd		= FirstFreeFD + ioctx->fdarray.fds.size();
+			fe->flags	= (uint64_t) flags;
+			fe->fd		= FirstFreeFD + (fd_t) ioctx->fdarray.fds.size();
 			fe->id		= curfeid++;
 
 			ioctx->fdarray.fds.push_back(fe);
@@ -283,7 +283,7 @@ namespace Filesystems
 			{
 				// if O_CREAT, force the issue.
 				if(!res && (flags & O_CREATE))
-					fs->driver->Create(node, path, flags, 0);
+					fs->driver->Create(node, path, (uint64_t) flags, 0);
 
 				auto ret = VFS::Open(ioctx, node, flags);
 				return ret;
@@ -377,7 +377,7 @@ namespace Filesystems
 			fe->node	= old->node;
 			fe->offset	= 0;
 			fe->flags	= old->flags;
-			fe->fd		= FirstFreeFD + ctx->fdarray.fds.size();
+			fe->fd		= FirstFreeFD + (fd_t) ctx->fdarray.fds.size();
 			fe->id		= curfeid++;
 
 			ctx->fdarray.fds.push_back(fe);
@@ -426,7 +426,7 @@ namespace Filesystems
 		auto ctx = getctx();
 		auto fe = VFS::FileEntryFromFD(ctx, fd);
 		if(fe == nullptr)
-			return -1;
+			return (size_t) -1;
 
 		assert(fe->node);
 		auto read = VFS::Read(ctx, fe->node, buf, fe->offset, len);
@@ -515,14 +515,14 @@ namespace Filesystems
 		{
 			// todo: set errno
 			Multitasking::SetThreadErrno(EBADF);
-			return -1;
+			return (uint64_t) -1;
 		}
 
 		auto fe = VFS::FileEntryFromFD(ctx, fd);
 		if(fe == nullptr)
 		{
 			Multitasking::SetThreadErrno(EBADF);
-			return -1;
+			return (uint64_t) -1;
 		}
 
 		return fe->offset;

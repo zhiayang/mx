@@ -195,7 +195,7 @@ namespace Multitasking
 		thread->StackPointer		= thread->TopOfStack;
 		thread->Thread				= Function;
 		thread->State				= STATE_NORMAL;
-		thread->ThreadID			= NumThreads;
+		thread->ThreadID			= (pid_t) NumThreads, NumThreads++;
 		thread->Parent				= Parent;
 		thread->Priority			= attr->priority;
 		thread->ExecutionTime		= 0;
@@ -206,8 +206,6 @@ namespace Multitasking
 
 		SetupStackThread(thread, u, physu, physks, ustacksz, (uint64_t) Function, attr);
 		Parent->Threads.push_back(thread);
-
-		NumThreads++;
 
 		if(FirstProc)
 		{
@@ -226,7 +224,7 @@ namespace Multitasking
 	Thread* CloneThread(Thread* orig)
 	{
 		Thread* ret			= new Thread();
-		ret->ThreadID		= NumThreads, NumThreads++;
+		ret->ThreadID		= (pid_t) NumThreads, NumThreads++;
 		ret->StackPointer	= orig->StackPointer;
 		ret->TopOfStack		= orig->TopOfStack;
 		ret->StackSize		= orig->StackSize;
@@ -275,7 +273,7 @@ namespace Multitasking
 			tlssize = 8;
 
 		process->Flags					= Flags;
-		process->ProcessID				= NumProcesses;
+		process->ProcessID				= (pid_t) NumProcesses;
 		process->VAS					= Virtual::VirtualAddressSpace(PML4);
 		process->SignalHandlers			= new sighandler_t[__SIGCOUNT];
 		process->tlssize				= tlssize;
@@ -336,7 +334,7 @@ namespace Multitasking
 
 		proc->Parent				= Multitasking::GetCurrentProcess();
 		proc->Flags					= proc->Parent->Flags;
-		proc->ProcessID				= NumProcesses;
+		proc->ProcessID				= (pid_t) NumProcesses;
 		proc->VAS					= Virtual::VirtualAddressSpace(PML4);
 		proc->SignalHandlers		= new sighandler_t[__SIGCOUNT];
 		proc->tlssize				= proc->Parent->tlssize;
@@ -383,7 +381,7 @@ namespace Multitasking
 		// check if we are *not* the child process.
 		if(proc->ProcessID != GetCurrentProcess()->ProcessID)
 		{
-			return proc->ProcessID;
+			return (int64_t) proc->ProcessID;
 		}
 		else
 		{

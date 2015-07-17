@@ -17,7 +17,7 @@ namespace Kernel
 		void appendToString(uint8_t ch)
 		{
 			assert(str);
-			str->append(ch);
+			str->append((char) ch);
 		}
 
 		void DumpBytes(uint64_t address, uint64_t length)
