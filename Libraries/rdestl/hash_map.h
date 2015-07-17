@@ -117,7 +117,7 @@ namespace rde
 		typedef TAllocator															allocator_type;
 		typedef node_iterator<node*, value_type*, value_type&>						iterator;
 		typedef node_iterator<const node*, const value_type*, const value_type&>	const_iterator;
-		typedef size_t																	size_type;
+		typedef size_t																size_type;
 		static const size_type														kNodeSize = sizeof(node);
 		static const size_type														kInitialCapacity = 64;
 
@@ -256,7 +256,7 @@ namespace rde
 		if (m_numUsed * TLoadFactor4 >= m_capacity * 4)
 			grow();
 
-		hash_value_t hash;
+		hash_value_t hash = 0;
 		node* n = find_for_insert(v.first, &hash);
 		if (n->is_occupied())
 		{
@@ -359,10 +359,11 @@ namespace rde
 private:
 	void grow()
 	{
-		const int newCapacity = (m_capacity == 0 ? kInitialCapacity : m_capacity * 2);
+		const size_t newCapacity = (m_capacity == 0 ? kInitialCapacity : m_capacity * 2);
 		grow(newCapacity);
 	}
-	void grow(int new_capacity)
+
+	void grow(size_t new_capacity)
 	{
 		RDE_ASSERT((new_capacity & (new_capacity - 1)) == 0);	// Must be power-of-two
 		node* newNodes = allocate_nodes(new_capacity);
@@ -375,6 +376,7 @@ private:
 		m_numUsed = m_size;
 		RDE_ASSERT(m_numUsed < m_capacity);
 	}
+
 	rde::pair<iterator, bool> insert_at(const value_type& v, node* n,
 		hash_value_t hash)
 	{
@@ -398,7 +400,7 @@ private:
 
 		const hash_value_t hash = hash_func(key);
 		*out_hash = hash;
-		uint32_t i = hash & m_capacityMask;
+		uint64_t i = hash & m_capacityMask;
 
 		node* n = m_nodes + i;
 		if (n->hash == hash && m_keyEqualFunc(key, n->data.first))
@@ -407,7 +409,7 @@ private:
 		node* freeNode(0);
 		if (n->is_deleted())
 			freeNode = n;
-		uint32_t numProbes(0);
+		uint64_t numProbes(0);
 		// Guarantees loop termination.
 		RDE_ASSERT(m_numUsed < m_capacity);
 		while (!n->is_unused())
@@ -425,12 +427,12 @@ private:
 	node* lookup(const key_type& key) const
 	{
 		const hash_value_t hash = hash_func(key);
-		uint32_t i = hash & m_capacityMask;
+		uint64_t i = hash & m_capacityMask;
 		node* n = m_nodes + i;
 		if(n->hash == hash && m_keyEqualFunc(key, n->data.first))
 			return n;
 
-		uint32_t numProbes = 0;
+		uint64_t numProbes = 0;
 
 		// Guarantees loop termination.
 		RDE_ASSERT(m_capacity == 0 || m_numUsed < m_capacity);
@@ -444,30 +446,30 @@ private:
 			if(compare_key(n, key, hash))
 				return n;
 
-			else if(numProbes >= (uint32_t) this->m_numUsed)
+			else if(numProbes >= (uint64_t) this->m_numUsed)
 				break;
 		}
 		return m_nodes + m_capacity;
 	}
 
-	static void rehash(int new_capacity, node* new_nodes,
-		int capacity, const node* nodes, bool destruct_original)
+	static void rehash(size_t new_capacity, node* new_nodes,
+		size_t capacity, const node* nodes, bool destruct_original)
 	{
 		//if (nodes == &ms_emptyNode || new_nodes == &ms_emptyNode)
 		  //  return;
 
 		const node* it = nodes;
 		const node* itEnd = nodes + capacity;
-		const uint32_t mask = new_capacity - 1;
+		const uint64_t mask = (uint64_t) new_capacity - 1;
 		while (it != itEnd)
 		{
 			if (it->is_occupied())
 			{
 				const hash_value_t hash = it->hash;
-				uint32_t i = hash & mask;
+				uint64_t i = hash & mask;
 
 				node* n = new_nodes + i;
-				uint32_t numProbes(0);
+				uint64_t numProbes(0);
 				while (!n->is_unused())
 				{
 					++numProbes;
@@ -483,7 +485,7 @@ private:
 		}
 	}
 
-	node* allocate_nodes(int n)
+	node* allocate_nodes(size_t n)
 	{
 		node* buckets = static_cast<node*>(m_allocator.allocate(n * sizeof(node)));
 		node* iterBuckets(buckets);
@@ -538,10 +540,10 @@ private:
 	}
 
 	node*			m_nodes;
-	int				m_size;
-	int				m_capacity;
-	uint32_t			m_capacityMask;
-	int				m_numUsed;
+	uint64_t		m_size;
+	uint64_t		m_capacity;
+	uint64_t		m_capacityMask;
+	uint64_t		m_numUsed;
 	THashFunc       m_hashFunc;
 	TKeyEqualFunc	m_keyEqualFunc;
 	TAllocator      m_allocator;

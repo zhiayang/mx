@@ -14,13 +14,13 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace SystemCalls
 {
-	extern "C" uint64_t Syscall_OpenAny(const char* path, uint64_t flags)
+	extern "C" fd_t Syscall_OpenAny(const char* path, uint64_t flags)
 	{
 		// handle only files for now.
 		return OpenFile(path, (int) flags);
 	}
 
-	extern "C" uint64_t Syscall_OpenSocket(uint64_t domain, uint64_t type, uint64_t protocol)
+	extern "C" fd_t Syscall_OpenSocket(uint64_t domain, uint64_t type, uint64_t protocol)
 	{
 		using namespace Library;
 
@@ -45,22 +45,22 @@ namespace SystemCalls
 		return Network::OpenSocket(sockprot, 0);
 	}
 
-	extern "C" uint64_t Syscall_BindNetSocket(uint64_t fd, uint32_t ipv4, uint16_t port)
+	extern "C" err_t Syscall_BindNetSocket(fd_t fd, uint32_t ipv4, uint16_t port)
 	{
 		return Network::BindSocket(fd, ipv4, port);
 	}
 
-	extern "C" uint64_t Syscall_ConnectNetSocket(uint64_t fd, uint32_t ipv4, uint16_t port)
+	extern "C" err_t Syscall_ConnectNetSocket(fd_t fd, uint32_t ipv4, uint16_t port)
 	{
 		return Network::ConnectSocket(fd, ipv4, port);
 	}
 
-	extern "C" uint64_t Syscall_BindIPCSocket(uint64_t fd, const char* path)
+	extern "C" err_t Syscall_BindIPCSocket(fd_t fd, const char* path)
 	{
 		return Network::BindSocket(fd, path);
 	}
 
-	extern "C" uint64_t Syscall_ConnectIPCSocket(uint64_t fd, const char* path)
+	extern "C" err_t Syscall_ConnectIPCSocket(fd_t fd, const char* path)
 	{
 		return Network::ConnectSocket(fd, path);
 	}
@@ -71,37 +71,37 @@ namespace SystemCalls
 
 
 
-	extern "C" void Syscall_CloseAny(uint64_t fd)
+	extern "C" void Syscall_CloseAny(fd_t fd)
 	{
 		Close(fd);
 	}
 
-	extern "C" void Syscall_FlushAny(uint64_t fd)
+	extern "C" void Syscall_FlushAny(fd_t fd)
 	{
 		Flush(fd);
 	}
 
-	extern "C" uint64_t Syscall_ReadAny(uint64_t fd, const void* dat, uint64_t size)
+	extern "C" uint64_t Syscall_ReadAny(fd_t fd, const void* dat, uint64_t size)
 	{
 		return Read(fd, (void*) dat, size);
 	}
 
-	extern "C" uint64_t Syscall_WriteAny(uint64_t fd, const void* dat, uint64_t size)
+	extern "C" uint64_t Syscall_WriteAny(fd_t fd, const void* dat, uint64_t size)
 	{
 		return Write(fd, (void*) dat, size);
 	}
 
-	extern "C" int Syscall_SeekAny(uint64_t fd, long offset, int whence)
+	extern "C" int Syscall_SeekAny(fd_t fd, long offset, int whence)
 	{
-		return Seek(fd, offset, whence);
+		return Seek(fd, (size_t) offset, whence);
 	}
 
-	extern "C" int Syscall_StatAny(uint64_t fd, struct stat* st, bool statlink)
+	extern "C" int Syscall_StatAny(fd_t fd, struct stat* st, bool statlink)
 	{
 		return Stat(fd, st, statlink);
 	}
 
-	extern "C" uint64_t Syscall_GetSeekPos(uint64_t fd)
+	extern "C" uint64_t Syscall_GetSeekPos(fd_t fd)
 	{
 		return GetSeekPos(fd);
 	}

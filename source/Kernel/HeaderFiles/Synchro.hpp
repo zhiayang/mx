@@ -45,7 +45,7 @@ namespace Kernel
 	class Semaphore
 	{
 		public:
-			Semaphore(uint64_t maxval) : value(maxval) { }
+			Semaphore(int64_t maxval) : value(maxval) { }
 			rde::vector<HardwareAbstraction::Multitasking::Thread*> contestants;
 			int64_t value = 0;
 	};

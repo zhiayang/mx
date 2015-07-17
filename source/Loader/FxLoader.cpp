@@ -168,7 +168,7 @@ uint64_t LoadKernelELF(uint64_t start, uint64_t length)
 
 		for(uint64_t m = 0; m < (ProgramHeader->ProgramMemorySize + 0x1000) / 0x1000; m++)
 		{
-			uint64_t actualvirt = (ProgramHeader->ProgramVirtualAddress + (m * 0x1000)) & ~0xFFF;
+			uint64_t actualvirt = (ProgramHeader->ProgramVirtualAddress + (m * 0x1000)) & ((uint64_t) ~0xFFF);
 
 			uint64_t t = Memory::AllocateFromReserved();
 			Memory::MapAddress(actualvirt, t, 0x03);

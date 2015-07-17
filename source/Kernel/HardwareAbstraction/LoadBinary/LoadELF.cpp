@@ -88,7 +88,7 @@ namespace LoadBinary
 
 			for(uint64_t m = 0; m < (ProgramHeader->ProgramMemorySize + 0x1000) / 0x1000; m++)
 			{
-				uint64_t actualvirt = (ProgramHeader->ProgramVirtualAddress + (m * 0x1000)) & ~0xFFF;
+				uint64_t actualvirt = (ProgramHeader->ProgramVirtualAddress + (m * 0x1000)) & ((uint64_t) ~0xFFF);
 
 				if(allocatedpgs->size() > 0 && allocatedpgs->find(actualvirt) != allocatedpgs->end())
 					continue;	// we've already mapped this address to a page, continue.

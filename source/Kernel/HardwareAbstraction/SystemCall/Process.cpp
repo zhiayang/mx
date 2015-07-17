@@ -76,7 +76,7 @@ namespace SystemCalls
 		Multitasking::Block(1);
 	}
 
-	extern "C" uint64_t Syscall_CreateThread(uint64_t ptr, pthread_attr_t* attr)
+	extern "C" pid_t Syscall_CreateThread(uint64_t ptr, pthread_attr_t* attr)
 	{
 		void (*t)() = (void(*)())(ptr);
 		Multitasking::Process* p = Multitasking::GetCurrentProcess();
@@ -97,12 +97,12 @@ namespace SystemCalls
 		return proc->ProcessID;
 	}
 
-	extern "C" uint64_t Syscall_GetPID()
+	extern "C" pid_t Syscall_GetPID()
 	{
 		return Multitasking::GetCurrentProcess()->ProcessID;
 	}
 
-	extern "C" uint64_t Syscall_GetParentPID()
+	extern "C" pid_t Syscall_GetParentPID()
 	{
 		return Multitasking::GetCurrentProcess()->Parent->ProcessID;
 	}

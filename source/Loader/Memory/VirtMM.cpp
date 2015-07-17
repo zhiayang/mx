@@ -21,7 +21,7 @@ namespace Memory
 
 	#define I_Present		(0x1)
 	#define I_ReadWrite		(0x2)
-	#define I_AlignMask		(~0xFFF)
+	#define I_AlignMask		((uint64_t) ~0xFFF)
 
 	void InitialiseVirt()
 	{

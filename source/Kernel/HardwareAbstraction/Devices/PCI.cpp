@@ -278,7 +278,7 @@ namespace PCI
 			else if(num < 5)
 			{
 				// 64 bit bar.
-				return (uint64_t)(bar & 0xFFFFFFF0 + ((uint64_t) ReadConfig32(this->Address, 0x10 + ((num + 1) * 0x4)) << 32));
+				return (uint64_t)((bar & 0xFFFFFFF0) + ((uint64_t) ReadConfig32(this->Address, 0x10 + ((num + 1) * 0x4)) << 32));
 			}
 		}
 

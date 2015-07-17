@@ -313,7 +313,7 @@ namespace DHCP
 		Multitasking::AddToQueue(Multitasking::CreateKernelThread(MonitorThread, 2));
 
 
-		uint64_t length = sizeof(DHCPPacket) + (options - packet);
+		uint64_t length = sizeof(DHCPPacket) + ((uintptr_t) options - (uintptr_t) packet);
 		UDP::SendIPv4Packet(interface, packet - sizeof(DHCPPacket), length, IPv4Address { 0xFFFFFFFF }, 68, 67);
 		Log("DHCP discover sent, awaiting reply");
 		delete (packet - sizeof(DHCPPacket));
@@ -405,7 +405,7 @@ namespace DHCP
 
 		options += 4;
 
-		uint64_t length = sizeof(DHCPPacket) + (options - packet);
+		uint64_t length = sizeof(DHCPPacket) + ((uintptr_t) options - (uintptr_t) packet);
 		Log("DHCP Request sent, awaiting reply");
 		UDP::SendIPv4Packet(interface, packet - sizeof(DHCPPacket), length, IPv4Address { 0xFFFFFFFF }, 68, 67);
 		delete (packet - sizeof(DHCPPacket));
