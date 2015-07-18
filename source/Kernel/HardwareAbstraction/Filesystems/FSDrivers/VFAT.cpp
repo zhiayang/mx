@@ -3,6 +3,13 @@
 // Licensed under the Apache License Version 2.0.
 
 
+
+// ********************************************
+// *********** BOTH FAT16 and FAT32 ***********
+// ********************************************
+
+
+
 #include <Kernel.hpp>
 #include <math.h>
 #include <stdlib.h>
@@ -30,11 +37,6 @@ namespace HardwareAbstraction {
 namespace Filesystems
 {
 	static time_t datetounix(uint16_t dosdate, uint16_t dostime);
-
-
-	// ********************************************
-	// *********** BOTH FAT16 and FAT32 ***********
-	// ********************************************
 
 	struct DirectoryEntry
 	{
@@ -458,15 +460,18 @@ namespace Filesystems
 		for(size_t i = 0; i < cchain.size(); i++)
 		{
 			pair_t p = { cchain[i], 1 };
-			while(i + 1 < cchain.size())
+
+			while(i < cchain.size())
 			{
 				i++;
-				if(cchain[i] == (p.first + p.second))
+
+				if(i < cchain.size() && cchain[i] == (p.first + p.second))
 				{
 					p.second++;
 				}
 				else
 				{
+					i--;
 					break;
 				}
 			}
@@ -527,6 +532,7 @@ namespace Filesystems
 
 		uint64_t skipped = 0;
 		uint64_t have = 0;
+
 		for(auto pair : clusterpairs)
 		{
 			// completely consume the pair if we need to skip
@@ -549,7 +555,7 @@ namespace Filesystems
 				uint64_t spc = this->SectorsPerCluster;
 				uint64_t toread = ((cluslen - have) > pair.second) ? (pair.second) : (cluslen - have);
 
-				Log("reading %d sectors at %d", toread * spc, this->ClusterToLBA((uint32_t) pair.first));
+				// Log("reading %d sectors at %d", toread * spc, this->ClusterToLBA((uint32_t) pair.first));
 				IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA((uint32_t) pair.first), rbuf, toread * spc * 512);
 				// Utilities::DumpBytes(rbuf, toread * spc * 512);
 
@@ -827,6 +833,7 @@ namespace Filesystems
 			}
 
 			ret.push_back(Cluster);
+			// Log("cluster: %d (s: %d, fs: %x, fo: %d)", Cluster, FatSector, FatSector * 512, FatOffset);
 
 			// cchain is the next cluster in the list.
 			Cluster = cchain;
@@ -837,7 +844,6 @@ namespace Filesystems
 		MemoryManager::Virtual::FreePage(obuf, lookahead == 0 ? 1 : (512 * lookahead) / 0x1000);
 		tovnd(node)->clusters = ret;
 
-		// Log(3, "read %d clusters", *numclus);
 		return ret;
 	}
 

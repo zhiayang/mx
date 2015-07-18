@@ -459,7 +459,7 @@ namespace Kernel
 
 			Log(3, "s.st_size: %d", s.st_size);
 
-			const uint64_t blocksz = 16384;
+			const uint64_t blocksz = 256;
 			uint8_t* fl = new uint8_t[blocksz + 1];
 			uint8_t* whole = new uint8_t[s.st_size + 1];
 
@@ -472,12 +472,12 @@ namespace Kernel
 
 				// PrintString((const char*) fl);
 				// SerialPort::WriteString((const char*) fl);
+				memcpy(whole + cur, fl, read);
 				cur += read;
 
 				// PrintFormatted(" %6d/%d", cur, total);
 				Log("%d/%d", cur, total);
 
-				memcpy(whole + cur, fl, read);
 			}
 
 			SerialPort::WriteString((const char*) whole);
@@ -708,8 +708,8 @@ namespace Kernel
 
 	void HaltSystem(const char* message, const char* filename, uint64_t line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%d, RA(0): %x, RA(1): %x", message, filename, line,
-			__builtin_return_address(0), __builtin_return_address(1));
+		Log("System Halted: %s, %s:%d, RA(0): %x, RA(1): %x, RA(2): %x, RA(3): %x", message, filename, line,
+			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2), __builtin_return_address(3));
 
 		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 
@@ -719,8 +719,8 @@ namespace Kernel
 
 	void HaltSystem(const char* message, const char* filename, const char* line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%s, RA(0): %x, RA(1): %x", message, filename, line,
-			__builtin_return_address(0), __builtin_return_address(1));
+		Log("System Halted: %s, %s:%s, RA(0): %x, RA(1): %x, RA(2): %x, RA(3): %x", message, filename, line,
+			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2), __builtin_return_address(3));
 
 		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %s (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 

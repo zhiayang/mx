@@ -31,6 +31,9 @@ namespace DMA
 	const uint8_t ATA_WriteSectors28DMA	= 0xCA;
 	const uint8_t ATA_WriteSectors48DMA	= 0x35;
 
+	const uint16_t PrimaryControl		= 0x3F6;
+	const uint16_t SecondaryControl		= 0x376;
+
 	static volatile bool _WaitingDMA14	= false;
 	static volatile bool _WaitingDMA15	= false;
 
@@ -57,16 +60,16 @@ namespace DMA
 	void Initialise()
 	{
 		using namespace Kernel::HardwareAbstraction::Devices::PCI;
-		PCIDevice* ide = PCI::GetDeviceByClassSubclass(01, 01);
+		PCIDevice* ata = PCI::GetDeviceByClassSubclass(01, 01);
 
-		assert(ide);
+		assert(ata);
 
 		// enable bus mastering
-		uint32_t f = ide->GetRegisterData(0x4, 0, 2);
-		ide->WriteRegisterData(0x4, 0, 2, f | 0x4);
+		uint32_t f = ata->GetRegisterData(0x4, 0, 2);
+		ata->WriteRegisterData(0x4, 0, 2, f | 0x4);
 
-		uint32_t mmio = (uint32_t) ide->GetBAR(4);
-		assert(ide->IsBARIOPort(4));
+		uint32_t mmio = (uint32_t) ata->GetBAR(4);
+		assert(ata->IsBARIOPort(4));
 
 		cachedPRDTables = new rde::vector<PRDTableCache>();
 		for(int i = 0; i < MaxCachedTables; i++)
@@ -83,8 +86,8 @@ namespace DMA
 		IOPort::WriteByte((uint16_t) mmio + 2, 0x4);
 		IOPort::WriteByte((uint16_t) mmio + 10, 0x4);
 
-		IOPort::WriteByte(0x3F6, 0);
-		IOPort::WriteByte(0x376, 0);
+		IOPort::WriteByte(PrimaryControl, 0);
+		IOPort::WriteByte(SecondaryControl, 0);
 
 		Log("Initialised Busmastering DMA with BaseIO %x", mmio);
 	}
@@ -97,15 +100,27 @@ namespace DMA
 	{
 		(void) Buffer;
 
-		if(Bytes <= 512)
+		// if(Bytes <= 512)
 		{
-			uint8_t* devdata = (uint8_t*) &dev->Data[0];
-			PIO::ReadSector(dev, Sector);
+			uint64_t sectors = (Bytes + 511) / 512;
+			DMAAddr a = Physical::AllocateDMA((Bytes + 0xFFF) / 0x1000);
 
-			Memory::Copy((uint8_t*) Buffer, devdata, Bytes);
+			uint64_t have = 0;
+			for(uint64_t i = 0; i < sectors; i++)
+			{
+				PIO::ReadSector(dev, Sector + i);
+				Memory::Copy((void*) (a.virt + have), &dev->Data[0], __min(512, Bytes - have));
+				have += __min(512, Bytes - have);
+			}
 
-			auto d = DMAAddr(0, (uint64_t) devdata);
-			return IOResult(Bytes, d, 0);
+			return IOResult(Bytes, a, (Bytes + 0xFFF) / 0x1000);
+
+			// uint8_t* devdata = (uint8_t*) &dev->Data[0];
+
+			// Memory::Copy((uint8_t*) Buffer, devdata, Bytes);
+
+			// auto d = DMAAddr(0, (uint64_t) devdata);
+			// return IOResult(Bytes, d, 0);
 		}
 
 
@@ -148,7 +163,7 @@ namespace DMA
 		for(uint64_t i = 0, done = 0; i < numprds; i++)
 		{
 			uint64_t toread = 0;
-			if(Bytes - done > UINT16_MAX)
+			if(Bytes - done >= UINT16_MAX)
 				toread = 0;
 
 			else
@@ -159,18 +174,10 @@ namespace DMA
 			prd[i].lastEntry = ((i == numprds - 1) ? 0x8000 : 0);
 
 			done += (toread == 0 ? 65536 : toread);
-			Log("batch %d: %d bytes (%x)", i, (toread == 0 ? 65536 : toread), prd[i].lastEntry);
+			Log("batch %d: %d bytes %s", i, (toread == 0 ? 65536 : toread), (prd[i].lastEntry & 0x8000) ? "(last)" : "");
 		}
 
-		Log("used %d prds.", numprds);
-
-
-
-		// allocate a buffer that we know is a good deal
-
-		prd->bufferPhysAddr = (uint32_t) paddr.phys;
-		prd->byteCount = (uint16_t) Bytes;
-		prd->lastEntry = 0x8000;
+		// Log("used %d prds.", numprds);
 
 		// write the bytes of address into register
 		IOPort::Write32((uint16_t) (mmio + (dev->GetBus() ? 8 : 0) + 4), (uint32_t) prdCache.address.phys);
