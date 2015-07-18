@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 #include "FxLoader.hpp"
-#include "Elf.hpp"
+#include "ELF.hpp"
 
 #include "heatshrink/heatshrink_decoder.h"
 
