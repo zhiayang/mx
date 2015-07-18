@@ -248,6 +248,7 @@ Fault31:
 
 
 GlobalHandler:
+	xchg %bx, %bx
 	pushq %r15
 	pushq %r14
 	pushq %r13

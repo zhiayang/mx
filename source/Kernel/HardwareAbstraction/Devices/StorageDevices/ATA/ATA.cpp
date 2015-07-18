@@ -19,14 +19,11 @@ namespace HardwareAbstraction {
 namespace Devices {
 namespace Storage
 {
-	static uint16_t PrimaryBaseIO			= 0x1F0;
+	static uint16_t PrimaryBaseIO		= 0x1F0;
 	static uint16_t SecondaryBaseIO		= 0x170;
 
-	// static uint16_t PrimaryControl			= 0x3F6;
-	// static uint16_t SecondaryControl		= 0x376;
-
 	static uint16_t PrimaryCommand		= 0;
-	static uint16_t SecondaryCommand		= 0;
+	static uint16_t SecondaryCommand	= 0;
 
 
 	ATADrive::ATADrive(uint8_t b, uint8_t d) : StorageDevice(StorageDeviceType::ATAHardDisk)

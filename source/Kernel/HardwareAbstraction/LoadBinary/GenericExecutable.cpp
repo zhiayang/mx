@@ -31,12 +31,11 @@ namespace LoadBinary
 		struct stat st;
 		Stat(fd, &st);
 
-		Log("stated: %d", st.st_size);
 		auto buf = new uint8_t[st.st_size];
+		auto read = Read(fd, (void*) buf, st.st_size);
+		assert(read == st.st_size);
 
-		Log("allocated");
-		Read(fd, (void*) buf, st.st_size);
-		Log("read");
+		// Utilities::DumpBytes((uint64_t) buf, st.st_size);
 
 		assert(buf);
 
@@ -46,17 +45,16 @@ namespace LoadBinary
 		if(buf[0] == ELF_MAGIC0 && buf[1] == ELF_MAGIC1 && buf[2] == ELF_MAGIC2 && buf[3] == ELF_MAGIC3)
 		{
 			ELFExecutable* elf = new ELFExecutable(buf);
-			Log("stage 1");
 			proc = Multitasking::CreateProcess(procname, FLAG_USERSPACE, elf->GetTLSSize(), (void(*)()) elf->GetEntryPoint(), 1, a1, a2, a3, a4, a5, a6);
 
-			Log("Created, loading now..");
 			elf->Load(proc);
 
-			Log("Loaded");
 			delete elf;
 		}
 		else
+		{
 			HALT("enosup");
+		}
 
 		delete[] buf;
 		return proc;

@@ -3,6 +3,13 @@
 // Licensed under the Apache License Version 2.0.
 
 
+
+// ********************************************
+// *********** BOTH FAT16 and FAT32 ***********
+// ********************************************
+
+
+
 #include <Kernel.hpp>
 #include <math.h>
 #include <stdlib.h>
@@ -30,11 +37,6 @@ namespace HardwareAbstraction {
 namespace Filesystems
 {
 	static time_t datetounix(uint16_t dosdate, uint16_t dostime);
-
-
-	// ********************************************
-	// *********** BOTH FAT16 and FAT32 ***********
-	// ********************************************
 
 	struct DirectoryEntry
 	{
@@ -351,8 +353,8 @@ namespace Filesystems
 		node->info->data = (void*) vd;
 
 
-		// // list everything
-		// if(strcmp(path, "/texts/big.txt") == 0)
+		// list everything
+		// if(strcmp(path, "/System/Library/LaunchDaemons/displayd.mxa") == 0)
 		// {
 		// 	Log("*** begin list");
 		// 	ls(this, node, 0);
@@ -458,15 +460,18 @@ namespace Filesystems
 		for(size_t i = 0; i < cchain.size(); i++)
 		{
 			pair_t p = { cchain[i], 1 };
-			while(i + 1 < cchain.size())
+
+			while(i < cchain.size())
 			{
 				i++;
-				if(cchain[i] == (p.first + p.second))
+
+				if(i < cchain.size() && cchain[i] == (p.first + p.second))
 				{
 					p.second++;
 				}
 				else
 				{
+					i--;
 					break;
 				}
 			}
@@ -527,6 +532,7 @@ namespace Filesystems
 
 		uint64_t skipped = 0;
 		uint64_t have = 0;
+
 		for(auto pair : clusterpairs)
 		{
 			// completely consume the pair if we need to skip
@@ -549,11 +555,16 @@ namespace Filesystems
 				uint64_t spc = this->SectorsPerCluster;
 				uint64_t toread = ((cluslen - have) > pair.second) ? (pair.second) : (cluslen - have);
 
+				// Log("reading %d sectors at %d", toread * spc, this->ClusterToLBA((uint32_t) pair.first));
 				IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA((uint32_t) pair.first), rbuf, toread * spc * 512);
+				// Utilities::DumpBytes(rbuf, toread * spc * 512);
+
+
 				rbuf += (toread * spc * 512);
 				have += toread;
 
-				StandardIO::PrintFormatted("\r                               \r%8d bytes read", rbuf - obuf);
+				// StandardIO::PrintFormatted("\r                               \r%8d bytes read", rbuf - obuf);
+
 			}
 
 			// exit condition
@@ -618,22 +629,20 @@ namespace Filesystems
 		uint64_t dirsize = 0;
 		uint64_t bufferPageSize = 0;
 
-		if(tovnd(node)->entrycluster == 0)
+
+		if(this->FATKind == FAT16 && tovnd(node)->entrycluster == 0)
 		{
-			if(this->FATKind == FAT16)
-			{
-				bufferPageSize = ((this->RootDirectorySize * 512) + 0xFFF) / 0x1000;
-				dirsize = this->RootDirectorySize * 512;
+			dirsize = this->RootDirectorySize * 512;
+			bufferPageSize = (dirsize + 0xFFF) / 0x1000;
 
-				buf = MemoryManager::Virtual::AllocatePage(bufferPageSize);
+			buf = MemoryManager::Virtual::AllocatePage(bufferPageSize);
 
-				// in fat16, "this->RootDirectoryCluster" is actually the SECTOR of the root directory
-				IO::Read(this->partition->GetStorageDevice(), this->RootDirectoryCluster, buf, this->RootDirectorySize * 512);
-			}
-			else
-			{
-				tovnd(node)->entrycluster = this->RootDirectoryCluster;
-			}
+			// in fat16 mode, "this->RootDirectoryCluster" is actually the SECTOR of the root directory
+			IO::Read(this->partition->GetStorageDevice(), this->RootDirectoryCluster, buf, this->RootDirectorySize * 512);
+		}
+		else if(this->FATKind == FAT32 && tovnd(node)->entrycluster == 0)
+		{
+			tovnd(node)->entrycluster = this->RootDirectoryCluster;
 		}
 		else
 		{
@@ -661,7 +670,6 @@ namespace Filesystems
 			}
 			buf = obuf;
 		}
-
 
 
 		rde::vector<VFS::vnode*> ret;
@@ -737,6 +745,8 @@ namespace Filesystems
 				if(this->FATKind == FAT32)	fsd->entrycluster = ((uint32_t) (dirent->clusterhigh << 16)) | dirent->clusterlow;
 				else						fsd->entrycluster = dirent->clusterlow;
 
+				// if(vn->type == VNodeType::Folder)
+					// Log("found folder %s (cluster %d)", name.c_str(), fsd->entrycluster);
 
 				fsd->filesize = dirent->filesize;
 
@@ -823,6 +833,7 @@ namespace Filesystems
 			}
 
 			ret.push_back(Cluster);
+			// Log("cluster: %d (s: %d, fs: %x, fo: %d)", Cluster, FatSector, FatSector * 512, FatOffset);
 
 			// cchain is the next cluster in the list.
 			Cluster = cchain;
@@ -833,7 +844,6 @@ namespace Filesystems
 		MemoryManager::Virtual::FreePage(obuf, lookahead == 0 ? 1 : (512 * lookahead) / 0x1000);
 		tovnd(node)->clusters = ret;
 
-		// Log(3, "read %d clusters", *numclus);
 		return ret;
 	}
 
@@ -950,6 +960,8 @@ namespace Filesystems
 		DECL_LEAP_SECOND(2011, 0, 0),
 		DECL_LEAP_SECOND(2012, 1, 0),
 		DECL_LEAP_SECOND(2013, 0, 0),
+		DECL_LEAP_SECOND(2014, 0, 0),
+		DECL_LEAP_SECOND(2015, 1, 0),
 	};
 
 

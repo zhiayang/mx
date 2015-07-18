@@ -57,6 +57,13 @@ namespace Virtual
 			return 0;
 		}
 
+		// do a cleanup.
+		for(auto x : vas->used)
+		{
+			if(x.length == 0 || x.phys == 0)
+				vas->used.remove(x);
+		}
+
 		// look for address first.
 		if(addr > 0)
 		{
@@ -77,7 +84,6 @@ namespace Virtual
 				if(found->start == addr && found->length == size)
 				{
 					vas->pairs.remove(*found);
-					delete found;
 				}
 				else if(found->start == addr)
 				{
@@ -86,8 +92,6 @@ namespace Virtual
 					AddressLengthPair np = AddressLengthPair(end, found->length - size);
 					vas->pairs.remove(*found);
 					vas->pairs.push_back(np);
-
-					delete found;
 				}
 				else
 				{
@@ -178,7 +182,6 @@ namespace Virtual
 				else
 				{
 					ret = found->start;
-					delete found;
 
 					LOCK(vas->mtx);
 					vas->used.push_back(ALPTuple(ret, size, phys));
@@ -240,7 +243,7 @@ namespace Virtual
 			ALPTuple& pair = vas->used[i];
 			// if(!pair) continue;
 
-			if(pair.start == page && pair.length == size)
+			if((pair.start == page && pair.length == size) || (pair.start == 0 && pair.length == 0 && pair.phys == 0))
 			{
 				// Log("freeing (%x, %x, %d) (%x)", pair->start, pair->phys, pair->length, __builtin_return_address(0));
 				vas->used.erase(vas->used.begin() + i);
@@ -326,6 +329,7 @@ namespace Virtual
 			}
 		}
 
+		if(!pair) return;
 		assert(pair);
 
 		uint64_t phys = pair->phys;
