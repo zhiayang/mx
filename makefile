@@ -4,7 +4,7 @@
 
 X_BUILD_FILE	= .build.h
 
-export QEMU				:= /usr/local/bin/qemu-system-x86_64
+export QEMU				:= qemu-system-x86_64
 export SYSROOT			:= $(shell pwd)/build/sysroot
 export TOOLCHAIN		:= $(shell pwd)/build/toolchain
 export CC				:= $(shell pwd)/build/toolchain/bin/x86_64-orionx-gcc
