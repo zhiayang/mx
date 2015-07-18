@@ -56,7 +56,7 @@ elif [ `uname` = "Linux" ]; then
 
 	mkdir -p mnt/disk
 	mkfs.vfat -F 32 build/fs.img
-	mount build/fs.img mnt/disk
+	sudo mount build/fs.img mnt/disk
 
 	mkdir -p mnt/disk/boot/grub
 	mkdir -p mnt/disk/System/Library/LaunchDaemons
@@ -64,7 +64,7 @@ elif [ `uname` = "Linux" ]; then
 
 	cp grub/* mnt/disk/boot/grub/
 
-	umount mnt/disk
+	sudo umount mnt/disk
 	cat build/mbr.img build/fs.img > $DISKNAME
 
 	mkdir -p build/mnt/mx
