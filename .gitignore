@@ -10,7 +10,11 @@ applications/ports
 commit
 a2l
 
-tools
-!tools/*.sh
+
 test*.*
 *.out
+tools/gdb
+tools/heatshrink
+tools/nm
+tools/od
+tools/re
