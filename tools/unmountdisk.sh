@@ -5,6 +5,6 @@ if [ `uname` = "Darwin" ]; then
 	echo
 
 elif [ `uname` = "Linux" ]; then
-	# umount build/mnt/mx
+	umount build/mnt/mx
 	echo
 fi

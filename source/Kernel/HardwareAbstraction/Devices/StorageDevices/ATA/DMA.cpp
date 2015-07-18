@@ -57,6 +57,8 @@ namespace DMA
 	#define MaxCachedTables 16
 	static rde::vector<PRDTableCache>* cachedPRDTables;
 
+	#define DISABLE_DMA		0
+
 	void Initialise()
 	{
 		using namespace Kernel::HardwareAbstraction::Devices::PCI;
@@ -100,7 +102,9 @@ namespace DMA
 	{
 		(void) Buffer;
 
-		// if(Bytes <= 512)
+		#if !DISABLE_DMA
+		if(Bytes <= 512)
+		#endif
 		{
 			uint64_t sectors = (Bytes + 511) / 512;
 			DMAAddr a = Physical::AllocateDMA((Bytes + 0xFFF) / 0x1000);

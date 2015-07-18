@@ -73,7 +73,7 @@ run: build
 
 all: $(OUTPUT)
 	@# unmount??
-	@# @tools/unmountdisk.sh
+	@tools/unmountdisk.sh
 
 	@echo "# Starting QEMU"
 	@$(QEMU) -serial stdio $(QEMU_FLAGS) | tee build/serialout.log
