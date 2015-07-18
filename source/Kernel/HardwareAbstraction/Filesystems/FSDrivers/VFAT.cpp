@@ -237,9 +237,13 @@ namespace Filesystems
 			{
 				this->FATKind = FAT16;
 			}
-			else
+			else if(NumClusters < 268435445)
 			{
 				this->FATKind = FAT32;
+			}
+			else
+			{
+				HALT("ExFAT not supported");
 			}
 		}
 
