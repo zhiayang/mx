@@ -351,8 +351,8 @@ namespace Filesystems
 		node->info->data = (void*) vd;
 
 
-		// // list everything
-		// if(strcmp(path, "/texts/big.txt") == 0)
+		// list everything
+		// if(strcmp(path, "/System/Library/LaunchDaemons/displayd.mxa") == 0)
 		// {
 		// 	Log("*** begin list");
 		// 	ls(this, node, 0);
@@ -549,11 +549,16 @@ namespace Filesystems
 				uint64_t spc = this->SectorsPerCluster;
 				uint64_t toread = ((cluslen - have) > pair.second) ? (pair.second) : (cluslen - have);
 
+				Log("reading %d sectors at %d", toread * spc, this->ClusterToLBA((uint32_t) pair.first));
 				IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA((uint32_t) pair.first), rbuf, toread * spc * 512);
+				// Utilities::DumpBytes(rbuf, toread * spc * 512);
+
+
 				rbuf += (toread * spc * 512);
 				have += toread;
 
-				StandardIO::PrintFormatted("\r                               \r%8d bytes read", rbuf - obuf);
+				// StandardIO::PrintFormatted("\r                               \r%8d bytes read", rbuf - obuf);
+
 			}
 
 			// exit condition
@@ -618,22 +623,20 @@ namespace Filesystems
 		uint64_t dirsize = 0;
 		uint64_t bufferPageSize = 0;
 
-		if(tovnd(node)->entrycluster == 0)
+
+		if(this->FATKind == FAT16 && tovnd(node)->entrycluster == 0)
 		{
-			if(this->FATKind == FAT16)
-			{
-				bufferPageSize = ((this->RootDirectorySize * 512) + 0xFFF) / 0x1000;
-				dirsize = this->RootDirectorySize * 512;
+			dirsize = this->RootDirectorySize * 512;
+			bufferPageSize = (dirsize + 0xFFF) / 0x1000;
 
-				buf = MemoryManager::Virtual::AllocatePage(bufferPageSize);
+			buf = MemoryManager::Virtual::AllocatePage(bufferPageSize);
 
-				// in fat16, "this->RootDirectoryCluster" is actually the SECTOR of the root directory
-				IO::Read(this->partition->GetStorageDevice(), this->RootDirectoryCluster, buf, this->RootDirectorySize * 512);
-			}
-			else
-			{
-				tovnd(node)->entrycluster = this->RootDirectoryCluster;
-			}
+			// in fat16 mode, "this->RootDirectoryCluster" is actually the SECTOR of the root directory
+			IO::Read(this->partition->GetStorageDevice(), this->RootDirectoryCluster, buf, this->RootDirectorySize * 512);
+		}
+		else if(this->FATKind == FAT32 && tovnd(node)->entrycluster == 0)
+		{
+			tovnd(node)->entrycluster = this->RootDirectoryCluster;
 		}
 		else
 		{
@@ -661,7 +664,6 @@ namespace Filesystems
 			}
 			buf = obuf;
 		}
-
 
 
 		rde::vector<VFS::vnode*> ret;
@@ -737,6 +739,8 @@ namespace Filesystems
 				if(this->FATKind == FAT32)	fsd->entrycluster = ((uint32_t) (dirent->clusterhigh << 16)) | dirent->clusterlow;
 				else						fsd->entrycluster = dirent->clusterlow;
 
+				// if(vn->type == VNodeType::Folder)
+					// Log("found folder %s (cluster %d)", name.c_str(), fsd->entrycluster);
 
 				fsd->filesize = dirent->filesize;
 
@@ -950,6 +954,8 @@ namespace Filesystems
 		DECL_LEAP_SECOND(2011, 0, 0),
 		DECL_LEAP_SECOND(2012, 1, 0),
 		DECL_LEAP_SECOND(2013, 0, 0),
+		DECL_LEAP_SECOND(2014, 0, 0),
+		DECL_LEAP_SECOND(2015, 1, 0),
 	};
 
 

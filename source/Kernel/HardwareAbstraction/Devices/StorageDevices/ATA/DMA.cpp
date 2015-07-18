@@ -9,6 +9,8 @@
 #include <Memory.hpp>
 #include <StandardIO.hpp>
 
+#include <orion.h>
+
 using namespace Library::StandardIO;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
 
@@ -134,9 +136,37 @@ namespace DMA
 
 
 		PRDEntry* prd = (PRDEntry*) prdCache.address.virt;
+		DMAAddr paddr = Physical::AllocateDMA((Bytes + 0xFFF) / 0x1000);
+
+		uint64_t numprds = (Bytes + (UINT16_MAX - 1)) / UINT16_MAX;
+		if(numprds > (0x1000 / sizeof(PRDEntry)))
+			HALT("Too many bytes!");
+
+		COMPILE_TIME_ASSERT(UINT16_MAX == 65535);
+		COMPILE_TIME_ASSERT(INT16_MAX == 32767);
+
+		for(uint64_t i = 0, done = 0; i < numprds; i++)
+		{
+			uint64_t toread = 0;
+			if(Bytes - done > UINT16_MAX)
+				toread = 0;
+
+			else
+				toread = Bytes - done;
+
+			prd[i].bufferPhysAddr = (uint32_t) (paddr.phys + done);
+			prd[i].byteCount = (uint16_t) toread;
+			prd[i].lastEntry = ((i == numprds - 1) ? 0x8000 : 0);
+
+			done += (toread == 0 ? 65536 : toread);
+			Log("batch %d: %d bytes (%x)", i, (toread == 0 ? 65536 : toread), prd[i].lastEntry);
+		}
+
+		Log("used %d prds.", numprds);
+
+
 
 		// allocate a buffer that we know is a good deal
-		DMAAddr paddr = Physical::AllocateDMA((Bytes + 0xFFF) / 0x1000);
 
 		prd->bufferPhysAddr = (uint32_t) paddr.phys;
 		prd->byteCount = (uint16_t) Bytes;
@@ -165,11 +195,11 @@ namespace DMA
 		// stop
 		IOPort::WriteByte((uint16_t) (mmio + (dev->GetBus() ? 8 : 0) + 0), DMA::DMACommandRead | DMA::DMACommandStop);
 
+		// Utilities::DumpBytes(paddr.virt, __min(32784, Bytes));
 
-		// todo: release cache
-		// todo: !!! ^^^ !!!
+		// release cache
+		prdCache.used = 0;
 
-		// copy over
 		return IOResult(Bytes, paddr, (Bytes + 0xFFF) / 0x1000);
 	}
 
@@ -261,7 +291,6 @@ namespace DMA
 		// stop
 		IOPort::WriteByte((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 0), DMA::DMACommandWrite | DMA::DMACommandStop);
 
-
 		// copy over
 		Memory::Copy((void*) Buffer, (void*) paddr.virt, Bytes);
 		Physical::FreeDMA(paddr, (Bytes + 0xFFF) / 0x1000);
@@ -271,12 +300,29 @@ namespace DMA
 
 	static void HandleIRQ()
 	{
-		if(!PreviousDevice)
+		ATADrive* dev = PreviousDevice;
+		if(!dev)
 			return;
 
-		if(PreviousDevice->ParentPCI->IsBARIOPort(4))
+		if(dev->ParentPCI->IsBARIOPort(4))
 		{
-			IOPort::ReadByte((uint16_t)(PreviousDevice->ParentPCI->GetBAR(4) + (PreviousDevice->GetBus() ? 8 : 0) + 2));
+			uint32_t mmio = (uint32_t) dev->ParentPCI->GetBAR(4);
+			uint8_t status = IOPort::ReadByte((uint16_t) (mmio + (dev->GetBus() ? 8 : 0) + 2));
+
+			if(!(status & 0x4))
+			{
+				if(dev->GetBus()) _WaitingDMA15 = true;
+				else _WaitingDMA14 = true;
+			}
+			else
+			{
+				if(status & 0x2)
+				{
+					Log(3, "DMA Transfer failed???");
+				}
+			}
+
+			IOPort::WriteByte((uint16_t) (mmio + (dev->GetBus() ? 8 : 0) + 2), status | 0x4);
 		}
 		else
 		{

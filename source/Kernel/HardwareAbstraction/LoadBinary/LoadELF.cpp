@@ -51,7 +51,8 @@ namespace LoadBinary
 		uint64_t tlssize = 0;
 		for(uint64_t s = 0; s < FileHeader->ElfSectionHeaderEntries; s++)
 		{
-			ELF64SectionHeader_type* sec = (ELF64SectionHeader_type*) (this->buffer + FileHeader->ElfSectionHeaderOffset + (s * FileHeader->ElfSectionHeaderEntrySize));
+			ELF64SectionHeader_type* sec = (ELF64SectionHeader_type*) (this->buffer + FileHeader->ElfSectionHeaderOffset
+				+ (s * FileHeader->ElfSectionHeaderEntrySize));
 
 			if(!(sec->SectionHeaderFlags & SHF_TLS))
 				continue;
@@ -83,8 +84,11 @@ namespace LoadBinary
 		{
 			ELF64ProgramHeader_type* ProgramHeader = (ELF64ProgramHeader_type*) (this->buffer + FileHeader->ElfProgramHeaderOffset + (k * FileHeader->ElfProgramHeaderEntrySize));
 
-			if(ProgramHeader->ProgramType == ProgramTypeNull || ProgramHeader->ProgramMemorySize == 0 || ProgramHeader->ProgramVirtualAddress == 0)
+			if(ProgramHeader->ProgramType == ProgramTypeNull || ProgramHeader->ProgramMemorySize == 0
+				|| ProgramHeader->ProgramVirtualAddress == 0)
+			{
 				continue;
+			}
 
 			for(uint64_t m = 0; m < (ProgramHeader->ProgramMemorySize + 0x1000) / 0x1000; m++)
 			{
@@ -96,20 +100,30 @@ namespace LoadBinary
 				(*allocatedpgs)[actualvirt] = true;
 
 				uint64_t t = Physical::AllocatePage();
+
 				assert(Virtual::AllocateVirtual(1, actualvirt, &proc->VAS, t) == actualvirt);
 				Virtual::MapAddress(actualvirt, t, 0x07, proc->VAS.PML4);
 
 				// map it to this address space for a bit.
 				Virtual::MapAddress(TemporaryVirtualMapping + actualvirt, t, 0x07);
+				// Log("mapped %x to phys %x, in target vas (%x)", actualvirt, t, proc->VAS.PML4);
+				// Log("temp %x to phys %x", TemporaryVirtualMapping + actualvirt, t);
 			}
 
 			if(ProgramHeader->ProgramMemorySize > ProgramHeader->ProgramFileSize)
 			{
-				Memory::Set((void*) (TemporaryVirtualMapping + ProgramHeader->ProgramVirtualAddress + ProgramHeader->ProgramFileSize), 0,
-					ProgramHeader->ProgramMemorySize - ProgramHeader->ProgramFileSize);
+				Memory::Set((void*) (TemporaryVirtualMapping + ProgramHeader->ProgramVirtualAddress + ProgramHeader->ProgramFileSize),
+					0, ProgramHeader->ProgramMemorySize - ProgramHeader->ProgramFileSize);
+
+				// Log("memset %x to 0, %d bytes", TemporaryVirtualMapping + ProgramHeader->ProgramVirtualAddress
+					// + ProgramHeader->ProgramFileSize, ProgramHeader->ProgramMemorySize - ProgramHeader->ProgramFileSize);
 			}
 
-			Memory::Copy((void*) (TemporaryVirtualMapping + ProgramHeader->ProgramVirtualAddress), (void*) (this->buffer + ProgramHeader->ProgramOffset), ProgramHeader->ProgramFileSize);
+			Memory::Copy((void*) (TemporaryVirtualMapping + ProgramHeader->ProgramVirtualAddress),
+				(void*) (this->buffer + ProgramHeader->ProgramOffset), ProgramHeader->ProgramFileSize);
+
+			// Log("memcpy to %x, %d bytes", TemporaryVirtualMapping + ProgramHeader->ProgramVirtualAddress, ProgramHeader->ProgramFileSize);
+			// Utilities::DumpBytes(TemporaryVirtualMapping + ProgramHeader->ProgramVirtualAddress, ProgramHeader->ProgramFileSize);
 		}
 
 		for(auto pair : *allocatedpgs)

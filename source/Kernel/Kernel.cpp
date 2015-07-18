@@ -408,7 +408,6 @@ namespace Kernel
 			TCP::Initialise();
 			UDP::Initialise();
 			DHCP::Initialise();
-
 			DNS::Initialise();
 		}
 
@@ -421,6 +420,30 @@ namespace Kernel
 
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
 
+		if(0)
+		{
+			// setup args:
+			// 0: prog name (duh)
+			// 1: FB address
+			// 2: width
+			// 3: height
+			// 4: bpp (32)
+
+			const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
+			auto proc = LoadBinary::Load(path, "displayd",
+				(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
+				GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
+
+			Multitasking::AddToQueue(proc);
+		}
+
+		PrintFormatted("[mx] has completed initialisation.\n");
+		Log("Kernel init complete\n----------------------------\n");
+
+
+
+
+
 		if(1)
 		{
 			using namespace Filesystems;
@@ -431,26 +454,14 @@ namespace Kernel
 			struct stat s;
 			Stat(file, &s);
 
-			// 				(256 bytes):	20850
-			// 				(512 bytes):	10450
-			// 				(1024 bytes):	7800
-			// 				(2048 bytes):	6550
-			// 				(4096 bytes):	5850
-			// 				(8192 bytes):	5550
-			// 				(16384 bytes):	5400
-			// 				(32768 bytes):	6200
-			// 				(65536 bytes):	6150
-			// 				(one shot):		6500
-
-
-
 			uint64_t st = 0;
 			uint64_t et = 0;
 
 			Log(3, "s.st_size: %d", s.st_size);
 
-			const uint64_t blocksz = s.st_size;
+			const uint64_t blocksz = 16384;
 			uint8_t* fl = new uint8_t[blocksz + 1];
+			uint8_t* whole = new uint8_t[s.st_size + 1];
 
 			uint64_t total = s.st_size;
 			Log(3, "start: %d ms", st = Time::Now());
@@ -465,36 +476,16 @@ namespace Kernel
 
 				// PrintFormatted(" %6d/%d", cur, total);
 				Log("%d/%d", cur, total);
+
+				memcpy(whole + cur, fl, read);
 			}
 
-			// SerialPort::WriteString((const char*) fl);
+			SerialPort::WriteString((const char*) whole);
 			// PrintString((const char*) fl);
 
 			Log(3, "end: %d ms", et = Time::Now());
 			Log(3, "time taken: %d ms", et - st);
-
-
-			// setup args:
-			// 0: prog name (duh)
-			// 1: FB address
-			// 2: width
-			// 3: height
-			// 4: bpp (32)
-
-			// const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
-			// auto proc = LoadBinary::Load(path, "displayd",
-			// 	(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
-			// 	GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
-
-			// Multitasking::AddToQueue(proc);
 		}
-
-		PrintFormatted("[mx] has completed initialisation.\n");
-		Log("Kernel init complete\n----------------------------\n");
-
-
-
-
 
 		if(0)
 		{
