@@ -51,14 +51,16 @@ namespace Virtual
 
 	struct VirtualAddressSpace
 	{
-		VirtualAddressSpace(PageMapStructure* pml4) : used(1024)
+		VirtualAddressSpace(PageMapStructure* pml4) //  : used(1024)
 		{
 			this->PML4 = pml4;
 		}
 
 		// book-keeping for allocations.
+
+		// lesson learned: do not fiddle with that which is not broken.
 		rde::vector<AddressLengthPair> pairs;
-		rde::vector<ALPTuple> used;
+		rde::list<ALPTuple> used;
 
 		// store the actual address of the pml4.
 		PageMapStructure* PML4;

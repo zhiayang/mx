@@ -203,11 +203,17 @@ namespace Storage
 				// read the identify data -- disk size in sectors.
 				if(ata->Data[83] & (1 << 10))
 				{
-					ata->SetSectors(*((uint64_t*)(ata->Data + 100)));
+					uint64_t thing = 0;
+					Memory::Copy((void*) &thing, &ata->Data[0] + 100, sizeof(thing));
+					ata->SetSectors(thing);
 				}
 				else
 				{
-					ata->SetSectors(*(uint32_t*)(ata->Data + 60));
+					// ata->SetSectors(*(uint32_t*)(&ata->Data[0] + 60));
+
+					uint32_t thing = 0;
+					Memory::Copy((void*) &thing, &ata->Data[0] + 60, sizeof(thing));
+					ata->SetSectors(thing);
 				}
 
 				return ata;

@@ -23,13 +23,37 @@ void __assert(const char* filename, unsigned long line, const char* function_nam
 
 /* Otherwise, declare the normal assert macro. */
 #if defined(ORION_KERNEL)
-namespace Kernel { void AssertCondition(const char*, int, const char*, const char*); }
 
-#define assert(invariant)	((invariant) ? (void) (0) : Kernel::AssertCondition(__FILE__, __LINE__, __PRETTY_FUNCTION__, #invariant))
+	namespace Kernel { void AssertCondition(const char*, int, const char*, const char*); }
+	#define assert(invariant)	((invariant) ? (void) (0) : Kernel::AssertCondition(__FILE__, __LINE__, __PRETTY_FUNCTION__, #invariant))
+
 #else
-#define assert(invariant)	((invariant) ? (void) (0) : __assert(__FILE__, __LINE__, __PRETTY_FUNCTION__, #invariant))
+
+	#define assert(invariant)	((invariant) ? (void) (0) : __assert(__FILE__, __LINE__, __PRETTY_FUNCTION__, #invariant))
+
 #endif
-// #endif
+
+
+
+#if defined(ENABLE_PARANOID_ASSERTS)
+
+	#define paranoid_assert(x)	assert(x)
+
+#else
+
+	#define paranoid_assert(x)
+
+#endif
+
+
+
+
+
+
+
+
+
+
 
 
 #ifdef __cplusplus

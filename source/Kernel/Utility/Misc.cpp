@@ -43,19 +43,23 @@ namespace Kernel
 			Log("Dump complete");
 		}
 
+		static Mutex* dumping_mtx = 0;
 		void StackDump(uint64_t* ptr, int num, bool fromTop)
 		{
+			if(!dumping_mtx) dumping_mtx = new Mutex();
+
+			LOCK(dumping_mtx);
+
 			Log("Stack dump of %x%s:", ptr, fromTop ? " (reverse)" : "");
 
 			for(int i = 0; i < num; i++)
 				Log("%d: %x", i, fromTop ? *--ptr : *ptr++);
+
+			UNLOCK(dumping_mtx);
 		}
 
 		void GenerateStackTrace(uint64_t stack, int frames)
 		{
-			(void) stack;
-			(void) frames;
-
 			// assumptions, everywhere.
 			uint64_t* rbp = (uint64_t*) stack;
 

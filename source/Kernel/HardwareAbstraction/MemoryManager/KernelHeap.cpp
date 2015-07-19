@@ -349,10 +349,10 @@ namespace KernelHeap
 
 			c->Size &= (uint64_t) (~0x1);
 			c->magic = c->Offset ^ c->Size;
-			c->callerAddr = (uint64_t) __builtin_return_address(1);	// two levels up, since (0) is probably operator new
+			// c->callerAddr = (uint64_t) __builtin_return_address(1);	// two levels up, since (0) is probably operator new
 
-			if(c->callerAddr == 0)	// but if it's 0, then... try (0).
-				c->callerAddr = (uint64_t) __builtin_return_address(0);
+			// if(c->callerAddr == 0)	// but if it's 0, then... try (0).
+			// 	c->callerAddr = (uint64_t) __builtin_return_address(0);
 
 			(void) callerData;
 

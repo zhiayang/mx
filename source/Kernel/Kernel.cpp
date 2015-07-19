@@ -47,7 +47,6 @@ extern "C" void KernelThreadInit()
 	Kernel::SetupKernelThreads();
 }
 
-
 namespace Kernel
 {
 	// If you're against global variables, fuck away.
@@ -459,7 +458,7 @@ namespace Kernel
 
 			Log(3, "s.st_size: %d", s.st_size);
 
-			const uint64_t blocksz = s.st_size;
+			const uint64_t blocksz = 32768;
 			uint8_t* fl = new uint8_t[blocksz + 1];
 			uint8_t* whole = new uint8_t[s.st_size + 1];
 
@@ -477,6 +476,7 @@ namespace Kernel
 
 				// PrintFormatted(" %6d/%d", cur, total);
 				Log("%d/%d", cur, total);
+				// SerialPort::WriteString(".");
 
 			}
 
@@ -540,7 +540,7 @@ namespace Kernel
 			SLEEP(15000);
 
 			memset(data, 0, 256);
-			strncpy((char*) data, "JOIN #ark-lang\r\n", 256);
+			strncpy((char*) data, "JOIN #WatchPeopleCode\r\n", 256);
 			WriteSocket(thesock, data, strlen((char*) data));
 			PrintFormatted("> %s", data);
 
@@ -550,7 +550,7 @@ namespace Kernel
 			{
 				static const char* msgs[] =
 				{
-					"PRIVMSG #ark-lang :testing\r\n",
+					"PRIVMSG #WatchPeopleCode :testing\r\n",
 					// "PRIVMSG #flax-lang :another mindless crime.\r\n",
 					// "PRIVMSG #flax-lang :behind the curtain,\r\n",
 					// "PRIVMSG #flax-lang :in the pantomime.\r\n",
@@ -708,8 +708,8 @@ namespace Kernel
 
 	void HaltSystem(const char* message, const char* filename, uint64_t line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%d, RA(0): %x, RA(1): %x, RA(2): %x, RA(3): %x", message, filename, line,
-			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2), __builtin_return_address(3));
+		Log("System Halted: %s, %s:%d, RA(0): %x, RA(1): %x, RA(2): %x", message, filename, line,
+			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2));
 
 		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 
@@ -719,8 +719,8 @@ namespace Kernel
 
 	void HaltSystem(const char* message, const char* filename, const char* line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%s, RA(0): %x, RA(1): %x, RA(2): %x, RA(3): %x", message, filename, line,
-			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2), __builtin_return_address(3));
+		Log("System Halted: %s, %s:%s, RA(0): %x, RA(1): %x, RA(2): %x", message, filename, line,
+			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2));
 
 		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %s (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 

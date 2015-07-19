@@ -145,8 +145,8 @@ namespace Kernel
 #define SLEEP(x)			Kernel::HardwareAbstraction::Multitasking::Sleep(x)
 #define BLOCK()				Kernel::HardwareAbstraction::Multitasking::Block()
 
-#define LOCK(x)				Kernel::LockMutex(x);
-#define UNLOCK(x)			Kernel::UnlockMutex(x);
+#define LOCK(x)				Kernel::LockMutex(x)
+#define UNLOCK(x)			Kernel::UnlockMutex(x)
 
 #define BOpt_Likely(x)		__builtin_expect((x), 1)
 #define BOpt_Unlikely(x)	__builtin_expect((x), 0)

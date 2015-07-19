@@ -17,7 +17,7 @@ _start:
 	pushq %rsi
 	pushq %rdi
 
-	xchg %bx, %bx
+	// xchg %bx, %bx
 	// Prepare signals, memory allocation, stdio and such.
 	call init_libc
 

@@ -49,19 +49,13 @@ namespace Virtual
 		VirtualAddressSpace* vas = v ? v : &proc->VAS;
 		assert(vas);
 
+
 		if(vas->pairs.size() == 0)
 		{
 			Log(3, "Virtual address space exhausted, WTF are you doing?!");
 			Multitasking::Kill(proc);
 			UHALT();
 			return 0;
-		}
-
-		// do a cleanup.
-		for(auto x : vas->used)
-		{
-			if(x.length == 0 || x.phys == 0)
-				vas->used.remove(x);
 		}
 
 		// look for address first.
@@ -134,19 +128,14 @@ namespace Virtual
 			pair.start += (size * 0x1000);
 			pair.length -= size;
 
-			LOCK(vas->mtx);
 			vas->used.push_back(ALPTuple(ret, size, phys));
-			UNLOCK(vas->mtx);
 		}
 		else if(pair.length == size)
 		{
 			ret = pair.start;
-			// delete vas->pairs.front();
 			vas->pairs.erase(vas->pairs.begin());
 
-			LOCK(vas->mtx);
 			vas->used.push_back(ALPTuple(ret, size, phys));
-			UNLOCK(vas->mtx);
 		}
 		else
 		{
@@ -175,17 +164,13 @@ namespace Virtual
 					found->length -= size;
 					found->start += (size * 0x1000);
 
-					LOCK(vas->mtx);
 					vas->used.push_back(ALPTuple(ret, size, phys));
-					UNLOCK(vas->mtx);
 				}
 				else
 				{
 					ret = found->start;
 
-					LOCK(vas->mtx);
 					vas->used.push_back(ALPTuple(ret, size, phys));
-					UNLOCK(vas->mtx);
 				}
 			}
 
@@ -196,7 +181,6 @@ namespace Virtual
 			}
 		}
 
-		// Log("\tvirt(%x) mapped to phys(%x) [%d] in vas %x (%x)", ret, phys, size, GetCurrentPML4T(), __builtin_return_address(0));
 		return ret;
 	}
 
@@ -237,20 +221,19 @@ namespace Virtual
 			vas->pairs.push_back(AddressLengthPair(page, size));
 		}
 
-		// Log("freeing %x, %d (%x, %x)", page, size, __builtin_return_address(0), __builtin_return_address(1));
-		for(size_t i = 0; i < vas->used.size(); i++)
-		{
-			ALPTuple& pair = vas->used[i];
-			// if(!pair) continue;
+		// basically cleanup duty
+		// for(auto it = vas->used.begin(); it != vas->used.end(); it++)
+		// {
+		// 	ALPTuple& pair = *it;
 
-			if((pair.start == page && pair.length == size) || (pair.start == 0 && pair.length == 0 && pair.phys == 0))
-			{
-				// Log("freeing (%x, %x, %d) (%x)", pair->start, pair->phys, pair->length, __builtin_return_address(0));
-				vas->used.erase(vas->used.begin() + i);
-				i = 0;
-				continue;
-			}
-		}
+		// 	if((pair.start == page && pair.length == size)
+		// 		|| (pair.start == 0 && pair.length == 0 && pair.phys == 0))
+		// 	{
+		// 		LOCK(vas->mtx);
+		// 		vas->used.erase(it);
+		// 		UNLOCK(vas->mtx);
+		// 	}
+		// }
 	}
 
 	void ForceInsertALPTuple(uint64_t addr, size_t sizeInPages, uint64_t phys, VirtualAddressSpace* v)
@@ -258,17 +241,9 @@ namespace Virtual
 		VirtualAddressSpace* vas = v ? v : &Multitasking::GetCurrentProcess()->VAS;
 		assert(vas);
 
-		for(ALPTuple& tup : vas->used)
-		{
-			if(tup.start == addr || tup.phys == phys)
-			{
-				// TODO: investigate
-				// Log("Duplicate: %x -> %x, %d", tup->start, tup->phys, tup->length);
-				// assert("Duplicate tuple!" && 0);
-			}
-		}
-
+		// LOCK(vas->mtx);
 		vas->used.push_back(ALPTuple(addr, sizeInPages, phys));
+		// UNLOCK(vas->mtx);
 	}
 
 	uint64_t GetVirtualPhysical(uint64_t virt, VirtualAddressSpace* v)
@@ -280,7 +255,6 @@ namespace Virtual
 		for(ALPTuple& pair : vas->used)
 		{
 			uint64_t end = pair.start + pair.length * 0x1000;
-			// Log("s: %x, p: %x, v: %x, l: %d -- %x", pair->start, pair->phys, virt, pair->length, vas->PML4);
 			if(virt >= pair.start && virt <= end)
 			{
 				ret = pair.phys + (virt - pair.start);
@@ -667,6 +641,7 @@ namespace Virtual
 	}
 
 
+	#define ALLOW_NULL	1
 	static uint64_t* GetPageTableEntry(uint64_t VirtAddr, PageMapStructure* VAS, PageMapStructure** pdpt, PageMapStructure** pd, PageMapStructure** pt)
 	{
 
@@ -678,12 +653,20 @@ namespace Virtual
 		PageMapStructure* PML = (VAS == 0 ? GetCurrentPML4T() : VAS);
 		bool other = (PML != GetCurrentPML4T());
 
+		#if ALLOW_NULL
+		if(!PML) return 0;
+		#endif
+
 		assert(PML);
 		{
 			if(other)
 				Virtual::MapAddress((uint64_t) PML, (uint64_t) PML, 0x7);
 
 			PageMapStructure* PDPT = (PageMapStructure*) (PML->Entry[PML4TIndex] & I_AlignMask);
+
+			#if ALLOW_NULL
+			if(!PDPT) return 0;
+			#endif
 
 			assert(PDPT);
 			{
@@ -692,12 +675,20 @@ namespace Virtual
 
 				PageMapStructure* PageDirectory = (PageMapStructure*) (PDPT->Entry[PageDirectoryPointerTableIndex] & I_AlignMask);
 
+				#if ALLOW_NULL
+				if(!PageDirectory) return 0;
+				#endif
+
 				assert(PageDirectory);
 				{
 					if(other)
 						Virtual::MapAddress((uint64_t) PageDirectory, (uint64_t) PageDirectory, 0x7);
 
 					PageMapStructure* PageTable = (PageMapStructure*) (PageDirectory->Entry[PageDirectoryIndex] & I_AlignMask);
+
+					#if ALLOW_NULL
+					if(!PageTable) return 0;
+					#endif
 
 					assert(PageTable);
 					{
@@ -724,6 +715,7 @@ namespace Virtual
 		PageMapStructure* pt = 0;
 
 		uint64_t ret = *GetPageTableEntry(VirtAddr, VAS, &pdpt, &pd, &pt);
+		assert(ret);
 
 		if(VAS != GetCurrentPML4T())
 		{
@@ -744,6 +736,7 @@ namespace Virtual
 
 
 		uint64_t* pg = GetPageTableEntry(virt, pml, &pdpt, &pd, &pt);
+		assert(pg);
 
 		uint64_t* pdptv = (uint64_t*) pdpt;
 		uint64_t* pdv = (uint64_t*) pd;

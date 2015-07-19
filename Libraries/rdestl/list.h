@@ -121,7 +121,7 @@ private:
 			return !(rhs == *this);
 		}
 
-	private:
+	// private:
 		TNodePtr	m_node;
 	};
 

@@ -158,7 +158,7 @@ namespace Interrupts
 
 		idt[num].sel = sel;
 		if(num < 32)
-			idt[num].always0_ist = 0x0;
+			idt[num].always0_ist = 0x0;		// ????? should be 1 or something.
 
 		else
 			idt[num].always0_ist = 0x0;
@@ -350,7 +350,8 @@ namespace Interrupts
 
 		if(Multitasking::GetCurrentThread()->State & 0x1)
 		{
-			Log(1, "Terminated thread %d belonging to parent %s, for exception: %s", Multitasking::GetCurrentThread()->ThreadID, Multitasking::GetCurrentThread()->Parent->Name, ExceptionMessages[r->InterruptID]);
+			Log(1, "Terminated thread %d belonging to parent %s, for exception: %s", Multitasking::GetCurrentThread()->ThreadID,
+				Multitasking::GetCurrentThread()->Parent->Name, ExceptionMessages[r->InterruptID]);
 
 			Multitasking::Thread* thr = Multitasking::GetCurrentThread();
 			if(thr)
@@ -377,14 +378,21 @@ namespace Interrupts
 			}
 
 
+			// get us a stack trace first
+			// lol nope
+			// Utilities::GenerateStackTrace(r->rsp, 3);
+
+
 			// this is quite fucking bad...
 			// basically, create opcodes in memory to do a syscall that does Syscall_TerminateCrashedThread
+			// did i mention we're executing code in the heap?????
 			uint8_t syscallOpcodes[] = { 0x49, 0xC7, 0xC2, 0x01, 0x00, 0x00, 0x00, 0xCD, 0xF8 };
 			uint8_t* dest = new uint8_t[16];
 
 			memcpy(dest, syscallOpcodes, 9);
 
 			r->rip = (uint64_t) dest;
+
 
 			return;
 		}

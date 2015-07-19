@@ -279,6 +279,7 @@ GlobalHandler:
 	movq %rsp, %rdi
 
 	call ExceptionHandler_C
+	hlt
 
 	addq $8, %rsp	// remove cr2
 	addq $8, %rsp	// Don't pop %rsp, may not be defined.
