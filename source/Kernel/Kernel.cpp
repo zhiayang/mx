@@ -419,7 +419,7 @@ namespace Kernel
 
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
 
-		if(0)
+		if(1)
 		{
 			// setup args:
 			// 0: prog name (duh)
@@ -443,7 +443,7 @@ namespace Kernel
 
 
 
-		if(1)
+		if(0)
 		{
 			using namespace Filesystems;
 
@@ -477,7 +477,6 @@ namespace Kernel
 				// PrintFormatted(" %6d/%d", cur, total);
 				Log("%d/%d", cur, total);
 				// SerialPort::WriteString(".");
-
 			}
 
 			SerialPort::WriteString((const char*) whole);

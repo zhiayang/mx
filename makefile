@@ -33,7 +33,7 @@ GWARNINGS			= -Wno-padded -Wno-cast-align -Wno-unreachable-code -Wno-switch-enum
 
 CXXFLAGS			= -m64 -g -Weverything -integrated-as -O2 -fno-omit-frame-pointer -std=gnu++14 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -DENABLE_PARANOID_ASSERTS=1 -target x86_64-elf -mcmodel=kernel -c
 
-GXXFLAGS			= -m64 -g -Wall -O0 -std=gnu++14 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -DENABLE_PARANOID_ASSERTS=1 -mcmodel=kernel -c
+GXXFLAGS			= -m64 -g -Wall -O2 -std=gnu++14 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -DENABLE_PARANOID_ASSERTS=1 -mcmodel=kernel -c
 
 
 LDFLAGS				= --gc-sections -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib

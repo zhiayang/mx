@@ -222,18 +222,18 @@ namespace Virtual
 		}
 
 		// basically cleanup duty
-		// for(auto it = vas->used.begin(); it != vas->used.end(); it++)
-		// {
-		// 	ALPTuple& pair = *it;
+		for(auto it = vas->used.begin(); it != vas->used.end(); it++)
+		{
+			ALPTuple& pair = *it;
 
-		// 	if((pair.start == page && pair.length == size)
-		// 		|| (pair.start == 0 && pair.length == 0 && pair.phys == 0))
-		// 	{
-		// 		LOCK(vas->mtx);
-		// 		vas->used.erase(it);
-		// 		UNLOCK(vas->mtx);
-		// 	}
-		// }
+			if((pair.start == page && pair.length == size)
+				|| (pair.start == 0 && pair.length == 0 && pair.phys == 0))
+			{
+				LOCK(vas->mtx);
+				vas->used.erase(it);
+				UNLOCK(vas->mtx);
+			}
+		}
 	}
 
 	void ForceInsertALPTuple(uint64_t addr, size_t sizeInPages, uint64_t phys, VirtualAddressSpace* v)
@@ -288,10 +288,10 @@ namespace Virtual
 		VirtualAddressSpace* vas = &proc->VAS;
 		assert(vas);
 
-		for(ALPTuple& p : vas->used)
+		for(auto it = vas->used.begin(); it != vas->used.end(); it++)
 		{
-			// if(!p)
-			// 	continue;
+			if(it.m_node == 0) continue;
+			ALPTuple p = *it;
 
 			if(p.start == addr)
 			{
