@@ -113,6 +113,7 @@ rm -rf build/build-gcc
 # todo: change this when (if) we upgrade gcc
 cp $PREFIX/lib/gcc/x86_64-orionx/4.9.1/include/*.h $SYSROOT/usr/include/
 
+mkdir build/diskroot
 
 
 cd tools

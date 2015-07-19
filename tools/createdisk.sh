@@ -55,7 +55,7 @@ elif [ `uname` = "Linux" ]; then
 	dd if=$DISKNAME of=build/fs.img bs=512 skip=2048 &> /dev/null
 
 	mkdir -p mnt/disk
-	mkfs.vfat -F 32 build/fs.img
+	mkfs.vfat build/fs.img
 	sudo mount build/fs.img mnt/disk
 
 	mkdir -p mnt/disk/boot/grub

@@ -24,7 +24,7 @@ namespace CPUID
 
 		uint32_t maxf = eax;
 
-		CPUIDInfo = new CPUIDData;
+		CPUIDInfo = new CPUIDData();
 
 		// fetch vendor ID.
 		CPUIDInfo->_VendorID[0] = (char)((ebx >> 0) & 0xFF);

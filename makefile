@@ -92,10 +92,12 @@ $(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) $(FLAXM
 	@echo "# Building [fx] loader"
 	@$(LD) $(LDFLAGS) -T loader.ld -o build/fxloader64.elf source/Loader/Start.s.o $(shell find source/Loader -name "*.o" ! -name "Start.s.o")
 
-	@echo "# Performing objcopy"
+	@echo # Performing objcopy
 	@$(OBJCOPY) -g -O elf32-i386 build/fxloader64.elf build/fxloader.mxa
 	@cp build/fxloader.mxa $(shell tools/getpath.sh)/boot/fxloader.mxa
 
+	@echo # Copying any extra files
+	@cp -R build/diskroot/* $(shell tools/getpath.sh)/ || :
 
 
 
