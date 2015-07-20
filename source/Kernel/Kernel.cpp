@@ -28,6 +28,7 @@ extern "C" uint64_t KernelEnd;
 extern "C" uint64_t StartBSS;
 extern "C" uint64_t EndBSS;
 
+
 static uint64_t LoadedCursorX = 1;
 static uint64_t LoadedCursorY = 1;
 
@@ -443,7 +444,6 @@ namespace Kernel
 
 
 
-
 		if(1)
 		{
 			using namespace Filesystems;
@@ -459,13 +459,14 @@ namespace Kernel
 
 			Log(3, "s.st_size: %d", s.st_size);
 
-			const uint64_t blocksz = s.st_size;
+			const uint64_t blocksz = 30000 /*s.st_size*/;
 			uint8_t* fl = new uint8_t[blocksz + 1];
 			uint8_t* whole = new uint8_t[s.st_size + 1];
 
 			uint64_t total = s.st_size;
 			Log(3, "start: %d ms", st = Time::Now());
 
+			int i = 0;
 			for(uint64_t cur = 0; cur < total; )
 			{
 				uint64_t read = Read(file, fl, blocksz);
@@ -476,11 +477,11 @@ namespace Kernel
 				cur += read;
 
 				// PrintFormatted(" %6d/%d", cur, total);
-				Log("%d/%d", cur, total);
-
+				Log("(%d): %d/%d", i, cur, total);
+				i++;
 			}
 
-			SerialPort::WriteString((const char*) whole);
+			// SerialPort::WriteString((const char*) whole);
 			// PrintString((const char*) fl);
 
 			Log(3, "end: %d ms", et = Time::Now());

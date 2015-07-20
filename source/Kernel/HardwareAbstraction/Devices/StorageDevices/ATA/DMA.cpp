@@ -178,7 +178,7 @@ namespace DMA
 			prd[i].lastEntry = ((i == numprds - 1) ? 0x8000 : 0);
 
 			done += (toread == 0 ? 65536 : toread);
-			Log("batch %d: %d bytes %s", i, (toread == 0 ? 65536 : toread), (prd[i].lastEntry & 0x8000) ? "(last)" : "");
+			// Log("batch %d: %d bytes %s", i, (toread == 0 ? 65536 : toread), (prd[i].lastEntry & 0x8000) ? "(last)" : "");
 		}
 
 		// Log("used %d prds.", numprds);

@@ -152,11 +152,14 @@ namespace Multitasking
 
 			Virtual::MapRegion(k, pk, DefaultRing3StackSize / 0x1000, 0x07, Parent->VAS.PML4);
 			physks = pk;
+
 		}
 		else
 		{
 			k = Virtual::AllocatePage(DefaultRing3StackSize / 0x1000);
 			physks = Virtual::GetVirtualPhysical(k);
+
+			Log("kernel stack for tid %d is at %x, %x bytes", NumThreads, physks, DefaultRing3StackSize);
 		}
 
 

@@ -321,14 +321,6 @@ namespace StandardIO
 		va_end(args);
 	}
 
-	extern "C" void printf(const char* str, ...)
-	{
-		va_list args;
-		va_start(args, str);
-		PrintFormatted(0, str, args);
-		va_end(args);
-	}
-
 	extern "C" int puts(const char* str)
 	{
 		PrintString(str);

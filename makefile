@@ -59,7 +59,7 @@ NUMFILES			= $$(($(words $(CXXSRC)) + $(words $(SSRC))))
 
 
 
-LIBRARIES			= -liris -lgcc -lrdestl
+LIBRARIES			= -liris -lrdestl
 OUTPUT				= build/kernel64.elf
 
 

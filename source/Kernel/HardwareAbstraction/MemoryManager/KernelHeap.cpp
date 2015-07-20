@@ -55,32 +55,33 @@ namespace KernelHeap
 		return FirstHeapPhysPage;
 	}
 
-	uint64_t GetSize(Block* c)
+	static uint64_t GetSize(Block* c)
 	{
 		uint64_t f = c->Size & (uint64_t)(~0x1);
 		return f;
 	}
 
-	uint64_t addr(Block* c)
+	static uint64_t addr(Block* c)
 	{
 		return (uint64_t) c;
 	}
 
-	bool IsFree(Block* c)
+	static bool IsFree(Block* c)
 	{
 		return c->Size & 0x1;
 	}
 
-	void ExpandMetadata()
+	static void ExpandMetadata()
 	{
 		uint64_t d = KernelHeapMetadata + (SizeOfMetadataInPages * 0x1000);
 		uint64_t p = Physical::AllocatePage();
-
-		Virtual::MapAddress(d, p, MapFlags, (Virtual::PageMapStructure*) GetKernelCR3());
 		SizeOfMetadataInPages++;
+
+		Log("Expanded heap metadata with virt %x, phys %x (%x, %x)", d, p, __builtin_return_address(1), __builtin_return_address(2));
+		Virtual::MapAddress(d, p, MapFlags, (Virtual::PageMapStructure*) GetKernelCR3());
 	}
 
-	Block* sane(Block* c)
+	static Block* sane(Block* c)
 	{
 		if(c && (c->Offset ^ c->Size) == c->magic)
 		{
@@ -98,7 +99,7 @@ namespace KernelHeap
 		}
 	}
 
-	uint64_t CreateNewChunk(uint64_t offset, uint64_t size)
+	static uint64_t CreateNewChunk(uint64_t offset, uint64_t size)
 	{
 		uint64_t s = KernelHeapMetadata + MetadataSize;
 		bool found = false;
@@ -159,13 +160,13 @@ namespace KernelHeap
 		return (uint64_t) sane(c1);
 	}
 
-	Block* GetChunkAtIndex(uint64_t i)
+	static Block* GetChunkAtIndex(uint64_t i)
 	{
 		uint64_t p = KernelHeapMetadata + MetadataSize + (i * sizeof(Block));
 		return sane((Block*) p);
 	}
 
-	uint64_t RoundSize(uint64_t s)
+	static uint64_t RoundSize(uint64_t s)
 	{
 		uint64_t remainder = s % Alignment;
 
@@ -219,7 +220,7 @@ namespace KernelHeap
 		DidInitialise = true;
 	}
 
-	uint64_t FindFirstFreeSlot(uint64_t Size)
+	static uint64_t FindFirstFreeSlot(uint64_t Size)
 	{
 		// free chunks are more often than not found at the back,
 		{
@@ -241,7 +242,7 @@ namespace KernelHeap
 	}
 
 
-	void SplitChunk(Block* Header, uint64_t Size)
+	static void SplitChunk(Block* Header, uint64_t Size)
 	{
 		// round up to nearest two.
 		uint64_t ns = ((Size / 2) + 1) * 2;
@@ -262,7 +263,7 @@ namespace KernelHeap
 	}
 
 
-	void ExpandHeap()
+	static void ExpandHeap(size_t pages)
 	{
 		if(SizeOfHeapInPages == MaximumHeapSizeInPages)
 		{
@@ -292,7 +293,7 @@ namespace KernelHeap
 			Block* c1 = (Block*) p;
 
 			// merge with that instead.
-			c1->Size += 0x1000;
+			c1->Size += (pages * 0x1000);
 			c1->Size |= 0x1;
 			c1->magic = c1->Offset ^ c1->Size;
 		}
@@ -300,27 +301,32 @@ namespace KernelHeap
 		{
 			// nothing we can do.
 			// create a new chunk.
-			CreateNewChunk(SizeOfHeapInPages * 0x1000, 0x1000);
+			CreateNewChunk(SizeOfHeapInPages * 0x1000, pages * 0x1000);
 		}
 
 
 
 		// create and map the actual space.
-		uint64_t x = Physical::AllocatePage();
-		Virtual::MapAddress(KernelHeapAddress + SizeOfHeapInPages * 0x1000, x, MapFlags, (Virtual::PageMapStructure*) GetKernelCR3());
-		Virtual::ForceInsertALPTuple(KernelHeapAddress + SizeOfHeapInPages * 0x1000, 1, x, &Multitasking::GetProcess(0)->VAS);
+		uint64_t x = Physical::AllocatePage(pages);
+		// Log("Expanded heap with virt %x, phys %x", KernelHeapAddress + SizeOfHeapInPages * 0x1000, x);
+
+
+		// Virtual::MapRegion(KernelHeapAddress + SizeOfHeapInPages * 0x1000, x, MapFlags, (Virtual::PageMapStructure*) GetKernelCR3());
+
+		Virtual::MapRegion(KernelHeapAddress + SizeOfHeapInPages * 0x1000, x, pages, MapFlags, (Virtual::PageMapStructure*) GetKernelCR3());
+		Virtual::ForceInsertALPTuple(KernelHeapAddress + SizeOfHeapInPages * 0x1000, pages, x, &Multitasking::GetProcess(0)->VAS);
 
 		SizeOfHeapInPages++;
 	}
 
 	void* AllocateChunk(uint64_t s, const char* callerData)
 	{
-		uint64_t Size = (uint64_t) s;
+		uint64_t size = s;
 
 		// AutoMutex lock = AutoMutex(Mutexes::KernelHeap);
 
 		// round to alignment.
-		uint64_t as = RoundSize(Size);
+		uint64_t as = RoundSize(size);
 
 		if(as == 0)
 			return nullptr;
@@ -331,7 +337,9 @@ namespace KernelHeap
 		// check if we didn't find one.
 		if(in == 0)
 		{
-			ExpandHeap();
+			Log("asked for %d bytes!", s);
+			Log("expanding heap by %d pages (%x, %x)", (as + 0xFFF) / 0x1000, __builtin_return_address(2), __builtin_return_address(3));
+			ExpandHeap((as + 0xFFF) / 0x1000);
 			return AllocateChunk(as, callerData);
 		}
 		else
@@ -368,7 +376,7 @@ namespace KernelHeap
 
 
 
-	bool TryMergeLeft(Block* c)
+	static bool TryMergeLeft(Block* c)
 	{
 		// make sure that this is not the first chunk.
 		if(addr(c) == KernelHeapMetadata + MetadataSize)
@@ -408,7 +416,7 @@ namespace KernelHeap
 
 
 
-	bool TryMergeRight(Block* c)
+	static bool TryMergeRight(Block* c)
 	{
 		// make sure that this is not the last chunk.
 		if(addr(c) + sizeof(Block) >= KernelHeapMetadata + (SizeOfMetadataInPages * 0x1000))
@@ -445,7 +453,7 @@ namespace KernelHeap
 		return false;
 	}
 
-	Block* LookupBlockFromOffset(uint64_t offset)
+	static Block* LookupBlockFromOffset(uint64_t offset)
 	{
 		// find the corresponding chunk in the mdata.
 		uint64_t p = KernelHeapMetadata + MetadataSize;
@@ -523,10 +531,10 @@ namespace KernelHeap
 
 
 
-	void ContractHeap()
-	{
-		Log(1, "Cannot shrink heap, not implemented.");
-	}
+	// static void ContractHeap()
+	// {
+	// 	Log(1, "Cannot shrink heap, not implemented.");
+	// }
 
 
 	uint64_t QuerySize(void* Address)

@@ -51,7 +51,7 @@ namespace Virtual
 
 	struct VirtualAddressSpace
 	{
-		VirtualAddressSpace(PageMapStructure* pml4) : used(1024)
+		VirtualAddressSpace(PageMapStructure* pml4) : used(64)
 		{
 			this->PML4 = pml4;
 		}

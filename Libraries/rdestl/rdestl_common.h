@@ -2,8 +2,13 @@
 #define RDESTL_COMMON_H
 
 #ifndef RDESTL_STANDALONE
-#	define RDESTL_STANDALONE	1
+	#define RDESTL_STANDALONE	1
 #endif
+
+#ifndef RAPIDXML_NO_STDLIB
+	#define RAPIDXML_NO_STDLIB
+#endif
+
 // comment
 #if RDESTL_STANDALONE
 #   include <assert.h>

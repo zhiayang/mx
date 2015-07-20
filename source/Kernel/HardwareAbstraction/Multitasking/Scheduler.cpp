@@ -166,9 +166,9 @@ namespace Multitasking
 
 	extern "C" void VerifySchedule()
 	{
-		// if(CurrentThread->Parent->Name[0] == 'b')
+		if(0 && CurrentThread->ThreadID == 1)
 		{
-			// Utilities::StackDump((uint64_t*) CurrentThread->StackPointer, 20);
+			Utilities::StackDump((uint64_t*) CurrentThread->StackPointer, 20);
 			// HALT("");
 		}
 	}

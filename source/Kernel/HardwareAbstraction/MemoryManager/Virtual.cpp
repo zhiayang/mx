@@ -7,6 +7,8 @@
 #include <StandardIO.hpp>
 #include <stddef.h>
 
+#include <rdestl/rdestl.h>
+
 using namespace Kernel;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
 using namespace Kernel::HardwareAbstraction::MemoryManager::Virtual;
@@ -38,7 +40,7 @@ namespace Virtual
 		IsPaging = true;
 	}
 
-
+	rde::rb_tree<int> m;
 
 	// this models (exactly) the FPL pair system of the physical allocator.
 	uint64_t AllocateVirtual(uint64_t size, uint64_t addr, VirtualAddressSpace* v, uint64_t phys)
@@ -238,16 +240,23 @@ namespace Virtual
 		}
 
 		// Log("freeing %x, %d (%x, %x)", page, size, __builtin_return_address(0), __builtin_return_address(1));
-		for(size_t i = 0; i < vas->used.size(); i++)
+		// for(size_t i = 0; i < vas->used.size(); i++)
+
+		for(auto it = vas->used.begin(); it != vas->used.end(); it++)
 		{
-			ALPTuple& pair = vas->used[i];
+			// ALPTuple& pair = vas->used[i];
 			// if(!pair) continue;
+
+			ALPTuple& pair = *it;
 
 			if((pair.start == page && pair.length == size) || (pair.start == 0 && pair.length == 0 && pair.phys == 0))
 			{
 				// Log("freeing (%x, %x, %d) (%x)", pair->start, pair->phys, pair->length, __builtin_return_address(0));
-				vas->used.erase(vas->used.begin() + i);
-				i = 0;
+				// vas->used.erase(vas->used.begin() + i);
+				// i = 0;
+
+				vas->used.erase(it);
+				it = vas->used.begin();
 				continue;
 			}
 		}
@@ -258,17 +267,9 @@ namespace Virtual
 		VirtualAddressSpace* vas = v ? v : &Multitasking::GetCurrentProcess()->VAS;
 		assert(vas);
 
-		for(ALPTuple& tup : vas->used)
-		{
-			if(tup.start == addr || tup.phys == phys)
-			{
-				// TODO: investigate
-				// Log("Duplicate: %x -> %x, %d", tup->start, tup->phys, tup->length);
-				// assert("Duplicate tuple!" && 0);
-			}
-		}
-
+		LOCK(vas->mtx);
 		vas->used.push_back(ALPTuple(addr, sizeInPages, phys));
+		UNLOCK(vas->mtx);
 	}
 
 	uint64_t GetVirtualPhysical(uint64_t virt, VirtualAddressSpace* v)

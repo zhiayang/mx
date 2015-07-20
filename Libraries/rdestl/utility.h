@@ -2,7 +2,17 @@
 #define RDESTL_UTILITY_H
 
 #include "rdestl_common.h"
-#include <new>
+#include "int_to_type.h"
+// #include <new>
+
+
+void operator delete(void* p) _GLIBCXX_USE_NOEXCEPT;
+void operator delete[](void* p) _GLIBCXX_USE_NOEXCEPT;
+void* operator new(size_t size);
+void* operator new[](size_t size);
+
+void* operator new(size_t, void* addr) noexcept;
+
 
 namespace rde
 {
@@ -12,8 +22,8 @@ namespace internal
 	void copy_n(const T* first, size_t n, T* result, int_to_type<false>)
 	{
 		const T* last = first + n;
-		//while (first != last)
-		//	*result++ = *first++;
+		// while (first != last)
+		// *result++ = *first++;
 		switch (n & 0x3)
 		{
 		case 0:
