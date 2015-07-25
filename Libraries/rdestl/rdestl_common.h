@@ -5,10 +5,6 @@
 	#define RDESTL_STANDALONE	1
 #endif
 
-#ifndef RAPIDXML_NO_STDLIB
-	#define RAPIDXML_NO_STDLIB
-#endif
-
 // comment
 #if RDESTL_STANDALONE
 #   include <assert.h>
@@ -32,15 +28,15 @@
 		{
 			RDE_FORCEINLINE void MemCpy(void* to, const void* from, size_t bytes)
 			{
-				std::memcpy(to, from, bytes);
+				memcpy(to, from, bytes);
 			}
 			RDE_FORCEINLINE void MemMove(void* to, const void* from, size_t bytes)
 			{
-				std::memmove(to, from, bytes);
+				memmove(to, from, bytes);
 			}
 			RDE_FORCEINLINE void MemSet(void* buf, unsigned char value, size_t bytes)
 			{
-				std::memset(buf, value, bytes);
+				memset(buf, value, bytes);
 			}
 		} // sys
 	}

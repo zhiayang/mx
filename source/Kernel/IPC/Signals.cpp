@@ -126,8 +126,8 @@ namespace IPC
 			// should be done, time to clean up.
 			if(thread->Parent != Multitasking::GetCurrentProcess())
 			{
-				Virtual::FreeVirtual(ustack & ((uint64_t) ~0xFFF));
-				Virtual::FreeVirtual(ptr & ((uint64_t) ~0xFFF));
+				Virtual::FreeVirtual(ustack & ((uint64_t) ~0xFFF), 1);
+				Virtual::FreeVirtual(ptr & ((uint64_t) ~0xFFF), 1);
 
 				Virtual::UnmapAddress(ptr & ((uint64_t) ~0xFFF));
 				Virtual::UnmapAddress(ustack & ((uint64_t) ~0xFFF));

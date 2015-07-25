@@ -5,7 +5,8 @@
 #pragma once
 #include <stdint.h>
 #include <sys/types.h>
-#include <rdestl/rdestl.h>
+#include <rdestl/rde_string.h>
+#include <Vector.hpp>
 
 #include <CircularBuffer.hpp>
 #include "../Devices/StorageDevice.hpp"
@@ -70,7 +71,7 @@ namespace Filesystems
 
 		struct FDArray
 		{
-			rde::vector<fileentry*> fds;
+			iris::vector<fileentry*> fds;
 		};
 
 		struct Filesystem

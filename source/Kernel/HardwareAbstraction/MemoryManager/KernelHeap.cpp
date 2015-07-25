@@ -15,7 +15,7 @@ using namespace Kernel::HardwareAbstraction::MemoryManager;
 using namespace Library;
 
 #define MaximumHeapSizeInPages		0xFFFFFFFF
-#define Alignment					32
+#define Alignment					64
 #define MetadataSize				32
 #define Warn						0
 #define MapFlags					0x7
@@ -77,7 +77,7 @@ namespace KernelHeap
 		uint64_t p = Physical::AllocatePage();
 		SizeOfMetadataInPages++;
 
-		Log("Expanded heap metadata with virt %x, phys %x (%x, %x)", d, p, __builtin_return_address(1), __builtin_return_address(2));
+		// Log("Expanded heap metadata with virt %x, phys %x (%x, %x)", d, p, __builtin_return_address(1), __builtin_return_address(2));
 		Virtual::MapAddress(d, p, MapFlags, (Virtual::PageMapStructure*) GetKernelCR3());
 	}
 
@@ -337,8 +337,8 @@ namespace KernelHeap
 		// check if we didn't find one.
 		if(in == 0)
 		{
-			Log("asked for %d bytes!", s);
-			Log("expanding heap by %d pages (%x, %x)", (as + 0xFFF) / 0x1000, __builtin_return_address(2), __builtin_return_address(3));
+			// Log("asked for %d bytes!", s);
+			// Log("expanding heap by %d pages (%x, %x)", (as + 0xFFF) / 0x1000, __builtin_return_address(2), __builtin_return_address(3));
 			ExpandHeap((as + 0xFFF) / 0x1000);
 			return AllocateChunk(as, callerData);
 		}

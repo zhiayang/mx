@@ -375,6 +375,7 @@ namespace Kernel
 		}
 
 
+
 		// manually jump start the vfs system
 		{
 			using namespace Filesystems;
@@ -398,7 +399,6 @@ namespace Kernel
 		}
 
 
-
 		// init network stuff
 		// if we have an nic, that is
 		if(DeviceManager::GetDevice(DeviceType::EthernetNIC) != 0)
@@ -408,8 +408,8 @@ namespace Kernel
 			IP::Initialise();
 			TCP::Initialise();
 			UDP::Initialise();
-			DHCP::Initialise();
-			DNS::Initialise();
+			// DHCP::Initialise();			// todo: dhcp is a little broken
+			// DNS::Initialise();			// todo: dns is also wonky
 		}
 
 		PS2::Initialise();
@@ -417,6 +417,7 @@ namespace Kernel
 		Log("StandardIO initialised");
 
 		// Console::ClearScreen();
+
 
 
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
@@ -457,14 +458,17 @@ namespace Kernel
 			uint64_t st = 0;
 			uint64_t et = 0;
 
-			Log(3, "s.st_size: %d", s.st_size);
+			Log(3, "(%d) s.st_size: %d", file, s.st_size);
 
-			const uint64_t blocksz = 30000 /*s.st_size*/;
+			const uint64_t blocksz = 40 /*s.st_size*/;
 			uint8_t* fl = new uint8_t[blocksz + 1];
 			uint8_t* whole = new uint8_t[s.st_size + 1];
 
 			uint64_t total = s.st_size;
 			Log(3, "start: %d ms", st = Time::Now());
+
+			Log(3, "whole: %x, end: %x ------ fl: %x, end: %x", whole, whole + s.st_size, fl, fl + blocksz);
+			VFS::FileEntryFromFD(&Multitasking::GetCurrentProcess()->iocontext, 4);
 
 			int i = 0;
 			for(uint64_t cur = 0; cur < total; )
@@ -473,11 +477,11 @@ namespace Kernel
 
 				// PrintString((const char*) fl);
 				// SerialPort::WriteString((const char*) fl);
-				memcpy(whole + cur, fl, read);
+				// memcpy(whole + cur, fl, read);
 				cur += read;
 
 				// PrintFormatted(" %6d/%d", cur, total);
-				Log("(%d): %d/%d", i, cur, total);
+				Log("(%d): %d, %d/%d", i, read, cur, total);
 				i++;
 			}
 
@@ -487,6 +491,9 @@ namespace Kernel
 			Log(3, "end: %d ms", et = Time::Now());
 			Log(3, "time taken: %d ms", et - st);
 		}
+
+		Log("stop");
+		UHALT();
 
 		if(0)
 		{

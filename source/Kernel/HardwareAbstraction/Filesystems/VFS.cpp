@@ -114,6 +114,7 @@ namespace Filesystems
 
 			for(auto v : ioctx->fdarray.fds)
 			{
+				Log("fd: %d", v->fd);
 				if(v->fd == fd)
 					return v;
 			}

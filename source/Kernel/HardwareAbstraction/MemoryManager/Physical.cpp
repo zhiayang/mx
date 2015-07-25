@@ -211,8 +211,7 @@ namespace Physical
 	void FreeDMA(DMAAddr addr, uint64_t size)
 	{
 		FreePage(addr.phys, size);
-		Virtual::FreeVirtual(addr.virt);
-
+		Virtual::FreeVirtual(addr.virt, size);
 		Virtual::UnmapRegion(addr.virt, size);
 	}
 

@@ -5,6 +5,11 @@
 #include "int_to_type.h"
 // #include <new>
 
+namespace Kernel
+{
+	void Log(uint8_t level, const char* str, ...);
+	void Log(const char* str, ...);
+}
 
 void operator delete(void* p) _GLIBCXX_USE_NOEXCEPT;
 void operator delete[](void* p) _GLIBCXX_USE_NOEXCEPT;
@@ -97,8 +102,9 @@ namespace internal
 	template<typename T>
 	void copy_construct_n(const T* first, size_t n, T* result, int_to_type<true>)
 	{
-		RDE_ASSERT(result >= first + n || result < first);
-		Sys::MemCpy(result, first, n * sizeof(T));
+		// Kernel::Log("RESULT: %x, FIRST: %x, N: %d, sizeof(T): %d", result, first, n, sizeof(T));
+		// RDE_ASSERT(result >= first + n || result < first);
+		Sys::MemMove(result, first, n * sizeof(T));
 	}
 
 	template<typename T>
@@ -136,12 +142,12 @@ namespace internal
 		// Nothing to do
 	}
 
-	template<typename T> RDE_FORCEINLINE
+	template<typename T> /*RDE_FORCEINLINE*/
 	void copy_construct(T* mem, const T& orig, int_to_type<false>)
 	{
 		new (mem) T(orig);
 	}
-	template<typename T> RDE_FORCEINLINE
+	template<typename T> /*RDE_FORCEINLINE*/
 	void copy_construct(T* mem, const T& orig, int_to_type<true>)
 	{
 		mem[0] = orig;

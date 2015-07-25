@@ -62,6 +62,11 @@
 #define VolumeMountPoint	"/Volumes/"
 
 
+#define LOG_INFO			0
+#define LOG_WARN			1
+#define LOG_SEVR			2
+#define LOG_CRIT			3
+
 
 // wrapper types for big endian shits
 // I don't think we will ever support big endian archs
