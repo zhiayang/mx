@@ -113,6 +113,8 @@ namespace DMA
 			for(uint64_t i = 0; i < sectors; i++)
 			{
 				PIO::ReadSector(dev, Sector + i);
+
+				// Log("&dev->Data[0] = %x, a.virt = %x, have = %x", &dev->Data[0], a.virt, have);
 				Memory::Copy((void*) (a.virt + have), &dev->Data[0], __min(512, Bytes - have));
 				have += __min(512, Bytes - have);
 			}

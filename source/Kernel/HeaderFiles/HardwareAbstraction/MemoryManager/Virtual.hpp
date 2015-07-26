@@ -66,7 +66,7 @@ namespace Virtual
 		}
 
 		// store the actual address of the pml4.
-		iris::vector<MemRegion*>* regions;
+		iris::vector<MemRegion>* regions;
 
 		PageMapStructure* PML4;
 		Mutex* mtx;

@@ -98,6 +98,8 @@ namespace iris
 
 				this->doCopyConstruct(this->array, newArr, this->elements);
 				this->array = newArr;
+
+				this->_capacity = newSize;
 			}
 
 
@@ -108,6 +110,10 @@ namespace iris
 			bool empty()		{ return this->elements == 0; }
 
 
+			~vector()
+			{
+				delete[] this->array;
+			}
 
 			vector(size_t cap)
 			{

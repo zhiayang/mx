@@ -246,10 +246,10 @@ namespace Kernel
 
 		// after everything is done, make sure shit works
 		{
-			uint64_t m = KernelHeap::GetFirstHeapMetadataPhysPage();
+			// uint64_t m = KernelHeap::GetFirstHeapMetadataPhysPage();
 			uint64_t h = KernelHeap::GetFirstHeapPhysPage();
 
-			Virtual::ForceInsertALPTuple(KernelHeapMetadata, 1, m);
+			// Virtual::ForceInsertALPTuple(KernelHeapMetadata, 1, m);
 			Virtual::ForceInsertALPTuple(KernelHeapAddress, 1, h);
 		}
 
@@ -829,7 +829,7 @@ namespace rapidxml
 
 extern "C" void* malloc(size_t s)
 {
-	return KernelHeap::AllocateFromHeap(s);
+	return KernelHeap::AllocateChunk(s, "");
 }
 extern "C" void free(void* ptr)
 {

@@ -5,9 +5,6 @@
 // Heap things.
 
 #include <Kernel.hpp>
-#include <Memory.hpp>
-#include <StandardIO.hpp>
-#include <String.hpp>
 
 using namespace Kernel;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
@@ -15,20 +12,28 @@ using namespace Kernel::HardwareAbstraction::MemoryManager;
 using namespace Library;
 
 #define MaximumHeapSizeInPages		0xFFFFFFFF
-#define Alignment					64
+#define Alignment					32
 #define MetadataSize				32
-#define Warn						0
+#define Paranoid					1
 #define MapFlags					0x7
 #define ClearMemory					1
 #define AllowMagicMismatch			1
 
-static uint64_t NumberOfChunksInHeap;
-static uint64_t SizeOfHeapInPages;
-static uint64_t SizeOfMetadataInPages;
-static uint64_t FirstFreeIndex;
 
-static uint64_t FirstHeapMetadataPhysPage;
-static uint64_t FirstHeapPhysPage;
+#define HEADER_FREE					0xFFFFFFFFEE014EAA
+#define HEADER_USED					0xFFFFFFFFEEDEAD00
+#define FOOTER_MAGIC				0x00000000EEF055AA
+
+
+
+#if Paranoid
+#define _assert(h, x)		do { if(!(x)) { Log("header %x failed (owner: %x)", h, h->owner); assert((x)); } } while(0)
+#else
+#define _assert(h, x)
+#endif
+
+#define returnAddr()	((uint64_t) __builtin_return_address(0))
+
 
 namespace Kernel {
 namespace HardwareAbstraction {
@@ -37,152 +42,123 @@ namespace KernelHeap
 {
 	bool DidInitialise = false;
 
-	struct Block
+	struct Footer;
+	struct Header
 	{
-		uint64_t Offset;
-		uint64_t Size;
-		uint64_t callerAddr;
 		uint64_t magic;
+		uint64_t size;
+		uint64_t owner;
+		Footer* footer;
 	};
 
-	uint64_t GetFirstHeapMetadataPhysPage()
+	struct Footer
 	{
-		return FirstHeapMetadataPhysPage;
+		uint64_t magic;
+		Header* header;
+	};
+
+	static uint64_t NumberOfChunksInHeap;
+	static uint64_t SizeOfHeapInPages;
+	static Header* FirstFreeHeader;
+
+	static uint64_t FirstHeapPhysPage;
+
+
+
+
+
+	static Header* sane(Header* header)
+	{
+		assert(header);
+
+		_assert(header, header->magic == HEADER_FREE || header->magic == HEADER_USED);
+		_assert(header, header->size > 0);
+
+		// check footer too.
+		assert(header->footer);
+
+		_assert(header, header->footer->magic == FOOTER_MAGIC);
+		_assert(header, header->footer->header == header);
+
+		return header;
 	}
 
-	uint64_t GetFirstHeapPhysPage()
+	static Footer* sane(Footer* footer)
 	{
-		return FirstHeapPhysPage;
+		assert(footer);
+		sane(footer->header);
+
+		return footer;
 	}
 
-	static uint64_t GetSize(Block* c)
+	static void ExpandHeap(uint64_t numPages);
+	static Header* create(uint64_t addr, uint64_t size, uint64_t owner)
 	{
-		uint64_t f = c->Size & (uint64_t)(~0x1);
-		return f;
-	}
+		assert(addr > 0);
+		assert(size > 0);
 
-	static uint64_t addr(Block* c)
-	{
-		return (uint64_t) c;
-	}
+		Log("creating header at %x, %x bytes (%x)", addr, size, returnAddr());
+		Header* header = (Header*) addr;
+		memset(header, 0, sizeof(Header));
 
-	static bool IsFree(Block* c)
-	{
-		return c->Size & 0x1;
-	}
+		header->magic = HEADER_FREE;
+		header->owner = owner;
+		header->size = size;
 
-	static void ExpandMetadata()
-	{
-		uint64_t d = KernelHeapMetadata + (SizeOfMetadataInPages * 0x1000);
-		uint64_t p = Physical::AllocatePage();
-		SizeOfMetadataInPages++;
+		Footer* footer = (Footer*) (addr + sizeof(Header) + size);
+		memset(footer, 0, sizeof(Footer));
 
-		// Log("Expanded heap metadata with virt %x, phys %x (%x, %x)", d, p, __builtin_return_address(1), __builtin_return_address(2));
-		Virtual::MapAddress(d, p, MapFlags, (Virtual::PageMapStructure*) GetKernelCR3());
-	}
+		footer->magic = FOOTER_MAGIC;
+		footer->header = header;
 
-	static Block* sane(Block* c)
-	{
-		if(c && (c->Offset ^ c->Size) == c->magic)
-		{
-			return c;
-		}
-		else
-		{
-			Log(1, "Expected 'magic' to be %x, got %x", c->Offset ^ c->Size, c->magic);
+		header->footer = footer;
 
-			#if !AllowMagicMismatch
-			HALT("");
-			#endif
-
-			return c;
-		}
-	}
-
-	static uint64_t CreateNewChunk(uint64_t offset, uint64_t size)
-	{
-		uint64_t s = KernelHeapMetadata + MetadataSize;
-		bool found = false;
-
-		for(uint64_t m = 0; m < NumberOfChunksInHeap; m++)
-		{
-			Block* ct = (Block*) s;
-			if((ct->Offset + GetSize(ct) == offset && IsFree(ct)) || (ct->Offset == 0 && ct->Size == 0))
-			{
-				found = true;
-				break;
-			}
-
-			s += sizeof(Block);
-		}
-
-		if(found)
-		{
-			Block* c1 = (Block*) s;
-
-			if(c1->Offset == 0 && c1->Size == 0)
-			{
-				// this is one of those derelict chunks, repurpose it.
-				c1->Offset = offset;
-				c1->Size = size & (uint64_t)(~0x1);
-				c1->Size |= 0x1;
-			}
-			else
-			{
-				c1->Size += size;
-				c1->Size |= 0x1;
-			}
-
-			c1->magic = c1->Size ^ c1->Offset;
-			return (uint64_t) sane(c1);
-		}
-
-
-
-
-		uint64_t p = MetadataSize + ((NumberOfChunksInHeap - 1) * sizeof(Block));
-
-		if(p + sizeof(Block) == SizeOfMetadataInPages * 0x1000)
-		{
-			// if this is the last one before the page
-			// create a new one.
-			ExpandMetadata();
-		}
-
-		// create another one.
-		Block* c1 = (Block*)(KernelHeapMetadata + p + sizeof(Block));
 		NumberOfChunksInHeap++;
-
-		c1->Offset = offset;
-		c1->Size = size | 0x1;
-		c1->magic = c1->Size ^ c1->Offset;
-
-		return (uint64_t) sane(c1);
+		return sane(header);
 	}
 
-	static Block* GetChunkAtIndex(uint64_t i)
+	// static Footer* getFooter(Header* header)
+	// {
+	// 	return sane(header)->footer;
+	// }
+
+	static Header* getHeader(Footer* footer)
 	{
-		uint64_t p = KernelHeapMetadata + MetadataSize + (i * sizeof(Block));
-		return sane((Block*) p);
+		return sane(footer)->header;
 	}
 
-	static uint64_t RoundSize(uint64_t s)
+	static Header* next(Header* header)
 	{
-		uint64_t remainder = s % Alignment;
-
-		if(remainder == 0)
-			return s;
-
-		return s + Alignment - remainder;
+		return sane((Header*) (sane(header)->footer + 1));
 	}
 
+	// static Header* next(Footer* footer)
+	// {
+	// 	return sane((Header*) (sane(footer) + 1));
+	// }
 
+	// static Header* prev(Header* header)
+	// {
+	// 	Footer* pfoot = sane((Footer*) ((uintptr_t) header - sizeof(Footer)));
+	// 	return pfoot->header;
+	// }
 
+	// static Header* prev(Footer* footer)
+	// {
+	// 	sane(footer);
+	// 	return prev(footer->header);
+	// }
 
+	static Header* getLast()
+	{
+		Footer* foot = sane((Footer*) ((KernelHeapAddress + (SizeOfHeapInPages * 0x1000)) - sizeof(Footer)));
+		return foot->header;
+	}
 
-
-
-
+	static bool isFree(Header* header)
+	{
+		return sane(header)->magic == HEADER_FREE;
+	}
 
 
 
@@ -190,388 +166,193 @@ namespace KernelHeap
 
 	void Initialise()
 	{
-		// the first page will contain bits of metadata.
-		// including: number of chunks.
-		// size of heap in pages.
-
-		// let's start.
-		// allocate one page for the heap.
-		// will be mapped for now.
-		FirstHeapMetadataPhysPage = Physical::AllocatePage();
+		// do it.
 		FirstHeapPhysPage = Physical::AllocatePage();
 
 		// also map it.
-		Virtual::MapAddress(KernelHeapMetadata, FirstHeapMetadataPhysPage, MapFlags);
 		Virtual::MapAddress(KernelHeapAddress, FirstHeapPhysPage, MapFlags);
 
 		NumberOfChunksInHeap = 1;
 		SizeOfHeapInPages = 1;
-		SizeOfMetadataInPages = 1;
-		FirstFreeIndex = 0;
 
-
-		Block* fc = (Block*) (KernelHeapMetadata + MetadataSize);
-		fc->Offset = 0;
-
-		// bit zero stores free/not: 1 is free, 0 is not. that means we can only do 2-byte granularity.
-		fc->Size = 0x1000 | 0x1;
-		fc->magic = fc->Size ^ fc->Offset;
-
+		FirstFreeHeader = create(KernelHeapAddress, 0x1000 - sizeof(Header) - sizeof(Footer), returnAddr());
 		DidInitialise = true;
 	}
 
-	static uint64_t FindFirstFreeSlot(uint64_t Size)
+	void ExpandHeap(uint64_t numPages)
 	{
-		// free chunks are more often than not found at the back,
+		uint64_t phys = Physical::AllocatePage(numPages);
+
+		Virtual::MapRegion(KernelHeapAddress + (SizeOfHeapInPages * 0x1000), phys, numPages, MapFlags);
+
+
+		Footer* _last = sane((Footer*) ((KernelHeapAddress + (SizeOfHeapInPages * 0x1000)) - sizeof(Footer)));
+		Header* last = getHeader(_last);
+
+		if(isFree(last))
 		{
-			uint64_t p = KernelHeapMetadata + MetadataSize + (FirstFreeIndex * sizeof(Block));
+			// we're in luck.
+			last->size += (numPages * 0x1000);
 
-			for(uint64_t k = 0; k < NumberOfChunksInHeap - FirstFreeIndex; k++)
-			{
-				Block* c = sane((Block*) p);
-				if(GetSize(c) > Size && IsFree(c))
-					return p;
-
-				else
-					p += sizeof(Block);
-			}
-
-			// because the minimum offset (from the meta address) is 8, zero will do.
-			return 0;
-		}
-	}
-
-
-	static void SplitChunk(Block* Header, uint64_t Size)
-	{
-		// round up to nearest two.
-		uint64_t ns = ((Size / 2) + 1) * 2;
-
-		assert(GetSize(Header) >= ns);
-
-		// create a new chunk.
-		// because of the inherently unordered nature of the list (ie. we can't insert arbitrarily into the middle of the
-		// list, for it is a simple array), we cannot make assumptions (aka assert() s) about the Offset and Size fields.
-		// because this function will definitely disorder the list, because CreateNewChunk() can only put
-		// new chunks at the end of the list.
-
-		uint64_t nsonc = GetSize(Header) - ns;
-		CreateNewChunk(Header->Offset + ns, nsonc);
-
-		Header->Size = ns | 0x1;
-		Header->magic = Header->Size ^ Header->Offset;
-	}
-
-
-	static void ExpandHeap(size_t pages)
-	{
-		if(SizeOfHeapInPages == MaximumHeapSizeInPages)
-		{
-			asm volatile("cli");
-			HALT("Heap out of memory! (Tried to expand beyond max amount of pages)");
-		}
-
-
-		uint64_t p = KernelHeapMetadata + MetadataSize;
-		bool found = false;
-		for(uint64_t m = 0; m < NumberOfChunksInHeap; m++)
-		{
-			Block* ct = (Block*) p;
-			if(ct->Offset + GetSize(ct) == SizeOfHeapInPages * 0x1000 && IsFree(ct))
-			{
-				found = true;
-				break;
-			}
-
-			p += sizeof(Block);
-		}
-
-
-		// check if the chunk before the new one is free.
-		if(found)
-		{
-			Block* c1 = (Block*) p;
-
-			// merge with that instead.
-			c1->Size += (pages * 0x1000);
-			c1->Size |= 0x1;
-			c1->magic = c1->Offset ^ c1->Size;
+			Footer* nfoot = (Footer*) ((uintptr_t) last + sizeof(Header) + last->size);
+			nfoot->magic = FOOTER_MAGIC;
+			nfoot->header = last;
 		}
 		else
 		{
-			// nothing we can do.
-			// create a new chunk.
-			CreateNewChunk(SizeOfHeapInPages * 0x1000, pages * 0x1000);
+			// aww. create a new one.
+			create(KernelHeapAddress + (SizeOfHeapInPages * 0x1000), numPages * 0x1000 - sizeof(Header) - sizeof(Footer), returnAddr());
 		}
 
-
-
-		// create and map the actual space.
-		uint64_t x = Physical::AllocatePage(pages);
-		// Log("Expanded heap with virt %x, phys %x", KernelHeapAddress + SizeOfHeapInPages * 0x1000, x);
-
-
-		// Virtual::MapRegion(KernelHeapAddress + SizeOfHeapInPages * 0x1000, x, MapFlags, (Virtual::PageMapStructure*) GetKernelCR3());
-
-		Virtual::MapRegion(KernelHeapAddress + SizeOfHeapInPages * 0x1000, x, pages, MapFlags, (Virtual::PageMapStructure*) GetKernelCR3());
-		Virtual::ForceInsertALPTuple(KernelHeapAddress + SizeOfHeapInPages * 0x1000, pages, x, &Multitasking::GetProcess(0)->VAS);
-
-		SizeOfHeapInPages++;
+		SizeOfHeapInPages += numPages;
 	}
 
-	void* AllocateChunk(uint64_t s, const char* callerData)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	void* AllocateChunk(uint64_t size, const char* fileAndLine)
 	{
-		uint64_t size = s;
+		size = ((size + (Alignment - 1)) / Alignment) * Alignment;
 
-		// AutoMutex lock = AutoMutex(Mutexes::KernelHeap);
+		Header* h = sane(FirstFreeHeader);
 
-		// round to alignment.
-		uint64_t as = RoundSize(size);
-
-		if(as == 0)
-			return nullptr;
-
-		// find first matching chunk.
-		uint64_t in = FindFirstFreeSlot(as);
-
-		// check if we didn't find one.
-		if(in == 0)
+		while(!isFree(h) || h->size < size)
 		{
-			// Log("asked for %d bytes!", s);
-			// Log("expanding heap by %d pages (%x, %x)", (as + 0xFFF) / 0x1000, __builtin_return_address(2), __builtin_return_address(3));
-			ExpandHeap((as + 0xFFF) / 0x1000);
-			return AllocateChunk(as, callerData);
-		}
-		else
-		{
-			// we must have found it.
-			// check that it's actually valid.
-			assert(!(in % sizeof(Block)));
+			h = next(h);
 
-			Block* c = sane((Block*) in);
-
-			if(GetSize(c) > as)
+			if(h == getLast() && (!isFree(h) || h->size < size))
 			{
-				SplitChunk(c, as);
+				ExpandHeap((size + 0xFFF) / 0x1000);
+
+				Log("Expanded heap by %d bytes", ((size + 0xFFF) / 0x1000) * 0x1000);
+				return AllocateChunk(size, fileAndLine);
+			}
+		}
+
+		assert(isFree(h));
+		sane(h);
+
+		if(h->size > size + (2 * sizeof(Header)) + sizeof(Footer))
+		{
+			uint64_t origSize = h->size;
+			uint64_t newSize = origSize - size - sizeof(Header) - sizeof(Footer);
+
+			// edge case: if the header we're about to create would exceed
+			// the size of the heap, expand it first.
+
+			// Log("h: %x, origSize: %x, size: %x, newsize: %x, max: %x", h, origSize, size, newSize, KernelHeapAddress + (SizeOfHeapInPages * 0x1000));
+			if((uintptr_t) h + sizeof(Header) + size + sizeof(Footer) + sizeof(Header) + newSize + sizeof(Footer)
+				> KernelHeapAddress + (SizeOfHeapInPages * 0x1000))
+			{
+				ExpandHeap(((newSize + sizeof(Header) + sizeof(Footer)) + 0xFFF) / 0x1000);
+				return AllocateChunk(size, fileAndLine);
 			}
 
-			c->Size &= (uint64_t) (~0x1);
-			c->magic = c->Offset ^ c->Size;
-			c->callerAddr = (uint64_t) __builtin_return_address(1);	// two levels up, since (0) is probably operator new
 
-			if(c->callerAddr == 0)	// but if it's 0, then... try (0).
-				c->callerAddr = (uint64_t) __builtin_return_address(0);
+			// split it.
+			// 1. preserve original header.
+			// 2. create new footer, reflecting allocated size
+			// 3. create new header, for new chunk
+			// 4. create new footer, for new chunk.
 
-			(void) callerData;
+			h->size = size;
 
-			if(ClearMemory)
-				Memory::Set((void*) (KernelHeapAddress + c->Offset), 0, GetSize(c));
+			Footer* f = (Footer*) ((uintptr_t) h + sizeof(Header) + h->size);
+			f->header = h;
+			f->magic = FOOTER_MAGIC;
+			h->footer = f;
 
-			return (void*) (c->Offset + KernelHeapAddress);
+
+			// create new header + footer.
+			// Log("splitting. h: %x, h->size: %x, origSize: %x, (hd: %x, ft: %x)", h, h->size, origSize, sizeof(Header), sizeof(Footer));
+			/*auto nh = */create((uintptr_t) h + sizeof(Header) + h->size + sizeof(Footer), newSize, returnAddr());
+			// Log("new header: %x, %x", nh, nh->size);
 		}
+
+
+		h->magic = HEADER_USED;
+		h->owner = returnAddr();
+
+		Log("chunk %x goes to owner %x (+1: %x, %x)", h, h->owner, (h != getLast() ? next(h) : 0), (h != getLast() ? next(h)->owner : 0));
+		return (void*) (h + 1);
 	}
-
-
-
-
-
-
-	static bool TryMergeLeft(Block* c)
-	{
-		// make sure that this is not the first chunk.
-		if(addr(c) == KernelHeapMetadata + MetadataSize)
-			return false;
-
-		uint64_t p = KernelHeapMetadata + MetadataSize;
-		bool found = false;
-
-		for(uint64_t m = 0; m < NumberOfChunksInHeap && p < KernelHeapMetadata + (SizeOfMetadataInPages * 0x1000); m++)
-		{
-			Block* ct = sane((Block*) p);
-			if(ct->Offset + GetSize(ct) == c->Offset && IsFree(ct))
-			{
-				found = true;
-				break;
-			}
-
-			p += sizeof(Block);
-		}
-
-		if(found)
-		{
-			Block* c1 = (Block*) p;
-
-			c->Offset = c1->Offset;
-			c->Size += c1->Size;
-			c->Size |= 0x1;
-			c->magic = c->Offset ^ c->Size;
-
-			c1->Offset = 0;
-			c1->Size = 0;
-			c1->magic = c1->Offset ^ c1->Size;
-		}
-
-		return found;
-	}
-
-
-
-	static bool TryMergeRight(Block* c)
-	{
-		// make sure that this is not the last chunk.
-		if(addr(c) + sizeof(Block) >= KernelHeapMetadata + (SizeOfMetadataInPages * 0x1000))
-			return false;
-
-		uint64_t p = KernelHeapMetadata + MetadataSize;
-		bool found = false;
-
-		for(uint64_t m = 0; m < NumberOfChunksInHeap && p < KernelHeapMetadata + (SizeOfMetadataInPages * 0x1000); m++)
-		{
-			Block* ct = (Block*) p;
-			if(c->Offset + GetSize(c) == ct->Offset && IsFree(ct))
-			{
-				found = true;
-				break;
-			}
-
-			p += sizeof(Block);
-		}
-
-		if(found)
-		{
-			Block* c1 = (Block*) p;
-
-			// merge with that instead.
-			c->Size += GetSize(c1);
-			c->Size |= 0x1;
-			c->magic = c->Offset ^ c->Size;
-
-			c1->Offset = 0;
-			c1->Size = 0;
-			c1->magic = c1->Offset ^ c1->Size;
-		}
-		return false;
-	}
-
-	static Block* LookupBlockFromOffset(uint64_t offset)
-	{
-		// find the corresponding chunk in the mdata.
-		uint64_t p = KernelHeapMetadata + MetadataSize;
-		Block* tc = 0;
-
-		for(uint64_t k = 0; k < NumberOfChunksInHeap; k++)
-		{
-			Block* c = (Block*) p;
-			if(offset - KernelHeapAddress == (uint64_t) c->Offset)
-			{
-				if(k < FirstFreeIndex && c && IsFree(c))
-					FirstFreeIndex = k;
-
-				tc = c;
-				break;
-			}
-
-			else
-				p += sizeof(Block);
-		}
-
-		if(!tc)
-		{
-			if(Warn)
-			{
-				Log(1, "Tried to free nonexistent chunk at address %x, RA(0): %x, RA(1): %x, ignoring...",
-					offset, __builtin_return_address(1), __builtin_return_address(2));
-			}
-
-			return 0;
-		}
-
-		sane(tc);
-		return tc;
-	}
-
 
 	void FreeChunk(void* Pointer)
 	{
-		// else, set it to free.
-		Block* tc = LookupBlockFromOffset((uint64_t) Pointer);
-		if(tc)
-		{
-			tc->Size |= 0x1;
-			tc->magic = tc->Offset ^ tc->Size;
-			Memory::Set((void*) ((uint64_t) (tc->Offset + KernelHeapAddress)), 0x00, GetSize(tc));
-
-			// try to merge left or right.
-			TryMergeRight(tc);
-			TryMergeLeft(tc);
-		}
 	}
 
 	void* ReallocateChunk(void* ptr, uint64_t size)
 	{
-		Block* b = LookupBlockFromOffset((uint64_t) ptr);
-
-		if(b->Size > size)
-		{
-			return (void*) b->Offset;
-		}
-		else
-		{
-			void* ret = AllocateChunk(size, "");
-			assert(ret);
-
-			Memory::Copy(ret, ptr, b->Size);
-			return ret;
-		}
-	}
-
-
-
-
-
-
-
-	// static void ContractHeap()
-	// {
-	// 	Log(1, "Cannot shrink heap, not implemented.");
-	// }
-
-
-	uint64_t QuerySize(void* Address)
-	{
-		// we need to loop through the list of chunks to find an entry that matches.
-
-		for(uint64_t n = 0; n < NumberOfChunksInHeap; n++)
-		{
-			if((uint64_t) Address - KernelHeapAddress == (uint64_t) GetChunkAtIndex(n)->Offset)
-			{
-				// we've got it.
-				return GetSize(GetChunkAtIndex(n));
-			}
-		}
+		HALT("");
 		return 0;
 	}
 
-
-
-
-
-
-
 	void Print()
 	{
-		uint64_t p = KernelHeapMetadata + MetadataSize;
-		for(uint64_t n = 0; n < NumberOfChunksInHeap; n++)
-		{
-			Block* c = (Block*) p;
-			Log("=> Offset: %x, Size: %x, IsFree: %b\n"
-				"\t %p", (uint64_t) c->Offset, GetSize(c), IsFree(c), c->callerAddr);
+	}
 
-			p += sizeof(Block);
-		}
+	// uint64_t GetFirstHeapMetadataPhysPage();
+	uint64_t GetFirstHeapPhysPage()
+	{
+		return FirstHeapPhysPage;
 	}
 }
 }
 }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
