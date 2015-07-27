@@ -126,6 +126,9 @@ namespace Virtual
 			Virtual::MapAddress((uint64_t) PML, (uint64_t) PML, 0x7);
 
 
+		if(VirtAddr == 0xFFFFF000000E7000) Log("mapping v = %x to p = %x (%x)", 0xFFFFF000000E7000, PhysAddr, PML);
+
+
 
 		if(!(PML->Entry[PML4TIndex] & I_Present))
 		{
@@ -190,13 +193,14 @@ namespace Virtual
 			MapAddress((uint64_t) PML4, (uint64_t) PML4, 0x03);
 		}
 
+		if(VirtAddr == 0xFFFFF000000E7000) Log("unmapping %x (%x)", 0xFFFFF000000E7000, PML4);
+
 		uint64_t PageTableIndex					= I_PT_INDEX(VirtAddr);
 		uint64_t PageDirectoryIndex				= I_PD_INDEX(VirtAddr);
 		uint64_t PageDirectoryPointerTableIndex	= I_PDPT_INDEX(VirtAddr);
 		uint64_t PML4TIndex						= I_PML4_INDEX(VirtAddr);
 
-
-		PageMapStructure* PML = (PageMapStructure*)(((PageMapStructure*) PML4)->Entry[I_RECURSIVE_SLOT] & I_AlignMask);
+		PageMapStructure* PML = PML4;
 
 		if(PML)
 		{
@@ -209,8 +213,8 @@ namespace Virtual
 				if(PageDirectory)
 				{
 					PageMapStructure* PageTable = (PageMapStructure*)(PageDirectory->Entry[PageDirectoryIndex] & I_AlignMask);
-
 					PageTable->Entry[PageTableIndex] = 0;
+
 					invlpg((PageMapStructure*) VirtAddr);
 				}
 			}

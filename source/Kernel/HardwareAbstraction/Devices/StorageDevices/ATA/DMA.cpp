@@ -14,6 +14,8 @@
 using namespace Library::StandardIO;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
 
+int shit = 0;
+
 namespace Kernel {
 namespace HardwareAbstraction {
 namespace Devices {
@@ -97,10 +99,15 @@ namespace DMA
 
 
 
-
+	extern "C" void _sane(void* p);
 	IOResult ReadBytes(ATADrive* dev, uint64_t Buffer, uint64_t Sector, uint64_t Bytes)
 	{
 		(void) Buffer;
+
+		if(shit > 0)
+		{
+			shit++;
+		}
 
 		#if !DISABLE_DMA
 		if(Bytes <= 512)
@@ -110,14 +117,16 @@ namespace DMA
 			DMAAddr a = Physical::AllocateDMA((Bytes + 0xFFF) / 0x1000);
 
 			uint64_t have = 0;
+			// Log(3, "&dev->Data[0] = %x, a.virt = %x, a.phys = %x", &dev->Data[0], a.virt, a.phys);
+
 			for(uint64_t i = 0; i < sectors; i++)
 			{
 				PIO::ReadSector(dev, Sector + i);
-
-				// Log("&dev->Data[0] = %x, a.virt = %x, have = %x", &dev->Data[0], a.virt, have);
 				Memory::Copy((void*) (a.virt + have), &dev->Data[0], __min(512, Bytes - have));
+
 				have += __min(512, Bytes - have);
 			}
+
 
 			return IOResult(Bytes, a, (Bytes + 0xFFF) / 0x1000);
 

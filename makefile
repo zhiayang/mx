@@ -82,8 +82,24 @@ all: $(OUTPUT)
 	@# mount the disk again for inspection.
 	@tools/mountdisk.sh
 
+
+debug: $(OUTPUT)
+	@# unmount??
+	@tools/unmountdisk.sh
+
+	@echo "# Starting QEMU"
+	@$(QEMU) -serial stdio -S $(QEMU_FLAGS) | tee build/serialout.log
+	-@rm -f build/.dmf
+
+	@# mount the disk again for inspection.
+	@tools/mountdisk.sh
+
+
+
 build: $(OUTPUT)
 	# built
+
+
 
 $(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) $(FLAXMAINOBJ) builduserspace
 	@echo "\n# Linking [mx] object files"

@@ -35,6 +35,9 @@ using namespace Library;
 #define returnAddr()	((uint64_t) __builtin_return_address(0))
 
 
+extern int shit;
+extern "C" void _sane(void* p);
+
 namespace Kernel {
 namespace HardwareAbstraction {
 namespace MemoryManager {
@@ -83,6 +86,11 @@ namespace KernelHeap
 		return header;
 	}
 
+	extern "C" void _sane(void* p)
+	{
+		sane((Header*) p);
+	}
+
 	static Footer* sane(Footer* footer)
 	{
 		assert(footer);
@@ -97,7 +105,7 @@ namespace KernelHeap
 		assert(addr > 0);
 		assert(size > 0);
 
-		Log("creating header at %x, %x bytes (%x)", addr, size, returnAddr());
+		// Log("creating header at %x, %x bytes (%x)", addr, size, returnAddr());
 		Header* header = (Header*) addr;
 		memset(header, 0, sizeof(Header));
 
@@ -238,9 +246,10 @@ namespace KernelHeap
 
 			if(h == getLast() && (!isFree(h) || h->size < size))
 			{
+				// Log("going to expand heap");
 				ExpandHeap((size + 0xFFF) / 0x1000);
 
-				Log("Expanded heap by %d bytes", ((size + 0xFFF) / 0x1000) * 0x1000);
+				// Log("Expanded heap by %d bytes", ((size + 0xFFF) / 0x1000) * 0x1000);
 				return AllocateChunk(size, fileAndLine);
 			}
 		}
@@ -256,7 +265,9 @@ namespace KernelHeap
 			// edge case: if the header we're about to create would exceed
 			// the size of the heap, expand it first.
 
-			// Log("h: %x, origSize: %x, size: %x, newsize: %x, max: %x", h, origSize, size, newSize, KernelHeapAddress + (SizeOfHeapInPages * 0x1000));
+			// Log("h: %x, origSize: %x, size: %x, newsize: %x, max: %x", h, origSize, size, newSize,
+			// 	KernelHeapAddress + (SizeOfHeapInPages * 0x1000));
+
 			if((uintptr_t) h + sizeof(Header) + size + sizeof(Footer) + sizeof(Header) + newSize + sizeof(Footer)
 				> KernelHeapAddress + (SizeOfHeapInPages * 0x1000))
 			{
@@ -281,15 +292,32 @@ namespace KernelHeap
 
 			// create new header + footer.
 			// Log("splitting. h: %x, h->size: %x, origSize: %x, (hd: %x, ft: %x)", h, h->size, origSize, sizeof(Header), sizeof(Footer));
-			/*auto nh = */create((uintptr_t) h + sizeof(Header) + h->size + sizeof(Footer), newSize, returnAddr());
+
+			auto nh = create((uintptr_t) h + sizeof(Header) + h->size + sizeof(Footer), newSize, returnAddr());
 			// Log("new header: %x, %x", nh, nh->size);
+
+			if((uintptr_t) nh == 0xFFFFFF200066A050)
+			{
+				Log("header %x resides at physical addr %x", nh,
+					Virtual::GetMapping((uintptr_t) nh & (uint64_t) ~0xFFF, Multitasking::GetCurrentProcess()->VAS.PML4));
+
+				shit = 1;
+				// asm volatile(
+				// 	"push %%rax						\n\t"
+				// 	"movq $0xB0002, %%rax			\n\t"
+				// 	"mov %%rax, %%dr7				\n\t"
+				// 	"movq $0xFFFFFF200066A050, %%rax\n\t"
+				// 	"mov %%rax, %%dr0				\n\t"
+
+				// 	"pop %%rax" ::: "%rax");
+			}
 		}
 
 
 		h->magic = HEADER_USED;
 		h->owner = returnAddr();
 
-		Log("chunk %x goes to owner %x (+1: %x, %x)", h, h->owner, (h != getLast() ? next(h) : 0), (h != getLast() ? next(h)->owner : 0));
+		// Log("chunk %x goes to owner %x (+1: %x, %x)", h, h->owner, (h != getLast() ? next(h) : 0), (h != getLast() ? next(h)->owner : 0));
 		return (void*) (h + 1);
 	}
 

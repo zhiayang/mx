@@ -107,8 +107,6 @@ KernelBootstrap:
 
 
 
-
-
 	// Call our kernel init -- this sets up the most basic services, but doesn't
 	// initialise the threads.
 

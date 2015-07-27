@@ -205,6 +205,7 @@ namespace Physical
 		ret.virt = Virtual::AllocateVirtual(size, 0, 0, ret.phys);
 
 		Virtual::MapRegion(ret.virt, ret.phys, size, 0x3);
+		// Log("allocated DMA region: virt = %x, phys = %x, %d pages", ret.virt, ret.phys, size);
 		return ret;
 	}
 
@@ -213,6 +214,8 @@ namespace Physical
 		FreePage(addr.phys, size);
 		Virtual::FreeVirtual(addr.virt, size);
 		Virtual::UnmapRegion(addr.virt, size);
+
+		// Log("freed DMA region: virt = %x, phys = %x, %d pages", addr.virt, addr.phys, size);
 	}
 
 
