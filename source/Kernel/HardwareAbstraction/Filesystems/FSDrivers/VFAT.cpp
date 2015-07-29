@@ -524,15 +524,10 @@ namespace Filesystems
 
 
 		uint64_t rbuf = MemoryManager::Virtual::AllocatePage(bufferPageSize);
-		Log("reading file: buf %x (%d pages)", rbuf, bufferPageSize);
 		uint64_t obuf = rbuf;
 
 
 		auto clusterpairs = ConsolidateClusterChain(vnd->clusters);
-		for(auto pair : clusterpairs)
-		{
-			Log("cpair: (%d, %d)", pair.first, pair.second);
-		}
 
 		uint64_t skipped = 0;
 		uint64_t have = 0;

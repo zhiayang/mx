@@ -27,7 +27,7 @@ using namespace Library;
 
 
 #if Paranoid
-#define _assert(h, x)		do { if(!(x)) { Log("header %x failed (owner: %x)", h, h->owner); assert((x)); } } while(0)
+#define _assert(h, x)		do { if(!(x)) { Log("header %x failed (fields:\nmagic = %x\nsize =  %x\nowner = %x\nfootr = %x\n\nmagic = %x, headr = %x)", h, h->magic, h->size, h->owner, h->footer, h->footer ? h->footer->magic : 0, h->footer ? h->footer->header : 0); assert((x)); } } while(0)
 #else
 #define _assert(h, x)
 #endif

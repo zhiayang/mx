@@ -460,7 +460,7 @@ namespace Kernel
 
 			Log(3, "(%d) s.st_size: %d", file, s.st_size);
 
-			const uint64_t blocksz = s.st_size;
+			const uint64_t blocksz = 64;
 			uint8_t* fl = new uint8_t[blocksz + 1];
 			uint8_t* whole = new uint8_t[s.st_size + 1];
 			Log("whole = %x, fl = %x", whole, fl);
@@ -477,15 +477,15 @@ namespace Kernel
 				// PrintString((const char*) fl);
 				// SerialPort::WriteString((const char*) fl);
 
-				Log("read: %d", read);
+				// Log("read: %d", read);
 				memcpy(whole + cur, fl, read);
 				cur += read;
 
 				// PrintFormatted(" %6d/%d", cur, total);
-				// Log("(%d): %d, %d/%d", i, read, cur, total);
+				Log("\r\t\t\t\t\t\t\t\t\t\t\t\r(%03d%%) %d, %d/%d", (uint64_t) (((double) cur / (double) total) * 100.0), read, cur, total);
 			}
 
-			SerialPort::WriteString((const char*) whole);
+			// SerialPort::WriteString((const char*) whole);
 			// PrintString((const char*) fl);
 
 			Log(3, "end: %d ms", et = Time::Now());

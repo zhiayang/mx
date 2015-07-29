@@ -151,7 +151,7 @@ namespace DMA
 
 		PRDEntry* prd = (PRDEntry*) prdCache.address.virt;
 		DMAAddr paddr = Physical::AllocateDMA((Bytes + 0xFFF) / 0x1000);
-		Log("dma read: (v = %x, p = %x) (%d pages)", paddr.virt, paddr.phys, (Bytes + 0xFFF) / 0x1000);
+		// Log("dma read: (v = %x, p = %x) (%d pages)", paddr.virt, paddr.phys, (Bytes + 0xFFF) / 0x1000);
 
 		uint64_t numprds = (Bytes + (UINT16_MAX - 1)) / UINT16_MAX;
 		if(numprds > (0x1000 / sizeof(PRDEntry)))
@@ -185,7 +185,7 @@ namespace DMA
 		// todo
 		PreviousDevice = dev;
 
-		Log("sending cmd data: sector %d, %d sectors", Sector, (uint8_t) (Bytes / dev->GetSectorSize()));
+		// Log("sending cmd data: sector %d, %d sectors", Sector, (uint8_t) (Bytes / dev->GetSectorSize()));
 		PIO::SendCommandData(dev, Sector, (uint8_t) (Bytes / dev->GetSectorSize()));
 
 		IOPort::WriteByte(dev->GetBaseIO() + 7, Sector > 0x0FFFFFFF ? ATA_ReadSectors48DMA : ATA_ReadSectors28DMA);
