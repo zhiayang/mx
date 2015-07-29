@@ -71,12 +71,56 @@ namespace iris
 		};
 
 
+		private:
+			void _sort(T* data, uint64_t low, uint64_t high)
+			{
+				while(true)
+				{
+					uint64_t i = low;
+					uint64_t j = high;
+					const T pivot = data[(low + high) >> 1];
+					do
+					{
+						// Jump over elements that are OK (smaller than pivot)
+						while(data[i] < pivot /*pred(data[i], pivot)*/)
+							i++;
+
+						// Jump over elements that are OK (greater than pivot)
+						while(pivot < data[j] /*pred(pivot, data[j])*/)
+							j--;
+
+						// Anything to swap?
+						if(j >= i)
+						{
+							if(i != j)
+							{
+								// Swap
+								T tmp(data[i]);
+								data[i] = data[j];
+								data[j] = tmp;
+							}
+
+							i++;
+							j--;
+						}
+					}
+					while(i <= j);
+
+					if(low < j)
+						_sort(data, low, j);
 
 
 
+					if(i < high)
+						low = i;	// that's basically quick_sort(data, i, high, pred), but we avoid recursive call.
+
+					else
+						break;
+
+				}
+			}
 
 
-		public:
 		private:
 			T*				array;
 			size_t			_capacity;
@@ -97,6 +141,9 @@ namespace iris
 				T* newArr = new T[newSize];
 
 				this->doCopyConstruct(this->array, newArr, this->elements);
+
+
+				delete[] this->array;
 				this->array = newArr;
 
 				this->_capacity = newSize;
@@ -124,15 +171,16 @@ namespace iris
 
 			vector(const vector& other)
 			{
-				assert(other._capacity > 0);
-
-				this->_capacity	= other._capacity;
-				this->array		= new T[this->_capacity];
-				this->elements	= other.elements;
-
-				if(this->elements > 0)
+				if(other._capacity > 0)
 				{
-					memcpy(this->array, other.array, this->elements);
+					this->_capacity	= other._capacity;
+					this->array		= new T[this->_capacity];
+					this->elements	= other.elements;
+
+					if(this->elements > 0)
+					{
+						memcpy(this->array, other.array, this->elements);
+					}
 				}
 			}
 
@@ -250,10 +298,19 @@ namespace iris
 
 
 
+			void quick_sort()
+			{
+			// 	if(end - begin > 1)
+			// 		this->_sort(begin, 0, (uint64_t) (end - begin - 1));
+				this->_sort(this->array, 0, this->elements);
+			}
+
+
+
 			// operators
 
 
-			vector& operator=(const vector& other) const
+			vector& operator=(const vector& other)
 			{
 				this->_capacity	= other._capacity;
 				this->elements	= other.elements;
@@ -266,7 +323,7 @@ namespace iris
 
 			vector& operator=(vector& other)
 			{
-				return (*this = other);
+				return (*this = (const vector&) other);
 			}
 
 			T& operator[](size_t i)

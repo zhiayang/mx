@@ -14,8 +14,6 @@
 using namespace Library::StandardIO;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
 
-int shit = 0;
-
 namespace Kernel {
 namespace HardwareAbstraction {
 namespace Devices {
@@ -57,9 +55,7 @@ namespace DMA
 	};
 
 	#define MaxCachedTables 16
-	static rde::vector<PRDTableCache>* cachedPRDTables;
-
-	#define DISABLE_DMA		0
+	static iris::vector<PRDTableCache>* cachedPRDTables;
 
 	void Initialise()
 	{
@@ -75,7 +71,7 @@ namespace DMA
 		uint32_t mmio = (uint32_t) ata->GetBAR(4);
 		assert(ata->IsBARIOPort(4));
 
-		cachedPRDTables = new rde::vector<PRDTableCache>();
+		cachedPRDTables = new iris::vector<PRDTableCache>();
 		for(int i = 0; i < MaxCachedTables; i++)
 		{
 			// precreate these
@@ -104,20 +100,15 @@ namespace DMA
 	{
 		(void) Buffer;
 
-		if(shit > 0)
-		{
-			shit++;
-		}
-
-		#if !DISABLE_DMA
 		if(Bytes <= 512)
-		#endif
 		{
 			uint64_t sectors = (Bytes + 511) / 512;
 			DMAAddr a = Physical::AllocateDMA((Bytes + 0xFFF) / 0x1000);
+			// DMAAddr a;
+			// a.phys = 0;
+			// a.virt = (uintptr_t) (&dev->Data[0]);
 
 			uint64_t have = 0;
-			// Log(3, "&dev->Data[0] = %x, a.virt = %x, a.phys = %x", &dev->Data[0], a.virt, a.phys);
 
 			for(uint64_t i = 0; i < sectors; i++)
 			{
@@ -127,15 +118,8 @@ namespace DMA
 				have += __min(512, Bytes - have);
 			}
 
-
 			return IOResult(Bytes, a, (Bytes + 0xFFF) / 0x1000);
-
-			// uint8_t* devdata = (uint8_t*) &dev->Data[0];
-
-			// Memory::Copy((uint8_t*) Buffer, devdata, Bytes);
-
-			// auto d = DMAAddr(0, (uint64_t) devdata);
-			// return IOResult(Bytes, d, 0);
+			// return IOResult(Bytes, a, 0);
 		}
 
 
@@ -167,6 +151,7 @@ namespace DMA
 
 		PRDEntry* prd = (PRDEntry*) prdCache.address.virt;
 		DMAAddr paddr = Physical::AllocateDMA((Bytes + 0xFFF) / 0x1000);
+		Log("dma read: (v = %x, p = %x) (%d pages)", paddr.virt, paddr.phys, (Bytes + 0xFFF) / 0x1000);
 
 		uint64_t numprds = (Bytes + (UINT16_MAX - 1)) / UINT16_MAX;
 		if(numprds > (0x1000 / sizeof(PRDEntry)))
@@ -199,6 +184,8 @@ namespace DMA
 
 		// todo
 		PreviousDevice = dev;
+
+		Log("sending cmd data: sector %d, %d sectors", Sector, (uint8_t) (Bytes / dev->GetSectorSize()));
 		PIO::SendCommandData(dev, Sector, (uint8_t) (Bytes / dev->GetSectorSize()));
 
 		IOPort::WriteByte(dev->GetBaseIO() + 7, Sector > 0x0FFFFFFF ? ATA_ReadSectors48DMA : ATA_ReadSectors28DMA);

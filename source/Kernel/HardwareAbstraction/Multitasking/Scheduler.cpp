@@ -127,7 +127,6 @@ namespace Multitasking
 		}
 
 
-
 		// 0x2610 stores the thread's current errno.
 		// we therefore need to save it before switching threads.
 		CurrentThread->currenterrno = *((int64_t*) 0x2610);

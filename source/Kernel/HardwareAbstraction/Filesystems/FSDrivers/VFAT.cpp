@@ -453,10 +453,9 @@ namespace Filesystems
 	static rde::vector<rde::pair<uint64_t, uint64_t>> ConsolidateClusterChain(rde::vector<uint32_t> cchain)
 	{
 		typedef rde::pair<uint64_t, uint64_t> pair_t;
-
-		rde::vector<pair_t> ret;
 		rde::quick_sort(cchain.begin(), cchain.end());
 
+		rde::vector<pair_t> ret;
 		for(size_t i = 0; i < cchain.size(); i++)
 		{
 			pair_t p = { cchain[i], 1 };
@@ -525,10 +524,15 @@ namespace Filesystems
 
 
 		uint64_t rbuf = MemoryManager::Virtual::AllocatePage(bufferPageSize);
+		Log("reading file: buf %x (%d pages)", rbuf, bufferPageSize);
 		uint64_t obuf = rbuf;
 
 
 		auto clusterpairs = ConsolidateClusterChain(vnd->clusters);
+		for(auto pair : clusterpairs)
+		{
+			Log("cpair: (%d, %d)", pair.first, pair.second);
+		}
 
 		uint64_t skipped = 0;
 		uint64_t have = 0;
@@ -563,7 +567,7 @@ namespace Filesystems
 				rbuf += (toread * spc * 512);
 				have += toread;
 
-				// StandardIO::PrintFormatted("\r                               \r%8d bytes read", rbuf - obuf);
+				StandardIO::PrintFormatted("\r                               \r%8d bytes read", rbuf - obuf);
 
 			}
 
@@ -844,6 +848,8 @@ namespace Filesystems
 		MemoryManager::Virtual::FreePage(obuf, lookahead == 0 ? 1 : (512 * lookahead) / 0x1000);
 		tovnd(node)->clusters = ret;
 
+		// for(auto c : ret)
+		// 	Log("cluster: %d", c);
 		return ret;
 	}
 

@@ -14,12 +14,15 @@ namespace HardwareAbstraction {
 namespace MemoryManager {
 namespace Virtual
 {
-	static uint64_t FinaliseRegion(MemRegion& region, uint64_t phys)
+	static uint64_t FinaliseRegion(MemRegion* region, uint64_t phys, void* x)
 	{
-		region.used = 1;
-		if(phys != 0) region.phys = phys;
+		region->used = 1;
+		region->phys = phys;
 
-		return region.start;
+		Log("allocated virtual mem %x (%d) to (%x, %x, %x) (vas %x)", region->start, region->length, __builtin_return_address(0),
+			__builtin_return_address(1), __builtin_return_address(2), x);
+
+		return region->start;
 	}
 
 
@@ -35,24 +38,24 @@ namespace Virtual
 		auto m = AutoMutex(vas->mtx);
 
 		// int i = 0;
-		// for(auto r : *vas->regions)
+		// Log("\n\n******** RETURN: %x / %x ********", __builtin_return_address(0), __builtin_return_address(1));
+		// for(MemRegion& region : *vas->regions)
 		// {
-		// 	Log("(%d): %x, %d, %d (%x)", i, r->start, r->length, r->used, r->phys);
+		// 	Log("[%04d]: (%016x, %02d): %016x, %s", i, region.start, region.length, region.phys, region.used ? "used" : "free");
 		// 	i++;
 		// }
 
-
+		// Log("******** END ********\n\n");
 
 		for(MemRegion& region : *vas->regions)
 		{
-			// assert(region);
-			// assert(region->length > 0);
-			// assert(region->start > 0);
+			assert(region.length > 0);
+			assert(region.start > 0);
 
 			uint64_t regionEnd = (region.start + (region.length * 0x1000));
 
 			// look for a free region
-			if(!region.used)
+			if(region.used == 0)
 			{
 				if(addr != 0)
 				{
@@ -65,8 +68,7 @@ namespace Virtual
 						{
 							if(region.length == size)
 							{
-								FinaliseRegion(region, phys);
-								return region.start;
+								return FinaliseRegion(&region, phys, vas->PML4);
 							}
 							else
 							{
@@ -87,7 +89,7 @@ namespace Virtual
 
 								region.length = size;
 
-								return FinaliseRegion(region, phys);
+								return FinaliseRegion(&region, phys, vas->PML4);
 							}
 						}
 						else
@@ -126,37 +128,38 @@ namespace Virtual
 								vas->regions->push_back(back);
 							}
 
-							return FinaliseRegion(region, phys);
+							return FinaliseRegion(&region, phys, vas->PML4);
 						}
 					}
 				}
-
-				// else
-				if(region.length == size)
+				else
 				{
-					// mark the whole thing as used.
-					return FinaliseRegion(region, phys);
-				}
-				else if(region.length > size)
-				{
-					// create a new region bit.
-					uint64_t newsz = region.length - size;
-					uint64_t newst = region.start + (size * 0x1000);
+					if(region.length == size)
+					{
+						// mark the whole thing as used.
+						return FinaliseRegion(&region, phys, vas->PML4);
+					}
+					else if(region.length > size)
+					{
+						// create a new region bit.
+						uint64_t newsz = region.length - size;
+						uint64_t newst = region.start + (size * 0x1000);
 
-					assert(newsz > 0);
-					assert(newst > 0);
+						assert(newsz > 0);
+						assert(newst > 0);
 
-					MemRegion newr;
-					newr.start = newst;
-					newr.length = newsz;
-					newr.used = 0;
-					newr.phys = 0;
+						MemRegion newr;
+						newr.start = newst;
+						newr.length = newsz;
+						newr.used = 0;
+						newr.phys = 0;
 
-					vas->regions->push_back(newr);
+						vas->regions->push_back(newr);
 
-					region.length = size;
+						region.length = size;
 
-					return FinaliseRegion(region, phys);
+						return FinaliseRegion(&region, phys, vas->PML4);
+					}
 				}
 			}
 		}
@@ -165,7 +168,9 @@ namespace Virtual
 		// if we got here, then we're fucked
 		if(addr != 0)
 		{
-			Log(LOG_WARN, "Failed to allocate virtual memory at desired address (%x, %d pages), returning 0!", addr, size);
+			Log(LOG_CRIT, "Failed to allocate virtual memory at desired address (%x, %d pages), returning 0!", addr, size);
+			UHALT();
+
 			return 0;
 		}
 		else
@@ -208,7 +213,7 @@ namespace Virtual
 	VirtualAddressSpace* SetupVAS(VirtualAddressSpace* vas)
 	{
 		assert(vas);
-		vas->regions = new iris::vector<MemRegion>();
+		vas->regions = new rde::vector<MemRegion>();
 
 		// Max 48-bit virtual address space (current implementations)
 		MemRegion r1;

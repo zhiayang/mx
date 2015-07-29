@@ -34,7 +34,7 @@ namespace Physical
 	extern Kernel::HardwareAbstraction::MemoryManager::MemoryMap::MemoryMap_type* K_MemoryMap;
 
 	static bool DidInit = false;
-	static iris::vector<Pair*>* PageList;
+	static rde::deque<Pair*>* PageList;
 
 	// Define a region of memory in which the VMM gets it's memory from, to create page strucures.
 	uint64_t ReservedRegionForVMM = 0;
@@ -70,9 +70,9 @@ namespace Physical
 		assert(!DidInit);
 		// See InitialiseFPLs() for an in-depth explanation on this
 		// FPL system.
+
 		mtx = new Mutex();
-		// PageList = new LinkedList<Pair>();
-		PageList = new iris::vector<Pair*>();
+		PageList = new rde::deque<Pair*>();
 
 		InitialiseFPLs(Kernel::K_MemoryMap);
 		DidInit = true;
@@ -150,7 +150,7 @@ namespace Physical
 		for(size_t i = 0; i < PageList->size(); i++)
 		{
 			Pair* pair = PageList->front();
-			PageList->erase(PageList->begin());
+			PageList->erase_unordered(PageList->begin());
 
 			// 3 basic conditions
 			// 1. we find a match below a pair's baseaddr
@@ -165,7 +165,7 @@ namespace Physical
 			}
 			else if(pair->BaseAddr + (pair->LengthInPages * 0x1000) == page)
 			{
-				pair->LengthInPages += (size * 0x1000);
+				pair->LengthInPages += size;
 				ret = true;
 			}
 

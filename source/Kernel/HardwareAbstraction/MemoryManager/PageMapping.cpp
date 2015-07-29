@@ -126,10 +126,6 @@ namespace Virtual
 			Virtual::MapAddress((uint64_t) PML, (uint64_t) PML, 0x7);
 
 
-		if(VirtAddr == 0xFFFFF000000E7000) Log("mapping v = %x to p = %x (%x)", 0xFFFFF000000E7000, PhysAddr, PML);
-
-
-
 		if(!(PML->Entry[PML4TIndex] & I_Present))
 		{
 			PML->Entry[PML4TIndex] = Physical::AllocateFromReserved() | (Flags | 0x1);
@@ -185,15 +181,14 @@ namespace Virtual
 		bool DidMapPML4 = false;
 
 		if(PML4 == 0)
+		{
 			PML4 = GetCurrentPML4T();
-
+		}
 		else if(PML4 != GetCurrentPML4T())
 		{
 			DidMapPML4 = true;
 			MapAddress((uint64_t) PML4, (uint64_t) PML4, 0x03);
 		}
-
-		if(VirtAddr == 0xFFFFF000000E7000) Log("unmapping %x (%x)", 0xFFFFF000000E7000, PML4);
 
 		uint64_t PageTableIndex					= I_PT_INDEX(VirtAddr);
 		uint64_t PageDirectoryIndex				= I_PD_INDEX(VirtAddr);
@@ -250,6 +245,11 @@ namespace Virtual
 		uint64_t PageDirectoryIndex				= I_PD_INDEX(va);
 		uint64_t PageDirectoryPointerTableIndex	= I_PDPT_INDEX(va);
 		uint64_t PML4TIndex						= I_PML4_INDEX(va);
+
+		assert(PageTableIndex < 512);
+		assert(PageDirectoryIndex < 512);
+		assert(PageDirectoryPointerTableIndex < 512);
+		assert(PML4TIndex < 512);
 
 		PageMapStructure* PML = (VAS == 0 ? GetCurrentPML4T() : VAS);
 		bool other = (PML != GetCurrentPML4T());

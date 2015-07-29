@@ -460,29 +460,29 @@ namespace Kernel
 
 			Log(3, "(%d) s.st_size: %d", file, s.st_size);
 
-			const uint64_t blocksz = 40 /*s.st_size*/;
+			const uint64_t blocksz = s.st_size;
 			uint8_t* fl = new uint8_t[blocksz + 1];
 			uint8_t* whole = new uint8_t[s.st_size + 1];
+			Log("whole = %x, fl = %x", whole, fl);
 
 			uint64_t total = s.st_size;
 			Log(3, "start: %d ms", st = Time::Now());
 
-			Log(3, "whole: %x, end: %x ------ fl: %x, end: %x", whole, whole + s.st_size, fl, fl + blocksz);
-			VFS::FileEntryFromFD(&Multitasking::GetCurrentProcess()->iocontext, 4);
-
-			int i = 0;
 			for(uint64_t cur = 0; cur < total; )
 			{
+				// Log("starting read");
 				uint64_t read = Read(file, fl, blocksz);
+				// Log("read is done");
 
 				// PrintString((const char*) fl);
 				// SerialPort::WriteString((const char*) fl);
-				// memcpy(whole + cur, fl, read);
+
+				Log("read: %d", read);
+				memcpy(whole + cur, fl, read);
 				cur += read;
 
 				// PrintFormatted(" %6d/%d", cur, total);
-				Log("(%d): %d, %d/%d", i, read, cur, total);
-				i++;
+				// Log("(%d): %d, %d/%d", i, read, cur, total);
 			}
 
 			// SerialPort::WriteString((const char*) whole);
