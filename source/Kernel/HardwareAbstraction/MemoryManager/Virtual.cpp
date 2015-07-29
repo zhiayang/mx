@@ -19,8 +19,8 @@ namespace Virtual
 		region->used = 1;
 		region->phys = phys;
 
-		Log("allocated virtual mem %x (%d) to (%x, %x, %x) (vas %x)", region->start, region->length, __builtin_return_address(0),
-			__builtin_return_address(1), __builtin_return_address(2), x);
+		// Log("allocated virtual mem %x (%d) to (%x, %x, %x) (vas %x)", region->start, region->length, __builtin_return_address(0),
+			// __builtin_return_address(1), __builtin_return_address(2), x);
 
 		return region->start;
 	}
@@ -41,55 +41,55 @@ namespace Virtual
 		// Log("\n\n******** RETURN: %x / %x ********", __builtin_return_address(0), __builtin_return_address(1));
 		// for(MemRegion& region : *vas->regions)
 		// {
-		// 	Log("[%04d]: (%016x, %02d): %016x, %s", i, region.start, region.length, region.phys, region.used ? "used" : "free");
+		// 	Log("[%04d]: (%016x, %02d): %016x, %s", i, region->start, region->length, region->phys, region->used ? "used" : "free");
 		// 	i++;
 		// }
 
 		// Log("******** END ********\n\n");
 
-		for(MemRegion& region : *vas->regions)
+		for(MemRegion* region : *vas->regions)
 		{
-			assert(region.length > 0);
-			assert(region.start > 0);
+			assert(region->length > 0);
+			assert(region->start > 0);
 
-			uint64_t regionEnd = (region.start + (region.length * 0x1000));
+			uint64_t regionEnd = (region->start + (region->length * 0x1000));
 
 			// look for a free region
-			if(region.used == 0)
+			if(region->used == 0)
 			{
 				if(addr != 0)
 				{
-					if(region.start <= addr && regionEnd >= (addr + (size * 0x1000)))
+					if(region->start <= addr && regionEnd >= (addr + (size * 0x1000)))
 					{
-						assert(region.length >= size);
+						assert(region->length >= size);
 
 						// do stuff.
-						if(region.start == addr)
+						if(region->start == addr)
 						{
-							if(region.length == size)
+							if(region->length == size)
 							{
-								return FinaliseRegion(&region, phys, vas->PML4);
+								return FinaliseRegion(region, phys, vas->PML4);
 							}
 							else
 							{
 								// create a new region bit.
-								uint64_t newsz = region.length - size;
-								uint64_t newst = region.start + (size * 0x1000);
+								uint64_t newsz = region->length - size;
+								uint64_t newst = region->start + (size * 0x1000);
 
 								assert(newsz > 0);
 								assert(newst > 0);
 
-								MemRegion newr;
-								newr.start = newst;
-								newr.length = newsz;
-								newr.used = 0;
-								newr.phys = 0;
+								MemRegion* newr = new MemRegion();
+								newr->start = newst;
+								newr->length = newsz;
+								newr->used = 0;
+								newr->phys = 0;
 
 								vas->regions->push_back(newr);
 
-								region.length = size;
+								region->length = size;
 
-								return FinaliseRegion(&region, phys, vas->PML4);
+								return FinaliseRegion(region, phys, vas->PML4);
 							}
 						}
 						else
@@ -98,67 +98,67 @@ namespace Virtual
 							// definitely need to split off the front bit though.
 							// (THE FRONT FELL OFF??!!)
 
-							MemRegion front;
-							front.start = region.start;
-							front.length = (addr - region.start) / 0x1000;
-							front.used = 0;
-							front.phys = 0;
+							MemRegion* front = new MemRegion();
+							front->start = region->start;
+							front->length = (addr - region->start) / 0x1000;
+							front->used = 0;
+							front->phys = 0;
 							vas->regions->push_back(front);
 
-							region.start = addr;
-							region.length -= front.length;
+							region->start = addr;
+							region->length -= front->length;
 
 
-							assert(region.length >= size);
+							assert(region->length >= size);
 
 							// now see if we need to split off the back bit
-							if(region.length > size)
+							if(region->length > size)
 							{
-								MemRegion back;
-								back.start = region.start + (size * 0x1000);
-								back.length = region.length - size;
-								back.used = 0;
-								back.phys = 0;
+								MemRegion* back = new MemRegion();
+								back->start = region->start + (size * 0x1000);
+								back->length = region->length - size;
+								back->used = 0;
+								back->phys = 0;
 
-								region.length = size;
+								region->length = size;
 
-								assert(back.start > 0);
-								assert(back.length > 0);
+								assert(back->start > 0);
+								assert(back->length > 0);
 
 								vas->regions->push_back(back);
 							}
 
-							return FinaliseRegion(&region, phys, vas->PML4);
+							return FinaliseRegion(region, phys, vas->PML4);
 						}
 					}
 				}
 				else
 				{
-					if(region.length == size)
+					if(region->length == size)
 					{
 						// mark the whole thing as used.
-						return FinaliseRegion(&region, phys, vas->PML4);
+						return FinaliseRegion(region, phys, vas->PML4);
 					}
-					else if(region.length > size)
+					else if(region->length > size)
 					{
 						// create a new region bit.
-						uint64_t newsz = region.length - size;
-						uint64_t newst = region.start + (size * 0x1000);
+						uint64_t newsz = region->length - size;
+						uint64_t newst = region->start + (size * 0x1000);
 
 						assert(newsz > 0);
 						assert(newst > 0);
 
-						MemRegion newr;
-						newr.start = newst;
-						newr.length = newsz;
-						newr.used = 0;
-						newr.phys = 0;
+						MemRegion* newr = new MemRegion();
+						newr->start = newst;
+						newr->length = newsz;
+						newr->used = 0;
+						newr->phys = 0;
 
 						vas->regions->push_back(newr);
 
-						region.length = size;
+						region->length = size;
 
-						return FinaliseRegion(&region, phys, vas->PML4);
+						return FinaliseRegion(region, phys, vas->PML4);
 					}
 				}
 			}
@@ -213,22 +213,22 @@ namespace Virtual
 	VirtualAddressSpace* SetupVAS(VirtualAddressSpace* vas)
 	{
 		assert(vas);
-		vas->regions = new rde::vector<MemRegion>();
+		vas->regions = new rde::vector<MemRegion*>();
 
 		// Max 48-bit virtual address space (current implementations)
-		MemRegion r1;
-		MemRegion r2;
+		MemRegion* r1 = new MemRegion();
+		MemRegion* r2 = new MemRegion();
 
-		r1.start = 0x01000000;
-		r1.length = 0xFF000;
-		r1.used = 0;
-		r1.phys = 0;
+		r1->start = 0x01000000;
+		r1->length = 0xFF000;
+		r1->used = 0;
+		r1->phys = 0;
 
 
-		r2.start = 0xFFFFF00000000000;
-		r2.length = 0x100000;
-		r2.used = 0;
-		r2.phys = 0;
+		r2->start = 0xFFFFF00000000000;
+		r2->length = 0x100000;
+		r2->used = 0;
+		r2->phys = 0;
 
 		vas->regions->push_back(r1);
 		vas->regions->push_back(r2);
@@ -251,18 +251,18 @@ namespace Virtual
 		assert(vas);
 		assert(vas->regions);
 
-		for(MemRegion& region : *vas->regions)
+		for(MemRegion* region : *vas->regions)
 		{
 			// assert(region);
-			assert(region.start > 0);
-			assert(region.length > 0);
+			assert(region->start > 0);
+			assert(region->length > 0);
 
-			uint64_t end = region.start + (region.length * 0x1000);
+			uint64_t end = region->start + (region->length * 0x1000);
 
-			if(virt >= region.start && virt <= end)
+			if(virt >= region->start && virt <= end)
 			{
-				assert(region.phys > 0);
-				return region.phys + (virt - region.start);
+				assert(region->phys > 0);
+				return region->phys + (virt - region->start);
 			}
 		}
 

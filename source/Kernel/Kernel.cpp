@@ -485,7 +485,7 @@ namespace Kernel
 				// Log("(%d): %d, %d/%d", i, read, cur, total);
 			}
 
-			// SerialPort::WriteString((const char*) whole);
+			SerialPort::WriteString((const char*) whole);
 			// PrintString((const char*) fl);
 
 			Log(3, "end: %d ms", et = Time::Now());
