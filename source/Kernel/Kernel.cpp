@@ -61,7 +61,7 @@ namespace Kernel
 	static uint64_t LFBAddr;
 	static uint64_t LFBInPages;
 	static uint64_t CR3Value = 0x3000;
-	static fd_t aSock = 0;
+	// static fd_t aSock = 0;
 
 	// things
 	Multitasking::Process* KernelProcess;
@@ -418,11 +418,20 @@ namespace Kernel
 
 		// Console::ClearScreen();
 
+		#define TEST_USERSPACE_PROG		0
+		#define TEST_LARGE_FILE_READ	0
+		#define TEST_NETWORK_IRC		0
+		#define TEST_MUTEXES			0
+
+
+
+
+
 
 
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
 
-		if(0)
+		#if TEST_USERSPACE_PROG
 		{
 			// setup args:
 			// 0: prog name (duh)
@@ -438,14 +447,14 @@ namespace Kernel
 
 			Multitasking::AddToQueue(proc);
 		}
+		#endif
+
 
 		PrintFormatted("[mx] has completed initialisation.\n");
 		Log("Kernel init complete\n----------------------------\n");
 
 
-
-
-		if(0)
+		#if TEST_LARGE_FILE_READ
 		{
 			using namespace Filesystems;
 
@@ -481,6 +490,7 @@ namespace Kernel
 			Log(3, "end: %d ms", et = Time::Now());
 			Log(3, "time taken: %d ms", et - st);
 		}
+		#endif
 
 
 
@@ -491,7 +501,7 @@ namespace Kernel
 
 
 
-		if(1)
+		#if TEST_NETWORK_IRC
 		{
 			using namespace Network;
 			// IPv4Address fn = DNS::QueryDNSv4(rde::string("www.example.com"));
@@ -587,26 +597,7 @@ namespace Kernel
 			Kill(thr);
 			CloseSocket(thesock);
 		}
-
-		// Log("Socket test\n");
-		// {
-		// 	using namespace Network;
-
-		// 	auto other = []()
-		// 	{
-		// 		fd_t skt = OpenSocket(SocketProtocol::IPC, 0);
-		// 		ConnectSocket(skt, "/some/socket");
-		// 		Log("socket connected");
-
-		// 		uint64_t x = 0;
-		// 		while(true)
-		// 		{
-		// 			WriteSocket(skt, (void*) &x, 8);
-		// 			YieldCPU();
-
-		// 			x++;
-		// 		}
-		// 	};
+		#endif
 
 
 
@@ -614,64 +605,49 @@ namespace Kernel
 
 
 
+		#if TEST_MUTEXES
+		{
+			static Mutex* test = new Mutex;
+			auto func1 = []()
+			{
+				PrintFormatted("locking mutex\n");
+				LOCK(test);
 
-		// 	// open a socket
-		// 	fd_t skt = OpenSocket(SocketProtocol::IPC, 0);
-		// 	Log("socket opened: %d", skt);
+				PrintFormatted("sleeping for 2 seconds\n");
+				SLEEP(2000);
+				PrintFormatted("lock released\n");
+				UNLOCK(test);
+			};
 
-		// 	BindSocket(skt, "/some/socket");
-		// 	Log("socket bound");
+			auto func2 = []()
+			{
+				PrintFormatted("waiting for lock...");
+				SLEEP(500);
+				PrintFormatted("trying mutex\n");
 
-		// 	Multitasking::AddToQueue(Multitasking::CreateKernelThread(other, 2));
+				while(!TryLockMutex(test))
+					PrintFormatted("x");
 
-		// 	while(true)
-		// 	{
-		// 		uint64_t d = 0;
-		// 		ReadSocket(skt, &d, 8);
+				PrintFormatted("locked!\n");
+				UNLOCK(test);
+			};
 
-		// 		if(d != 0)
-		// 			PrintFormatted("%x\n", d);
-		// 	}
-		// }
-
-
-
-
-
-
-		// PrintFormatted("mutex tests\n");
-		// {
-		// 	static Mutex* test = new Mutex;
-		// 	auto func1 = []()
-		// 	{
-		// 		PrintFormatted("locking mutex\n");
-		// 		LOCK(test);
-
-		// 		PrintFormatted("sleeping for 2 seconds\n");
-		// 		SLEEP(2000);
-		// 		PrintFormatted("lock released\n");
-		// 		UNLOCK(test);
-		// 	};
-
-		// 	auto func2 = []()
-		// 	{
-		// 		PrintFormatted("waiting for lock...");
-		// 		SLEEP(1000);
-		// 		PrintFormatted("trying mutex\n");
-
-		// 		// while(!TryLockMutex(test))
-		// 		// 	PrintFormatted("x");
-
-		// 		PrintFormatted("locked!\n");
-		// 		UNLOCK(test);
-		// 	};
-
-		// 	Multitasking::AddToQueue(Multitasking::CreateKernelThread(func2));
-		// 	Multitasking::AddToQueue(Multitasking::CreateKernelThread(func1));
-		// }
+			Multitasking::AddToQueue(Multitasking::CreateKernelThread(func2));
+			Multitasking::AddToQueue(Multitasking::CreateKernelThread(func1));
+		}
+		#endif
 
 
-		// KernelHeap::Print();
+
+
+
+
+
+
+
+
+
+
 
 		// kernel stops here
 		// for now.
