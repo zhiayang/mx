@@ -28,6 +28,7 @@ extern "C" uint64_t KernelEnd;
 extern "C" uint64_t StartBSS;
 extern "C" uint64_t EndBSS;
 
+
 static uint64_t LoadedCursorX = 1;
 static uint64_t LoadedCursorY = 1;
 
@@ -46,6 +47,7 @@ extern "C" void KernelThreadInit()
 {
 	Kernel::SetupKernelThreads();
 }
+
 
 namespace Kernel
 {
@@ -244,10 +246,10 @@ namespace Kernel
 
 		// after everything is done, make sure shit works
 		{
-			uint64_t m = KernelHeap::GetFirstHeapMetadataPhysPage();
+			// uint64_t m = KernelHeap::GetFirstHeapMetadataPhysPage();
 			uint64_t h = KernelHeap::GetFirstHeapPhysPage();
 
-			Virtual::ForceInsertALPTuple(KernelHeapMetadata, 1, m);
+			// Virtual::ForceInsertALPTuple(KernelHeapMetadata, 1, m);
 			Virtual::ForceInsertALPTuple(KernelHeapAddress, 1, h);
 		}
 
@@ -373,6 +375,7 @@ namespace Kernel
 		}
 
 
+
 		// manually jump start the vfs system
 		{
 			using namespace Filesystems;
@@ -396,7 +399,6 @@ namespace Kernel
 		}
 
 
-
 		// init network stuff
 		// if we have an nic, that is
 		if(DeviceManager::GetDevice(DeviceType::EthernetNIC) != 0)
@@ -406,8 +408,8 @@ namespace Kernel
 			IP::Initialise();
 			TCP::Initialise();
 			UDP::Initialise();
-			DHCP::Initialise();
-			DNS::Initialise();
+			// DHCP::Initialise();			// todo: dhcp is a little broken
+			// DNS::Initialise();			// todo: dns is also wonky
 		}
 
 		PS2::Initialise();
@@ -417,9 +419,10 @@ namespace Kernel
 		// Console::ClearScreen();
 
 
+
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
 
-		if(1)
+		if(0)
 		{
 			// setup args:
 			// 0: prog name (duh)
@@ -442,8 +445,7 @@ namespace Kernel
 
 
 
-
-		if(0)
+		if(1)
 		{
 			using namespace Filesystems;
 
@@ -456,35 +458,42 @@ namespace Kernel
 			uint64_t st = 0;
 			uint64_t et = 0;
 
-			Log(3, "s.st_size: %d", s.st_size);
+			Log(3, "(%d) s.st_size: %d", file, s.st_size);
 
-			const uint64_t blocksz = 32768;
+			const uint64_t blocksz = 16384;
 			uint8_t* fl = new uint8_t[blocksz + 1];
 			uint8_t* whole = new uint8_t[s.st_size + 1];
+			Log("whole = %x, fl = %x", whole, fl);
 
 			uint64_t total = s.st_size;
 			Log(3, "start: %d ms", st = Time::Now());
 
 			for(uint64_t cur = 0; cur < total; )
 			{
+				// Log("starting read");
 				uint64_t read = Read(file, fl, blocksz);
+				// Log("read is done");
 
 				// PrintString((const char*) fl);
 				// SerialPort::WriteString((const char*) fl);
+
+				// Log("read: %d", read);
 				memcpy(whole + cur, fl, read);
 				cur += read;
 
 				// PrintFormatted(" %6d/%d", cur, total);
-				Log("%d/%d", cur, total);
-				// SerialPort::WriteString(".");
+				Log("\r\t\t\t\t\t\t\t\t\t\t\t\r(%03d%%) %d, %d/%d", (uint64_t) (((double) cur / (double) total) * 100.0), read, cur, total);
 			}
 
-			SerialPort::WriteString((const char*) whole);
+			// SerialPort::WriteString((const char*) whole);
 			// PrintString((const char*) fl);
 
 			Log(3, "end: %d ms", et = Time::Now());
 			Log(3, "time taken: %d ms", et - st);
 		}
+
+		Log("stop");
+		UHALT();
 
 		if(0)
 		{
@@ -539,7 +548,7 @@ namespace Kernel
 			SLEEP(15000);
 
 			memset(data, 0, 256);
-			strncpy((char*) data, "JOIN #WatchPeopleCode\r\n", 256);
+			strncpy((char*) data, "JOIN #ark-lang\r\n", 256);
 			WriteSocket(thesock, data, strlen((char*) data));
 			PrintFormatted("> %s", data);
 
@@ -549,7 +558,7 @@ namespace Kernel
 			{
 				static const char* msgs[] =
 				{
-					"PRIVMSG #WatchPeopleCode :testing\r\n",
+					"PRIVMSG #ark-lang :testing\r\n",
 					// "PRIVMSG #flax-lang :another mindless crime.\r\n",
 					// "PRIVMSG #flax-lang :behind the curtain,\r\n",
 					// "PRIVMSG #flax-lang :in the pantomime.\r\n",
@@ -707,8 +716,8 @@ namespace Kernel
 
 	void HaltSystem(const char* message, const char* filename, uint64_t line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%d, RA(0): %x, RA(1): %x, RA(2): %x", message, filename, line,
-			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2));
+		Log("System Halted: %s, %s:%d, RA(0): %x, RA(1): %x, RA(2): %x, RA(3): %x", message, filename, line,
+			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2), __builtin_return_address(3));
 
 		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 
@@ -718,8 +727,8 @@ namespace Kernel
 
 	void HaltSystem(const char* message, const char* filename, const char* line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%s, RA(0): %x, RA(1): %x, RA(2): %x", message, filename, line,
-			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2));
+		Log("System Halted: %s, %s:%s, RA(0): %x, RA(1): %x, RA(2): %x, RA(3): %x", message, filename, line,
+			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2), __builtin_return_address(3));
 
 		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %s (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 
@@ -820,7 +829,7 @@ namespace rapidxml
 
 extern "C" void* malloc(size_t s)
 {
-	return KernelHeap::AllocateFromHeap(s);
+	return KernelHeap::AllocateChunk(s, "");
 }
 extern "C" void free(void* ptr)
 {

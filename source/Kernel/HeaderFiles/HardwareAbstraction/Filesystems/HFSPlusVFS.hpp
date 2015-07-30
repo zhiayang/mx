@@ -120,7 +120,7 @@ namespace Filesystems
 			virtual void Close(VFS::vnode* node) override;
 
 			// returns a list of items inside the directory, as vnodes.
-			virtual rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
+			virtual iris::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 
 
 		private:

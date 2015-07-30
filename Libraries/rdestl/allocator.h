@@ -42,12 +42,14 @@ inline bool operator!=(const allocator& lhs, const allocator& rhs)
 
 inline void* allocator::allocate(size_t bytes, int)
 {
-	return operator new(bytes);
+	return malloc(bytes);
+	// return operator new(bytes);
 }
 
 inline void allocator::deallocate(void* ptr, size_t)
 {
-	operator delete(ptr);
+	// operator delete(ptr);
+	free(ptr);
 }
 
 } // namespace rde

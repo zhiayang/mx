@@ -42,7 +42,7 @@
 
 // Configurable sizes
 // As above, try not to mess with these
-#define DefaultRing3StackSize	0x10000
+#define DefaultRing3StackSize	0x20000
 
 // Global IRQ0 tickrate.
 #define GlobalTickRate		20
@@ -61,6 +61,11 @@
 #define IPCNumber			0xF9
 #define VolumeMountPoint	"/Volumes/"
 
+
+#define LOG_INFO			0
+#define LOG_WARN			1
+#define LOG_SEVR			2
+#define LOG_CRIT			3
 
 
 // wrapper types for big endian shits

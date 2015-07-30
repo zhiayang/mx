@@ -414,7 +414,7 @@ namespace Network
 			virtual void Close(Filesystems::VFS::vnode* node) override;
 
 			// returns a list of items inside the directory, as vnodes.
-			virtual rde::vector<Filesystems::VFS::vnode*> ReadDir(Filesystems::VFS::vnode* node) override;
+			virtual iris::vector<Filesystems::VFS::vnode*> ReadDir(Filesystems::VFS::vnode* node) override;
 
 
 			// unix-isms that we'll just have to implement for an easier time in userspace

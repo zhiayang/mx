@@ -91,7 +91,8 @@ namespace Filesystems
 	{
 		rde::string name;
 		uint32_t entrycluster;
-		rde::vector<uint32_t> clusters;
+		iris::vector<uint32_t> clusters;
+		iris::vector<rde::pair<uint64_t, uint64_t>> clusterchain;
 		uint32_t filesize;
 
 		DirectoryEntry dirent;
@@ -314,7 +315,7 @@ namespace Filesystems
 
 	void ls(FSDriver* fs, vnode* node, int nest)
 	{
-		rde::vector<vnode*> nodes = fs->ReadDir(node);
+		iris::vector<vnode*> nodes = fs->ReadDir(node);
 		if(nodes.size() == 0)
 			return;
 
@@ -389,7 +390,7 @@ namespace Filesystems
 			assert(cn->info);
 			assert(cn->info->data);
 
-			rde::vector<VFS::vnode*> cdcontent = this->ReadDir(cn);
+			iris::vector<VFS::vnode*> cdcontent = this->ReadDir(cn);
 
 			// check each.
 			for(auto d : cdcontent)
@@ -450,13 +451,22 @@ namespace Filesystems
 
 
 
-	static rde::vector<rde::pair<uint64_t, uint64_t>> ConsolidateClusterChain(rde::vector<uint32_t> cchain)
+	static iris::vector<rde::pair<uint64_t, uint64_t>> ConsolidateClusterChain(iris::vector<uint32_t>& _cchain)
 	{
+		// rde::vector<uint32_t> cchain;
+		// cchain.reserve(_cchain.size());
+
+		// for(auto c : _cchain)
+		// 	cchain.push_back(c);
+
 		typedef rde::pair<uint64_t, uint64_t> pair_t;
+		// rde::quick_sort(cchain.begin(), cchain.end());
+		auto& cchain = _cchain;
 
-		rde::vector<pair_t> ret;
-		rde::quick_sort(cchain.begin(), cchain.end());
+		// cchain.quick_sort();
+		cchain.merge_sort();
 
+		iris::vector<pair_t> ret;
 		for(size_t i = 0; i < cchain.size(); i++)
 		{
 			pair_t p = { cchain[i], 1 };
@@ -528,13 +538,20 @@ namespace Filesystems
 		uint64_t obuf = rbuf;
 
 
-		auto clusterpairs = ConsolidateClusterChain(vnd->clusters);
+		iris::vector<rde::pair<uint64_t, uint64_t>> clusterpairs = (vnd->clusterchain.size() == 0) ?
+				(vnd->clusterchain = ConsolidateClusterChain(vnd->clusters)) : vnd->clusterchain;
+
+		// for(auto p : clusterpairs)
+		// 	Log("pairs: (%d, %d)", p.first, p.second);
 
 		uint64_t skipped = 0;
 		uint64_t have = 0;
 
 		for(auto pair : clusterpairs)
 		{
+			if(pair.first == 0 || pair.second == 0)
+				continue;
+
 			// completely consume the pair if we need to skip
 			if(skippedclus > skipped && pair.second <= (skippedclus - skipped))
 			{
@@ -563,7 +580,7 @@ namespace Filesystems
 				rbuf += (toread * spc * 512);
 				have += toread;
 
-				// StandardIO::PrintFormatted("\r                               \r%8d bytes read", rbuf - obuf);
+				StandardIO::PrintFormatted("\r                               \r%8d bytes read", rbuf - obuf);
 
 			}
 
@@ -618,7 +635,7 @@ namespace Filesystems
 
 
 
-	rde::vector<VFS::vnode*> FSDriverFAT::ReadDir(VFS::vnode* node)
+	iris::vector<VFS::vnode*> FSDriverFAT::ReadDir(VFS::vnode* node)
 	{
 		assert(node);
 		assert(node->info);
@@ -647,7 +664,7 @@ namespace Filesystems
 		else
 		{
 			// grab its clusters.
-			auto clusters = tovnd(node)->clusters;
+			auto& clusters = tovnd(node)->clusters;
 			uint64_t numclus = 0;
 
 			if(clusters.size() == 0)
@@ -672,7 +689,7 @@ namespace Filesystems
 		}
 
 
-		rde::vector<VFS::vnode*> ret;
+		iris::vector<VFS::vnode*> ret;
 
 		for(uint64_t addr = buf; addr < buf + dirsize;)
 		{
@@ -791,7 +808,7 @@ namespace Filesystems
 
 
 
-	rde::vector<uint32_t> FSDriverFAT::GetClusterChain(VFS::vnode* node, uint64_t* numclus)
+	iris::vector<uint32_t> FSDriverFAT::GetClusterChain(VFS::vnode* node, uint64_t* numclus)
 	{
 		// read the cluster chain
 
@@ -804,7 +821,7 @@ namespace Filesystems
 		uint32_t Cluster = tovnd(node)->entrycluster;
 		uint32_t cchain = 0;
 		const uint32_t lookahead = 0;
-		rde::vector<uint32_t> ret;
+		iris::vector<uint32_t> ret;
 
 		auto buf = MemoryManager::Virtual::AllocatePage(lookahead == 0 ? 1 : (512 * lookahead) / 0x1000);
 		auto obuf = buf;
@@ -844,6 +861,8 @@ namespace Filesystems
 		MemoryManager::Virtual::FreePage(obuf, lookahead == 0 ? 1 : (512 * lookahead) / 0x1000);
 		tovnd(node)->clusters = ret;
 
+		// for(auto c : ret)
+		// 	Log("cluster: %d", c);
 		return ret;
 	}
 

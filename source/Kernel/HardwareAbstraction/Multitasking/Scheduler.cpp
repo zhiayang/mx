@@ -46,8 +46,8 @@ namespace Multitasking
 
 	Process* GetCurrentProcess()		{ return CurrentThread ? CurrentThread->Parent : Kernel::KernelProcess; }
 	Thread* GetCurrentThread()			{ return CurrentThread; }
-	pid_t GetCurrentThreadID()			{ return CurrentThread->ThreadID; }
-	pid_t GetCurrentProcessID()			{ return CurrentThread->Parent->ProcessID; }
+	pid_t GetCurrentThreadID()		{ return CurrentThread->ThreadID; }
+	pid_t GetCurrentProcessID()		{ return CurrentThread->Parent->ProcessID; }
 	RunQueue* getRunQueue()				{ return mainRunQueue; }
 
 	// if, after N number of switches, processes in the low/norm queue don't get to run, run them all to completion.
@@ -106,9 +106,7 @@ namespace Multitasking
 			}
 		}
 		else
-		{
 			IsFirst = false;
-		}
 
 
 
@@ -119,7 +117,7 @@ namespace Multitasking
 			// check if we're about to overflow.
 			if(context - StackBottom <= 0x100)
 			{
-				Log(1, "Warning: Thread(%d) of Process(%s, %d) has only 256 bytes of stack space left", CurrentThread->ThreadID, CurrentThread->Parent->Name, CurrentThread->Parent->ProcessID);
+				Log(1, "Warning: Thread(%d) of Process(%s, %d) has only 0x100 bytes of stack space left", CurrentThread->ThreadID, CurrentThread->Parent->Name, CurrentThread->Parent->ProcessID);
 			}
 			else if(context - StackBottom <= 0x10)
 			{
@@ -127,7 +125,6 @@ namespace Multitasking
 				UHALT();
 			}
 		}
-
 
 
 		// 0x2610 stores the thread's current errno.
@@ -168,13 +165,11 @@ namespace Multitasking
 
 	extern "C" void VerifySchedule()
 	{
-		#if 0
-		if(doDumping || CurrentThread->ThreadID == 1)
+		if(0 && CurrentThread->ThreadID == 1)
 		{
-			Log(1, "thread: %d", CurrentThread->ThreadID);
 			Utilities::StackDump((uint64_t*) CurrentThread->StackPointer, 20);
+			// HALT("");
 		}
-		#endif
 	}
 
 	extern "C" void YieldCPU()
@@ -194,6 +189,7 @@ namespace Multitasking
 		p->Sleep = (uint32_t) __abs(time);
 		PendingSleepList->push_back(p);
 
+		// if time is negative, we called from userspace, so don't nest interrupts.
 		YieldCPU();
 	}
 

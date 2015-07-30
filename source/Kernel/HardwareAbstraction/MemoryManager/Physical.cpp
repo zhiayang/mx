@@ -34,7 +34,7 @@ namespace Physical
 	extern Kernel::HardwareAbstraction::MemoryManager::MemoryMap::MemoryMap_type* K_MemoryMap;
 
 	static bool DidInit = false;
-	static rde::vector<Pair*>* PageList;
+	static rde::deque<Pair*>* PageList;
 
 	// Define a region of memory in which the VMM gets it's memory from, to create page strucures.
 	uint64_t ReservedRegionForVMM = 0;
@@ -70,9 +70,9 @@ namespace Physical
 		assert(!DidInit);
 		// See InitialiseFPLs() for an in-depth explanation on this
 		// FPL system.
+
 		mtx = new Mutex();
-		// PageList = new LinkedList<Pair>();
-		PageList = new rde::vector<Pair*>();
+		PageList = new rde::deque<Pair*>();
 
 		InitialiseFPLs(Kernel::K_MemoryMap);
 		DidInit = true;
@@ -133,6 +133,7 @@ namespace Physical
 			}
 			else
 			{
+				Log(1, "tried allocating %d pages, failed", size);
 				HALT("Out of physical pages");
 				return 0;
 			}
@@ -150,7 +151,7 @@ namespace Physical
 		for(size_t i = 0; i < PageList->size(); i++)
 		{
 			Pair* pair = PageList->front();
-			PageList->erase(PageList->begin());
+			PageList->erase_unordered(PageList->begin());
 
 			// 3 basic conditions
 			// 1. we find a match below a pair's baseaddr
@@ -165,7 +166,7 @@ namespace Physical
 			}
 			else if(pair->BaseAddr + (pair->LengthInPages * 0x1000) == page)
 			{
-				pair->LengthInPages += (size * 0x1000);
+				pair->LengthInPages += size;
 				ret = true;
 			}
 
@@ -176,7 +177,7 @@ namespace Physical
 		}
 
 		// if we reach here, we haven't found a match.
-		Pair* np = new Pair;
+		Pair* np = new Pair();
 		np->BaseAddr = page;
 		np->LengthInPages = size;
 
@@ -205,15 +206,17 @@ namespace Physical
 		ret.virt = Virtual::AllocateVirtual(size, 0, 0, ret.phys);
 
 		Virtual::MapRegion(ret.virt, ret.phys, size, 0x3);
+		// Log("allocated DMA region: virt = %x, phys = %x, %d pages", ret.virt, ret.phys, size);
 		return ret;
 	}
 
 	void FreeDMA(DMAAddr addr, uint64_t size)
 	{
 		FreePage(addr.phys, size);
-		Virtual::FreeVirtual(addr.virt);
-
+		Virtual::FreeVirtual(addr.virt, size);
 		Virtual::UnmapRegion(addr.virt, size);
+
+		// Log("freed DMA region: virt = %x, phys = %x, %d pages", addr.virt, addr.phys, size);
 	}
 
 

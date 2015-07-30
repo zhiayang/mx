@@ -82,11 +82,13 @@ namespace PIO
 			// check for error
 			if((stat & (1 << 0)) || (stat & (1 << 5)))
 			{
-				StandardIO::PrintFormatted("Error: ATA Drive ERR or DF bit set. Return addresses:\n");
+				Log(1, "Error: ATA Drive ERR or DF bit set. (cmd: sector %d, num = %d) Return addresses:", Sector, SecCount);
 
-				StandardIO::PrintFormatted("(0): %x\n", __builtin_return_address(0));
-				StandardIO::PrintFormatted("(1): %x\n", __builtin_return_address(1));
-				StandardIO::PrintFormatted("(2): %x\n", __builtin_return_address(2));
+				Log(1, "(0): %x", __builtin_return_address(0));
+				Log(1, "(1): %x", __builtin_return_address(1));
+				Log(1, "(2): %x", __builtin_return_address(2));
+				Log(1, "(3): %x", __builtin_return_address(3));
+				Log(1, "(4): %x", __builtin_return_address(4));
 			}
 
 			// wait until we're ready

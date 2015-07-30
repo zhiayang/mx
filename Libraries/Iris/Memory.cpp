@@ -18,6 +18,10 @@ extern "C" void* memmove(void* d, void* s, unsigned long l)
 	return Memory::CopyOverlap(d, s, l);
 }
 
+namespace Kernel
+{
+	void Log(const char*, ...);
+}
 
 namespace Memory
 {

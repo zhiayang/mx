@@ -12,8 +12,6 @@ namespace Kernel {
 namespace HardwareAbstraction {
 namespace IO
 {
-	#define DIRECTOP	0
-
 	struct IOTransfer
 	{
 		IOTransfer() { this->magic = 0xAF; }
@@ -24,6 +22,7 @@ namespace IO
 		uint64_t pos = 0;
 		uint64_t out = 0;
 		uint64_t count = 0;
+		uint64_t ownerRet = 0;
 
 		uint8_t magic = 0;
 		bool blockop = 0;
@@ -88,7 +87,8 @@ namespace IO
 					// if this is a read from kernel space, just do shit.
 					if(req.owningthread->Parent == Multitasking::GetProcess(0))
 					{
-						Memory::Copy((void*) req.out, (void*) iores.allocatedBuffer.virt, req.count);
+						// Log("copying over: %x to %x, %d bytes (%x)", iores.allocatedBuffer.virt, req.out, req.count, req.ownerRet);
+						Memory::CopyOverlap((void*) req.out, (void*) iores.allocatedBuffer.virt, req.count);
 					}
 					else
 					{
@@ -131,8 +131,7 @@ namespace IO
 		Transfers = new rde::vector<IOTransfer>();
 		listmtx = new Mutex();
 
-		if(!DIRECTOP)
-			Multitasking::AddToQueue(Multitasking::CreateKernelThread(Scheduler, 2));
+		Multitasking::AddToQueue(Multitasking::CreateKernelThread(Scheduler, 2));
 	}
 
 	void Read(IODevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes)
@@ -145,30 +144,24 @@ namespace IO
 			return;
 		}
 
-		if(DIRECTOP)
-		{
-			dev->Read(pos, buf, bytes);
-		}
-		else
-		{
-			IOTransfer req;
+		IOTransfer req;
 
-			req.device			= dev;
-			req.pos				= pos;
-			req.out				= buf;
-			req.count			= bytes;
+		req.device			= dev;
+		req.pos				= pos;
+		req.out				= buf;
+		req.count			= bytes;
 
-			req.owningthread	= Multitasking::GetCurrentThread();
-			req.writeop 		= false;
-			req.blockop			= true;
+		req.owningthread	= Multitasking::GetCurrentThread();
+		req.writeop 		= false;
+		req.blockop			= true;
+		req.ownerRet		= (uint64_t) __builtin_return_address(0);
 
 
-			LOCK(listmtx);
-			Transfers->push_back(req);
-			UNLOCK(listmtx);
+		LOCK(listmtx);
+		Transfers->push_back(req);
+		UNLOCK(listmtx);
 
-			BLOCK();
-		}
+		BLOCK();
 	}
 
 	void Write(IODevice* dev, uint64_t pos, uint64_t buf, uint64_t bytes)
@@ -178,33 +171,27 @@ namespace IO
 		if(bytes == 0 || buf == 0)
 			return;
 
-		if(DIRECTOP)
+		IOTransfer req;
+		if(pos == 0x1D6A)
 		{
-			dev->Write(pos, buf, bytes);
+			MemoryManager::KernelHeap::Print();
+			UHALT();
 		}
-		else
-		{
-			IOTransfer req;
-			if(pos == 0x1D6A)
-			{
-				MemoryManager::KernelHeap::Print();
-				UHALT();
-			}
-			req.device			= dev;
-			req.pos				= pos;
-			req.out				= buf;
-			req.count			= bytes;
+		req.device			= dev;
+		req.pos				= pos;
+		req.out				= buf;
+		req.count			= bytes;
 
-			req.owningthread	= Multitasking::GetCurrentThread();
-			req.writeop 		= true;
-			req.blockop			= true;
+		req.owningthread	= Multitasking::GetCurrentThread();
+		req.writeop 		= true;
+		req.blockop			= true;
+		req.ownerRet		= (uint64_t) __builtin_return_address(0);
 
-			LOCK(listmtx);
-			Transfers->push_back(req);
-			UNLOCK(listmtx);
+		LOCK(listmtx);
+		Transfers->push_back(req);
+		UNLOCK(listmtx);
 
-			BLOCK();
-		}
+		BLOCK();
 	}
 
 
