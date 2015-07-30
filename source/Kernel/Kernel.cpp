@@ -460,7 +460,7 @@ namespace Kernel
 
 			Log(3, "(%d) s.st_size: %d", file, s.st_size);
 
-			const uint64_t blocksz = 64;
+			const uint64_t blocksz = 16384;
 			uint8_t* fl = new uint8_t[blocksz + 1];
 			uint8_t* whole = new uint8_t[s.st_size + 1];
 			Log("whole = %x, fl = %x", whole, fl);
