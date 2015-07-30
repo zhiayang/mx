@@ -47,7 +47,7 @@ void* operator new(size_t size)
 	}
 	#else
 	{
-		return (void*) KernelHeap::AllocateFromHeap(size);
+		return (void*) KernelHeap::AllocateChunk(size);
 	}
 	#endif
 }
@@ -65,7 +65,7 @@ void* operator new[](size_t size)
 	}
 	#else
 	{
-		return (void*) KernelHeap::AllocateFromHeap(size);
+		return (void*) KernelHeap::AllocateChunk(size);
 	}
 	#endif
 }

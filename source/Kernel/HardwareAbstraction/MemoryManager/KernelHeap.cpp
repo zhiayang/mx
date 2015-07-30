@@ -126,19 +126,28 @@ namespace KernelHeap
 		return sane(header);
 	}
 
-	// static Footer* getFooter(Header* header)
-	// {
-	// 	return sane(header)->footer;
-	// }
+	static Footer* getFooter(Header* header)
+	{
+		return sane(header)->footer;
+	}
 
 	static Header* getHeader(Footer* footer)
 	{
 		return sane(footer)->header;
 	}
 
+	static Header* getLast();
 	static Header* next(Header* header)
 	{
-		return sane((Header*) (sane(header)->footer + 1));
+		// check we're not the last
+		if(header != getLast())
+		{
+			return sane((Header*) (sane(header)->footer + 1));
+		}
+		else
+		{
+			return 0;
+		}
 	}
 
 	// static Header* next(Footer* footer)
@@ -146,11 +155,19 @@ namespace KernelHeap
 	// 	return sane((Header*) (sane(footer) + 1));
 	// }
 
-	// static Header* prev(Header* header)
-	// {
-	// 	Footer* pfoot = sane((Footer*) ((uintptr_t) header - sizeof(Footer)));
-	// 	return pfoot->header;
-	// }
+	static Header* prev(Header* header)
+	{
+		// check we're not first.
+		if((uintptr_t) header != KernelHeapAddress)
+		{
+			Footer* pfoot = sane((Footer*) ((uintptr_t) header - sizeof(Footer)));
+			return pfoot->header;
+		}
+		else
+		{
+			return 0;
+		}
+	}
 
 	// static Header* prev(Footer* footer)
 	// {
@@ -236,8 +253,10 @@ namespace KernelHeap
 
 
 
-	void* AllocateChunk(uint64_t size, const char* fileAndLine)
+	void* AllocateChunk(uint64_t size)
 	{
+		if(size == 0) return 0;
+
 		size = ((size + (Alignment - 1)) / Alignment) * Alignment;
 
 		Header* h = sane(FirstFreeHeader);
@@ -252,7 +271,7 @@ namespace KernelHeap
 				ExpandHeap((size + 0xFFF) / 0x1000);
 
 				// Log("Expanded heap by %d bytes", ((size + 0xFFF) / 0x1000) * 0x1000);
-				return AllocateChunk(size, fileAndLine);
+				return AllocateChunk(size);
 			}
 		}
 
@@ -274,7 +293,7 @@ namespace KernelHeap
 				> KernelHeapAddress + (SizeOfHeapInPages * 0x1000))
 			{
 				ExpandHeap(((newSize + sizeof(Header) + sizeof(Footer)) + 0xFFF) / 0x1000);
-				return AllocateChunk(size, fileAndLine);
+				return AllocateChunk(size);
 			}
 
 
@@ -308,20 +327,153 @@ namespace KernelHeap
 		return (void*) (h + 1);
 	}
 
+
+
+	void TryMergeLeft(Header* hdr)
+	{
+		assert(isFree(hdr));
+
+		hdr = sane(hdr);
+		if(prev(hdr) != 0)
+		{
+			Header* left = prev(hdr);
+			if(isFree(left))
+			{
+				// do it.
+				// 1. modify its header to point to our footer
+				// 2. modify our footer to point to its header
+				// 2. modify it ssize to include our size, and sizeof(Header) + sizeof(Footer)
+
+				void* oldFooter = left->footer;
+				void* oldHeader = hdr;
+
+				left->footer = getFooter(hdr);
+				getFooter(hdr)->header = left;
+
+				left->size += hdr->size + sizeof(Header) + sizeof(Footer);
+
+				// done.
+				// cleanup:
+				// memset its footer and our header to 0.
+				memset(oldFooter, 0, sizeof(Footer));
+				memset(oldHeader, 0, sizeof(Header));
+			}
+		}
+	}
+
+	void TryMergeRight(Header* hdr)
+	{
+		assert(isFree(hdr));
+
+		hdr = sane(hdr);
+		if(next(hdr) != 0)
+		{
+			Header* right = next(hdr);
+			if(isFree(right))
+			{
+				// do it.
+				// 1. modify our header to point to its footer
+				// 2. modify its footer to point to our header
+				// 3. modify our size to include its size, and sizeof(Header) + sizeof(Footer)
+
+				void* oldFooter = hdr->footer;
+				void* oldHeader = right;
+
+				hdr->footer = getFooter(right);
+				getFooter(right)->header = hdr;
+
+				hdr->size += right->size + sizeof(Header) + sizeof(Footer);
+
+
+				// done.
+				// cleanup:
+				// memset its footer and our header to 0.
+				memset(oldFooter, 0, sizeof(Footer));
+				memset(oldHeader, 0, sizeof(Header));
+			}
+		}
+	}
+
+
 	void FreeChunk(void* ptr)
 	{
-		assert(ptr);
+		if(ptr == 0)
+		{
+			Log(1, "free() called with ptr == 0, might be a bug: return %x / %x", returnAddr(0), returnAddr(1));
+			return;
+		}
 
+
+		Header* hdr = (Header*) ptr;
+		hdr -= 1;
+
+		sane(hdr);
+
+		// make sure it's actually used.
+		_assert(hdr, !isFree(hdr));
+
+		// set it to free.
+		hdr->magic = HEADER_FREE;
+
+		// try merging, and we're done.
+		// merge right first, because that preserves *our* header, and destroys
+		// the other one -- this ensures we can try merging left as well.
+		TryMergeRight(hdr);
+		TryMergeLeft(hdr);
 	}
 
 	void* ReallocateChunk(void* ptr, uint64_t size)
 	{
-		HALT("");
-		return 0;
+		if(ptr == 0)
+		{
+			Log(1, "called realloc() with ptr == 0, possible bug: return %x / %x", returnAddr(0), returnAddr(1));
+			return AllocateChunk(size);
+		}
+
+		if(size == 0)
+		{
+			Log(1, "called realloc() with size == 0, possible bug: return %x / %x", returnAddr(0), returnAddr(1));
+			FreeChunk(ptr);
+			return 0;
+		}
+
+
+
+		// now get the actual header.
+		Header* hdr = (Header*) ptr;
+		hdr -= 1;
+
+		sane(hdr);
+
+		// make sure it's actually used.
+		_assert(hdr, !isFree(hdr));
+
+		// check the capacity of the chunk vs what we need.
+		if(hdr->size >= size)
+		{
+			return ptr;	// nothing to be done.
+		}
+		else
+		{
+			// we need to allocate a new one, then free it.
+			void* newplace = AllocateChunk(size);
+			memmove(newplace, ptr, hdr->size);
+
+			FreeChunk(ptr);
+			return newplace;
+		}
 	}
 
 	void Print()
 	{
+		Header* hdr = (Header*) KernelHeapAddress;
+		sane(hdr);
+
+		do
+		{
+			Log("Chunk %x, size %x, %s", (uintptr_t) hdr - KernelHeapAddress, hdr->size, isFree(hdr) ? "free" : "used");
+
+		} while((hdr = next(hdr)) != 0);
 	}
 
 	// uint64_t GetFirstHeapMetadataPhysPage();

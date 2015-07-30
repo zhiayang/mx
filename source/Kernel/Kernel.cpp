@@ -408,8 +408,8 @@ namespace Kernel
 			IP::Initialise();
 			TCP::Initialise();
 			UDP::Initialise();
-			// DHCP::Initialise();			// todo: dhcp is a little broken
-			// DNS::Initialise();			// todo: dns is also wonky
+			DHCP::Initialise();			// todo: dhcp is a little broken
+			DNS::Initialise();			// todo: dns is also wonky
 		}
 
 		PS2::Initialise();
@@ -445,7 +445,7 @@ namespace Kernel
 
 
 
-		if(1)
+		if(0)
 		{
 			using namespace Filesystems;
 
@@ -463,39 +463,35 @@ namespace Kernel
 			const uint64_t blocksz = 16384;
 			uint8_t* fl = new uint8_t[blocksz + 1];
 			uint8_t* whole = new uint8_t[s.st_size + 1];
-			Log("whole = %x, fl = %x", whole, fl);
 
 			uint64_t total = s.st_size;
 			Log(3, "start: %d ms", st = Time::Now());
 
 			for(uint64_t cur = 0; cur < total; )
 			{
-				// Log("starting read");
 				uint64_t read = Read(file, fl, blocksz);
-				// Log("read is done");
 
-				// PrintString((const char*) fl);
-				// SerialPort::WriteString((const char*) fl);
-
-				// Log("read: %d", read);
 				memcpy(whole + cur, fl, read);
 				cur += read;
 
-				// PrintFormatted(" %6d/%d", cur, total);
-				Log("\r\t\t\t\t\t\t\t\t\t\t\t\r(%03d%%) %d, %d/%d", (uint64_t) (((double) cur / (double) total) * 100.0), read, cur, total);
+				PrintFormatted("\r\t\t\t\t\t\t\t\t\t\t\t\r(%02.2f%%) %d, %d/%d", (((double) cur / (double) total) * 100.0),
+					read, cur, total);
 			}
-
-			// SerialPort::WriteString((const char*) whole);
-			// PrintString((const char*) fl);
 
 			Log(3, "end: %d ms", et = Time::Now());
 			Log(3, "time taken: %d ms", et - st);
 		}
 
-		Log("stop");
-		UHALT();
 
-		if(0)
+
+
+
+
+
+
+
+
+		if(1)
 		{
 			using namespace Network;
 			// IPv4Address fn = DNS::QueryDNSv4(rde::string("www.example.com"));
@@ -503,10 +499,10 @@ namespace Kernel
 			// assert(fns.size() > 0);
 
 			IPv4Address fn;
-			fn.b1 = 38;
-			fn.b2 = 229;
-			fn.b3 = 70;
-			fn.b4 = 22;
+			fn.b1 = 31;
+			fn.b2 = 13;
+			fn.b3 = 222;
+			fn.b4 = 109;
 
 			PrintFormatted("irc.freenode.net is at %d.%d.%d.%d\n", fn.b1, fn.b2, fn.b3, fn.b4);
 
@@ -548,7 +544,7 @@ namespace Kernel
 			SLEEP(15000);
 
 			memset(data, 0, 256);
-			strncpy((char*) data, "JOIN #ark-lang\r\n", 256);
+			strncpy((char*) data, "JOIN #learnprogramming\r\n", 256);
 			WriteSocket(thesock, data, strlen((char*) data));
 			PrintFormatted("> %s", data);
 
@@ -558,7 +554,7 @@ namespace Kernel
 			{
 				static const char* msgs[] =
 				{
-					"PRIVMSG #ark-lang :testing\r\n",
+					"PRIVMSG #learnprogramming :testing\r\n",
 					// "PRIVMSG #flax-lang :another mindless crime.\r\n",
 					// "PRIVMSG #flax-lang :behind the curtain,\r\n",
 					// "PRIVMSG #flax-lang :in the pantomime.\r\n",
@@ -829,7 +825,7 @@ namespace rapidxml
 
 extern "C" void* malloc(size_t s)
 {
-	return KernelHeap::AllocateChunk(s, "");
+	return KernelHeap::AllocateChunk(s);
 }
 extern "C" void free(void* ptr)
 {

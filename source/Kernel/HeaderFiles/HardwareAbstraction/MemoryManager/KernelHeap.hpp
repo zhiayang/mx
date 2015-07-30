@@ -21,9 +21,7 @@ namespace MemoryManager
 			#define STRINGIFY(x) STRINGIFY0(x)
 		#endif
 
-		void* AllocateChunk(uint64_t size, const char* fileAndLine);
-		#define AllocateFromHeap(sz) AllocateChunk(sz, __FILE__ ":" STRINGIFY(__LINE__))
-
+		void* AllocateChunk(uint64_t size);
 		void FreeChunk(void* Pointer);
 		void* ReallocateChunk(void* ptr, uint64_t size);
 
