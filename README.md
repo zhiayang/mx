@@ -2,7 +2,7 @@
 
 
 The fifth rewrite of what never was, OrionOS.
-As of version 0.90, [mx] has surpassed Orion-X4 in its featureset.
+As of version 0.9.0, [mx] has surpassed Orion-X4 in its featureset.
 
 #### Disclaimer ####
 [mx] often faces stretches of active development followed by complete abandonment.
