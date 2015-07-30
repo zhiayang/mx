@@ -89,6 +89,10 @@ namespace PIO
 				Log(1, "(2): %x", __builtin_return_address(2));
 				Log(1, "(3): %x", __builtin_return_address(3));
 				Log(1, "(4): %x", __builtin_return_address(4));
+
+				// abort.
+				Log(1, "ABORT CMD");
+				return;
 			}
 
 			// wait until we're ready

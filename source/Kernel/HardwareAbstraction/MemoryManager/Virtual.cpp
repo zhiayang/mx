@@ -19,9 +19,6 @@ namespace Virtual
 		region->used = 1;
 		region->phys = phys;
 
-		// Log("allocated virtual mem %x (%d) to (%x, %x, %x) (vas %x)", region->start, region->length, __builtin_return_address(0),
-			// __builtin_return_address(1), __builtin_return_address(2), x);
-
 		return region->start;
 	}
 
@@ -36,16 +33,6 @@ namespace Virtual
 		assert(vas->regions);
 
 		auto m = AutoMutex(vas->mtx);
-
-		// int i = 0;
-		// Log("\n\n******** RETURN: %x / %x ********", __builtin_return_address(0), __builtin_return_address(1));
-		// for(MemRegion& region : *vas->regions)
-		// {
-		// 	Log("[%04d]: (%016x, %02d): %016x, %s", i, region->start, region->length, region->phys, region->used ? "used" : "free");
-		// 	i++;
-		// }
-
-		// Log("******** END ********\n\n");
 
 		for(MemRegion* region : *vas->regions)
 		{
@@ -192,21 +179,83 @@ namespace Virtual
 		return virt;
 	}
 
+	static MemRegion* _FreeVirtual(uint64_t addr, uint64_t size, VirtualAddressSpace* _v)
+	{
+		VirtualAddressSpace* vas = (_v ? _v : &Multitasking::GetCurrentProcess()->VAS);
+
+		assert(vas);
+		assert(vas->mtx);
+		assert(vas->regions);
+
+		auto m = AutoMutex(vas->mtx);
+
+
+		MemRegion* offending = 0;
+
+		for(MemRegion* region : *vas->regions)
+		{
+			if(region->start == addr && region->length == size)
+			{
+				assert(region->used);
+				vas->regions->remove(region);
+
+				offending = region;
+				break;
+			}
+		}
+
+		assert(offending);
+		offending->used = 1;
+
+		// loop through again.
+		for(MemRegion* region : *vas->regions)
+		{
+			// simple things:
+			// check if we can either fit in below, or above
+			if(offending->start + (offending->length * 0x1000) == region->start && region->used == 0)
+			{
+				// fit in below.
+				region->start = offending->start;
+				region->length += offending->length;
+
+				return offending;	// can delete.
+			}
+			else if(region->start + (region->length * 0x1000) == offending->start && region->used == 0)
+			{
+				// fit in above.
+				region->length += offending->length;
+
+				return offending;	// can delete.
+			}
+		}
+
+		// else.
+		offending->used = 0;
+		vas->regions->push_back(offending);
+		return offending;	// can't delete region.
+	}
+
 	void FreeVirtual(uint64_t addr, uint64_t size, VirtualAddressSpace* _v)
 	{
-		// todo
+		MemRegion* region = _FreeVirtual(addr, size, _v);
 
-		(void) addr;
-		(void) size;
-		(void) _v;
+		assert(region);
+		if(region->used) delete region;
 	}
 
 	void FreePage(uint64_t addr, uint64_t size)
 	{
-		// todo
+		MemRegion* region = _FreeVirtual(addr, size, 0);
+		assert(region);
 
-		(void) addr;
-		(void) size;
+		uint64_t phys = region->phys;
+		assert(phys > 0);
+		assert(region->length > 0);
+
+		UnmapRegion(region->start, region->length);
+		Physical::FreePage(phys, region->length);
+
+		if(region->used) delete region;
 	}
 
 

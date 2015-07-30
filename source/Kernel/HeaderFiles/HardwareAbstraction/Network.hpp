@@ -381,18 +381,18 @@ namespace Network
 		Socket(size_t BufferSize, Library::SocketProtocol prot) : recvbuffer(BufferSize), protocol(prot) { }
 
 		Library::CircularMemoryBuffer recvbuffer;
-		Library::IPv4Address ip4source;
-		Library::IPv4Address ip4dest;
+		Library::IPv4Address ip4source = 0;
+		Library::IPv4Address ip4dest = 0;
 
-		Library::IPv6Address ip6source;
-		Library::IPv6Address ip6dest;
+		// Library::IPv6Address ip6source = 0;
+		// Library::IPv6Address ip6dest = 0;
 
 		Library::SocketProtocol protocol;
-		uint64_t clientport;
-		uint64_t serverport;
+		uint64_t clientport = 0;
+		uint64_t serverport = 0;
 
-		TCP::TCPConnection* tcpconnection;
-		Devices::NIC::GenericNIC* interface;
+		TCP::TCPConnection* tcpconnection = 0;
+		Devices::NIC::GenericNIC* interface = 0;
 
 		rde::string ipcSocketPath;
 		rde::vector<pid_t> blockingProcs;

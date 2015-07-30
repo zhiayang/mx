@@ -92,7 +92,7 @@ namespace Filesystems
 		rde::string name;
 		uint32_t entrycluster;
 		iris::vector<uint32_t> clusters;
-		iris::vector<rde::pair<uint64_t, uint64_t>> clusterchain;
+		rde::vector<rde::pair<uint64_t, uint64_t>> clusterchain;
 		uint32_t filesize;
 
 		DirectoryEntry dirent;
@@ -451,22 +451,12 @@ namespace Filesystems
 
 
 
-	static iris::vector<rde::pair<uint64_t, uint64_t>> ConsolidateClusterChain(iris::vector<uint32_t>& _cchain)
+	static rde::vector<rde::pair<uint64_t, uint64_t>> ConsolidateClusterChain(iris::vector<uint32_t>& cchain)
 	{
-		// rde::vector<uint32_t> cchain;
-		// cchain.reserve(_cchain.size());
-
-		// for(auto c : _cchain)
-		// 	cchain.push_back(c);
-
 		typedef rde::pair<uint64_t, uint64_t> pair_t;
-		// rde::quick_sort(cchain.begin(), cchain.end());
-		auto& cchain = _cchain;
-
-		// cchain.quick_sort();
 		cchain.merge_sort();
 
-		iris::vector<pair_t> ret;
+		rde::vector<pair_t> ret;
 		for(size_t i = 0; i < cchain.size(); i++)
 		{
 			pair_t p = { cchain[i], 1 };
@@ -538,7 +528,7 @@ namespace Filesystems
 		uint64_t obuf = rbuf;
 
 
-		iris::vector<rde::pair<uint64_t, uint64_t>> clusterpairs = (vnd->clusterchain.size() == 0) ?
+		rde::vector<rde::pair<uint64_t, uint64_t>> clusterpairs = (vnd->clusterchain.size() == 0) ?
 				(vnd->clusterchain = ConsolidateClusterChain(vnd->clusters)) : vnd->clusterchain;
 
 		// for(auto p : clusterpairs)
