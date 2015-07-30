@@ -27,12 +27,12 @@ using namespace Library;
 
 
 #if Paranoid
-#define _assert(h, x)		do { if(!(x)) { Log("header %x failed (fields:\nmagic = %x\nsize =  %x\nowner = %x\nfootr = %x\n\nmagic = %x, headr = %x)", h, h->magic, h->size, h->owner, h->footer, h->footer ? h->footer->magic : 0, h->footer ? h->footer->header : 0); assert((x)); } } while(0)
+#define _assert(h, x)		do { if(!(x)) { Log("header %x failed (fields:\nmagic = %x\nsize =  %x\nownr1 = %x\nownr2 = %x\nfootr = %x\n\nmagic = %x, headr = %x)", h, h->magic, h->size, 0xFFFFFFFF00000000 | h->owner, 0xFFFFFFFF00000000 | h->owner1, h->footer, h->footer ? h->footer->magic : 0, h->footer ? h->footer->header : 0); assert((x)); } } while(0)
 #else
 #define _assert(h, x)
 #endif
 
-#define returnAddr()	((uint64_t) __builtin_return_address(0))
+#define returnAddr(x)	((uint64_t) __builtin_return_address(x))
 
 
 extern "C" void _sane(void* p);
@@ -49,7 +49,8 @@ namespace KernelHeap
 	{
 		uint64_t magic;
 		uint64_t size;
-		uint64_t owner;
+		uint32_t owner;
+		uint32_t owner1;
 		Footer* footer;
 	};
 
@@ -99,7 +100,7 @@ namespace KernelHeap
 	}
 
 	static void ExpandHeap(uint64_t numPages);
-	static Header* create(uint64_t addr, uint64_t size, uint64_t owner)
+	static Header* create(uint64_t addr, uint64_t size, uint64_t owner1, uint64_t owner2)
 	{
 		assert(addr > 0);
 		assert(size > 0);
@@ -109,7 +110,8 @@ namespace KernelHeap
 		memset(header, 0, sizeof(Header));
 
 		header->magic = HEADER_FREE;
-		header->owner = owner;
+		header->owner = (owner1 & 0xFFFFFFFF);
+		header->owner1 = (owner2 & 0xFFFFFFFF);
 		header->size = size;
 
 		Footer* footer = (Footer*) (addr + sizeof(Header) + size);
@@ -182,7 +184,7 @@ namespace KernelHeap
 		NumberOfChunksInHeap = 1;
 		SizeOfHeapInPages = 1;
 
-		FirstFreeHeader = create(KernelHeapAddress, 0x1000 - sizeof(Header) - sizeof(Footer), returnAddr());
+		FirstFreeHeader = create(KernelHeapAddress, 0x1000 - sizeof(Header) - sizeof(Footer), returnAddr(0), returnAddr(1));
 		DidInitialise = true;
 	}
 
@@ -208,7 +210,8 @@ namespace KernelHeap
 		else
 		{
 			// aww. create a new one.
-			create(KernelHeapAddress + (SizeOfHeapInPages * 0x1000), numPages * 0x1000 - sizeof(Header) - sizeof(Footer), returnAddr());
+			create(KernelHeapAddress + (SizeOfHeapInPages * 0x1000), numPages * 0x1000 - sizeof(Header) - sizeof(Footer), returnAddr(0),
+				returnAddr(1));
 		}
 
 		SizeOfHeapInPages += numPages;
@@ -292,13 +295,14 @@ namespace KernelHeap
 			// create new header + footer.
 			// Log("splitting. h: %x, h->size: %x, origSize: %x, (hd: %x, ft: %x)", h, h->size, origSize, sizeof(Header), sizeof(Footer));
 
-			create((uintptr_t) h + sizeof(Header) + h->size + sizeof(Footer), newSize, returnAddr());
+			create((uintptr_t) h + sizeof(Header) + h->size + sizeof(Footer), newSize, returnAddr(0), returnAddr(1));
 			// Log("new header: %x, %x", nh, nh->size);
 		}
 
 
 		h->magic = HEADER_USED;
-		h->owner = returnAddr();
+		h->owner = returnAddr(0) & 0xFFFFFFFF;
+		h->owner1 = returnAddr(1)  & 0xFFFFFFFF;
 
 		// Log("chunk %x goes to owner %x", h, h->owner);
 		return (void*) (h + 1);

@@ -72,9 +72,9 @@ namespace Filesystems
 	{
 	}
 
-	rde::vector<VFS::vnode*> FSDriverConsole::ReadDir(VFS::vnode*)
+	iris::vector<VFS::vnode*> FSDriverConsole::ReadDir(VFS::vnode*)
 	{
-		return rde::vector<VFS::vnode*>();
+		return iris::vector<VFS::vnode*>();
 	}
 }
 }

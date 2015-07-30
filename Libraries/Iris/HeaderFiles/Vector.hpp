@@ -34,6 +34,15 @@ namespace iris
 				self_type operator--() { self_type i = *this; ptr_--; return i; } // prefix
 				self_type operator--(int) { ptr_--; return *this; } // postfix
 
+				size_t operator-(self_type other)
+				{
+					size_t b = (this->ptr_ > other.ptr_) ? ((uintptr_t) this->ptr_ - (uintptr_t) other.ptr_)
+									: ((uintptr_t) other.ptr_ - (uintptr_t) this->ptr_);
+
+					return b / sizeof(T);
+				}
+
+
 				reference operator*() { return *ptr_; }
 				pointer operator->() { return ptr_; }
 				bool operator==(const self_type& rhs) { return ptr_ == rhs.ptr_; }
@@ -61,6 +70,15 @@ namespace iris
 				self_type operator--() { self_type i = *this; ptr_--; return i; } // prefix
 				self_type operator--(int) { ptr_--; return *this; } // postfix
 
+
+				size_t operator-(self_type other)
+				{
+					size_t b = (this->ptr_ > other.ptr_) ? ((uintptr_t) this->ptr_ - (uintptr_t) other.ptr_)
+									: ((uintptr_t) other.ptr_ - (uintptr_t) this->ptr_);
+
+					return b / sizeof(T);
+				}
+
 				const value_type& operator*() const { return *ptr_; }
 				const value_type* operator->() const { return ptr_; }
 				bool operator==(const self_type& rhs) { return ptr_ == rhs.ptr_; }
@@ -72,7 +90,7 @@ namespace iris
 
 
 		private:
-			void _sort(T* data, uint64_t low, uint64_t high)
+			void _quicksort(T* data, uint64_t low, uint64_t high)
 			{
 				while(true)
 				{
@@ -82,11 +100,11 @@ namespace iris
 					do
 					{
 						// Jump over elements that are OK (smaller than pivot)
-						while(data[i] < pivot /*pred(data[i], pivot)*/)
+						while(data[i] < pivot /* pred(data[i], pivot) */)
 							i++;
 
 						// Jump over elements that are OK (greater than pivot)
-						while(pivot < data[j] /*pred(pivot, data[j])*/)
+						while(pivot < data[j] /* pred(pivot, data[j]) */)
 							j--;
 
 						// Anything to swap?
@@ -107,8 +125,7 @@ namespace iris
 					while(i <= j);
 
 					if(low < j)
-						_sort(data, low, j);
-
+						_quicksort(data, low, j);
 
 
 					if(i < high)
@@ -119,6 +136,33 @@ namespace iris
 
 				}
 			}
+
+
+
+			vector _mergesort(vector& a, vector& b)
+			{
+				vector result;
+				size_t i = 0;
+				size_t j = 0;
+				while(i < a.size() && j < b.size())
+				{
+					if(a[i] <= b[j])
+						result.push_back(a[i++]);
+
+					else
+						result.push_back(b[j++]);
+				}
+
+				// Copy tail. Only one of these loops will execute per invocation
+				while(i < a.size())
+					result.push_back(a[i++]);
+
+				while(j < b.size())
+					result.push_back(b[j++]);
+
+				return result;
+			}
+
 
 
 		private:
@@ -138,7 +182,8 @@ namespace iris
 			void grow(size_t newSize)
 			{
 				assert(newSize > this->elements);
-				T* newArr = new T[newSize];
+				// T* newArr = new T[newSize];
+				T* newArr = (T*) new uint8_t[newSize * sizeof(T)];
 
 				this->doCopyConstruct(this->array, newArr, this->elements);
 
@@ -182,6 +227,12 @@ namespace iris
 						memcpy(this->array, other.array, this->elements);
 					}
 				}
+				else
+				{
+					this->_capacity = 0;
+					this->array = 0;
+					this->elements = 0;
+				}
 			}
 
 			vector() : vector(INITIAL_CAPACITY)
@@ -191,6 +242,20 @@ namespace iris
 			vector(vector& other) : vector((const vector&) other)
 			{
 
+			}
+
+			vector(iterator _start, iterator _end)
+			{
+				size_t required_cap = _end - _start;
+				this->_capacity = required_cap;
+				this->array = (T*) new uint8_t[this->_capacity * sizeof(T)];
+				this->elements = 0;
+
+
+				for(auto it = _start; it != _end; it++, this->elements++)
+				{
+					this->array[this->elements] = *it;
+				}
 			}
 
 			void clear()
@@ -300,10 +365,32 @@ namespace iris
 
 			void quick_sort()
 			{
-			// 	if(end - begin > 1)
-			// 		this->_sort(begin, 0, (uint64_t) (end - begin - 1));
-				this->_sort(this->array, 0, this->elements);
+				this->_quicksort(this->array, 0, this->elements);
 			}
+
+			void merge_sort()
+			{
+				// split in half.
+				if(this->elements <= 1)
+					return;
+
+				iterator middle = iterator(this->array + (this->elements / 2));
+				vector left(this->begin(), middle);
+				vector right(middle, this->end());
+
+				assert(left.size() + right.size() == this->size());
+				auto result = this->_mergesort(left, right);
+
+				*this = result;
+			}
+
+
+
+
+
+
+
+
 
 
 

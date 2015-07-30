@@ -82,7 +82,7 @@ namespace PIO
 			// check for error
 			if((stat & (1 << 0)) || (stat & (1 << 5)))
 			{
-				Log(1, "Error: ATA Drive ERR or DF bit set. Return addresses:");
+				Log(1, "Error: ATA Drive ERR or DF bit set. (cmd: sector %d, num = %d) Return addresses:", Sector, SecCount);
 
 				Log(1, "(0): %x", __builtin_return_address(0));
 				Log(1, "(1): %x", __builtin_return_address(1));

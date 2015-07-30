@@ -164,7 +164,7 @@ namespace Filesystems
 			virtual void Stat(VFS::vnode* node, struct stat* stat, bool statlink);
 
 			// returns a list of items inside the directory, as vnodes.
-			virtual rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node);
+			virtual iris::vector<VFS::vnode*> ReadDir(VFS::vnode* node);
 
 			virtual dev_t GetID() final { return this->fsid; }
 			virtual FSDriverType GetType() final { return this->_type; }

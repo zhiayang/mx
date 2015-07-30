@@ -133,6 +133,7 @@ namespace Physical
 			}
 			else
 			{
+				Log(1, "tried allocating %d pages, failed", size);
 				HALT("Out of physical pages");
 				return 0;
 			}

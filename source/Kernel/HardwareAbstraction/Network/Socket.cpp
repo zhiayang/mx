@@ -517,9 +517,9 @@ namespace Network
 
 	}
 
-	rde::vector<VFS::vnode*> SocketVFS::ReadDir(VFS::vnode*)
+	iris::vector<VFS::vnode*> SocketVFS::ReadDir(VFS::vnode*)
 	{
-		return rde::vector<VFS::vnode*>();
+		return iris::vector<VFS::vnode*>();
 	}
 }
 }
