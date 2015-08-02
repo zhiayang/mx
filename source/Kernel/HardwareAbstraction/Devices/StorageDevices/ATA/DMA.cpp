@@ -11,7 +11,6 @@
 
 #include <orion.h>
 
-using namespace Library::StandardIO;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
 
 namespace Kernel {

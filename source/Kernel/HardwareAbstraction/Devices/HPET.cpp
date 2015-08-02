@@ -58,7 +58,7 @@ namespace Devices
 		Log("Initialising HPET Device, base address %x", table->baseAddress.baseAddress);
 		Log("ACPI address type: %s, register width: %d bits, register offset: %d bits", table->baseAddress.isMemMapped ? "memory mapped" : "io memory", table->baseAddress.regBitWidth, table->baseAddress.regBitOffset);
 
-		Log("%d HPET timer%s present", table->compCount, table->compCount == 1 ? "" : "s");
+		Log("%d HPET timer%s present", (int) table->compCount, table->compCount == 1 ? "" : "s");
 
 		if(table->isLegacy)
 		{

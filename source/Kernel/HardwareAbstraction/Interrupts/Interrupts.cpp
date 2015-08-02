@@ -13,7 +13,6 @@
 
 using namespace Kernel;
 using namespace Library;
-using namespace StandardIO;
 using namespace Kernel::HardwareAbstraction::Devices;
 
 

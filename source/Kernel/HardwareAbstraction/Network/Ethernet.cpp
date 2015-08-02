@@ -6,7 +6,6 @@
 #include <HardwareAbstraction/Network.hpp>
 #include <StandardIO.hpp>
 
-using namespace Library::StandardIO;
 
 namespace Kernel {
 namespace HardwareAbstraction {

@@ -17,7 +17,7 @@ namespace IPC
 	using namespace Kernel::HardwareAbstraction::Multitasking;
 	void TerminateProcess(int sig)
 	{
-		Library::StandardIO::PrintFormatted("Terminated PID %d: Signal %d", GetCurrentProcess()->ProcessID, sig);
+		StdIO::PrintFmt("Terminated PID %d: Signal %d", GetCurrentProcess()->ProcessID, sig);
 		Kill(GetCurrentProcess());
 
 		while(true);

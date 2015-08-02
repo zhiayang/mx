@@ -5,7 +5,6 @@
 #include <Kernel.hpp>
 #include <StandardIO.hpp>
 using namespace Kernel::HardwareAbstraction::MemoryManager;
-using namespace Library::StandardIO;
 
 #define bswap16(x)						__builtin_bswap16(x)
 #define bswap32(x)						__builtin_bswap32(x)

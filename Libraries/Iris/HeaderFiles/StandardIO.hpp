@@ -5,26 +5,42 @@
 
 #pragma once
 
+#include <ctype.h>
 #include <stdint.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <string.h>
 
-namespace Library
+#include "../../acess2_stl/string.h"
+#include "Utility.hpp"
+
+#include "VariadicPrintf.hpp"
+
+namespace StdIO
 {
-	namespace StandardIO
-	{
-		uint64_t PrintString(const char* string, size_t length = (size_t) -1, void (*pf)(uint8_t) = 0);
-		void PrintGUID(uint64_t High64, uint64_t Low64);
+	void PrintFmt(void (*pf)(uint8_t), const char* str, ...);
+	void PrintFmt(const char* string, ...);
 
+	void PrintFmt(void (*pf)(uint8_t), const char* str, va_list);
+	void PrintFmt(const char* string, va_list);
 
-		void PrintFormatted(void (*pf)(uint8_t), const char* str, ...);
-		void PrintFormatted(const char* string, ...);
-
-		void PrintFormatted(void (*pf)(uint8_t), const char* str, va_list);
-		void PrintFormatted(const char* string, va_list);
-
-	}
+	size_t PrintStr(const char* s, size_t len);
+	size_t PrintStr(uint8_t* s, size_t len);
 }
+
+int _printf(const char* format, ...);
+int _vprintf(const char* format, va_list list);
+int _sprintf(char* str, const char* format, ...);
+int _vsprintf(char* str, const char* format, va_list ap);
+int _snprintf(char* str, size_t size, const char* format, ...);
+int _vsnprintf(char* str, size_t size, const char* format, va_list list);
+size_t _printf_callback(size_t (*callback)(void*, const char*, size_t), void* user, const char* format, ...);
+size_t _vprintf_callback(size_t (*callback)(void*, const char*, size_t), void* user, const char* format, va_list parameters);
+
+
+
+
+
 
 
 

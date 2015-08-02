@@ -25,7 +25,7 @@ namespace MBR
 		// verify the MBR signature: 0x55, 0xAA
 		// but since x86 is little-endian, it would really be 0xAA55
 		if(((uint16_t*) b)[255] != 0xAA55)
-			Library::StandardIO::PrintFormatted("\t\t\t- Invalid MBR signature! Expected [%x], got [%x] instead -- Check your disk.\n", 0xAA55, ((uint16_t*) b)[255]);
+			StdIO::PrintFmt("\t\t\t- Invalid MBR signature! Expected [0xAA55], got [%x] instead -- Check your disk.\n",	((uint16_t*) b)[255]);
 
 
 		// read the partition table at the 446'th byte

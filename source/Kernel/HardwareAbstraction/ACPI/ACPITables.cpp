@@ -10,7 +10,6 @@
 #include <HardwareAbstraction/Devices/APIC.hpp>
 
 using namespace Library;
-using namespace Library::StandardIO;
 
 namespace Kernel {
 namespace HardwareAbstraction {

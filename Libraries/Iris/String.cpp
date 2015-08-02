@@ -118,6 +118,11 @@ extern "C" int strcmp(const char* str1, const char* str2)
 	return String::Compare(str1, str2);
 }
 
+extern "C" int strncmp(const char* s1, const char* s2, size_t n)
+{
+	return Memory::Compare(s1, s2, n);
+}
+
 extern "C" char* strcat(char* dest, const char* src)
 {
 	strcpy(dest + strlen(dest), src);

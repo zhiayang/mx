@@ -7,7 +7,6 @@
 #include <StandardIO.hpp>
 #include <rdestl/hash_map.h>
 
-using namespace Library::StandardIO;
 using namespace Library;
 
 namespace Kernel {

@@ -73,7 +73,7 @@ namespace Storage
 			uint64_t index = Library::Utility::ReduceBinaryUnits(ata->GetSectors() * ata->GetSectorSize());
 			uint64_t mem = Library::Utility::GetReducedMemory(ata->GetSectors() * ata->GetSectorSize());
 
-			Library::StandardIO::PrintFormatted("\t-> %s Bus, %s Drive: [%d sectors, size: %d %s, %s]\n", !ata->GetBus() ? "Primary" : "Secondary", !ata->GetDrive() ? "Master" : "Slave", ata->GetSectors(), mem, Kernel::K_BinaryUnits[index], ata->GetIsGPT() ? "GPT Drive" : "MBR Drive");
+			StdIO::PrintFmt("\t-> %s Bus, %s Drive: [%d sectors, size: %d %s, %s]\n", !ata->GetBus() ? "Primary" : "Secondary", !ata->GetDrive() ? "Master" : "Slave", ata->GetSectors(), mem, Kernel::K_BinaryUnits[index], ata->GetIsGPT() ? "GPT Drive" : "MBR Drive");
 		}
 
 		void Initialise()
@@ -86,7 +86,7 @@ namespace Storage
 
 			if(devlist->size() == 0)
 			{
-				Library::StandardIO::PrintFormatted("ERROR: No IDE Controller found on the PCI bus, which is impossible.");
+				StdIO::PrintFmt("ERROR: No IDE Controller found on the PCI bus, which is impossible.");
 				UHALT();
 			}
 

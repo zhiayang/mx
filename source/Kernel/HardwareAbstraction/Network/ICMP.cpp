@@ -37,7 +37,7 @@
 // 		echo->basic.checksum = SwapEndian16(IP::CalculateIPChecksum((void*) packet, len));
 
 // 		// random id number (419)
-// 		// PrintFormatted("sent ICMP\n");
+// 		// PrintFmt("sent ICMP\n");
 // 		IP::SendIPv4Packet(interface, echo, len, 419, dest, IP::ProtocolType::ICMP);
 // 	}
 

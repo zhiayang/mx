@@ -17,14 +17,12 @@
 #include <Bootscreen.hpp>
 #include "../../.build.h"
 
-#include <acess2_stl/string.h>
-#include <SafePrintf.hpp>
 
 using namespace Kernel;
 using namespace Kernel::HardwareAbstraction;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
 using namespace Library;
-using namespace Library::StandardIO;
+using namespace StdIO;
 
 
 extern "C" uint64_t KernelEnd;
@@ -122,14 +120,14 @@ namespace Kernel
 		// Initalise various subsystems.
 		SerialPort::Initialise();			// most important.
 
-		Log("[mx] kernel has control");
-
 		// Read GRUB memory map and init memory managers
 		MemoryMap::Initialise(MBTStruct);
 		Virtual::Initialise();
 		Physical::Bootstrap();
 		KernelHeap::Initialise();
 
+
+		Log("[mx] kernel has control");
 		// copy kernel CR3 to somewhere sane-r
 		{
 			uint64_t oldcr3 = Virtual::GetRawCR3();
@@ -167,22 +165,22 @@ namespace Kernel
 		Kernel::KernelCPUID = CPUID::Initialise(Kernel::KernelCPUID);
 		if(!KernelCPUID->SSE3Instructions())
 		{
-			PrintFormatted("I don't know how you got this far.\n");
-			PrintFormatted("[mx] requires your CPU to support SSE3 instructions.\n");
+			StdIO::PrintFmt("I don't know how you got this far.\n");
+			StdIO::PrintFmt("[mx] requires your CPU to support SSE3 instructions.\n");
 			UHALT();
 		}
 		if(!KernelCPUID->OnboardAPIC())
 		{
-			PrintFormatted("[mx] requires your CPU to have an APIC chip.");
+			StdIO::PrintFmt("[mx] requires your CPU to have an APIC chip.");
 			UHALT();
 		}
 
 		// check if we have enough memory.
 		if(K_SystemMemoryInBytes < 0x02000000)
 		{
-			PrintFormatted("[mx] requires at least 64 Megabytes (67 108 864 bytes) of memory to operate.\n");
-			PrintFormatted("Only %d bytes of memory detected.\n", K_SystemMemoryInBytes);
-			PrintFormatted("Install more RAM, or increase the amount of memory in your Virtual Machine.");
+			StdIO::PrintFmt("[mx] requires at least 64 Megabytes (67 108 864 bytes) of memory to operate.\n");
+			StdIO::PrintFmt("Only %d bytes of memory detected.\n", K_SystemMemoryInBytes);
+			StdIO::PrintFmt("Install more RAM, or increase the amount of memory in your Virtual Machine.");
 			UHALT();
 		}
 
@@ -197,7 +195,7 @@ namespace Kernel
 		}
 
 
-		PrintFormatted("Loading [mx]...\n");
+		PrintFmt("Loading [mx]...\n");
 		Log("Initialising Kernel subsystem");
 	}
 
@@ -318,7 +316,7 @@ namespace Kernel
 			}
 		}
 
-		PrintFormatted("Initialising RTC...\n");
+		PrintFmt("Initialising RTC...\n");
 		Devices::RTC::Initialise(+8);
 		Log("RTC Initialised");
 
@@ -349,7 +347,7 @@ namespace Kernel
 				LFBBufferAddr = LFBAddr;
 
 				// Set video mode
-				PrintFormatted("\nInitialising Linear Framebuffer at %x...", LFBAddr);
+				PrintFmt("\nInitialising Linear Framebuffer at %x...", LFBAddr);
 				vd->SetMode(PrefResX, PrefResY, 32);
 				VideoOutput::LinearFramebuffer::Initialise();
 
@@ -453,14 +451,14 @@ namespace Kernel
 		#endif
 
 
-		PrintFormatted("[mx] has completed initialisation.\n");
+		PrintFmt("[mx] has completed initialisation.\n");
 		Log("Kernel init complete\n----------------------------\n");
 
 
 
 
 		// print((astl::string("POOOOP") + "%").c_str());
-		print("Hello, % number %x!", "world", 504);
+		PrintF("Hello, % number %x!", "world", 504);
 
 
 
@@ -493,7 +491,7 @@ namespace Kernel
 				memcpy(whole + cur, fl, read);
 				cur += read;
 
-				PrintFormatted("\r\t\t\t\t\t\t\t\t\t\t\t\r(%02.2f%%) %d, %d/%d", (((double) cur / (double) total) * 100.0),
+				PrintFmt("\r\t\t\t\t\t\t\t\t\t\t\t\r(%02.2f%%) %d, %d/%d", (((double) cur / (double) total) * 100.0),
 					read, cur, total);
 			}
 
@@ -524,7 +522,7 @@ namespace Kernel
 			fn.b3 = 222;
 			fn.b4 = 109;
 
-			PrintFormatted("irc.freenode.net is at %d.%d.%d.%d\n", fn.b1, fn.b2, fn.b3, fn.b4);
+			PrintFmt("irc.freenode.net is at %d.%d.%d.%d\n", fn.b1, fn.b2, fn.b3, fn.b4);
 
 			fd_t thesock = OpenSocket(SocketProtocol::TCP, 0);
 			ConnectSocket(thesock, fn, 6667);
@@ -541,7 +539,7 @@ namespace Kernel
 						size_t read = ReadSocket(aSock, output, 256);
 
 						output[(read == 256) ? (read - 1) : read] = 0;
-						PrintFormatted("%s", output);
+						PrintFmt("%s", output);
 					}
 				}
 			};
@@ -554,19 +552,19 @@ namespace Kernel
 
 			strncpy((char*) data, "NICK zhiayang|tcp\r\n", 256);
 			WriteSocket(thesock, data, strlen((char*) data));
-			PrintFormatted("> %s", data);
+			PrintFmt("> %s", data);
 
 			memset(data, 0, 256);
 			strncpy((char*) data, "USER zhiayang 8 * : zhiayang\r\n", 256);
 			WriteSocket(thesock, data, strlen((char*) data));
-			PrintFormatted("> %s", data);
+			PrintFmt("> %s", data);
 
 			SLEEP(15000);
 
 			memset(data, 0, 256);
 			strncpy((char*) data, "JOIN #learnprogramming\r\n", 256);
 			WriteSocket(thesock, data, strlen((char*) data));
-			PrintFormatted("> %s", data);
+			PrintFmt("> %s", data);
 
 
 			SLEEP(1000);
@@ -588,7 +586,7 @@ namespace Kernel
 					memset(data, 0, 256);
 					strncpy((char*) data, msgs[i], 256);
 					WriteSocket(thesock, data, strlen((char*) data));
-					PrintFormatted("> %s", data);
+					PrintFmt("> %s", data);
 
 					SLEEP(800);
 				}
@@ -601,7 +599,7 @@ namespace Kernel
 			memset(data, 0, 256);
 			strncpy((char*) data, "QUIT\r\n", 256);
 			WriteSocket(thesock, data, strlen((char*) data));
-			PrintFormatted("> %s", data);
+			PrintFmt("> %s", data);
 
 			SLEEP(500);
 			Kill(thr);
@@ -620,25 +618,25 @@ namespace Kernel
 			static Mutex* test = new Mutex;
 			auto func1 = []()
 			{
-				PrintFormatted("locking mutex\n");
+				PrintFmt("locking mutex\n");
 				LOCK(test);
 
-				PrintFormatted("sleeping for 2 seconds\n");
+				PrintFmt("sleeping for 2 seconds\n");
 				SLEEP(2000);
-				PrintFormatted("lock released\n");
+				PrintFmt("lock released\n");
 				UNLOCK(test);
 			};
 
 			auto func2 = []()
 			{
-				PrintFormatted("waiting for lock...");
+				PrintFmt("waiting for lock...");
 				SLEEP(500);
-				PrintFormatted("trying mutex\n");
+				PrintFmt("trying mutex\n");
 
 				while(!TryLockMutex(test))
-					PrintFormatted("x");
+					PrintFmt("x");
 
-				PrintFormatted("locked!\n");
+				PrintFmt("locked!\n");
 				UNLOCK(test);
 			};
 
@@ -701,7 +699,7 @@ namespace Kernel
 		Log("System Halted: %s, %s:%d, RA(0): %x, RA(1): %x, RA(2): %x, RA(3): %x", message, filename, line,
 			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(0), __builtin_return_address(0));
 
-		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
+		PrintFmt("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 
 
 		UHALT();
@@ -712,7 +710,7 @@ namespace Kernel
 		Log("System Halted: %s, %s:%s, RA(0): %x, RA(1): %x, RA(2): %x, RA(3): %x", message, filename, line,
 			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2), __builtin_return_address(3));
 
-		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %s (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
+		PrintFmt("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %s (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 
 		UHALT();
 	}

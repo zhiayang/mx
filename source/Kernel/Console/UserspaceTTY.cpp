@@ -160,8 +160,8 @@ namespace TTY
 					Memory::Copy(tempout, tty->buffer.data(), bc);
 					tty->buffer.clear();
 
-					total += Library::StandardIO::PrintString((const char*) tempout, bc);
-					total += Library::StandardIO::PrintString("\n", 1);
+					total += StdIO::PrintStr((const char*) tempout, bc);
+					total += StdIO::PrintStr("\n", 1);
 
 					delete[] tempout;
 				}
@@ -180,13 +180,13 @@ namespace TTY
 
 			if(tty->buffer.size() >= tty->buffersize)
 			{
-				Library::StandardIO::PrintString((const char*) tty->buffer.data(), tty->buffer.size());
+				StdIO::PrintStr((const char*) tty->buffer.data(), tty->buffer.size());
 				tty->buffer.clear();
 			}
 		}
 		else
 		{
-			return Library::StandardIO::PrintString((const char*) buf, length);
+			return StdIO::PrintStr((const char*) buf, length);
 		}
 
 		return length;
@@ -201,7 +201,7 @@ namespace TTY
 		Memory::Copy(tempout, tty->buffer.data(), bc);
 		tty->buffer.clear();
 
-		Library::StandardIO::PrintString((const char*) tempout, bc);
+		StdIO::PrintStr((const char*) tempout, bc);
 		delete[] tempout;
 	}
 

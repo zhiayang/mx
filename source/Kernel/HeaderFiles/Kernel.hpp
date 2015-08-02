@@ -23,6 +23,7 @@
 #include "HardwareAbstraction/Random.hpp"
 #include "HardwareAbstraction/Devices/NIC.hpp"
 
+#include "Log.hpp"
 #include "JobDispatcher.hpp"
 #include <assert.h>
 

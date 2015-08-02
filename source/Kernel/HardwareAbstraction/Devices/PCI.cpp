@@ -371,7 +371,7 @@ namespace PCI
 
 	void PCIDevice::PrintPCIDeviceInfo()
 	{
-		Library::StandardIO::PrintFormatted("\t%s=> /dev/pci%d%s%s > %d:%d, v:%#04x, d:%#04x, c:%#02x:%#02x h:%#02x int:%02d", (this->GetFunction() > 0) ? "\t" : "",	(this->GetBus() * 32 + this->GetSlot()), (this->GetFunction() > 0 ? "f" : ""), (this->GetFunction() > 0 ? (Library::Utility::ConvertToString(this->GetFunction())) : ((char*)"")), this->GetBus(), this->GetSlot(), this->GetVendorID(), this->GetDeviceID(), this->GetClass(), this->GetSubclass(), this->GetHeaderType(), this->GetRegisterData(0x3C, 0, 1));
+		StdIO::PrintFmt("\t%s=> /dev/pci%d%s%s > %d:%d, v:%#04x, d:%#04x, c:%#02x:%#02x h:%#02x int:%02d", (this->GetFunction() > 0) ? "\t" : "",	(this->GetBus() * 32 + this->GetSlot()), (this->GetFunction() > 0 ? "f" : ""), (this->GetFunction() > 0 ? (Library::Utility::ConvertToString(this->GetFunction())) : ((char*)"")), this->GetBus(), this->GetSlot(), this->GetVendorID(), this->GetDeviceID(), this->GetClass(), this->GetSubclass(), this->GetHeaderType(), this->GetRegisterData(0x3C, 0, 1));
 	}
 
 

@@ -570,8 +570,6 @@ namespace Filesystems
 				rbuf += (toread * spc * 512);
 				have += toread;
 
-				StandardIO::PrintFormatted("\r                               \r%8d bytes read", rbuf - obuf);
-
 			}
 
 			// exit condition

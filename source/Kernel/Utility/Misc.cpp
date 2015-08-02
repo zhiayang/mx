@@ -6,7 +6,6 @@
 #include <HardwareAbstraction/Devices/SerialPort.hpp>
 #include <StandardIO.hpp>
 
-using namespace Library::StandardIO;
 using namespace Library;
 
 namespace Kernel
@@ -27,13 +26,13 @@ namespace Kernel
 			for(uint64_t i = 0; i < length; i++)
 			{
 				// if((i % 16) == 0)
-				// 	PrintFormatted(appendToString, "\n%x:  ", address + i);
+				// 	PrintFmt(appendToString, "\n%x:  ", address + i);
 
 				if((i % 16) == 0)
-					PrintFormatted(appendToString, "\n");
+					StdIO::PrintFmt(appendToString, "\n");
 
 
-				PrintFormatted(appendToString, "%#02x ", *((uint8_t*)(address + i)));
+				StdIO::PrintFmt(appendToString, "%#02x ", *((uint8_t*)(address + i)));
 
 				HardwareAbstraction::Devices::SerialPort::WriteString(str->c_str());
 				str->clear();

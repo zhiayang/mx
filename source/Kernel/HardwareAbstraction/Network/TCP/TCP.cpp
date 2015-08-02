@@ -7,7 +7,6 @@
 #include <HardwareAbstraction/Devices.hpp>
 #include <StandardIO.hpp>
 
-using namespace Library::StandardIO;
 using namespace Library;
 
 // in ms

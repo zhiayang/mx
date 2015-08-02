@@ -5,11 +5,6 @@
 #include "int_to_type.h"
 // #include <new>
 
-namespace Kernel
-{
-	void Log(uint8_t level, const char* str, ...);
-	void Log(const char* str, ...);
-}
 
 void operator delete(void* p) _GLIBCXX_USE_NOEXCEPT;
 void operator delete[](void* p) _GLIBCXX_USE_NOEXCEPT;

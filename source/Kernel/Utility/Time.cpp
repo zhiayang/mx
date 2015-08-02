@@ -8,8 +8,6 @@
 #include <HardwareAbstraction/Devices/IOPort.hpp>
 #include <StandardIO.hpp>
 
-using namespace Library::StandardIO;
-
 namespace Kernel {
 namespace Time
 {
@@ -402,11 +400,11 @@ namespace Time
 				PrintString(spaces.c_str());
 				Console::MoveCursor(xpos, 0);
 
-				PrintFormatted("%s[ %d.%02d %s ", Kernel::SystemTime->Hour12F < 10 ? " " : "", Kernel::SystemTime->Hour12F + Kernel::SystemTime->UTCOffset, Kernel::SystemTime->Minute, IsAM() ? "am" : "pm");
+				PrintFmt("%s[ %d.%02d %s ", Kernel::SystemTime->Hour12F < 10 ? " " : "", Kernel::SystemTime->Hour12F + Kernel::SystemTime->UTCOffset, Kernel::SystemTime->Minute, IsAM() ? "am" : "pm");
 
 				if(PrintSeconds)
 				{
-					PrintFormatted("%02ds ]", Kernel::SystemTime->Second);
+					PrintFmt("%02ds ]", Kernel::SystemTime->Second);
 				}
 				else
 				{

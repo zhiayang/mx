@@ -20,7 +20,7 @@ namespace LoadBinary
 	// 	// display 28 bytes of the header.
 	// 	// for(int i = 0; i < 28; i++)
 	// 	{
-	// 		StandardIO::PrintFormatted("%#08x ", ((uint32_t*) this->buf)[0]);
+	// 		StandardIO::PrintFmt("%#08x ", ((uint32_t*) this->buf)[0]);
 	// 	}
 	// }
 

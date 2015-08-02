@@ -13,7 +13,6 @@
 
 using namespace Kernel;
 using namespace Library;
-using namespace StandardIO;
 using namespace Kernel::HardwareAbstraction::Devices;
 
 
@@ -310,20 +309,20 @@ namespace Interrupts
 
 	void PrintRegisterDump(RegisterStruct_type* r)
 	{
-		PrintFormatted("%wRegisters:\n");
+		StdIO::PrintFmt("%wRegisters:\n");
 
 
-		PrintFormatted("rax:\t%#16.8x\trbx:\t%#16.8x\n", r->rax, r->rbx);
-		PrintFormatted("rcx:\t%#16.8x\trdx:\t%#16.8x\n", r->rcx, r->rdx);
-		PrintFormatted("r08:\t%#16.8x\tr09:\t%#16.8x\n", r->r8, r->r9);
-		PrintFormatted("r10:\t%#16.8x\tr11:\t%#16.8x\n", r->r10, r->r11);
-		PrintFormatted("r12:\t%#16.8x\tr13:\t%#16.8x\n", r->r12, r->r13);
-		PrintFormatted("r14:\t%#16.8x\tr15:\t%#16.8x\n", r->r14, r->r15);
-		PrintFormatted("rdi:\t%#16.8x\trsi:\t%#16.8x\n", r->rdi, r->rsi);
-		PrintFormatted("rbp:\t%#16.8x\trsp:\t%#16.8x\n", r->rbp, r->rsp);
-		PrintFormatted("rip:\t%#16.8x\tcs: \t%#16.8x\n", r->rip, r->cs);
-		PrintFormatted("ss: \t%#16.8x\tu-rsp:\t%#16.8x\n", r->ss, r->useresp);
-		PrintFormatted("rflags:\t%#16.8x\tcr2:\t%#16.8x\n", r->rflags, r->cr2);
+		StdIO::PrintFmt("rax:\t%#16.8x\trbx:\t%#16.8x\n", r->rax, r->rbx);
+		StdIO::PrintFmt("rcx:\t%#16.8x\trdx:\t%#16.8x\n", r->rcx, r->rdx);
+		StdIO::PrintFmt("r08:\t%#16.8x\tr09:\t%#16.8x\n", r->r8, r->r9);
+		StdIO::PrintFmt("r10:\t%#16.8x\tr11:\t%#16.8x\n", r->r10, r->r11);
+		StdIO::PrintFmt("r12:\t%#16.8x\tr13:\t%#16.8x\n", r->r12, r->r13);
+		StdIO::PrintFmt("r14:\t%#16.8x\tr15:\t%#16.8x\n", r->r14, r->r15);
+		StdIO::PrintFmt("rdi:\t%#16.8x\trsi:\t%#16.8x\n", r->rdi, r->rsi);
+		StdIO::PrintFmt("rbp:\t%#16.8x\trsp:\t%#16.8x\n", r->rbp, r->rsp);
+		StdIO::PrintFmt("rip:\t%#16.8x\tcs: \t%#16.8x\n", r->rip, r->cs);
+		StdIO::PrintFmt("ss: \t%#16.8x\tu-rsp:\t%#16.8x\n", r->ss, r->useresp);
+		StdIO::PrintFmt("rflags:\t%#16.8x\tcr2:\t%#16.8x\n", r->rflags, r->cr2);
 	}
 
 
@@ -398,11 +397,11 @@ namespace Interrupts
 		}
 
 
-		PrintFormatted("\n\n\nCPU Exception: %s; Error Code: %x", ExceptionMessages[r->InterruptID], r->ErrorCode);
-		PrintFormatted("\n[mx] has met an unresolvable error, and will now halt.\n");
+		StdIO::PrintFmt("\n\n\nCPU Exception: %s; Error Code: %x", ExceptionMessages[r->InterruptID], r->ErrorCode);
+		StdIO::PrintFmt("\n[mx] has met an unresolvable error, and will now halt.\n");
 
 
-		PrintFormatted("Debug Information:\n\n");
+		StdIO::PrintFmt("Debug Information:\n\n");
 
 		if(r->InterruptID == 14)
 		{
@@ -414,29 +413,28 @@ namespace Interrupts
 			uint8_t PageInstructionFetch	= r->ErrorCode & 0x10;		// Caused by an instruction fetch?
 
 
-			PrintFormatted("Page Fault Error Codes:\n");
-			PrintFormatted("\tCR2: %x, CR3: %x\n", cr2, cr3);
+			StdIO::PrintFmt("Page Fault Error Codes:\n");
+			StdIO::PrintFmt("\tCR2: %x, CR3: %x\n", cr2, cr3);
 
 
 			if(PageNotPresent)
-				PrintFormatted("\tPage not present\n");
+				StdIO::PrintFmt("\tPage not present\n");
 
 			if(PageAccess)
-				PrintFormatted("\tWriting to read-only page\n");
+				StdIO::PrintFmt("\tWriting to read-only page\n");
 
 			if(PageSupervisor)
-				PrintFormatted("\tAccessing Supervisor page from User Mode\n");
+				StdIO::PrintFmt("\tAccessing Supervisor page from User Mode\n");
 
 			if(PageReservedBits)
-				PrintFormatted("\tOverwritten reserved bits\n");
+				StdIO::PrintFmt("\tOverwritten reserved bits\n");
 
 			if(PageInstructionFetch)
-				PrintFormatted("\tPF Caused by instruction fetch\n");
+				StdIO::PrintFmt("\tPF Caused by instruction fetch\n");
 		}
 
 
-
-		PrintFormatted("\n");
+		StdIO::PrintFmt("\n");
 		UHALT();
 	}
 }
