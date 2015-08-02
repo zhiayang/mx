@@ -31,9 +31,9 @@ WARNINGS			= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-
 GWARNINGS			= -Wno-padded -Wno-cast-align -Wno-unreachable-code -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-old-style-cast -Wno-unused-macros -Wno-unknown-pragmas -Wno-attributes
 
 
-CXXFLAGS			= -m64 -g -Weverything -msse3 -integrated-as -O2 -fno-omit-frame-pointer -fno-strict-aliasing -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -mcmodel=kernel -c
+CXXFLAGS			= -m64 -g -Weverything -msse3 -integrated-as -O2 -fno-omit-frame-pointer -fno-strict-aliasing -std=gnu++14 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -mcmodel=kernel -c
 
-GXXFLAGS			= -m64 -g -Wall -msse3 -O2 -fno-omit-frame-pointer -fno-strict-aliasing -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -mcmodel=kernel -c
+GXXFLAGS			= -m64 -g -Wall -msse3 -O2 -fno-omit-frame-pointer -fno-strict-aliasing -std=gnu++14 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -mcmodel=kernel -c
 
 
 LDFLAGS				= --gc-sections -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib
@@ -59,7 +59,7 @@ NUMFILES			= $$(($(words $(CXXSRC)) + $(words $(SSRC))))
 
 
 
-LIBRARIES			= -liris -lrdestl
+LIBRARIES			= -liris -lrdestl -lacess2_stl
 OUTPUT				= build/kernel64.elf
 
 

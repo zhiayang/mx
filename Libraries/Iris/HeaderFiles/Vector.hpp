@@ -13,7 +13,7 @@
 
 namespace iris
 {
-	template<typename T>
+	template <typename T>
 	class vector
 	{
 		class iterator

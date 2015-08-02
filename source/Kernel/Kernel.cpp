@@ -17,6 +17,9 @@
 #include <Bootscreen.hpp>
 #include "../../.build.h"
 
+#include <acess2_stl/string.h>
+#include <SafePrintf.hpp>
+
 using namespace Kernel;
 using namespace Kernel::HardwareAbstraction;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
@@ -454,6 +457,13 @@ namespace Kernel
 		Log("Kernel init complete\n----------------------------\n");
 
 
+
+
+		// print((astl::string("POOOOP") + "%").c_str());
+		print("Hello, % number %x!", "world", 504);
+
+
+
 		#if TEST_LARGE_FILE_READ
 		{
 			using namespace Filesystems;
@@ -689,7 +699,7 @@ namespace Kernel
 	void HaltSystem(const char* message, const char* filename, uint64_t line, const char* reason)
 	{
 		Log("System Halted: %s, %s:%d, RA(0): %x, RA(1): %x, RA(2): %x, RA(3): %x", message, filename, line,
-			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2), __builtin_return_address(3));
+			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(0), __builtin_return_address(0));
 
 		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 

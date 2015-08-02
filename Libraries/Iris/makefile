@@ -5,9 +5,12 @@
 
 
 CXXFLAGS	= -g -Wall -O2 -fPIC -std=gnu++11 -mno-red-zone -fno-exceptions -fno-rtti -I../../source/Kernel/HeaderFiles -c
-CXXSRC	= $(shell find . -name "*.cpp")
-CXXHDR	= $(shell find . -name "*.hpp")
-CXXOBJ	:= $(CXXSRC:.cpp=.o)
+CXXSRC		= $(shell find . -name "*.cpp")
+CXXHDR		= $(shell find . -name "*.hpp")
+CXXOBJ		= $(CXXSRC:.cpp=.o)
+
+CXXDEPS		= $(CXXOBJ:.o=.cpp.d)
+-include	$(CXXDEPS)
 
 
 .PHONY: all
@@ -20,7 +23,7 @@ $(SYSROOT)/usr/lib/libiris.a: $(CXXOBJ)
 	@echo libiris.a
 
 %.o: %.cpp
-	@$(CXX) $(CXXFLAGS) -o $@ $<
+	@$(CXX) $(CXXFLAGS) -MMD -MP -o $@ $<
 
 
 

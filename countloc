@@ -1,2 +1,2 @@
 #!/bin/bash
-cloc --exclude-ext=d source Libraries
+cloc --exclude-ext=d,o source Libraries

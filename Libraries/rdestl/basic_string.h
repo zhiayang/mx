@@ -134,6 +134,18 @@ public:
 		return *this;
 	}
 
+	basic_string& operator+=(const char* rhs)
+	{
+		append(rhs);
+		return *this;
+	}
+
+	basic_string& operator+=(char rhs)
+	{
+		append(rhs);
+		return *this;
+	}
+
 	int compare(const value_type* str) const
 	{
 		const size_type thisLen = length();
