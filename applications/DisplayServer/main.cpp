@@ -62,37 +62,37 @@ int main(int argc, char** argv)
 
 	printf("Display server online\n");
 	printf("Forking process...\n");
-	int res = fork();
+	// int res = fork();
 
-	if(res == 0)
-	{
-		do_child();
-		exit(0);
-	}
-	else
-	{
-		printf("parent: child proc has pid %d, continuing\n", res);
-	}
+	// if(res == 0)
+	// {
+	// 	do_child();
+	// 	exit(0);
+	// }
+	// else
+	// {
+	// 	printf("parent: child proc has pid %d, continuing\n", res);
+	// }
 
-	printf("opening shit\n");
-	{
-		int s = socket(AF_UNIX, SOCK_DGRAM, 0);
-		struct sockaddr_un addr;
+	// printf("opening shit\n");
+	// {
+	// 	int s = socket(AF_UNIX, SOCK_DGRAM, 0);
+	// 	struct sockaddr_un addr;
 
-		addr.sun_family = AF_UNIX;
+	// 	addr.sun_family = AF_UNIX;
 
-		strcpy(addr.sun_path, "/some/socket");
-		bind(s, (struct sockaddr*) &addr, sizeof(addr));
+	// 	strcpy(addr.sun_path, "/some/socket");
+	// 	bind(s, (struct sockaddr*) &addr, sizeof(addr));
 
 
-		const char* msg = "HELLO, WORLD!\n";
-		write(s, msg, strlen(msg) + 1);
+	// 	const char* msg = "HELLO, WORLD!\n";
+	// 	write(s, msg, strlen(msg) + 1);
 
-		usleep(1500000);
+	// 	usleep(1500000);
 
-		printf("closing\n");
-		close(s);
-	}
+	// 	printf("closing\n");
+	// 	close(s);
+	// }
 
 
 

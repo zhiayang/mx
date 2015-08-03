@@ -130,15 +130,23 @@ namespace StdIO
 					// if we have a '.' now, parse precision.
 					if(*fmt == '.')
 					{
-						// eat the '.'
-						fmt++; i++;
+						if(!isdigit(*(fmt + 1)))
+						{
+							// oops, we actually just wanted to print a period.
+							// don't do anything.
+						}
+						else
+						{
+							// eat the '.'
+							fmt++; i++;
 
-						astl::string tmp;
-						while(*fmt >= '0' && *fmt <= '9')
-							tmp += *fmt++, i++;
+							astl::string tmp;
+							while(*fmt >= '0' && *fmt <= '9')
+								tmp += *fmt++, i++;
 
-						if(tmp.length() > 0)
-							precs = (uint8_t) Library::Utility::ParseInteger(tmp.c_str(), 0, 10);
+							if(tmp.length() > 0)
+								precs = (uint8_t) Library::Utility::ParseInteger(tmp.c_str(), 0, 10);
+						}
 					}
 
 					// handle the "special" formatters:
@@ -147,6 +155,10 @@ namespace StdIO
 					if(tolower(*fmt) == 'x' || tolower(*fmt) == 'p')
 					{
 						flags |= __FLAG_PRINT_HEX;
+
+						if(tolower(*fmt) == 'p')
+							flags |= __FLAG_ALT_FORM;
+
 						fmt++; i++;
 
 						if(isupper(*fmt)) flags |= __FLAG_PRINT_CAPS;
@@ -198,6 +210,8 @@ namespace StdIO
 
 		return ret;
 	}
+
+	void PrintF(const char* fmt);
 
 	template <typename T, typename... Args>
 	void PrintF(const char* fmt, T&& head, Args&&... rest)

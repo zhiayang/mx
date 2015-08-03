@@ -27,7 +27,7 @@ using namespace Library;
 
 
 #if Paranoid
-#define _assert(h, x)		do { if(!(x)) { Log("header %x failed (fields:\nmagic = %x\nsize =  %x\nownr1 = %x\nownr2 = %x\nfootr = %x\n\nmagic = %x, headr = %x)", h, h->magic, h->size, 0xFFFFFFFF00000000 | h->owner, 0xFFFFFFFF00000000 | h->owner1, h->footer, h->footer ? h->footer->magic : 0, h->footer ? h->footer->header : 0); assert((x)); } } while(0)
+#define _assert(h, x)		do { if(!(x)) { Log("header %lx failed (fields:\nmagic = %lx\nsize =  %x\nownr1 = %lx\nownr2 = %lx\nfootr = %lx\n\nmagic = %lx, headr = %lx)", h, h->magic, h->size, 0xFFFFFFFF00000000 | h->owner, 0xFFFFFFFF00000000 | h->owner1, h->footer, h->footer ? h->footer->magic : 0, h->footer ? h->footer->header : 0); assert((x)); } } while(0)
 #else
 #define _assert(h, x)
 #endif
@@ -410,7 +410,10 @@ namespace KernelHeap
 		sane(hdr);
 
 		// make sure it's actually used.
-		_assert(hdr, !isFree(hdr));
+		// todo: investigate a curious double-free bug that happens when we terminate
+		// a process from userspace.
+
+		// _assert(hdr, !isFree(hdr));
 
 		// set it to free.
 		hdr->magic = HEADER_FREE;
@@ -471,7 +474,8 @@ namespace KernelHeap
 
 		do
 		{
-			Log("Chunk %x, size %x, %s", (uintptr_t) hdr - KernelHeapAddress, hdr->size, isFree(hdr) ? "free" : "used");
+			Log("Chunk %0.5x, data %0.5x, size %x, %s", (uintptr_t) hdr - KernelHeapAddress,
+				(uintptr_t) hdr - KernelHeapAddress + sizeof(Header), hdr->size, isFree(hdr) ? "free" : "used");
 
 		} while((hdr = next(hdr)) != 0);
 	}

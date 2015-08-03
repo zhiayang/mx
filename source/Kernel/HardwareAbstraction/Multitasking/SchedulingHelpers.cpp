@@ -97,40 +97,6 @@ namespace Multitasking
 	}
 
 
-
-
-	void Cleanup(Thread* t)
-	{
-		// delete all the thread's resources.
-		assert(t);
-
-		if(t->CrashState)		delete t->CrashState;
-
-		delete t;
-	}
-
-	void Cleanup(Process* p)
-	{
-		// todo: close all file handles
-		// todo: delete ioctx
-
-		assert(p);
-		assert(p->Threads.size() == 0);
-
-
-		// close all files
-		Filesystems::CloseAll(p);
-
-
-		// destroy its address space
-		// assert(p->VAS);
-		// MemoryManager::Virtual::ChangeAddressSpace(p->VAS->PML4);
-		MemoryManager::Virtual::DestroyVAS(&p->VAS);
-		Log("Cleaned up process %s", p->Name);
-
-		delete p;
-	}
-
 	void SetThreadErrno(int errno)
 	{
 		// set here in case we get switched
@@ -233,6 +199,9 @@ namespace Multitasking
 
 
 
+
+
+
 	void AddToQueue(Process* Proc)
 	{
 		ProcessList->push_back(Proc);
@@ -270,6 +239,49 @@ namespace Multitasking
 		YieldCPU();
 
 		while(true);
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	void Cleanup(Thread* t)
+	{
+		// delete all the thread's resources.
+		assert(t);
+
+		if(t->CrashState)		delete t->CrashState;
+
+		delete t;
+	}
+
+	void Cleanup(Process* p)
+	{
+		// todo: close all file handles
+		// todo: delete ioctx
+
+		assert(p);
+		assert(p->Threads.size() == 0);
+
+		// close all files
+		Filesystems::CloseAll(p);
+
+
+		// destroy its address space
+		MemoryManager::Virtual::DestroyVAS(&p->VAS);
+		Log("Cleaned up process %s", p->Name);
+
+		delete p;
 	}
 
 
@@ -320,10 +332,15 @@ namespace Multitasking
 			GetThreadList(p)->remove(p);
 			SleepList->push_back(p);
 
-			getRunQueue()->unlock();
 
 			if(!(par->Flags & FLAG_DYING) && par->Threads.empty())
+			{
+				Log("Killed all threads of process %s, cleaning up", par->Name);
 				Cleanup(par);
+			}
+
+			getRunQueue()->unlock();
+
 
 			// wake up the watching threads.
 			for(size_t i = 0, s = p->watchers.size(); i < s; i++)
@@ -371,14 +388,16 @@ namespace Multitasking
 	void Kill(Process* p)
 	{
 		assert(p);
-		Log("Killing %d thread%s of process %s", p->Threads.size(), p->Threads.size() == 1 ? "" : "s", p->Name);
+		Log("Killing process %s, disposing of %d thread%s", p->Name, p->Threads.size(), p->Threads.size() == 1 ? "" : "s");
 
 		// in the process of dying.
-		p->Flags |= FLAG_DYING;
+		// p->Flags |= FLAG_DYING;
+
+		// the flag stops Kill(thread) from calling Cleanup() on the parent process.
 		for(auto t : p->Threads)
 			Kill(t);
 
-		Cleanup(p);
+		// Cleanup(p);
 	}
 
 
@@ -392,12 +411,6 @@ namespace Multitasking
 
 	Process* GetProcess(pid_t pid)
 	{
-		// for(uint64_t i = 0; i < ProcessList->size(); i++)
-		// {
-		// 	if(ProcessList->get(i)->ProcessID == pid)
-		// 		return ProcessList->get(i);
-		// }
-
 		for(auto p : *ProcessList)
 		{
 			if(p->ProcessID == pid)

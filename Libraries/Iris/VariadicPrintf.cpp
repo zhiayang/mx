@@ -15,7 +15,7 @@ namespace StdIO
 	static astl::string _getfmt(uint16_t flags, uint8_t width, uint8_t prec)
 	{
 		astl::string ret;
-		if(flags & __FLAG_LEFT_ALIGN)		ret += "-";
+		if(flags & __FLAG_LEFT_ALIGN)	ret += "-";
 		if(flags & __FLAG_PREPEND_SIGN)	ret += "+";
 		if(flags & __FLAG_PREPEND_ZERO)	ret += "0";
 		if(flags & __FLAG_ALT_FORM)		ret += "#";
@@ -43,12 +43,12 @@ namespace StdIO
 	{
 		if(f & __FLAG_PRINT_CAPS)
 		{
-			if(f & __FLAG_PRINT_HEX)		return "X";
+			if(f & __FLAG_PRINT_HEX)	return "X";
 			else						return (u ? "u" : "d");
 		}
 		else
 		{
-			if(f & __FLAG_PRINT_HEX)		return "x";
+			if(f & __FLAG_PRINT_HEX)	return "x";
 			else						return (u ? "u" : "d");
 		}
 	}
@@ -58,8 +58,8 @@ namespace StdIO
 		if(f & __FLAG_PRINT_CAPS)
 		{
 			if(f & __FLAG_PRINT_DOUBLE)	return "F";
-			if(f & __FLAG_PRINT_EXP)		return "E";
-			if(f & __FLAG_PRINT_FLTG)		return "G";
+			if(f & __FLAG_PRINT_EXP)	return "E";
+			if(f & __FLAG_PRINT_FLTG)	return "G";
 			if(f & __FLAG_PRINT_0X_HEX)	return "A";
 
 			assert(0);
@@ -298,6 +298,10 @@ namespace StdIO
 
 
 
+	void PrintF(const char* fmt)
+	{
+		PrintFmt(fmt);
+	}
 
 	astl::string Format(const char* fmt)
 	{

@@ -202,7 +202,7 @@ size_t _vprintf_callback(size_t (*callback)(void*, const char*, size_t), void* u
 			{
 				value = (uint64_t) va_arg(parameters, void*);
 				conversion = 'x';
-				alternate = !alternate;
+				alternate = false;
 				prepend_blank_if_positive = false;
 				prepend_plus_if_positive = false;
 			}
@@ -288,7 +288,7 @@ size_t _vprintf_callback(size_t (*callback)(void*, const char*, size_t), void* u
 				prefix[prefix_length++] = ' ';
 
 			// and here.
-			if(!alternate /* (used to be if(alternate ...) */ && (conversion == 'x' || conversion == 'X') && value != 0)
+			if(!alternate /* (used to be if(alternate ...) */ && (conversion == 'x' || conversion == 'X' || conversion == 'p') && value != 0)
 			{
 				prefix[prefix_digits_length++, prefix_length++] = '0';
 				prefix[prefix_digits_length++, prefix_length++] = conversion;

@@ -202,6 +202,7 @@ cleandisk:
 cleanall: cleandisk clean
 	@echo "# Cleaning directory tree"
 	@find Libraries -name "*.o" | xargs rm -f
+	@find Libraries -name "*.cpp.d" | xargs rm -f
 	@find Libraries -name "*.a" | xargs rm -f
 	@find applications -name "*.o" | xargs rm -f
 

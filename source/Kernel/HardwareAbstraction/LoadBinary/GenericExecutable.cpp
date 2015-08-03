@@ -45,7 +45,8 @@ namespace LoadBinary
 		if(buf[0] == ELF_MAGIC0 && buf[1] == ELF_MAGIC1 && buf[2] == ELF_MAGIC2 && buf[3] == ELF_MAGIC3)
 		{
 			ELFExecutable* elf = new ELFExecutable(buf);
-			proc = Multitasking::CreateProcess(procname, FLAG_USERSPACE, elf->GetTLSSize(), (void(*)()) elf->GetEntryPoint(), 1, a1, a2, a3, a4, a5, a6);
+			proc = Multitasking::CreateProcess(procname, FLAG_USERSPACE, elf->GetTLSSize(),(void(*)()) elf->GetEntryPoint(),
+				1, a1, a2, a3, a4, a5, a6);
 
 			elf->Load(proc);
 
@@ -53,7 +54,7 @@ namespace LoadBinary
 		}
 		else
 		{
-			HALT("enosup");
+			HALT("enotsup");
 		}
 
 		delete[] buf;

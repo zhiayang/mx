@@ -98,6 +98,7 @@ namespace HardwareAbstraction
 		#define STATE_NORMAL		1
 		#define STATE_AWAITDEATH	2
 		#define STATE_BLOCKING		3
+
 		#define STATE_DEAD			255
 
 		#define BLOCK_MESSAGE		0
