@@ -44,11 +44,26 @@ namespace Multitasking
 		*((int64_t*) 0x2610) = 0;
 	}
 
-	Process* GetCurrentProcess()		{ return CurrentThread ? CurrentThread->Parent : Kernel::KernelProcess; }
-	Thread* GetCurrentThread()			{ return CurrentThread; }
+
+
+	// static void* getsp()
+	// {
+	// 	void* sp = 0;
+	// 	asm volatile("movq %%rsp, %0" : "=r"(sp) : /* No input */ : /* no clobbered */);
+
+	// 	return sp;
+	// }
+
+
+
+
+
+
+	Process* GetCurrentProcess()	{ return CurrentThread ? CurrentThread->Parent : Kernel::KernelProcess; }
+	Thread* GetCurrentThread()		{ return CurrentThread; }
 	pid_t GetCurrentThreadID()		{ return CurrentThread->ThreadID; }
 	pid_t GetCurrentProcessID()		{ return CurrentThread->Parent->ProcessID; }
-	RunQueue* getRunQueue()				{ return mainRunQueue; }
+	RunQueue* getRunQueue()			{ return mainRunQueue; }
 
 	// if, after N number of switches, processes in the low/norm queue don't get to run, run them all to completion.
 	// todo: fix scheduler. starvation still happens (unable to prevent cross-starvation)
@@ -132,12 +147,12 @@ namespace Multitasking
 		CurrentThread->currenterrno = *((int64_t*) 0x2610);
 		CurrentThread = GetNextThread();
 
+
 		if(CurrentThread->Parent->Flags & 0x1)
 		{
 			// this tells switch.s (on return) that we need to return to user-mode.
 			*((uint64_t*) 0x2608) = 0xFADE;
 		}
-
 
 		// set tss
 		*((uint64_t*) 0x2504) = CurrentThread->TopOfStack;
@@ -149,26 +164,37 @@ namespace Multitasking
 
 		if((uint64_t) CurrentThread->Parent->VAS.PML4 != CurrentCR3)
 		{
+			using namespace MemoryManager;
+
+
+			// make sure it's mapped.
+			// if(CurrentThread->Parent->ProcessID == 2)
+			// {
+			// 	uint64_t ps = Virtual::GetMapping(CurrentThread->StackPointer, Virtual::GetCurrentPML4T()) & ((uint64_t) ~0xFFF);
+			// 	Virtual::MapAddress(CurrentThread->StackPointer & ((uint64_t) ~0xFFF), ps, 0x3, CurrentThread->Parent->VAS.PML4);
+			// }
+
+
 			// Only change the value in cr3 if we need to, to avoid trashing the TLB.
 			*((uint64_t*) 0x2600) = (uint64_t) CurrentThread->Parent->VAS.PML4;
-
 			CurrentCR3 = (uint64_t) CurrentThread->Parent->VAS.PML4;
-			MemoryManager::Virtual::SwitchPML4T((MemoryManager::Virtual::PageMapStructure*) CurrentCR3);
+			Virtual::SwitchPML4T((Virtual::PageMapStructure*) CurrentCR3);
 		}
 		else
 		{
 			*((uint64_t*) 0x2600) = 0;
 		}
 
+
+
 		return CurrentThread->StackPointer;
 	}
 
 	extern "C" void VerifySchedule()
 	{
-		if(0 && CurrentThread->ThreadID == 1)
+		if(CurrentThread->Parent->ProcessID == 2)
 		{
-			Utilities::StackDump((uint64_t*) CurrentThread->StackPointer, 20);
-			// HALT("");
+			Log(3, "the beast (%x)", CurrentCR3);
 		}
 	}
 
@@ -177,7 +203,7 @@ namespace Multitasking
 		asm volatile("int $0xF7");
 	}
 
-	void Sleep(int64_t time)
+	void Sleep(int64_t t)
 	{
 		if(CurrentThread->Sleep != 0)
 		{
@@ -186,7 +212,7 @@ namespace Multitasking
 
 		Thread* p = FetchAndRemoveThread(CurrentThread);
 
-		p->Sleep = (uint32_t) __abs(time);
+		p->Sleep = (uint32_t) __abs(t);
 		PendingSleepList->push_back(p);
 
 		// if time is negative, we called from userspace, so don't nest interrupts.

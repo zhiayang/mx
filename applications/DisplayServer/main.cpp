@@ -62,17 +62,27 @@ int main(int argc, char** argv)
 
 	printf("Display server online\n");
 	printf("Forking process...\n");
-	// int res = fork();
+	int res = fork();
 
-	// if(res == 0)
+	// while(true)
 	// {
-	// 	do_child();
-	// 	exit(0);
+	// 	usleep(500 * 1000);
+	// 	printf(".\n");
 	// }
-	// else
-	// {
-	// 	printf("parent: child proc has pid %d, continuing\n", res);
-	// }
+
+	if(res == 0)
+	{
+		// do_child();
+		// exit(0);
+
+		printf("in child\n");
+		while(1);
+	}
+	else
+	{
+		printf("parent: child proc has pid %d, continuing\n", res);
+		while(1);
+	}
 
 	// printf("opening shit\n");
 	// {
@@ -99,7 +109,7 @@ int main(int argc, char** argv)
 
 
 	// {
-	// 	FILE* f = fopen("/something.txt", "r");
+	// 	FILE* f = fopen("/texts/1984.txt", "r");
 	// 	struct stat s;
 
 	// 	fstat((int) f->__fd, &s);

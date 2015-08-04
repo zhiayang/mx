@@ -340,7 +340,7 @@ namespace Interrupts
 		asm volatile("mov %%cr3, %0" : "=r" (cr3));
 
 
-		Log(1, "%s Exception: RIP: %x, Error Code: %x, CR3: %x, CR2: %x, TID: %d", ExceptionMessages[r->InterruptID], r->rip, r->ErrorCode, cr3, r->cr2, Multitasking::GetCurrentThread()->ThreadID);
+		Log(1, "%s Exception: RIP: %p, Error Code: %x, CR3: %p, CR2: %p, TID: %d", ExceptionMessages[r->InterruptID], r->rip, r->ErrorCode, cr3, r->cr2, Multitasking::GetCurrentThread()->ThreadID);
 
 		// check if this page fault can be handled gracefully, ie. swapping from disk, doing a cow, etc.
 		if(r->InterruptID == 14 && MemoryManager::Virtual::HandlePageFault(cr2, cr3, r->ErrorCode))
@@ -414,7 +414,7 @@ namespace Interrupts
 
 
 			StdIO::PrintFmt("Page Fault Error Codes:\n");
-			StdIO::PrintFmt("\tCR2: %x, CR3: %x\n", cr2, cr3);
+			StdIO::PrintFmt("\tCR2: %p, CR3: %p\n", cr2, cr3);
 
 
 			if(PageNotPresent)

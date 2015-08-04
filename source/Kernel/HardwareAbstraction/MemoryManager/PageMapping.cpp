@@ -125,7 +125,6 @@ namespace Virtual
 		if(other)
 			Virtual::MapAddress((uint64_t) PML, (uint64_t) PML, 0x7);
 
-
 		if(!(PML->Entry[PML4TIndex] & I_Present))
 		{
 			PML->Entry[PML4TIndex] = Physical::AllocateFromReserved() | (Flags | 0x1);

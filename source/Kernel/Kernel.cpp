@@ -446,7 +446,6 @@ namespace Kernel
 				(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
 				GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
 
-			Log("proc: %p", proc);
 			Multitasking::AddToQueue(proc);
 		}
 		#endif

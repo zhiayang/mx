@@ -346,6 +346,11 @@ namespace Multitasking
 		for(int i = 0; i < __SIGCOUNT; i++)
 			proc->SignalHandlers[i] = __signal_ignore;
 
+		// setup first
+		Virtual::SetupVAS(&proc->VAS);
+		proc->VAS.regions->clear();
+
+
 		Virtual::CopyVAS(&proc->Parent->VAS, &proc->VAS);
 		String::Copy(proc->Name, name);
 
@@ -378,8 +383,12 @@ namespace Multitasking
 	extern "C" int64_t Syscall_ForkProcess()
 	{
 		Process* proc = ForkProcess(GetCurrentProcess()->Name, 0);
-		Multitasking::AddToQueue(proc);
 
+		Multitasking::AddToQueue(proc);
+		Log(1, "QUEUED");
+
+
+		while(true);
 
 		// fuck around with the stack of the child process
 		// check if we are *not* the child process.

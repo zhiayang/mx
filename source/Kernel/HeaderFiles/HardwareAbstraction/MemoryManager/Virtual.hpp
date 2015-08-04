@@ -63,6 +63,7 @@ namespace Virtual
 		VirtualAddressSpace(PageMapStructure* pml4)
 		{
 			this->PML4 = pml4;
+			this->mtx = new Mutex();
 		}
 
 		// store the actual address of the pml4.
