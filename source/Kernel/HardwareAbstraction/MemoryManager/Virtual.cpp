@@ -451,6 +451,23 @@ namespace Virtual
 
 		assert(dest->regions->size() == 0);
 
+		// shitty, manual old-school stuff.
+		// enter the matrix of the recursive thing
+		// which i probably didn't do properly.
+		{
+
+			// I_RECURSIVE_SLOT
+		}
+
+
+
+
+
+
+
+
+
+		// proper, clean stuff.
 		for(auto pair : *src->regions)
 		{
 			MemRegion* reg = new MemRegion();
@@ -464,14 +481,15 @@ namespace Virtual
 				uint64_t p = Physical::AllocatePage(pair->length);
 
 				// todo: use Copy-on-write (COW) for this instead of allocating a new page
-				Virtual::MapRegion(pair->start, p, pair->length, (pair->phys & 0xFFF), dest->PML4);
+				Virtual::MapRegion(pair->start, p, pair->length, (pair->phys & 0xFFF) | 0x7, dest->PML4);
+
 				Virtual::MapRegion(TemporaryVirtualMapping, p, pair->length, 0x07);
 
 				// copy contents.
 				Memory::CopyOverlap((void*) TemporaryVirtualMapping, (void*) pair->start, pair->length * 0x1000);
 
 				Virtual::UnmapRegion(TemporaryVirtualMapping, pair->length);
-				pair->phys = p | (pair->phys & 0xFFF);
+				reg->phys = p | (pair->phys & 0xFFF);
 			}
 
 

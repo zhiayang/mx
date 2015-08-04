@@ -359,7 +359,12 @@ namespace Multitasking
 		// copy the thread.
 		Thread* newt = CloneThread(curthr);
 		newt->Parent = proc;
+		assert(newt->StackPointer == newt->TopOfStack - 160);
+
+		// todo: does nothing.
 		newt->StackPointer = newt->TopOfStack - 160;
+
+
 		proc->Threads.push_back(newt);
 
 
@@ -383,12 +388,8 @@ namespace Multitasking
 	extern "C" int64_t Syscall_ForkProcess()
 	{
 		Process* proc = ForkProcess(GetCurrentProcess()->Name, 0);
-
 		Multitasking::AddToQueue(proc);
-		Log(1, "QUEUED");
 
-
-		while(true);
 
 		// fuck around with the stack of the child process
 		// check if we are *not* the child process.

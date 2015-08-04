@@ -166,15 +166,6 @@ namespace Multitasking
 		{
 			using namespace MemoryManager;
 
-
-			// make sure it's mapped.
-			// if(CurrentThread->Parent->ProcessID == 2)
-			// {
-			// 	uint64_t ps = Virtual::GetMapping(CurrentThread->StackPointer, Virtual::GetCurrentPML4T()) & ((uint64_t) ~0xFFF);
-			// 	Virtual::MapAddress(CurrentThread->StackPointer & ((uint64_t) ~0xFFF), ps, 0x3, CurrentThread->Parent->VAS.PML4);
-			// }
-
-
 			// Only change the value in cr3 if we need to, to avoid trashing the TLB.
 			*((uint64_t*) 0x2600) = (uint64_t) CurrentThread->Parent->VAS.PML4;
 			CurrentCR3 = (uint64_t) CurrentThread->Parent->VAS.PML4;
@@ -192,10 +183,6 @@ namespace Multitasking
 
 	extern "C" void VerifySchedule()
 	{
-		if(CurrentThread->Parent->ProcessID == 2)
-		{
-			Log(3, "the beast (%x)", CurrentCR3);
-		}
 	}
 
 	extern "C" void YieldCPU()
