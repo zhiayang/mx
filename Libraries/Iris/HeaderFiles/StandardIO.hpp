@@ -11,9 +11,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "../../acess2_stl/string.h"
 #include "Utility.hpp"
-
 #include "VariadicPrintf.hpp"
 
 namespace StdIO

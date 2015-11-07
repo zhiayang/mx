@@ -7,5 +7,5 @@
 
 extern "C"
 {
-	int __thread _errno = 0;
+	int /*__thread*/ _errno = 0;
 }

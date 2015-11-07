@@ -63,6 +63,7 @@ namespace KernelHeap
 	static uint64_t NumberOfChunksInHeap;
 	static uint64_t SizeOfHeapInPages;
 	static Header* FirstFreeHeader;
+	static Mutex* mtx;
 
 	static uint64_t FirstHeapPhysPage;
 
@@ -203,6 +204,8 @@ namespace KernelHeap
 
 		FirstFreeHeader = create(KernelHeapAddress, 0x1000 - sizeof(Header) - sizeof(Footer), returnAddr(0), returnAddr(1));
 		DidInitialise = true;
+
+		mtx = new Mutex();
 	}
 
 	void ExpandHeap(uint64_t numPages)
@@ -257,6 +260,7 @@ namespace KernelHeap
 	{
 		if(size == 0) return 0;
 
+		auto mutex = AutoMutex(mtx);
 		size = ((size + (Alignment - 1)) / Alignment) * Alignment;
 
 		Header* h = sane(FirstFreeHeader);
@@ -399,10 +403,11 @@ namespace KernelHeap
 	{
 		if(ptr == 0)
 		{
-			Log(1, "free() called with ptr == 0, might be a bug: return %x / %x", returnAddr(0), returnAddr(1));
+			Log(1, "free() called with ptr == 0, might be a bug: return %p / %p", returnAddr(0), returnAddr(1));
 			return;
 		}
 
+		auto mutex = AutoMutex(mtx);
 
 		Header* hdr = (Header*) ptr;
 		hdr -= 1;
@@ -429,17 +434,18 @@ namespace KernelHeap
 	{
 		if(ptr == 0)
 		{
-			Log(1, "called realloc() with ptr == 0, possible bug: return %x / %x", returnAddr(0), returnAddr(1));
+			Log(1, "called realloc() with ptr == 0, possible bug: return %p / %p", returnAddr(0), returnAddr(1));
 			return AllocateChunk(size);
 		}
 
 		if(size == 0)
 		{
-			Log(1, "called realloc() with size == 0, possible bug: return %x / %x", returnAddr(0), returnAddr(1));
+			Log(1, "called realloc() with size == 0, possible bug: return %p / %p", returnAddr(0), returnAddr(1));
 			FreeChunk(ptr);
 			return 0;
 		}
 
+		auto mutex = AutoMutex(mtx);
 
 
 		// now get the actual header.

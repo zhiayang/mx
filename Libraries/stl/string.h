@@ -5,14 +5,13 @@
  * string (header)
  * - C++'s String type
  */
-#ifndef _LIBCXX_STRING_
-#define _LIBCXX_STRING_
+#ifndef STL_STRING_H
+#define STL_STRING_H
 
-#include "_libcxx_helpers.h"
 #include "allocator.h"
 #include "initialiser_list.h"
 
-namespace astl
+namespace stl
 {
 	template <class charT>
 	struct char_traits

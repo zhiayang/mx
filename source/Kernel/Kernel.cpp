@@ -165,22 +165,22 @@ namespace Kernel
 		Kernel::KernelCPUID = CPUID::Initialise(Kernel::KernelCPUID);
 		if(!KernelCPUID->SSE3Instructions())
 		{
-			StdIO::PrintF("I don't know how you got this far.\n");
-			StdIO::PrintF("[mx] requires your CPU to support SSE3 instructions.\n");
+			StdIO::PrintFmt("I don't know how you got this far.\n");
+			StdIO::PrintFmt("[mx] requires your CPU to support SSE3 instructions.\n");
 			UHALT();
 		}
 		if(!KernelCPUID->OnboardAPIC())
 		{
-			StdIO::PrintF("[mx] requires your CPU to have an APIC chip.");
+			StdIO::PrintFmt("[mx] requires your CPU to have an APIC chip.");
 			UHALT();
 		}
 
 		// check if we have enough memory.
 		if(K_SystemMemoryInBytes < 0x02000000)
 		{
-			StdIO::PrintF("[mx] requires at least 64 Megabytes (67 108 864 bytes) of memory to operate.\n");
-			StdIO::PrintF("Only % bytes of memory detected.\n", K_SystemMemoryInBytes);
-			StdIO::PrintF("Install more RAM, or increase the amount of memory in your Virtual Machine.");
+			StdIO::PrintFmt("[mx] requires at least 64 Megabytes (67 108 864 bytes) of memory to operate.\n");
+			StdIO::PrintFmt("Only % bytes of memory detected.\n", K_SystemMemoryInBytes);
+			StdIO::PrintFmt("Install more RAM, or increase the amount of memory in your Virtual Machine.");
 			UHALT();
 		}
 
@@ -195,7 +195,7 @@ namespace Kernel
 		}
 
 
-		PrintF("Loading [mx]...\n");
+		PrintFmt("Loading [mx]...\n");
 		Log("Initialising Kernel subsystem");
 	}
 
@@ -316,7 +316,7 @@ namespace Kernel
 			}
 		}
 
-		PrintF("Initialising RTC...\n");
+		PrintFmt("Initialising RTC...\n");
 		Devices::RTC::Initialise(+8);
 		Log("RTC Initialised");
 
@@ -421,7 +421,7 @@ namespace Kernel
 
 		#define TEST_USERSPACE_PROG		1
 		#define TEST_LARGE_FILE_READ	0
-		#define TEST_NETWORK_IRC		0
+		#define TEST_NETWORK_IRC		1
 		#define TEST_MUTEXES			0
 
 
@@ -451,14 +451,8 @@ namespace Kernel
 		#endif
 
 
-		PrintF("[mx] has completed initialisation.\n");
+		PrintFmt("[mx] has completed initialisation.\n");
 		Log("Kernel init complete\n----------------------------\n");
-
-
-
-
-		// print((astl::string("POOOOP") + "%").c_str());
-		PrintF("Hello, % number %x!\n\n\n", "world", 504);
 
 
 
@@ -475,14 +469,14 @@ namespace Kernel
 			uint64_t st = 0;
 			uint64_t et = 0;
 
-			Log(3, "(%d) s.st_size: %d", file, s.st_size);
+			Log(3, "(%d) s.st_size: %ld", file, s.st_size);
 
 			const uint64_t blocksz = 16384;
 			uint8_t* fl = new uint8_t[blocksz + 1];
 			uint8_t* whole = new uint8_t[s.st_size + 1];
 
 			uint64_t total = s.st_size;
-			Log(3, "start: %d ms", st = Time::Now());
+			Log(3, "start: %ld ms", st = Time::Now());
 
 			for(uint64_t cur = 0; cur < total; )
 			{
@@ -491,12 +485,12 @@ namespace Kernel
 				memcpy(whole + cur, fl, read);
 				cur += read;
 
-				PrintF("\r\t\t\t\t\t\t\t\t\t\t\t\r(%02.2%%) %, %/%", (((double) cur / (double) total) * 100.0),
-					read, cur, total);
+				PrintFmt("\r\t\t\t\t\t\t\t\t\t\t\t\r(%02.2d%%) %d/%d", (size_t) (((double) cur / (double) total) * 100.0),
+					cur, total);
 			}
 
-			Log(3, "end: %d ms", et = Time::Now());
-			Log(3, "time taken: %d ms", et - st);
+			Log(3, "end: %ld ms", et = Time::Now());
+			Log(3, "time taken: %ld ms", et - st);
 		}
 		#endif
 
@@ -522,11 +516,11 @@ namespace Kernel
 			fn.b3 = 222;
 			fn.b4 = 109;
 
-			PrintF("irc.freenode.net is at %.%.%.%\n", fn.b1, fn.b2, fn.b3, fn.b4);
+			PrintFmt("irc.freenode.net is at %d.%d.%d.%d\n", fn.b1, fn.b2, fn.b3, fn.b4);
 
 			fd_t thesock = OpenSocket(SocketProtocol::TCP, 0);
 			ConnectSocket(thesock, fn, 6667);
-			aSock = thesock;
+			static fd_t aSock = thesock;
 
 			auto other = []()
 			{
@@ -539,7 +533,7 @@ namespace Kernel
 						size_t read = ReadSocket(aSock, output, 256);
 
 						output[(read == 256) ? (read - 1) : read] = 0;
-						PrintF("%", output);
+						PrintFmt("%s", output);
 					}
 				}
 			};
@@ -552,19 +546,19 @@ namespace Kernel
 
 			strncpy((char*) data, "NICK zhiayang|tcp\r\n", 256);
 			WriteSocket(thesock, data, strlen((char*) data));
-			PrintFmt("> %s", data);
+			PrintFmt("> %s\n", data);
 
 			memset(data, 0, 256);
 			strncpy((char*) data, "USER zhiayang 8 * : zhiayang\r\n", 256);
 			WriteSocket(thesock, data, strlen((char*) data));
-			PrintFmt("> %s", data);
+			PrintFmt("> %s\n", data);
 
 			SLEEP(15000);
 
 			memset(data, 0, 256);
 			strncpy((char*) data, "JOIN #learnprogramming\r\n", 256);
 			WriteSocket(thesock, data, strlen((char*) data));
-			PrintFmt("> %s", data);
+			PrintFmt("> %s\n", data);
 
 
 			SLEEP(1000);
@@ -586,7 +580,7 @@ namespace Kernel
 					memset(data, 0, 256);
 					strncpy((char*) data, msgs[i], 256);
 					WriteSocket(thesock, data, strlen((char*) data));
-					PrintF("> %", data);
+					PrintFmt("> %s\n", data);
 
 					SLEEP(800);
 				}
@@ -599,7 +593,7 @@ namespace Kernel
 			memset(data, 0, 256);
 			strncpy((char*) data, "QUIT\r\n", 256);
 			WriteSocket(thesock, data, strlen((char*) data));
-			PrintF("> %", data);
+			PrintFmt("> %s\n", data);
 
 			SLEEP(500);
 			Kill(thr);
@@ -644,10 +638,6 @@ namespace Kernel
 			Multitasking::AddToQueue(Multitasking::CreateKernelThread(func1));
 		}
 		#endif
-
-
-
-
 
 
 

@@ -6,15 +6,14 @@
  * - C++'s allocator
  */
 
-#ifndef _LIBCXX_ALLOCATOR_
-#define _LIBCXX_ALLOCATOR_
-
-#include "_libcxx_helpers.h"
+#ifndef STL_ALLOCATOR_H
+#define STL_ALLOCATOR_H
 
 #include <stddef.h>
+#include "_libcxx_helpers.h"
 #include "utility.h"
 
-namespace astl {
+namespace stl {
 
 template <class T> class allocator;
 namespace _bits
@@ -66,14 +65,14 @@ namespace _bits
 				return &x;
 			}
 
-			pointer allocate(size_type n, const void* hint = 0)
+			static pointer allocate(size_type n, const void* hint = 0)
 			{
 				(void) hint;
 				// hint = hint;
 				return static_cast<pointer>( ::operator new (n * sizeof(value_type)) );
 			}
 
-			void deallocate(pointer p, size_type n)
+			static void deallocate(pointer p, size_type n)
 			{
 				(void) n;
 				// n = n;
@@ -95,7 +94,7 @@ namespace _bits
 			template<class U, class... Args>
 			void construct(U* p, Args&&... args)
 			{
-				::new ((void*) p) U (::astl::forward<Args>(args)...);
+				::new ((void*) p) U (::stl::forward<Args>(args)...);
 			}
 			#endif
 
@@ -106,7 +105,7 @@ namespace _bits
 	};
 
 	template <class T>
-	class allocator_noconstruct : public ::astl::_bits::allocator_real<T>
+	class allocator_noconstruct : public ::stl::_bits::allocator_real<T>
 	{
 		public:
 			void construct(typename allocator_real<T>::pointer p, typename allocator_real<T>::const_reference val)

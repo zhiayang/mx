@@ -10,6 +10,7 @@
 #include "MemoryManager/Virtual.hpp"
 #include <Synchro.hpp>
 #include <defs/_pthreadstructs.h>
+#include <stl/vector.h>
 
 #include <signal.h>
 
@@ -108,8 +109,8 @@ namespace HardwareAbstraction
 		#define FLAG_DYING			0x80
 
 
-		extern rde::vector<Process*>* ProcessList;
-		extern rde::vector<Thread*>* SleepList;
+		extern stl::vector<Process*>* ProcessList;
+		extern stl::vector<Thread*>* SleepList;
 
 		extern uint64_t NumThreads;
 		extern uint64_t NumProcesses;

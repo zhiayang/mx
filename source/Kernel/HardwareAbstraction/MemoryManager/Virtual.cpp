@@ -266,7 +266,7 @@ namespace Virtual
 	VirtualAddressSpace* SetupVAS(VirtualAddressSpace* vas)
 	{
 		assert(vas);
-		vas->regions = new rde::vector<MemRegion*>();
+		vas->regions = new stl::vector<MemRegion*>();
 
 		// Max 48-bit virtual address space (current implementations)
 		MemRegion* r1 = new MemRegion();

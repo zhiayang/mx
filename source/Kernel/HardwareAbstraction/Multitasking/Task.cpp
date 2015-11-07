@@ -241,7 +241,8 @@ namespace Multitasking
 		ret->returnval		= orig->returnval;
 		ret->Thread			= orig->Thread;
 		ret->CrashState		= new ThreadRegisterState_type;
-		ret->tlsptr			= new uint8_t[orig->Parent->tlssize];
+		ret->tlsptr			= new uint8_t[1600 * orig->Parent->tlssize];
+		Memory::Copy(ret->tlsptr, orig->tlsptr, orig->Parent->tlssize);
 
 		return ret;
 	}

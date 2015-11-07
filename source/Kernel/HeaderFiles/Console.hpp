@@ -4,8 +4,7 @@
 
 #pragma once
 #include <stdint.h>
-#include <rdestl/rdestl.h>
-#include <CircularBuffer.hpp>
+#include <stl/vector.h>
 
 namespace Kernel
 {
@@ -41,8 +40,8 @@ namespace Kernel
 				bool echomode;
 				uint8_t BufferMode;
 				size_t buffersize;
-				rde::vector<uint8_t> buffer;
-				rde::vector<uint8_t> internalbuffer;
+				stl::vector<uint8_t> buffer;
+				stl::vector<uint8_t> internalbuffer;
 		};
 
 		void Initialise();

@@ -7,6 +7,7 @@
 #include <HardwareAbstraction/Devices/IOPort.hpp>
 #include <String.hpp>
 #include <stdlib.h>
+#include <stl/vector.h>
 
 using namespace Kernel;
 using namespace Library;
@@ -23,16 +24,16 @@ namespace Multitasking
 	static uint64_t CurrentCR3 = 0;
 	static uint64_t ScheduleCount = 0;
 
-	rde::vector<Thread*>* SleepList;
-	rde::vector<Process*>* ProcessList;
+	stl::vector<Thread*>* SleepList;
+	stl::vector<Process*>* ProcessList;
 
 	bool SchedulerEnabled = true;
 
 	void Initialise()
 	{
 		CurrentCR3 = GetKernelCR3();
-		SleepList = new rde::vector<Thread*>();
-		ProcessList = new rde::vector<Process*>();
+		SleepList = new stl::vector<Thread*>();
+		ProcessList = new stl::vector<Process*>();
 		PendingSleepList = new rde::vector<Thread*>();
 
 		mainRunQueue = new RunQueue();

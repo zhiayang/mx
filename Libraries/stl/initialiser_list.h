@@ -6,13 +6,13 @@
  * - C++'s initialiser_list type
  */
 
-#ifndef _LIBCXX__INITIALISER_LIST_
-#define _LIBCXX__INITIALISER_LIST_
+#ifndef STL_INITIALISER_LIST_H
+#define STL_INITIALISER_LIST_H
 
 #include <stdint.h>
 #include <stddef.h>
 
-namespace astl
+namespace stl
 {
 	template <class T>
 	class initialiser_list
@@ -50,8 +50,8 @@ namespace astl
 
 }
 
-template <class T> const T* begin(const ::astl::initialiser_list<T>& il) { return il.begin(); }
-template <class T> const T* end  (const ::astl::initialiser_list<T>& il) { return il.end(); }
+template <class T> const T* begin(const ::stl::initialiser_list<T>& il) { return il.begin(); }
+template <class T> const T* end  (const ::stl::initialiser_list<T>& il) { return il.end(); }
 
 #endif
 

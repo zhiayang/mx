@@ -59,7 +59,7 @@ NUMFILES			= $$(($(words $(CXXSRC)) + $(words $(SSRC))))
 
 
 
-LIBRARIES			= -liris -lrdestl -lacess2_stl
+LIBRARIES			= -liris -lrdestl -lkstl
 OUTPUT				= build/kernel64.elf
 
 
@@ -169,7 +169,7 @@ $(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) $(FLAXM
 
 
 builduserspace:
-	@printf "\n# Building userspace applications"
+	@printf "\n# Building userspace applications\n"
 	@$(MAKE) -C applications/
 
 copyheader:

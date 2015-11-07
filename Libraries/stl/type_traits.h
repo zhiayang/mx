@@ -5,8 +5,8 @@
  * type_traits (header)
  * - C++11 type traits
  */
-#ifndef _LIBCXX_TYPE_TRAITS_
-#define _LIBCXX_TYPE_TRAITS_
+#ifndef STL_TYPE_TRAITS_H
+#define STL_TYPE_TRAITS_H
 
 #include "_libcxx_helpers.h"
 

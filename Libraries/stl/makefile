@@ -5,23 +5,20 @@ CXXFLAGS	= -g -Wall -O2 -fPIC -std=gnu++11 -mno-red-zone -fno-exceptions -fno-rt
 
 CXXSRC	= $(shell find . -name "*.cpp")
 CXXOBJ	= $(CXXSRC:.cpp=.o)
-CXXDEPS	= $(CXXOBJ:.o=.cpp.d)
+CXXDEPS	= $(CXXSRC:.cpp=.cpp.d)
 
 -include $(CXXDEPS)
 
 
-all: $(SYSROOT)/usr/lib/libacess2_stl.a
+all: $(SYSROOT)/usr/lib/libkstl.a
 	@:
 
-$(SYSROOT)/usr/lib/libacess2_stl.a: $(CXXOBJ)
-	@echo libacess2_stl.a
-	@$(AR) rcs $(SYSROOT)/usr/lib/libacess2_stl.a $(CXXOBJ)
+$(SYSROOT)/usr/lib/libkstl.a: $(CXXOBJ)
+	@echo libkstl.a
+	@$(AR) rcs $(SYSROOT)/usr/lib/libkstl.a $(CXXOBJ)
 
 %.o: %.cpp
 	@$(CXX) $(CXXFLAGS) -MMD -MP -o $@ $<
-
-
-
 
 
 

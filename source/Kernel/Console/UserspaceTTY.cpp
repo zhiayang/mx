@@ -21,10 +21,9 @@ namespace TTY
 
 	static rde::hash_map<long, TTYObject*>* ttys;
 
-	TTYObject::TTYObject(uint8_t bufmode, uint64_t (*read)(TTYObject*, uint8_t*, uint64_t), uint64_t (*write)(TTYObject*, uint8_t*, uint64_t), void (*flsh)(TTYObject*))
+	TTYObject::TTYObject(uint8_t bufmode, uint64_t (*read)(TTYObject*, uint8_t*, uint64_t),
+		uint64_t (*write)(TTYObject*, uint8_t*, uint64_t), void (*flsh)(TTYObject*))
 	{
-		// this->buffer = new rde::vector<uint8_t>();
-		// this->internalbuffer = new rde::vector<uint8_t>();
 		this->BufferMode = bufmode;
 		this->in = read;
 		this->out = write;

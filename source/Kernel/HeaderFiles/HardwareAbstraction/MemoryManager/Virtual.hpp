@@ -8,7 +8,7 @@
 #include <rdestl/rdestl.h>
 #include <HardwareAbstraction/MemoryManager/PageMapping.hpp>
 
-#include <Vector.hpp>
+#include <stl/vector.h>
 
 #define I_Present		0x01
 #define I_ReadWrite		0x02
@@ -67,7 +67,7 @@ namespace Virtual
 		}
 
 		// store the actual address of the pml4.
-		rde::vector<MemRegion*>* regions;
+		stl::vector<MemRegion*>* regions;
 
 		PageMapStructure* PML4;
 		Mutex* mtx;

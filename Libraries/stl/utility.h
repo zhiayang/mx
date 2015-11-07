@@ -5,13 +5,13 @@
  * string (header)
  * - C++'s String type
  */
-#ifndef _LIBCXX_UTILITY_
-#define _LIBCXX_UTILITY_
+#ifndef STL_UTILITY_H
+#define STL_UTILITY_H
 
 #include "_libcxx_helpers.h"
 #include "type_traits.h"
 
-namespace astl
+namespace stl
 {
 	template <class T1, class T2>
 	class pair
