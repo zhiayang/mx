@@ -421,8 +421,8 @@ namespace Kernel
 
 		#define TEST_USERSPACE_PROG		1
 		#define TEST_LARGE_FILE_READ	0
-		#define TEST_NETWORK_IRC		1
-		#define TEST_MUTEXES			0
+		#define TEST_NETWORK_IRC		0
+		#define TEST_MUTEXES			1
 
 
 
