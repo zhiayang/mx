@@ -129,6 +129,9 @@ namespace Filesystems
 		(void) statlink;
 	}
 
+	void FSDriverHFSPlus::Close(VFS::vnode *node)
+	{
+	}
 
 	// returns a list of items inside the directory, as vnodes.
 	iris::vector<VFS::vnode*> FSDriverHFSPlus::ReadDir(VFS::vnode* node)

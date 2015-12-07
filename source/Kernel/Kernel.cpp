@@ -33,6 +33,9 @@ extern "C" uint64_t EndBSS;
 static uint64_t LoadedCursorX = 1;
 static uint64_t LoadedCursorY = 1;
 
+extern "C" uint64_t start_ctors;
+extern "C" uint64_t end_ctors;
+
 extern "C" void TaskSwitcherCoOp();
 extern "C" void ProcessTimerInterrupt();
 extern "C" void HandleSyscall();
@@ -42,6 +45,22 @@ extern "C" void KernelInit(uint64_t MultibootMagic, uint64_t MBTAddr, uint64_t c
 	LoadedCursorY = cy;
 
 	KernelCore((uint32_t) MultibootMagic, (uint32_t) MBTAddr);
+
+
+	uint64_t* ctorListBegin = &start_ctors;
+	uint64_t* ctorListEnd = &end_ctors;
+
+	Log("Calling Constructors:");
+
+	size_t i = 0;
+	while(ctorListBegin != ctorListEnd)
+	{
+		Log("%d: %p", i, *ctorListBegin);
+		void (*fn)() = (void(*)()) (*ctorListBegin);
+		fn();
+
+		ctorListBegin++, i++;
+	}
 }
 
 extern "C" void KernelThreadInit()
@@ -108,7 +127,7 @@ namespace Kernel
 		{
 			uint64_t v = X_BUILD_NUMBER;
 
-			VER_MAJOR = 4;
+			VER_MAJOR = 5;
 			VER_MINOR = v / 10000;
 			VER_REVSN = (v - (VER_MINOR * 10000)) / 100;
 			VER_MINRV = (v - (VER_MINOR * 10000) - (VER_REVSN * 100)) / 1;
@@ -394,9 +413,8 @@ namespace Kernel
 
 				// mount root fs from partition 0 at /
 				VFS::Mount(f1->Partitions.front(), fs, "/");
-				Log("Root FS (fat32) Mounted at /");
+				Log("Root FS vfat[16/32] Mounted at /");
 			}
-
 		}
 
 
@@ -419,10 +437,10 @@ namespace Kernel
 
 		// Console::ClearScreen();
 
-		#define TEST_USERSPACE_PROG		1
-		#define TEST_LARGE_FILE_READ	0
+		#define TEST_USERSPACE_PROG		0
+		#define TEST_LARGE_FILE_READ	1
 		#define TEST_NETWORK_IRC		0
-		#define TEST_MUTEXES			1
+		#define TEST_MUTEXES			0
 
 
 
@@ -686,8 +704,7 @@ namespace Kernel
 
 	void HaltSystem(const char* message, const char* filename, uint64_t line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%d, RA(0): %p, RA(1): %p, RA(2): %p, RA(3): %p", message, filename, line,
-			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2), __builtin_return_address(0));
+		Log("System Halted: %s, %s:%d, RA(0): %p", message, filename, line, __builtin_return_address(0));
 
 		PrintFmt("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 
@@ -697,8 +714,7 @@ namespace Kernel
 
 	void HaltSystem(const char* message, const char* filename, const char* line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%s, RA(0): %p, RA(1): %p, RA(2): %p, RA(3): %p", message, filename, line,
-			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2), __builtin_return_address(3));
+		Log("System Halted: %s, %s:%s, RA(0): %p", message, filename, line, __builtin_return_address(0));
 
 		PrintFmt("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %s (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
 

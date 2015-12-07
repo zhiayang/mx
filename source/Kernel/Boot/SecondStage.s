@@ -119,31 +119,8 @@ KernelBootstrap:
 	call KernelInit
 
 
-	// now with the heap and everything setup, we can call the constructors.
-	mov $StartConstructors, %rbx
-	jmp 2f
-
-1:
-	call *(%rbx)
-	add $8, %rbx
-2:
-	cmp $EndConstructors, %rbx
-	jb 1b
-
-
 	// call the kernel thread setup.
 	call KernelThreadInit
-
-
-	mov $EndDestructors, %rbx
-	jmp 4f
-
-3:
-	sub $8, %rbx
-	call *(%rbx)
-4:
-	cmp $StartDestructors, %rbx
-	ja 3b
 
 
 
