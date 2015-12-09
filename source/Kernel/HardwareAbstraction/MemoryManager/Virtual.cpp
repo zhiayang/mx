@@ -1,5 +1,5 @@
 // Virtual.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 
@@ -30,11 +30,11 @@ namespace Virtual
 
 		assert(vas);
 		assert(vas->mtx);
-		assert(vas->regions);
+		// assert(vas->regions);
 
 		auto m = AutoMutex(vas->mtx);
 
-		for(MemRegion* region : *vas->regions)
+		for(MemRegion* region : vas->regions)
 		{
 			assert(region->length > 0);
 			assert(region->start > 0);
@@ -72,7 +72,7 @@ namespace Virtual
 								newr->used = 0;
 								newr->phys = 0;
 
-								vas->regions->push_back(newr);
+								vas->regions.push_back(newr);
 
 								region->length = size;
 
@@ -90,7 +90,7 @@ namespace Virtual
 							front->length = (addr - region->start) / 0x1000;
 							front->used = 0;
 							front->phys = 0;
-							vas->regions->push_back(front);
+							vas->regions.push_back(front);
 
 							region->start = addr;
 							region->length -= front->length;
@@ -112,7 +112,7 @@ namespace Virtual
 								assert(back->start > 0);
 								assert(back->length > 0);
 
-								vas->regions->push_back(back);
+								vas->regions.push_back(back);
 							}
 
 							return FinaliseRegion(region, phys, vas->PML4);
@@ -141,7 +141,7 @@ namespace Virtual
 						newr->used = 0;
 						newr->phys = 0;
 
-						vas->regions->push_back(newr);
+						vas->regions.push_back(newr);
 
 						region->length = size;
 
@@ -187,19 +187,19 @@ namespace Virtual
 
 		assert(vas);
 		assert(vas->mtx);
-		assert(vas->regions);
+		// assert(vas->regions);
 
 		auto m = AutoMutex(vas->mtx);
 
 
 		MemRegion* offending = 0;
 
-		for(MemRegion* region : *vas->regions)
+		for(MemRegion* region : vas->regions)
 		{
 			if(region->start == addr && region->length == size)
 			{
 				assert(region->used);
-				vas->regions->remove(region);
+				vas->regions.remove(region);
 
 				offending = region;
 				break;
@@ -210,7 +210,7 @@ namespace Virtual
 		offending->used = 1;
 
 		// loop through again.
-		for(MemRegion* region : *vas->regions)
+		for(MemRegion* region : vas->regions)
 		{
 			// simple things:
 			// check if we can either fit in below, or above
@@ -233,7 +233,7 @@ namespace Virtual
 
 		// else.
 		offending->used = 0;
-		vas->regions->push_back(offending);
+		vas->regions.push_back(offending);
 		return offending;	// can't delete region.
 	}
 
@@ -266,7 +266,8 @@ namespace Virtual
 	VirtualAddressSpace* SetupVAS(VirtualAddressSpace* vas)
 	{
 		assert(vas);
-		vas->regions = new stl::vector<MemRegion*>();
+		// vas->regions = new stl::vector<MemRegion*>();
+		vas->regions = rde::vector<MemRegion*>();
 
 		// Max 48-bit virtual address space (current implementations)
 		MemRegion* r1 = new MemRegion();
@@ -283,8 +284,8 @@ namespace Virtual
 		r2->used = 0;
 		r2->phys = 0;
 
-		vas->regions->push_back(r1);
-		vas->regions->push_back(r2);
+		vas->regions.push_back(r1);
+		vas->regions.push_back(r2);
 
 		// vas->mtx = new Mutex();
 		return vas;
@@ -302,9 +303,9 @@ namespace Virtual
 	{
 		VirtualAddressSpace* vas = v ? v : &Multitasking::GetCurrentProcess()->VAS;
 		assert(vas);
-		assert(vas->regions);
+		// assert(vas->regions);
 
-		for(MemRegion* region : *vas->regions)
+		for(MemRegion* region : vas->regions)
 		{
 			// assert(region);
 			assert(region->start > 0);
@@ -449,7 +450,7 @@ namespace Virtual
 		// no need to lock source, but lock dest.
 		LOCK(dest->mtx);
 
-		assert(dest->regions->size() == 0);
+		assert(dest->regions.size() == 0);
 
 		// shitty, manual old-school stuff.
 		// enter the matrix of the recursive thing
@@ -468,7 +469,7 @@ namespace Virtual
 
 
 		// proper, clean stuff.
-		for(auto pair : *src->regions)
+		for(auto pair : src->regions)
 		{
 			MemRegion* reg = new MemRegion();
 			reg->length	= pair->length;
@@ -493,7 +494,7 @@ namespace Virtual
 			}
 
 
-			dest->regions->push_back(reg);
+			dest->regions.push_back(reg);
 		}
 
 

@@ -136,6 +136,10 @@ class allocator<unsigned long> : public _bits::allocator_noconstruct<unsigned lo
 {
 };
 
+#ifndef TINYSTL_ALLOCATOR
+#define TINYSTL_ALLOCATOR ::stl::allocator
+#endif
+
 // #endif
 
 }

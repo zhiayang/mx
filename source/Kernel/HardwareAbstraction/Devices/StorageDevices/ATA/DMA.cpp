@@ -1,5 +1,5 @@
 // DMA.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
@@ -54,7 +54,7 @@ namespace DMA
 	};
 
 	#define MaxCachedTables 16
-	static iris::vector<PRDTableCache>* cachedPRDTables;
+	static rde::vector<PRDTableCache> cachedPRDTables;
 
 	void Initialise()
 	{
@@ -70,7 +70,8 @@ namespace DMA
 		uint32_t mmio = (uint32_t) ata->GetBAR(4);
 		assert(ata->IsBARIOPort(4));
 
-		cachedPRDTables = new iris::vector<PRDTableCache>();
+		cachedPRDTables = rde::vector<PRDTableCache>();
+
 		for(int i = 0; i < MaxCachedTables; i++)
 		{
 			// precreate these
@@ -79,7 +80,7 @@ namespace DMA
 			tcache.length = 0x1000;
 			tcache.used = 0;
 
-			cachedPRDTables->push_back(tcache);
+			cachedPRDTables.push_back(tcache);
 		}
 
 		IOPort::WriteByte((uint16_t) mmio + 2, 0x4);
@@ -127,7 +128,7 @@ namespace DMA
 		// get a prd
 		bool found = false;
 		PRDTableCache prdCache;
-		for(PRDTableCache& cache : *cachedPRDTables)
+		for(PRDTableCache& cache : cachedPRDTables)
 		{
 			if(!cache.used)
 			{
@@ -144,7 +145,7 @@ namespace DMA
 			prdCache.length = 0x1000;
 			prdCache.used = 1;
 
-			cachedPRDTables->push_back(prdCache);
+			cachedPRDTables.push_back(prdCache);
 		}
 
 
@@ -246,7 +247,7 @@ namespace DMA
 		// get a prd
 		bool found = false;
 		PRDTableCache prdCache;
-		for(PRDTableCache& cache : *cachedPRDTables)
+		for(PRDTableCache& cache : cachedPRDTables)
 		{
 			if(!cache.used)
 			{
@@ -263,7 +264,7 @@ namespace DMA
 			prdCache.length = 0x1000;
 			prdCache.used = 1;
 
-			cachedPRDTables->push_back(prdCache);
+			cachedPRDTables.push_back(prdCache);
 		}
 
 		PRDEntry* prd = (PRDEntry*) prdCache.address.virt;

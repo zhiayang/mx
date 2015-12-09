@@ -1,12 +1,12 @@
 // FSUtil.hpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #pragma once
 #include <stdint.h>
 #include <sys/types.h>
 #include <rdestl/rde_string.h>
-#include <Vector.hpp>
+#include <stl/vector.h>
 
 #include <CircularBuffer.hpp>
 #include "../Devices/StorageDevice.hpp"
@@ -71,7 +71,7 @@ namespace Filesystems
 
 		struct FDArray
 		{
-			iris::vector<fileentry*> fds;
+			rde::vector<fileentry*> fds;
 		};
 
 		struct Filesystem
@@ -164,7 +164,7 @@ namespace Filesystems
 			virtual void Stat(VFS::vnode* node, struct stat* stat, bool statlink);
 
 			// returns a list of items inside the directory, as vnodes.
-			virtual iris::vector<VFS::vnode*> ReadDir(VFS::vnode* node);
+			virtual rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node);
 
 			virtual dev_t GetID() final { return this->fsid; }
 			virtual FSDriverType GetType() final { return this->_type; }

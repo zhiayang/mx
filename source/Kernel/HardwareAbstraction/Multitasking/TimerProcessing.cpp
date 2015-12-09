@@ -1,5 +1,5 @@
 // TimerProcessing.cpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0
 
 
@@ -26,14 +26,14 @@ namespace Multitasking
 		TimerCounter += (GlobalMilliseconds / GlobalTickRate);
 		ThreadTime += (GlobalMilliseconds / GlobalTickRate);
 
-		for(uint64_t l = SleepList->size(), g = 0; g < l; g++)
+		for(uint64_t l = SleepList.size(), g = 0; g < l; g++)
 		{
-			Thread* m = SleepList->front();
-			SleepList->erase(SleepList->begin());
+			Thread* m = SleepList.front();
+			SleepList.erase(SleepList.begin());
 
 			if(m->State == STATE_SUSPEND || m->State == STATE_BLOCKING)
 			{
-				SleepList->push_back(m);
+				SleepList.push_back(m);
 				continue;
 			}
 			else if(m->State == STATE_AWAITDEATH)
@@ -57,18 +57,13 @@ namespace Multitasking
 			if(m->Sleep == 0)
 			{
 				// GetThreadList(m)->insert(GetThreadList(m)->begin(), m);
-				GetThreadList(m)->push_back(m);
+				GetThreadList(m).push_back(m);
 			}
 			else
 			{
-				SleepList->push_back(m);
+				SleepList.push_back(m);
 			}
 		}
-
-
-
-
-
 
 		// do the thing with the rtc thing
 		if(Devices::RTC::DidInitialise())

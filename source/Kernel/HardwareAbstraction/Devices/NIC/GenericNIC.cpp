@@ -1,5 +1,5 @@
 // GenericNIC.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under Creative Commons 3.0 Unported.
 
 #include <Kernel.hpp>

@@ -1,5 +1,5 @@
 // HFSPlusVFS.hpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #pragma once
@@ -120,7 +120,7 @@ namespace Filesystems
 			virtual void Close(VFS::vnode* node) override;
 
 			// returns a list of items inside the directory, as vnodes.
-			virtual iris::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
+			virtual rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 
 
 		private:

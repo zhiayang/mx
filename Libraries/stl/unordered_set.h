@@ -34,7 +34,7 @@
 
 namespace stl
 {
-	template<typename Key, typename Alloc = TINYSTL_ALLOCATOR>
+	template<typename Key, typename Alloc = TINYSTL_ALLOCATOR<Key>>
 	class unordered_set
 	{
 	public:

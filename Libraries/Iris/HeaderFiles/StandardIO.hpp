@@ -1,5 +1,5 @@
 // userspace/StandardIO.hpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 
@@ -12,7 +12,6 @@
 #include <string.h>
 
 #include "Utility.hpp"
-#include "VariadicPrintf.hpp"
 
 namespace StdIO
 {

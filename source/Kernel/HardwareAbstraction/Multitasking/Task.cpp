@@ -1,5 +1,5 @@
 // Task.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
@@ -349,7 +349,7 @@ namespace Multitasking
 
 		// setup first
 		Virtual::SetupVAS(&proc->VAS);
-		proc->VAS.regions->clear();
+		proc->VAS.regions.clear();
 
 
 		Virtual::CopyVAS(&proc->Parent->VAS, &proc->VAS);

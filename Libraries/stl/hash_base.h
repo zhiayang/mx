@@ -32,29 +32,29 @@
 namespace stl
 {
 	template<typename Key, typename Value>
-	struct pair
+	struct h_pair
 	{
-		pair();
-		pair(const Key& key, const Value& value);
+		h_pair();
+		h_pair(const Key& key, const Value& value);
 
 		Key first;
 		Value second;
 	};
 
 	template<typename Key, typename Value>
-	pair<Key, Value>::pair()
+	h_pair<Key, Value>::h_pair()
 	{
 	}
 
 	template<typename Key, typename Value>
-	pair<Key, Value>::pair(const Key& key, const Value& value) : first(key), second(value)
+	h_pair<Key, Value>::h_pair(const Key& key, const Value& value) : first(key), second(value)
 	{
 	}
 
 	template<typename Key, typename Value>
-	static inline pair<Key, Value> make_pair(const Key& key, const Value& value)
+	static inline h_pair<Key, Value> make_pair(const Key& key, const Value& value)
 	{
-		return pair<Key, Value>(key, value);
+		return h_pair<Key, Value>(key, value);
 	}
 
 

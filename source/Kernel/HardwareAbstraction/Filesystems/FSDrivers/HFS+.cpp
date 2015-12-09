@@ -1,5 +1,5 @@
 // HFS+.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
@@ -129,15 +129,16 @@ namespace Filesystems
 		(void) statlink;
 	}
 
-	void FSDriverHFSPlus::Close(VFS::vnode *node)
+	void FSDriverHFSPlus::Close(VFS::vnode* node)
 	{
+		(void) node;
 	}
 
 	// returns a list of items inside the directory, as vnodes.
-	iris::vector<VFS::vnode*> FSDriverHFSPlus::ReadDir(VFS::vnode* node)
+	rde::vector<VFS::vnode*> FSDriverHFSPlus::ReadDir(VFS::vnode* node)
 	{
 		(void) node;
-		return iris::vector<VFS::vnode*>();
+		return rde::vector<VFS::vnode*>();
 	}
 
 }

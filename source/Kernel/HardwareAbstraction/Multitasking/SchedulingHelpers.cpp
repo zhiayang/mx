@@ -1,5 +1,5 @@
 // Scheduler.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 
@@ -126,15 +126,29 @@ namespace Multitasking
 			:: [lo]"g"(low), [hi]"g"(high) : "memory", "rax", "rbx", "rcx", "rdx");
 	}
 
-	rde::vector<Thread*>* GetThreadList(Thread* t)
+
+
+
+
+
+
+
+
+
+
+	rde::vector<Thread*>& GetThreadList(Thread* t)
 	{
-		return getRunQueue()->queue[t->Priority];
+		return GetRunQueue().queue[t->Priority];
 	}
 
 	Thread* FetchAndRemoveThread(Thread* thread)
 	{
 		assert(thread);
-		GetThreadList(thread)->remove(thread);
+		GetRunQueue().lock();
+
+		GetThreadList(thread).remove(thread);
+
+		GetRunQueue().unlock();
 		return thread;
 	}
 
@@ -147,35 +161,35 @@ namespace Multitasking
 
 	void WakeForMessage(Thread* thread)
 	{
-		getRunQueue()->lock();
+		GetRunQueue().lock();
 		assert(thread);
 
 		auto list = GetThreadList(thread);
 		if(thread->State != STATE_BLOCKING && thread->State != STATE_SUSPEND)
 		{
-			assert(list->contains(thread));
+			assert(list.contains(thread));
 			// list->insert(list->begin(), FetchAndRemoveThread(thread));
-			list->push_back(FetchAndRemoveThread(thread));
+			list.push_back(FetchAndRemoveThread(thread));
 		}
 		else
 		{
-			assert(SleepList->contains(thread));
+			assert(SleepList.contains(thread));
 			// thread is blocking, shoo it out of the blocking queue.
 
-			SleepList->remove(thread);
+			SleepList.remove(thread);
 			thread->State = STATE_NORMAL;
 			// GetThreadList(thread)->insert(GetThreadList(thread)->begin(), thread);
-			GetThreadList(thread)->push_back(thread);
+			GetThreadList(thread).push_back(thread);
 		}
 
-		getRunQueue()->unlock();
+		GetRunQueue().unlock();
 		YieldCPU();
 	}
 
 
 	void Block(uint8_t purpose)
 	{
-		getRunQueue()->lock();
+		GetRunQueue().lock();
 		if(GetCurrentThread()->State == STATE_BLOCKING)
 		{
 			Log("BLOCK (%d, %d, %x)", GetCurrentThread()->ThreadID, GetCurrentThread()->State, __builtin_return_address(0));
@@ -185,10 +199,10 @@ namespace Multitasking
 		Thread* thread = FetchAndRemoveThread(GetCurrentThread());
 
 		thread->State = STATE_BLOCKING;
-		SleepList->push_back(thread);
+		SleepList.push_back(thread);
 
 		(void) purpose;
-		getRunQueue()->unlock();
+		GetRunQueue().unlock();
 		YieldCPU();
 	}
 
@@ -204,16 +218,16 @@ namespace Multitasking
 
 	void AddToQueue(Process* Proc)
 	{
-		ProcessList->push_back(Proc);
+		ProcessList.push_back(Proc);
 		for(auto t : Proc->Threads)
 			AddToQueue(t);
 	}
 
 	void AddToQueue(Thread* t)
 	{
-		getRunQueue()->lock();
-		getRunQueue()->queue[t->Priority]->push_back(t);
-		getRunQueue()->unlock();
+		GetRunQueue().lock();
+		GetRunQueue().queue[t->Priority].push_back(t);
+		GetRunQueue().unlock();
 	}
 
 	extern "C" void Syscall_TerminateCrashedThread()
@@ -290,7 +304,7 @@ namespace Multitasking
 	// direct
 	void Suspend(Thread* p)
 	{
-		getRunQueue()->lock();
+		GetRunQueue().lock();
 		if(p && p->State == STATE_NORMAL)
 		{
 			Log("Suspended thread %d, name: %s", p->ThreadID, p->Parent->Name);
@@ -298,16 +312,17 @@ namespace Multitasking
 			// GetThreadList(p)->RemoveAt((uint64_t) GetThreadList(p)->IndexOf(p));
 
 			assert(p);
-			GetThreadList(p)->remove(p);
-			SleepList->push_back(p);
+			GetThreadList(p).remove(p);
+			SleepList.push_back(p);
 			p->State = STATE_SUSPEND;
 		}
-		getRunQueue()->unlock();
+
+		GetRunQueue().unlock();
 	}
 
 	void Resume(Thread* p)
 	{
-		getRunQueue()->lock();
+		GetRunQueue().lock();
 		if(p && p->State == STATE_SUSPEND)
 		{
 			Log("Resumed thread %d, name: %s", p->ThreadID, p->Parent->Name);
@@ -315,22 +330,22 @@ namespace Multitasking
 			p->Sleep = 0;
 			p->State = STATE_NORMAL;
 		}
-		getRunQueue()->unlock();
+		GetRunQueue().unlock();
 	}
 
 	void Kill(Thread* p)
 	{
 		if(p && p->State == STATE_NORMAL)
 		{
-			getRunQueue()->lock();
+			GetRunQueue().lock();
 			p->State = STATE_AWAITDEATH;
 
 			// remove the thread from its parent process's list.
 			Process* par = p->Parent;
 			par->Threads.remove(p);
 
-			GetThreadList(p)->remove(p);
-			SleepList->push_back(p);
+			GetThreadList(p).remove(p);
+			SleepList.push_back(p);
 
 
 			if(!(par->Flags & FLAG_DYING) && par->Threads.empty())
@@ -339,7 +354,7 @@ namespace Multitasking
 				Cleanup(par);
 			}
 
-			getRunQueue()->unlock();
+			GetRunQueue().unlock();
 
 
 			// wake up the watching threads.
@@ -354,7 +369,7 @@ namespace Multitasking
 		}
 		else if(p && (p->State == STATE_BLOCKING || p->State == STATE_SUSPEND))
 		{
-			assert(SleepList->contains(p));
+			assert(SleepList.contains(p));
 			p->State = STATE_AWAITDEATH;
 			Process* par = p->Parent;
 			par->Threads.remove(p);
@@ -411,7 +426,7 @@ namespace Multitasking
 
 	Process* GetProcess(pid_t pid)
 	{
-		for(auto p : *ProcessList)
+		for(auto p : ProcessList)
 		{
 			if(p->ProcessID == pid)
 				return p;
@@ -422,27 +437,27 @@ namespace Multitasking
 
 	Thread* GetThread(pid_t tid)
 	{
-		auto queue = getRunQueue();
-		queue->lock();
+		auto& runqueue = GetRunQueue();
+		runqueue.lock();
 
 		Thread* ret = 0;
 
 		for(int i = 0; i < NUM_PRIO; i++)
 		{
-			for(auto t : *getRunQueue()->queue[i])
+			for(auto t : runqueue.queue[i])
 			{
 				if(t->ThreadID == tid)
 					ret = t;
 			}
 		}
 
-		for(auto t : *SleepList)
+		for(auto t : SleepList)
 		{
 			if(t->ThreadID == tid)
 				ret = t;
 		}
 
-		queue->unlock();
+		runqueue.unlock();
 		return ret;
 	}
 }

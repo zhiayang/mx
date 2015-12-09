@@ -1,5 +1,5 @@
 // FAT32.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 
@@ -19,8 +19,9 @@
 #include <ctype.h>
 
 #include <String.hpp>
-#include <rdestl/vector.h>
 #include <sys/stat.h>
+
+#include <rdestl/vector.h>
 
 #include <StandardIO.hpp>
 #include <HardwareAbstraction/Filesystems.hpp>
@@ -91,7 +92,7 @@ namespace Filesystems
 	{
 		rde::string name;
 		uint32_t entrycluster;
-		iris::vector<uint32_t> clusters;
+		rde::vector<uint32_t> clusters;
 		rde::vector<rde::pair<uint64_t, uint64_t>> clusterchain;
 		uint32_t filesize;
 
@@ -315,7 +316,7 @@ namespace Filesystems
 
 	void ls(FSDriver* fs, vnode* node, int nest)
 	{
-		iris::vector<vnode*> nodes = fs->ReadDir(node);
+		rde::vector<vnode*> nodes = fs->ReadDir(node);
 		if(nodes.size() == 0)
 			return;
 
@@ -390,7 +391,7 @@ namespace Filesystems
 			assert(cn->info);
 			assert(cn->info->data);
 
-			iris::vector<VFS::vnode*> cdcontent = this->ReadDir(cn);
+			rde::vector<VFS::vnode*> cdcontent = this->ReadDir(cn);
 
 			// check each.
 			for(auto d : cdcontent)
@@ -443,15 +444,7 @@ namespace Filesystems
 
 
 
-
-
-
-
-
-
-
-
-	static rde::vector<rde::pair<uint64_t, uint64_t>> ConsolidateClusterChain(iris::vector<uint32_t>& cchain)
+	static rde::vector<rde::pair<uint64_t, uint64_t>> ConsolidateClusterChain(rde::vector<uint32_t>& cchain)
 	{
 		typedef rde::pair<uint64_t, uint64_t> pair_t;
 		cchain.merge_sort();
@@ -623,7 +616,7 @@ namespace Filesystems
 
 
 
-	iris::vector<VFS::vnode*> FSDriverFAT::ReadDir(VFS::vnode* node)
+	rde::vector<VFS::vnode*> FSDriverFAT::ReadDir(VFS::vnode* node)
 	{
 		assert(node);
 		assert(node->info);
@@ -677,7 +670,7 @@ namespace Filesystems
 		}
 
 
-		iris::vector<VFS::vnode*> ret;
+		rde::vector<VFS::vnode*> ret;
 
 		for(uint64_t addr = buf; addr < buf + dirsize;)
 		{
@@ -796,7 +789,7 @@ namespace Filesystems
 
 
 
-	iris::vector<uint32_t> FSDriverFAT::GetClusterChain(VFS::vnode* node, uint64_t* numclus)
+	rde::vector<uint32_t> FSDriverFAT::GetClusterChain(VFS::vnode* node, uint64_t* numclus)
 	{
 		// read the cluster chain
 
@@ -809,7 +802,7 @@ namespace Filesystems
 		uint32_t Cluster = tovnd(node)->entrycluster;
 		uint32_t cchain = 0;
 		const uint32_t lookahead = 0;
-		iris::vector<uint32_t> ret;
+		rde::vector<uint32_t> ret;
 
 		auto buf = MemoryManager::Virtual::AllocatePage(lookahead == 0 ? 1 : (512 * lookahead) / 0x1000);
 		auto obuf = buf;

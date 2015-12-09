@@ -1,5 +1,5 @@
 // Scheduler.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 
@@ -18,29 +18,31 @@ namespace HardwareAbstraction {
 namespace Multitasking
 {
 	static bool IsFirst = true;
-	static rde::vector<Thread*>* PendingSleepList;
-	static RunQueue* mainRunQueue;
+	static stl::vector<Thread*> PendingSleepList;
+
+	static RunQueue mainRunQueue;
 	static Thread* CurrentThread = 0;
+
 	static uint64_t CurrentCR3 = 0;
 	static uint64_t ScheduleCount = 0;
 
-	stl::vector<Thread*>* SleepList;
-	stl::vector<Process*>* ProcessList;
+	rde::vector<Thread*> SleepList;
+	rde::vector<Process*> ProcessList;
 
 	bool SchedulerEnabled = true;
 
 	void Initialise()
 	{
 		CurrentCR3 = GetKernelCR3();
-		SleepList = new stl::vector<Thread*>();
-		ProcessList = new stl::vector<Process*>();
-		PendingSleepList = new rde::vector<Thread*>();
+		// SleepList = new stl::vector<Thread*>();
+		// ProcessList = new stl::vector<Process*>();
+		// PendingSleepList = new rde::vector<Thread*>();
 
-		mainRunQueue = new RunQueue();
-		mainRunQueue->queue = new rde::vector<Thread*>*[NUM_PRIO];
+		mainRunQueue = RunQueue();
+		mainRunQueue.queue = new rde::vector<Thread*>[NUM_PRIO];
 
-		for(int i = 0; i < NUM_PRIO; i++)
-			mainRunQueue->queue[i] = new rde::vector<Thread*>();
+		// for(int i = 0; i < NUM_PRIO; i++)
+			// mainRunQueue.queue[i] = stl::vector<Thread*>();
 
 		*((int64_t*) 0x2610) = 0;
 	}
@@ -64,7 +66,7 @@ namespace Multitasking
 	Thread* GetCurrentThread()		{ return CurrentThread; }
 	pid_t GetCurrentThreadID()		{ return CurrentThread->ThreadID; }
 	pid_t GetCurrentProcessID()		{ return CurrentThread->Parent->ProcessID; }
-	RunQueue* getRunQueue()			{ return mainRunQueue; }
+	RunQueue& GetRunQueue()			{ return mainRunQueue; }
 
 	// if, after N number of switches, processes in the low/norm queue don't get to run, run them all to completion.
 	// todo: fix scheduler. starvation still happens (unable to prevent cross-starvation)
@@ -72,16 +74,17 @@ namespace Multitasking
 
 	Thread* GetNextThread()
 	{
-		auto theQueue = getRunQueue();
+		auto& theQueue = GetRunQueue();
 		Thread* r = CurrentThread;
-		theQueue->lock();
+		theQueue.lock();
+
 		for(int i = 0; i < NUM_PRIO; i++)
 		{
-			if(!theQueue->queue[i]->empty() && (ScheduleCount % StarvationThresholds[i]) == 0)
+			if(!theQueue.queue[i].empty() && (ScheduleCount % StarvationThresholds[i]) == 0)
 			{
-				r = theQueue->queue[i]->front();
-				theQueue->queue[i]->erase(theQueue->queue[i]->begin());
-				theQueue->queue[i]->push_back(r);
+				r = theQueue.queue[i].front();
+				theQueue.queue[i].erase(theQueue.queue[i].begin());
+				theQueue.queue[i].push_back(r);
 				break;
 			}
 		}
@@ -95,7 +98,7 @@ namespace Multitasking
 			assert(r);
 		}
 
-		theQueue->unlock();
+		theQueue.unlock();
 
 		ScheduleCount++;
 		return r;
@@ -105,15 +108,15 @@ namespace Multitasking
 	{
 		if(BOpt_Likely(!IsFirst))
 		{
-			if(PendingSleepList->size() > 0)
+			if(PendingSleepList.size() > 0)
 			{
-				for(uint64_t i = 0, s = PendingSleepList->size(); i < s; i++)
+				for(uint64_t i = 0, s = PendingSleepList.size(); i < s; i++)
 				{
-					auto front = PendingSleepList->front();
-					PendingSleepList->erase_unordered(PendingSleepList->begin());
-					SleepList->push_back(front);
+					auto front = PendingSleepList.front();
+					PendingSleepList.erase_unordered(PendingSleepList.begin());
+					SleepList.push_back(front);
 
-					SleepList->back()->StackPointer = context;
+					SleepList.back()->StackPointer = context;
 				}
 			}
 			else
@@ -143,10 +146,13 @@ namespace Multitasking
 		}
 
 
+
+
 		// 0x2610 stores the thread's current errno.
 		// we therefore need to save it before switching threads.
 		CurrentThread->currenterrno = *((int64_t*) 0x2610);
 		CurrentThread = GetNextThread();
+
 
 
 		if(CurrentThread->Parent->Flags & 0x1)
@@ -154,6 +160,7 @@ namespace Multitasking
 			// this tells switch.s (on return) that we need to return to user-mode.
 			*((uint64_t*) 0x2608) = 0xFADE;
 		}
+
 
 		// set tss
 		*((uint64_t*) 0x2504) = CurrentThread->TopOfStack;
@@ -201,7 +208,7 @@ namespace Multitasking
 		Thread* p = FetchAndRemoveThread(CurrentThread);
 
 		p->Sleep = (uint32_t) __abs(t);
-		PendingSleepList->push_back(p);
+		PendingSleepList.push_back(p);
 
 		// if time is negative, we called from userspace, so don't nest interrupts.
 		YieldCPU();

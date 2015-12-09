@@ -1,5 +1,5 @@
 // Network.hpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <stdint.h>
@@ -414,7 +414,7 @@ namespace Network
 			virtual void Close(Filesystems::VFS::vnode* node) override;
 
 			// returns a list of items inside the directory, as vnodes.
-			virtual iris::vector<Filesystems::VFS::vnode*> ReadDir(Filesystems::VFS::vnode* node) override;
+			virtual rde::vector<Filesystems::VFS::vnode*> ReadDir(Filesystems::VFS::vnode* node) override;
 
 
 			// unix-isms that we'll just have to implement for an easier time in userspace

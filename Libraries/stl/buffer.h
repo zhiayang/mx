@@ -235,7 +235,7 @@ namespace stl
 	{
 		typedef T* pointer;
 		const size_t range = (size_t) (last - first);
-		const size_t tail = (b->last - last);
+		const size_t tail = (size_t) (b->last - last);
 		pointer it = b->last - ((range < tail) ? range : tail);
 		for(pointer end = b->last, dest = first; it != end; ++it, ++dest)
 			move(*dest, *it);

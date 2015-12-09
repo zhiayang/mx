@@ -1,5 +1,5 @@
 // Multitasking.hpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under Creative Commons Attribution ShareAlike 3.0 Unported.
 
 
@@ -91,7 +91,7 @@ namespace HardwareAbstraction
 			}
 
 			Mutex* thelock;
-			rde::vector<Thread*>** queue;
+			rde::vector<Thread*>* queue;
 		};
 
 
@@ -108,16 +108,15 @@ namespace HardwareAbstraction
 		#define FLAG_DETACHED		0x2
 		#define FLAG_DYING			0x80
 
-
-		extern stl::vector<Process*>* ProcessList;
-		extern stl::vector<Thread*>* SleepList;
+		extern rde::vector<Process*> ProcessList;
+		extern rde::vector<Thread*> SleepList;
 
 		extern uint64_t NumThreads;
 		extern uint64_t NumProcesses;
 		extern bool SchedulerEnabled;
 
 		void Initialise();
-		RunQueue* getRunQueue();
+		RunQueue& GetRunQueue();
 		uint64_t GetNumberOfThreads();
 		uint64_t GetCurrentCR3();
 		Thread* GetThread(pid_t id);
@@ -136,7 +135,7 @@ namespace HardwareAbstraction
 		void Sleep(int64_t Miliseconds);
 		extern "C" void YieldCPU();
 		void Block(uint8_t purpose = 0);
-		rde::vector<Thread*>* GetThreadList(Thread* t);
+		rde::vector<Thread*>& GetThreadList(Thread* t);
 		Thread* FetchAndRemoveThread(Thread* t);
 
 		void Suspend(Thread* p);

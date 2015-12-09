@@ -1,5 +1,5 @@
 // ConsoleVFS.hpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include "FSUtil.hpp"
@@ -24,7 +24,7 @@ namespace Kernel
 					virtual void Flush(VFS::vnode* node) override;
 					virtual void Close(VFS::vnode* node) override;
 
-					virtual iris::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
+					virtual rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 			};
 
 			class FSDriverStdin : public FSDriver
@@ -41,7 +41,7 @@ namespace Kernel
 					virtual void Flush(VFS::vnode* node) override;
 					virtual void Close(VFS::vnode* node) override;
 
-					virtual iris::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
+					virtual rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 			};
 
 			class FSDriverStdout : public FSDriver
@@ -58,7 +58,7 @@ namespace Kernel
 					virtual void Flush(VFS::vnode* node) override;
 					virtual void Close(VFS::vnode* node) override;
 
-					virtual iris::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
+					virtual rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 			};
 
 			class FSDriverStdlog : public FSDriver
@@ -75,7 +75,7 @@ namespace Kernel
 					virtual void Flush(VFS::vnode* node) override;
 					virtual void Close(VFS::vnode* node) override;
 
-					virtual iris::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
+					virtual rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 			};
 		}
 	}

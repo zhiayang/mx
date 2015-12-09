@@ -98,9 +98,66 @@ namespace stl
 		iterator erase_unordered(iterator where);
 		iterator erase_unordered(iterator first, iterator last);
 
+		void merge_sort();
+
 	private:
 		buffer<T, Alloc> m_buffer;
 	};
+
+
+	template <typename T, typename Alloc>
+	static vector<T, Alloc> _mergesort(vector<T, Alloc>& a, vector<T, Alloc>& b)
+	{
+		vector<T, Alloc> result;
+		size_t i = 0;
+		size_t j = 0;
+		while(i < a.size() && j < b.size())
+		{
+			if(a[i] <= b[j])
+				result.push_back(a[i++]);
+
+			else
+				result.push_back(b[j++]);
+		}
+
+		// Copy tail. Only one of these loops will execute per invocation
+		while(i < a.size())
+			result.push_back(a[i++]);
+
+		while(j < b.size())
+			result.push_back(b[j++]);
+
+		return result;
+	}
+
+
+
+
+
+
+	template <typename T, typename Alloc>
+	inline void vector<T, Alloc>::merge_sort()
+	{
+		// split in half.
+		if(this->size() <= 1)
+			return;
+
+		iterator middle = this->begin() + (this->size() / 2);
+		vector left(this->begin(), middle);
+		vector right(middle, this->end());
+
+		assert(left.size() + right.size() == this->size());
+		auto result = _mergesort(left, right);
+
+		*this = result;
+	}
+
+
+
+
+
+
+
 
 
 
