@@ -89,8 +89,6 @@ namespace Kernel
 	ACPI::RootTable* RootACPITable;
 	CPUID::CPUIDData* KernelCPUID;
 
-	static Mutex* mtxtest = 0;
-
 	// devices
 	Random* KernelRandom;
 
@@ -438,17 +436,17 @@ namespace Kernel
 
 		// Console::ClearScreen();
 
-		#define TEST_USERSPACE_PROG		1
-		#define TEST_LARGE_FILE_READ	1
-		#define TEST_NETWORK_IRC		0
-		#define TEST_MUTEXES			1
+		#define TEST_USERSPACE_PROG		0
+		#define TEST_LARGE_FILE_READ	0
+		#define TEST_NETWORK_IRC		1
+		#define TEST_MUTEXES			0
 
 
 
 
 		#if TEST_MUTEXES
 		{
-			mtxtest = new Mutex();
+			static mtxtest = new Mutex();
 			auto func1 = []()
 			{
 				PrintFmt("locking mutex\n");
@@ -576,6 +574,8 @@ namespace Kernel
 
 			auto other = []()
 			{
+				PrintFmt("sock = %d\n", aSock);
+
 				uint8_t* output = new uint8_t[256];
 				while(true)
 				{

@@ -41,7 +41,9 @@ namespace Network
 
 		if(fe->node->info->driver->GetType() != FSDriverType::Socket)
 		{
-			Log(1, "Cannot perform socket operations on a non-socket FD!");
+			Log(1, "Cannot perform socket operations on a non-socket FD! (Type = %d) (%p // %p)", fe->node->info->driver->GetType(),
+				__builtin_return_address(0), __builtin_return_address(1));
+
 			Multitasking::SetThreadErrno(ENOTSOCK);
 
 			return 0;
