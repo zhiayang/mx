@@ -18,7 +18,7 @@ namespace HardwareAbstraction {
 namespace Multitasking
 {
 	static bool IsFirst = true;
-	static stl::vector<Thread*> PendingSleepList;
+	static rde::vector<Thread*> PendingSleepList;
 
 	static RunQueue mainRunQueue;
 	static Thread* CurrentThread = 0;
@@ -34,32 +34,12 @@ namespace Multitasking
 	void Initialise()
 	{
 		CurrentCR3 = GetKernelCR3();
-		// SleepList = new stl::vector<Thread*>();
-		// ProcessList = new stl::vector<Process*>();
-		// PendingSleepList = new rde::vector<Thread*>();
 
 		mainRunQueue = RunQueue();
 		mainRunQueue.queue = new rde::vector<Thread*>[NUM_PRIO];
 
-		// for(int i = 0; i < NUM_PRIO; i++)
-			// mainRunQueue.queue[i] = stl::vector<Thread*>();
-
 		*((int64_t*) 0x2610) = 0;
 	}
-
-
-
-	// static void* getsp()
-	// {
-	// 	void* sp = 0;
-	// 	asm volatile("movq %%rsp, %0" : "=r"(sp) : /* No input */ : /* no clobbered */);
-
-	// 	return sp;
-	// }
-
-
-
-
 
 
 	Process* GetCurrentProcess()	{ return CurrentThread ? CurrentThread->Parent : Kernel::KernelProcess; }
@@ -110,6 +90,7 @@ namespace Multitasking
 		{
 			if(PendingSleepList.size() > 0)
 			{
+				assert(PendingSleepList.size() == 1 && "no, it can't be!");
 				for(uint64_t i = 0, s = PendingSleepList.size(); i < s; i++)
 				{
 					auto front = PendingSleepList.front();
@@ -125,7 +106,9 @@ namespace Multitasking
 			}
 		}
 		else
+		{
 			IsFirst = false;
+		}
 
 
 
@@ -210,6 +193,7 @@ namespace Multitasking
 		p->Sleep = (uint32_t) __abs(t);
 		PendingSleepList.push_back(p);
 
+		// todo: what does this comment mean?
 		// if time is negative, we called from userspace, so don't nest interrupts.
 		YieldCPU();
 	}

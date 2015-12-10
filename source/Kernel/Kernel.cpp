@@ -89,6 +89,7 @@ namespace Kernel
 	ACPI::RootTable* RootACPITable;
 	CPUID::CPUIDData* KernelCPUID;
 
+	static Mutex* mtxtest = 0;
 
 	// devices
 	Random* KernelRandom;
@@ -437,48 +438,52 @@ namespace Kernel
 
 		// Console::ClearScreen();
 
-		#define TEST_USERSPACE_PROG		0
+		#define TEST_USERSPACE_PROG		1
 		#define TEST_LARGE_FILE_READ	1
 		#define TEST_NETWORK_IRC		0
-		#define TEST_MUTEXES			0
+		#define TEST_MUTEXES			1
 
 
 
 
-
-
-
-		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
-
-		#if TEST_USERSPACE_PROG
+		#if TEST_MUTEXES
 		{
-			// setup args:
-			// 0: prog name (duh)
-			// 1: FB address
-			// 2: width
-			// 3: height
-			// 4: bpp (32)
+			mtxtest = new Mutex();
+			auto func1 = []()
+			{
+				PrintFmt("locking mutex\n");
+				LOCK(mtxtest);
 
-			const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
-			auto proc = LoadBinary::Load(path, "displayd",
-				(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
-				GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
+				PrintFmt("sleeping for 2 seconds\n");
+				SLEEP(2000);
+				PrintFmt("lock released\n");
+				UNLOCK(mtxtest);
+			};
 
-			Multitasking::AddToQueue(proc);
+			auto func2 = []()
+			{
+				PrintFmt("waiting for lock...");
+				SLEEP(500);
+				PrintFmt("trying mutex\n");
+
+				while(!TryLockMutex(mtxtest))
+					; // PrintFmt("x");
+
+				PrintFmt("locked!\n");
+				UNLOCK(mtxtest);
+			};
+
+			Multitasking::AddToQueue(Multitasking::CreateKernelThread(func2));
+			Multitasking::AddToQueue(Multitasking::CreateKernelThread(func1));
 		}
 		#endif
-
-
-		PrintFmt("[mx] has completed initialisation.\n");
-		Log("Kernel init complete\n----------------------------\n");
-
 
 
 		#if TEST_LARGE_FILE_READ
 		{
 			using namespace Filesystems;
 
-			fd_t file = OpenFile("/texts/big.txt", 0);
+			fd_t file = OpenFile("/texts/two-cities.txt", 0);
 			assert(file > 0);
 
 			struct stat s;
@@ -512,6 +517,35 @@ namespace Kernel
 		}
 		#endif
 
+
+
+
+
+
+
+		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
+
+		#if TEST_USERSPACE_PROG
+		{
+			// setup args:
+			// 0: prog name (duh)
+			// 1: FB address
+			// 2: width
+			// 3: height
+			// 4: bpp (32)
+
+			const char* path = "/System/Library/LaunchDaemons/displayd.mxa";
+			auto proc = LoadBinary::Load(path, "displayd",
+				(void*) 5, (void*) new uint64_t[5] { (uint64_t) path,
+				GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
+
+			Multitasking::AddToQueue(proc);
+		}
+		#endif
+
+
+		PrintFmt("[mx] has completed initialisation.\n");
+		Log("Kernel init complete\n----------------------------\n");
 
 
 
@@ -625,39 +659,6 @@ namespace Kernel
 
 
 
-		#if TEST_MUTEXES
-		{
-			static Mutex* test = new Mutex;
-			auto func1 = []()
-			{
-				PrintFmt("locking mutex\n");
-				LOCK(test);
-
-				PrintFmt("sleeping for 2 seconds\n");
-				SLEEP(2000);
-				PrintFmt("lock released\n");
-				UNLOCK(test);
-			};
-
-			auto func2 = []()
-			{
-				PrintFmt("waiting for lock...");
-				SLEEP(500);
-				PrintFmt("trying mutex\n");
-
-				while(!TryLockMutex(test))
-					PrintFmt("x");
-
-				PrintFmt("locked!\n");
-				UNLOCK(test);
-			};
-
-			Multitasking::AddToQueue(Multitasking::CreateKernelThread(func2));
-			Multitasking::AddToQueue(Multitasking::CreateKernelThread(func1));
-		}
-		#endif
-
-
 
 
 
@@ -704,9 +705,9 @@ namespace Kernel
 
 	void HaltSystem(const char* message, const char* filename, uint64_t line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%d, RA(0): %p", message, filename, line, __builtin_return_address(0));
+		Log("System Halted: %s, %s:%d, RA(0): %p, RA(1): %p", message, filename, line, __builtin_return_address(0));
 
-		PrintFmt("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
+		PrintFmt("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0), __builtin_return_address(1));
 
 
 		UHALT();
@@ -714,9 +715,9 @@ namespace Kernel
 
 	void HaltSystem(const char* message, const char* filename, const char* line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%s, RA(0): %p", message, filename, line, __builtin_return_address(0));
+		Log("System Halted: %s, %s:%s, RA(0): %p, RA(1): %p", message, filename, line, __builtin_return_address(0));
 
-		PrintFmt("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %s (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
+		PrintFmt("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %s (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0), __builtin_return_address(1));
 
 		UHALT();
 	}

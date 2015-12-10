@@ -493,7 +493,6 @@ namespace Virtual
 				reg->phys = p | (pair->phys & 0xFFF);
 			}
 
-
 			dest->regions.push_back(reg);
 		}
 
