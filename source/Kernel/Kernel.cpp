@@ -412,7 +412,7 @@ namespace Kernel
 
 				// mount root fs from partition 0 at /
 				VFS::Mount(f1->Partitions.front(), fs, "/");
-				Log("Root FS vfat[16/32] Mounted at /");
+				Log("Root FS vfat [%d] Mounted at /", fs->GetFATSize());
 			}
 		}
 

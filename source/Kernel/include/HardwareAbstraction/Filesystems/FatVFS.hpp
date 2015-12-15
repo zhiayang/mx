@@ -25,6 +25,8 @@ namespace Filesystems
 
 			virtual rde::vector<VFS::vnode*> ReadDir(VFS::vnode* node) override;
 
+			size_t GetFATSize();
+
 		private:
 			uint8_t FATKind;
 

@@ -177,6 +177,22 @@ namespace Filesystems
 		return this->FirstUsableSector + (cluster * this->SectorsPerCluster - (2 * this->SectorsPerCluster));
 	}
 
+	size_t FSDriverFAT::GetFATSize()
+	{
+		if(this->FATKind == FAT16)
+		{
+			return 16;
+		}
+		else if(this->FATKind == FAT32)
+		{
+			return 32;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+
 	FSDriverFAT::FSDriverFAT(Partition* _part) : FSDriver(_part, FSDriverType::Physical)
 	{
 		COMPILE_TIME_ASSERT(sizeof(DirectoryEntry) == sizeof(LFNEntry));
