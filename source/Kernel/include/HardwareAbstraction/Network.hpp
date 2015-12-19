@@ -307,6 +307,8 @@ namespace Network
 				void Disconnect();
 
 			private:
+				TCPConnection& operator = (const TCPConnection&) = delete;
+				TCPConnection(const TCPConnection&) = delete;
 				TCPConnection(Socket* socket, uint16_t srcport, uint16_t destport);
 
 				ConnectionError error;

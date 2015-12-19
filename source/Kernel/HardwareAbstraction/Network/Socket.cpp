@@ -90,7 +90,8 @@ namespace Network
 		assert(socketfs);
 		assert(socketfs->driver);
 
-		assert(socketfs->driver->GetType() == FSDriverType::Socket);
+		FSDriverType fdt = socketfs->driver->GetType();
+		assert(fdt == FSDriverType::Socket);
 
 		if(!((SocketVFS*) socketfs->driver)->interface)
 			((SocketVFS*) socketfs->driver)->interface = interface;
@@ -208,6 +209,7 @@ namespace Network
 	SocketVFS::SocketVFS() : FSDriver(nullptr, FSDriverType::Socket)
 	{
 		this->_seekable = false;
+		this->interface = 0;
 	}
 
 	SocketVFS::~SocketVFS()

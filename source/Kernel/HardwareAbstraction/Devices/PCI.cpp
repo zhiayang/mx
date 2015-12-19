@@ -35,13 +35,18 @@ namespace PCI
 
 	rde::list<PCIDevice*>* SearchByVendorDevice(uint16_t VendorID, uint16_t DeviceID)
 	{
-		uint16_t bus = 0, slot = 0;
-		uint8_t func = 0;
-		uint16_t vendor = 0, device = 0;
 		rde::list<PCIDevice*>* ret = new rde::list<PCIDevice*>();
 
 		for(auto dev : *PCIDevice::PCIDevices)
 		{
+
+			uint16_t bus 	= 0;
+			uint16_t slot	= 0;
+			uint8_t func	= 0;
+			uint16_t vendor	= 0;
+			uint16_t device	= 0;
+
+
 			bus = dev->GetBus();
 			slot = dev->GetSlot();
 			func = dev->GetFunction();
@@ -58,14 +63,17 @@ namespace PCI
 
 	rde::list<PCIDevice*>* SearchByClassSubclass(uint8_t c, uint8_t sc)
 	{
-		uint16_t bus = 0, slot = 0;
-		uint8_t func = 0;
-		uint16_t tClass = 0, tSubclass = 0;
 		rde::list<PCIDevice*>* ret = new rde::list<PCIDevice*>();
 
 
 		for(auto dev : *PCIDevice::PCIDevices)
 		{
+			uint16_t bus		= 0;
+			uint16_t slot		= 0;
+			uint8_t func		= 0;
+			uint16_t tClass		= 0;
+			uint16_t tSubclass	= 0;
+
 			bus = dev->GetBus();
 			slot = dev->GetSlot();
 			func = dev->GetFunction();

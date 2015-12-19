@@ -16,7 +16,8 @@ namespace NIC
 
 	GenericNIC::GenericNIC()
 	{
-
+		memset(this->MAC, 0, 6);
+		this->pcidev = 0;
 	}
 }
 }

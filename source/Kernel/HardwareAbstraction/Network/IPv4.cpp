@@ -153,7 +153,9 @@ namespace IP
 		// check for fragmentation
 		if(((ip->FlagsAndFragmentOffset & 0xE0) >> 5) & 0x1)
 		{
-			Log("Received IPv4 packet with fragmentation, discarding...");
+			Log("Received IPv4 packet with fragmentation, discarding... (not supported)");
+			delete fragment;
+
 			return;
 		}
 

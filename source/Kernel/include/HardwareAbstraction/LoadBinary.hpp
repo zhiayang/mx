@@ -34,7 +34,7 @@ namespace LoadBinary
 	class ELFExecutable : public ExecutableFormat
 	{
 		public:
-			ELFExecutable(uint8_t* buf);
+			explicit ELFExecutable(uint8_t* buf);
 			~ELFExecutable();
 			virtual uint64_t GetEntryPoint() override;
 			virtual uint64_t GetTLSSize() override;

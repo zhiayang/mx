@@ -15,6 +15,7 @@ namespace Devices
 {
 	enum class KeyboardInterface
 	{
+		Invalid,
 		PS2,
 		USB
 	};
@@ -22,7 +23,7 @@ namespace Devices
 	class Keyboard : public DeviceManager::Device
 	{
 		public:
-			Keyboard() { }
+			Keyboard() : type(KeyboardInterface::Invalid), Enabled(false) { }
 			virtual ~Keyboard();
 
 			virtual void HandleKeypress();

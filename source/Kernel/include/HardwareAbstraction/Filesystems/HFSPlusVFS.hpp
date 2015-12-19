@@ -108,7 +108,7 @@ namespace Filesystems
 	class FSDriverHFSPlus : public FSDriver
 	{
 		public:
-			FSDriverHFSPlus(Devices::Storage::Partition* part);
+			explicit FSDriverHFSPlus(Devices::Storage::Partition* part);
 			virtual ~FSDriverHFSPlus() override;
 			virtual bool Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms) override;
 			virtual bool Delete(VFS::vnode* node, const char* path) override;

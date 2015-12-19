@@ -37,7 +37,7 @@ namespace VideoOutput
 	class BochsGraphicsAdapter : public GenericVideoDevice
 	{
 		public:
-			BochsGraphicsAdapter(Devices::PCI::PCIDevice* thisdev);
+			explicit BochsGraphicsAdapter(Devices::PCI::PCIDevice* thisdev);
 			void WriteRegister(uint64_t RegIndex, uint64_t Value);
 			uint64_t ReadRegister(uint64_t RegIndex);
 

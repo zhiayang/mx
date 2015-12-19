@@ -12,7 +12,7 @@ namespace Filesystems
 	class FSDriverFAT : public FSDriver
 	{
 		public:
-			FSDriverFAT(Devices::Storage::Partition* part);
+			explicit FSDriverFAT(Devices::Storage::Partition* part);
 			virtual ~FSDriverFAT() override;
 			virtual bool Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms) override;
 			virtual bool Delete(VFS::vnode* node, const char* path) override;

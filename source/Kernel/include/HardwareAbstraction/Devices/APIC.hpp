@@ -14,7 +14,7 @@ namespace Devices
 	class APIC : public DeviceManager::Device
 	{
 		public:
-			APIC(ACPI::APICTable* table);
+			explicit APIC(ACPI::APICTable* table);
 
 
 		private:

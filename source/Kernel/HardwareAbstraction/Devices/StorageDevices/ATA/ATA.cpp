@@ -36,6 +36,13 @@ namespace Storage
 
 		PrimaryCommand		= PrimaryBaseIO + 7;
 		SecondaryCommand	= SecondaryBaseIO + 7;
+
+		this->PRDTable		= 0;
+		this->ParentPCI		= 0;
+		this->MaxSectors	= 0;
+		this->IsGPT			= false;
+
+		memset(this->Data, 0, 512);
 	}
 
 
@@ -166,9 +173,9 @@ namespace Storage
 
 			// read status port
 			uint16_t exist = IOPort::ReadByte(BaseIO + 7);
-			uint8_t pollcount = 0;
 			if(exist)
 			{
+				uint8_t pollcount = 0;
 				while(pollcount < (uint8_t)(-1))
 				{
 					if(IOPort::ReadByte(BaseIO + 7) & (1 << 7))

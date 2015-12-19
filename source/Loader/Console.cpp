@@ -156,7 +156,6 @@ namespace Console
 
 	static uint64_t PrintHex_NoPrefix(uint64_t n)
 	{
-		int64_t tmp = 0;
 		int64_t i = 0;
 		uint64_t ret = 0;
 
@@ -213,8 +212,7 @@ namespace Console
 
 		for(; i >= 0; i -= 4)
 		{
-			tmp = (n >> i) & 0xF;
-
+			int64_t tmp = (n >> i) & 0xF;
 
 			if(tmp >= 0xA)
 				PrintChar((uint8_t) (tmp - 0xA + 'A'));
@@ -239,7 +237,7 @@ namespace Console
 			return PrintHex_NoPrefix(n) + 2;
 		}
 
-		int64_t tmp;
+
 		int64_t i = (prec * 4) - 4;
 		uint64_t ret = 0;
 
@@ -258,7 +256,7 @@ namespace Console
 
 		for(; i >= 0; i -= 4)
 		{
-			tmp = (n >> i) & 0xF;
+			int64_t tmp = (n >> i) & 0xF;
 
 
 			if(tmp >= 0xA)
@@ -390,7 +388,6 @@ namespace Console
 
 		uint64_t PrintedChars = 0;
 
-		char c = 0;
 		int64_t z = 0;
 		uint64_t x = 0;
 		char* s = 0;
@@ -405,7 +402,7 @@ namespace Console
 
 		for(uint64_t i = 0; i < length; i++)
 		{
-			c = string[i];
+			char c = string[i];
 
 			if(!IsFormat && c == '%')
 			{

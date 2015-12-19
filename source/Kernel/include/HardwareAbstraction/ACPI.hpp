@@ -30,7 +30,7 @@ namespace HardwareAbstraction
 
 		struct RootTable
 		{
-			RootTable(uint64_t address);
+			explicit RootTable(uint64_t address);
 
 			char signature[8];
 			char oemid[6];
@@ -49,7 +49,7 @@ namespace HardwareAbstraction
 		struct SDTable;
 		struct SystemDescriptionTable
 		{
-			SystemDescriptionTable(uint64_t address);
+			explicit SystemDescriptionTable(uint64_t address);
 
 			char		signature[4];
 			uint32_t	length;

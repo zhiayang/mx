@@ -143,6 +143,8 @@ namespace IPC
 			asm volatile("mov %%rsp, %[sp]" : [sp]"=m"(stackptr) :: "memory");
 
 			uint64_t* rbp = (uint64_t*) stackptr;
+			if(rbp == 0)
+				HALT("stackptr is null");
 
 			#define STACK_MAGIC_CANARY 0xFFFFFFFFDEADBEEF
 

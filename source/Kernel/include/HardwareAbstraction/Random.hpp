@@ -32,7 +32,7 @@ namespace HardwareAbstraction
 	class Random_PseudoRandom : public Random
 	{
 		public:
-			Random_PseudoRandom(uint32_t seed = 1);
+			explicit Random_PseudoRandom(uint32_t seed = 1);
 
 			virtual ~Random_PseudoRandom();
 			virtual uint8_t GenerateByte() override;

@@ -152,7 +152,7 @@ namespace Filesystems
 	class FSDriver
 	{
 		public:
-			FSDriver(Devices::Storage::Partition* part, FSDriverType type) : partition(part), _type(type) { }
+			FSDriver(Devices::Storage::Partition* part, FSDriverType type) : partition(part), _type(type), fsid(0), _seekable(false) { }
 			virtual ~FSDriver();
 			virtual bool Create(VFS::vnode* node, const char* path, uint64_t flags, uint64_t perms);
 			virtual bool Delete(VFS::vnode* node, const char* path);

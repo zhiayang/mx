@@ -336,10 +336,10 @@ namespace Filesystems
 		if(nodes.size() == 0)
 			return;
 
-		vnode* n = 0;
 		for(size_t k = 1; k < nodes.size(); k++)
 		{
-			n = nodes[k];
+			vnode* n = nodes[k];
+
 			if(tovnd(n)->name == ".." || tovnd(n)->name == ".")
 				continue;
 
@@ -507,6 +507,7 @@ namespace Filesystems
 
 		vnode_data* vnd = tovnd(node);
 		uint64_t numclus = 0;
+
 		if(vnd->clusters.size() == 0)
 			vnd->clusters = this->GetClusterChain(node, &numclus);
 
@@ -743,7 +744,7 @@ namespace Filesystems
 				if(dirent->attrib & ATTR_READONLY)	vn->attrib |= Attributes::ReadOnly;
 				if(dirent->attrib & ATTR_HIDDEN)	vn->attrib |= Attributes::Hidden;
 
-				vn->type = (dirent->attrib & ATTR_FOLDER ? VNodeType::Folder : VNodeType::File);
+				vn->type = ((dirent->attrib & ATTR_FOLDER) ? VNodeType::Folder : VNodeType::File);
 
 				// setup fs data
 				// we need to fill in the 'entrycluster' value in the vnode

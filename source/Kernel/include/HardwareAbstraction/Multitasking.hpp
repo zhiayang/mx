@@ -15,7 +15,12 @@
 #include <signal.h>
 
 extern "C" void YieldCPU();
+
 namespace Kernel {
+
+void Log(uint8_t level, const char* str, ...);
+void Log(const char* str, ...);
+
 namespace HardwareAbstraction
 {
 	namespace Multitasking
@@ -25,27 +30,29 @@ namespace HardwareAbstraction
 
 		struct Thread
 		{
-			pid_t ThreadID;
-			uint64_t StackPointer;
-			uint64_t TopOfStack;
-			uint64_t StackSize;
-			uint8_t State;
-			uint32_t Sleep;
-			uint8_t Priority;
-			uint8_t flags;
+			pid_t ThreadID			= 0;
+			uint64_t StackPointer	= 0;
+			uint64_t TopOfStack		= 0;
+			uint64_t StackSize		= 0;
+			uint8_t State			= 0;
+			uint32_t Sleep			= 0;
+			uint8_t Priority		= 0;
+			uint8_t flags			= 0;
+			uint16_t ExecutionTime	= 0;
+
+			void* tlsptr			= 0;
+			Process* Parent			= 0;
+
+			// a bit hacky, but this stores the current thread errno.
+			int64_t currenterrno	= 0;
 
 			rde::list<uintptr_t> messagequeue;
-			uint16_t ExecutionTime;
 
-			Process* Parent;
 			ThreadRegisterState_type* CrashState;
-			void* tlsptr;
 
 			rde::vector<Thread*> watchers;
 			rde::vector<Thread*> watching;
 
-			// a bit hacky, but this stores the current thread errno.
-			int64_t currenterrno;
 
 			void* returnval;
 			void (*Thread)();
@@ -53,18 +60,18 @@ namespace HardwareAbstraction
 
 		struct Process
 		{
-			Process(MemoryManager::Virtual::PageMapStructure* pml) : VAS(pml) { }
+			explicit Process(MemoryManager::Virtual::PageMapStructure* pml) : VAS(pml) { }
 
-			pid_t ProcessID;			// Process ID
-			uint8_t Flags;
-			char Name[64];				// Task's name
-			size_t tlssize;
+			pid_t ProcessID	= 0;		// Process ID
+			uint8_t Flags	= 0;
+			size_t tlssize	= 0;
+			char Name[64];		// Task's name
 
 			Filesystems::IOContext iocontext;
 			MemoryManager::Virtual::VirtualAddressSpace VAS;
-			sighandler_t* SignalHandlers;
+			sighandler_t* SignalHandlers = 0;
 
-			Process* Parent;
+			Process* Parent = 0;
 			rde::vector<Thread*> Threads;
 		};
 
@@ -77,6 +84,31 @@ namespace HardwareAbstraction
 			{
 				this->thelock = new Mutex();
 			}
+
+
+			RunQueue(const RunQueue&) = delete;
+			RunQueue& operator = (const RunQueue&) = delete;
+
+			RunQueue(const RunQueue&& copy)
+			{
+				if(this->thelock)	delete this->thelock;
+				this->thelock = copy.thelock;
+			}
+
+			RunQueue& operator = (const RunQueue&& copy)
+			{
+				if(this->thelock)	delete this->thelock;
+				this->thelock = copy.thelock;
+
+				return *this;
+			}
+
+
+
+
+
+
+
 
 			void lock()
 			{
@@ -91,7 +123,7 @@ namespace HardwareAbstraction
 			}
 
 			Mutex* thelock;
-			rde::vector<Thread*>* queue;
+			rde::vector<Thread*> queue[NUM_PRIO];
 		};
 
 

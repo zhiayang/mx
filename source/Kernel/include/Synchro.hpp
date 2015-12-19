@@ -29,7 +29,7 @@ namespace Kernel
 	{
 		Mutex* lock;
 		public:
-			AutoMutex(Mutex* l);
+			explicit AutoMutex(Mutex* l);
 			AutoMutex(const AutoMutex& m);
 			~AutoMutex();
 	};
@@ -45,7 +45,7 @@ namespace Kernel
 	class Semaphore
 	{
 		public:
-			Semaphore(int64_t maxval) : value(maxval) { }
+			explicit Semaphore(int64_t maxval) : value(maxval) { }
 			rde::vector<HardwareAbstraction::Multitasking::Thread*> contestants;
 			int64_t value = 0;
 	};
@@ -54,7 +54,7 @@ namespace Kernel
 	{
 		Semaphore* sem;
 		public:
-			AutoSemaphore(Semaphore* _sem);
+			explicit AutoSemaphore(Semaphore* _sem);
 			AutoSemaphore(const AutoSemaphore& as);
 			~AutoSemaphore();
 	};

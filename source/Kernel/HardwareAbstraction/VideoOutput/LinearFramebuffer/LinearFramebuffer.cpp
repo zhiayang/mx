@@ -104,13 +104,12 @@ namespace LinearFramebuffer
 		}
 
 		uint32_t* rowAddress = 0;
-		uint32_t* columnAddress = 0;
 
 		rowAddress = (uint32_t *) Kernel::GetFramebufferAddress() + y * GetResX() + x;
 		for(int row = 0; row < CharHeight; row++)
 		{
 			uint8_t data = CurrentFont[c][row];
-			columnAddress = rowAddress;
+			uint32_t* columnAddress = rowAddress;
 
 			int col = 0;
 			for(data = CurrentFont[c][row]; col < CharWidth; data <<= 1, col++)

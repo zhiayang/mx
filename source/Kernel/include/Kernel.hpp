@@ -76,8 +76,19 @@
 template<typename T, int bits>
 struct beInt
 {
-	beInt(T bval) : val(bval) { }
-	T le() { return (bits == 16 ? __builtin_bswap16(this->val) : (bits == 32 ? __builtin_bswap32(this->val) : __builtin_bswap64(this->val))); }
+	explicit beInt(T bval) : val(bval) { }
+	T le()
+	{
+		if(bits == 16)
+			return __builtin_bswap16(this->val);
+
+		else if(bits == 32)
+			return __builtin_bswap32(this->val);
+
+		else
+			return __builtin_bswap64(this->val);
+	}
+
 	T be() { return this->val; }
 
 	T val;

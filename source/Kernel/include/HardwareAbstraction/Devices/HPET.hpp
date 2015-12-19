@@ -14,7 +14,7 @@ namespace Devices
 	class HPET : public DeviceManager::Device
 	{
 		public:
-			HPET(ACPI::HPETTable* table);
+			explicit HPET(ACPI::HPETTable* table);
 
 
 		private:

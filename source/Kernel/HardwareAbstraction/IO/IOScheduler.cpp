@@ -15,19 +15,21 @@ namespace IO
 	struct IOTransfer
 	{
 		IOTransfer() { this->magic = 0xAF; }
-		Multitasking::Thread* owningthread;
-		IODevice* device;
+
+		IODevice* device	= 0;
 
 		// args to storagedevice.
-		uint64_t pos = 0;
-		uint64_t out = 0;
-		uint64_t count = 0;
-		uint64_t ownerRet = 0;
+		uint64_t pos		= 0;
+		uint64_t out		= 0;
+		uint64_t count		= 0;
+		uint64_t ownerRet	= 0;
 
-		uint8_t magic = 0;
-		bool blockop = 0;
-		bool writeop = 0;
-		bool completed = 0;
+		uint8_t magic		= 0;
+		bool blockop		= 0;
+		bool writeop		= 0;
+		bool completed		= 0;
+
+		Multitasking::Thread* owningthread = 0;
 	};
 
 	static rde::vector<IOTransfer>* Transfers;

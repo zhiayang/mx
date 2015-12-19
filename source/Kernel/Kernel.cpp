@@ -605,7 +605,9 @@ namespace Kernel
 			WriteSocket(thesock, data, strlen((char*) data));
 			PrintFmt("> %s\n", data);
 
-			SLEEP(15000);
+
+			SLEEP(12000);
+
 
 			memset(data, 0, 256);
 			strncpy((char*) data, "JOIN #learnprogramming\r\n", 256);
@@ -618,7 +620,7 @@ namespace Kernel
 			{
 				static const char* msgs[] =
 				{
-					"PRIVMSG #learnprogramming :testing\r\n",
+					"PRIVMSG #learnprogramming :boohoo\r\n",
 					// "PRIVMSG #flax-lang :another mindless crime.\r\n",
 					// "PRIVMSG #flax-lang :behind the curtain,\r\n",
 					// "PRIVMSG #flax-lang :in the pantomime.\r\n",
@@ -637,9 +639,6 @@ namespace Kernel
 					SLEEP(800);
 				}
 			}
-
-
-
 
 
 			memset(data, 0, 256);

@@ -38,7 +38,7 @@ namespace HardwareAbstraction
 		class IRQHandlerPlugList
 		{
 			public:
-				IRQHandlerPlugList(uint64_t n)
+				explicit IRQHandlerPlugList(uint64_t n)
 				{
 					this->IRQNum = n;
 				}

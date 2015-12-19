@@ -48,11 +48,13 @@ namespace HardwareAbstraction
 		{
 			enum class StorageDeviceType
 			{
+				Invalid,
 				ATAHardDisk,
 			};
 
 			enum class PartitionTableType
 			{
+				Invalid,
 				MasterBootRecord,
 				GuidPartitionTable,
 			};
@@ -63,7 +65,7 @@ namespace HardwareAbstraction
 			class StorageDevice : public IODevice
 			{
 				public:
-					StorageDevice(StorageDeviceType tp) : Type(tp) { }
+					explicit StorageDevice(StorageDeviceType tp) : Type(tp), PartitionTable(PartitionTableType::Invalid) { }
 					virtual ~StorageDevice() override;
 					virtual IOResult Read(uint64_t position, uint64_t outbuf, size_t bytes) override;
 					virtual IOResult Write(uint64_t position, uint64_t outbuf, size_t bytes) override;

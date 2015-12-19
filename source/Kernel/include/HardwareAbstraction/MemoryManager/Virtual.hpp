@@ -4,6 +4,7 @@
 
 #pragma once
 #include <stdint.h>
+#include <assert.h>
 #include <Synchro.hpp>
 #include <rdestl/rdestl.h>
 #include <HardwareAbstraction/MemoryManager/PageMapping.hpp>
@@ -35,6 +36,9 @@ namespace Kernel {
 
 class Mutex;
 
+void Log(uint8_t level, const char* str, ...);
+void Log(const char* str, ...);
+
 namespace HardwareAbstraction {
 namespace MemoryManager {
 namespace Virtual
@@ -60,10 +64,39 @@ namespace Virtual
 
 	struct VirtualAddressSpace
 	{
-		VirtualAddressSpace(PageMapStructure* pml4)
+		VirtualAddressSpace(const VirtualAddressSpace&) = delete;
+		VirtualAddressSpace& operator = (const VirtualAddressSpace&) = delete;
+
+		VirtualAddressSpace(const VirtualAddressSpace&& copy)
+		{
+			if(copy.mtx)	delete copy.mtx;
+
+			this->mtx = copy.mtx;
+			this->regions = copy.regions;
+			this->PML4 = copy.PML4;
+		}
+
+		VirtualAddressSpace& operator = (const VirtualAddressSpace&& copy)
+		{
+			if(copy.mtx)	delete copy.mtx;
+
+			this->mtx = copy.mtx;
+			this->regions = copy.regions;
+			this->PML4 = copy.PML4;
+
+			return *this;
+		}
+
+
+		explicit VirtualAddressSpace(PageMapStructure* pml4)
 		{
 			this->PML4 = pml4;
 			this->mtx = new Mutex();
+		}
+
+		~VirtualAddressSpace()
+		{
+			if(this->mtx) delete this->mtx;
 		}
 
 		// store the actual address of the pml4.

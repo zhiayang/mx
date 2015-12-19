@@ -36,7 +36,7 @@ namespace Multitasking
 		CurrentCR3 = GetKernelCR3();
 
 		mainRunQueue = RunQueue();
-		mainRunQueue.queue = new rde::vector<Thread*>[NUM_PRIO];
+		// mainRunQueue.queue = new rde::vector<Thread*>[NUM_PRIO];
 
 		*((int64_t*) 0x2610) = 0;
 	}

@@ -62,6 +62,10 @@ namespace TCP
 		this->state = ConnectionState::Disconnected;
 
 		this->mtx = new Mutex();
+
+		this->error = ConnectionError::NoError;
+		this->serversequence = 0;
+		this->servercumlsequence = 0;
 	}
 
 	TCPConnection::TCPConnection(Socket* skt, Library::IPv4Address dest, uint16_t srcport, uint16_t destport) : TCPConnection(skt, srcport, destport)

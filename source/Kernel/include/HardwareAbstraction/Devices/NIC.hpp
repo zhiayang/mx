@@ -36,7 +36,7 @@ namespace NIC
 	class RTL8139 : public GenericNIC
 	{
 		public:
-			RTL8139(PCI::PCIDevice* pcidev);
+			explicit RTL8139(PCI::PCIDevice* pcidev);
 			virtual ~RTL8139() override;
 			virtual void Reset() override;
 			virtual void SendData(uint8_t* data, uint64_t bytes) override;
