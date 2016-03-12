@@ -371,15 +371,6 @@ namespace Filesystems
 		node->info->data = (void*) vd;
 
 
-		// list everything
-		// if(strcmp(path, "/System/Library/LaunchDaemons/displayd.mxa") == 0)
-		// {
-		// 	Log("*** begin list");
-		// 	ls(this, node, 0);
-		// 	Log("*** end list");
-		// }
-
-
 
 		rde::string pth = rde::string(path);
 
@@ -400,6 +391,7 @@ namespace Filesystems
 
 		for(auto v : dirs)
 		{
+			// Log(1, "found dir %s", (*v).c_str());
 			bool found = false;
 
 			// iterative traverse.
@@ -408,6 +400,7 @@ namespace Filesystems
 			assert(cn->info->data);
 
 			rde::vector<VFS::vnode*> cdcontent = this->ReadDir(cn);
+			// Log(1, "cdcontent = %d", cdcontent.size());
 
 			// check each.
 			for(auto d : cdcontent)
@@ -423,6 +416,10 @@ namespace Filesystems
 
 				rde::string vlower = *v;
 				vlower.make_lower();
+
+				// Log(1, "vlower = %s", vlower.c_str());
+				// Log(1, "filelower = %s", filelower.c_str());
+				// Log(1, "vndlower = %s", vndlower.c_str());
 
 				if(curlvl == levels && d->type == VNodeType::File && String::Compare(vndlower.c_str(), filelower.c_str()) == 0)
 				{
@@ -503,13 +500,19 @@ namespace Filesystems
 		assert(node->info->data);
 		assert(node->info->driver == this);
 
+		// Log("reading file.");
 		Memory::Set(buf, 0, length);
 
 		vnode_data* vnd = tovnd(node);
 		uint64_t numclus = 0;
 
 		if(vnd->clusters.size() == 0)
+		{
+			// Log("getting cluster chain.");
 			vnd->clusters = this->GetClusterChain(node, &numclus);
+		}
+		// Log("got cluster chain.");
+
 
 		assert(vnd->clusters.size() > 0);
 		numclus = vnd->clusters.size();
@@ -574,8 +577,6 @@ namespace Filesystems
 
 				// Log("reading %d sectors at %d", toread * spc, this->ClusterToLBA((uint32_t) pair.first));
 				IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA((uint32_t) pair.first), rbuf, toread * spc * 512);
-				// Utilities::DumpBytes(rbuf, toread * spc * 512);
-
 
 				rbuf += (toread * spc * 512);
 				have += toread;
@@ -651,16 +652,19 @@ namespace Filesystems
 			bufferPageSize = (dirsize + 0xFFF) / 0x1000;
 
 			buf = MemoryManager::Virtual::AllocatePage(bufferPageSize);
+			if(buf == 0) assert("failed to allocate buffer" == 0);
 
 			// in fat16 mode, "this->RootDirectoryCluster" is actually the SECTOR of the root directory
 			IO::Read(this->partition->GetStorageDevice(), this->RootDirectoryCluster, buf, this->RootDirectorySize * 512);
 		}
-		else if(this->FATKind == FAT32 && tovnd(node)->entrycluster == 0)
-		{
-			tovnd(node)->entrycluster = this->RootDirectoryCluster;
-		}
 		else
 		{
+
+			if(this->FATKind == FAT32 && tovnd(node)->entrycluster == 0)
+			{
+				tovnd(node)->entrycluster = this->RootDirectoryCluster;
+			}
+
 			// grab its clusters.
 			auto& clusters = tovnd(node)->clusters;
 			uint64_t numclus = 0;
@@ -676,6 +680,8 @@ namespace Filesystems
 
 			dirsize = numclus * this->SectorsPerCluster * 512;
 			buf = MemoryManager::Virtual::AllocatePage(bufferPageSize);
+			if(buf == 0) assert("failed to allocate buffer" == 0);
+
 			auto obuf = buf;
 
 			for(auto v : clusters)
@@ -683,6 +689,7 @@ namespace Filesystems
 				IO::Read(this->partition->GetStorageDevice(), this->ClusterToLBA(v), buf, this->SectorsPerCluster * 512);
 				buf += this->SectorsPerCluster * 512;
 			}
+
 			buf = obuf;
 		}
 
@@ -775,7 +782,9 @@ namespace Filesystems
 			addr += sizeof(LFNEntry);
 		}
 
-		MemoryManager::Virtual::FreePage(buf, bufferPageSize);
+		if(buf != 0 && bufferPageSize != 0)
+			MemoryManager::Virtual::FreePage(buf, bufferPageSize);
+
 		return ret;
 	}
 
@@ -818,21 +827,31 @@ namespace Filesystems
 		bool condition = false;
 		uint32_t Cluster = tovnd(node)->entrycluster;
 		uint32_t cchain = 0;
+
 		const uint32_t lookahead = 0;
 		rde::vector<uint32_t> ret;
 
 		auto buf = MemoryManager::Virtual::AllocatePage(lookahead == 0 ? 1 : (512 * lookahead) / 0x1000);
-		auto obuf = buf;
+		if(buf == 0) assert("failed to allocate buffer" == 0);
 
+		Log("allocated buffer.");
 		uint32_t ClusterMultFactor = (this->FATKind == FAT16 ? 2 : 4);
+
+		uint32_t lastReadSector = 0;
+
 		do
 		{
 			uint32_t FatSector = (uint32_t) this->partition->GetStartLBA() + this->ReservedSectors + ((Cluster * ClusterMultFactor) / 512);
 			uint32_t FatOffset = (Cluster * ClusterMultFactor) % 512;
 
-			buf = obuf;
+			if(lastReadSector == 0 || lastReadSector != FatSector)
+			{
+				// Log("read sector %d, length = %d bytes.", FatSector, lookahead == 0 ? 512 : lookahead * 512);
+				IO::Read(this->partition->GetStorageDevice(), FatSector, buf, lookahead == 0 ? 512 : lookahead * 512);
+				lastReadSector = FatSector;
+			}
 
-			IO::Read(this->partition->GetStorageDevice(), FatSector, obuf, lookahead == 0 ? 512 : lookahead * 512);
+			// Log("read sector.", FatSector, lookahead == 0 ? 512 : lookahead * 512);
 
 			uint8_t* clusterchain = (uint8_t*) buf;
 
@@ -856,7 +875,7 @@ namespace Filesystems
 
 		} while(condition);
 
-		MemoryManager::Virtual::FreePage(obuf, lookahead == 0 ? 1 : (512 * lookahead) / 0x1000);
+		MemoryManager::Virtual::FreePage(buf, lookahead == 0 ? 1 : (512 * lookahead) / 0x1000);
 		tovnd(node)->clusters = ret;
 
 		// for(auto c : ret)

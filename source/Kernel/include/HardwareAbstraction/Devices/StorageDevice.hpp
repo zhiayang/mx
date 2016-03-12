@@ -156,7 +156,7 @@ namespace HardwareAbstraction
 					void WriteSector(uint64_t LBA);
 
 					virtual IOResult Read(uint64_t LBA, uint64_t Buffer, size_t Bytes) override;
-					virtual IOResult Write(uint64_t LBA, uint64_t Buffer, size_t Bytes) override;
+					virtual IOResult Write(uint64_t LBA, uint64_t Data, size_t Bytes) override;
 
 					uint16_t Data[256];
 					uint64_t PRDTable;
@@ -209,7 +209,7 @@ namespace HardwareAbstraction
 					void ReadSector(ATADrive* dev, uint64_t Sector);
 					void WriteSector(ATADrive* dev, uint64_t Sector);
 
-					void SendCommandData(ATADrive* dev, uint64_t Sector, uint8_t SecCount, bool IsDMA = false);
+					void SendCommandData(ATADrive* dev, uint64_t Sector, uint32_t SecCount, bool IsDMA = false);
 
 					extern "C" void IRQHandler14();
 					extern "C" void IRQHandler15();
@@ -235,8 +235,8 @@ namespace HardwareAbstraction
 
 					void Initialise();
 
-					IOResult ReadBytes(ATADrive* dev, uint64_t Buffer, uint64_t Sector, size_t Bytes);
-					IOResult WriteBytes(ATADrive* dev, uint64_t Buffer, uint64_t Sector, size_t Bytes);
+					IOResult ReadBytes(ATADrive* dev, uint64_t Sector, size_t Bytes);
+					IOResult WriteBytes(ATADrive* dev, uint64_t Sector, uint64_t Data, size_t Bytes);
 				}
 
 				void PrintATAInfo(ATADrive* ata);

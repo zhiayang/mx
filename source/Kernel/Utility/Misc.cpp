@@ -25,12 +25,23 @@ namespace Kernel
 			str = new rde::string();
 			for(uint64_t i = 0; i < length; i++)
 			{
-				// if((i % 16) == 0)
-				// 	PrintFmt(appendToString, "\n%x:  ", address + i);
-
 				if((i % 16) == 0)
-					StdIO::PrintFmt(appendToString, "\n");
+				{
+					if(i != 0)
+					{
+						StdIO::PrintFmt(appendToString, " | ");
 
+						for(uint64_t k = 0; k < 16; k++)
+						{
+							uint8_t c = *((uint8_t*) (address + i - 16 + k));
+
+							// only printable.
+							StdIO::PrintFmt(appendToString, "%c", (c >= 32 && c <= 126) ? c : '.');
+						}
+					}
+
+					StdIO::PrintFmt(appendToString, "\n%p :: %#06x | ", address + i, i);
+				}
 
 				StdIO::PrintFmt(appendToString, "%#02x ", *((uint8_t*)(address + i)));
 
@@ -38,8 +49,10 @@ namespace Kernel
 				str->clear();
 			}
 
+			HardwareAbstraction::Devices::SerialPort::WriteString("\n");
+
 			delete str;
-			Log("Dump complete");
+			Log("\nDump complete");
 		}
 
 		static Mutex* dumping_mtx = 0;

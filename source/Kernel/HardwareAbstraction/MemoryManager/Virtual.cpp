@@ -14,10 +14,12 @@ namespace HardwareAbstraction {
 namespace MemoryManager {
 namespace Virtual
 {
-	static uint64_t FinaliseRegion(MemRegion* region, uint64_t phys, void*)
+	static uint64_t FinaliseRegion(MemRegion* region, uint64_t phys, void* pml4)
 	{
 		region->used = 1;
 		region->phys = phys;
+
+		// Log(1, "allocated %d pages at %x, in pml %x", region->length, region->start, pml4);
 
 		return region->start;
 	}
@@ -183,6 +185,8 @@ namespace Virtual
 
 	static MemRegion* _FreeVirtual(uint64_t addr, uint64_t size, VirtualAddressSpace* _v)
 	{
+		if(size == 0) return 0;
+
 		VirtualAddressSpace* vas = (_v ? _v : &Multitasking::GetCurrentProcess()->VAS);
 
 		assert(vas);
@@ -205,6 +209,9 @@ namespace Virtual
 				break;
 			}
 		}
+
+		if(offending == 0)
+			return 0;
 
 		assert(offending);
 		offending->used = 1;
@@ -247,6 +254,7 @@ namespace Virtual
 
 	void FreePage(uint64_t addr, uint64_t size)
 	{
+		// Log(1, "trying to free %d pages at %x (%x)", size, addr, __builtin_return_address(0));
 		MemRegion* region = _FreeVirtual(addr, size, 0);
 		assert(region);
 

@@ -437,8 +437,8 @@ namespace Kernel
 		// Console::ClearScreen();
 
 		#define TEST_USERSPACE_PROG		0
-		#define TEST_LARGE_FILE_READ	0
-		#define TEST_NETWORK_IRC		1
+		#define TEST_LARGE_FILE_READ	1
+		#define TEST_NETWORK_IRC		0
 		#define TEST_MUTEXES			0
 
 
@@ -481,7 +481,7 @@ namespace Kernel
 		{
 			using namespace Filesystems;
 
-			fd_t file = OpenFile("/texts/two-cities.txt", 0);
+			fd_t file = OpenFile("/texts/big.txt", 0);
 			assert(file > 0);
 
 			struct stat s;
@@ -492,7 +492,7 @@ namespace Kernel
 
 			Log(3, "(%d) s.st_size: %ld", file, s.st_size);
 
-			const uint64_t blocksz = 16384;
+			const uint64_t blocksz = s.st_size;
 			uint8_t* fl = new uint8_t[blocksz + 1];
 			uint8_t* whole = new uint8_t[s.st_size + 1];
 
@@ -509,6 +509,9 @@ namespace Kernel
 				PrintFmt("\r\t\t\t\t\t\t\t\t\t\t\t\r(%02.2d%%) %d/%d", (size_t) (((double) cur / (double) total) * 100.0),
 					cur, total);
 			}
+
+			// Log("<< %s >>", whole);
+			// Utilities::DumpBytes((uintptr_t) (whole + 101880), 1024);
 
 			Log(3, "end: %ld ms", et = Time::Now());
 			Log(3, "time taken: %ld ms", et - st);

@@ -61,14 +61,15 @@ namespace Storage
 	uint32_t ATADrive::GetSectorSize()			{ return this->SectorSize; }
 	uint16_t ATADrive::GetBaseIO()				{ return this->BaseIO; }
 
-	IOResult ATADrive::Read(uint64_t LBA, uint64_t Buffer, uint64_t Bytes)
+	IOResult ATADrive::Read(uint64_t LBA, uint64_t buf, uint64_t Bytes)
 	{
-		return ATA::DMA::ReadBytes(this, Buffer, LBA, Bytes);
+		(void) buf;
+		return ATA::DMA::ReadBytes(this, LBA, Bytes);
 	}
 
-	IOResult ATADrive::Write(uint64_t LBA, uint64_t Buffer, uint64_t Bytes)
+	IOResult ATADrive::Write(uint64_t LBA, uint64_t data, uint64_t Bytes)
 	{
-		return ATA::DMA::WriteBytes(this, Buffer, LBA, Bytes);
+		return ATA::DMA::WriteBytes(this, LBA, data, Bytes);
 	}
 
 	namespace ATA
