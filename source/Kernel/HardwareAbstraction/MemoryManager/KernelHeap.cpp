@@ -260,7 +260,7 @@ namespace KernelHeap
 	{
 		if(size == 0) return 0;
 
-		auto mutex = AutoMutex(mtx);
+		AutoMutex mutex(*mtx);
 		size = ((size + (Alignment - 1)) / Alignment) * Alignment;
 
 		Header* h = sane(FirstFreeHeader);
@@ -407,7 +407,7 @@ namespace KernelHeap
 			return;
 		}
 
-		auto mutex = AutoMutex(mtx);
+		AutoMutex mutex(*mtx);
 
 		Header* hdr = (Header*) ptr;
 		hdr -= 1;
@@ -445,7 +445,7 @@ namespace KernelHeap
 			return 0;
 		}
 
-		auto mutex = AutoMutex(mtx);
+		AutoMutex mutex(*mtx);
 
 
 		// now get the actual header.

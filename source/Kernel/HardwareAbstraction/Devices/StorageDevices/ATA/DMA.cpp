@@ -10,6 +10,7 @@
 #include <StandardIO.hpp>
 
 #include <orion.h>
+#include <stdlib.h>
 
 using namespace Kernel::HardwareAbstraction::MemoryManager;
 

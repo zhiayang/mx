@@ -55,10 +55,10 @@ namespace Kernel
 			Log("\nDump complete");
 		}
 
-		static Mutex* dumping_mtx = 0;
+		static Mutex dumping_mtx;
 		void StackDump(uint64_t* ptr, int num, bool fromTop)
 		{
-			if(!dumping_mtx) dumping_mtx = new Mutex();
+			// if(!dumping_mtx) dumping_mtx = new Mutex();
 
 			LOCK(dumping_mtx);
 

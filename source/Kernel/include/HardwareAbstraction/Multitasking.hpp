@@ -85,21 +85,19 @@ namespace HardwareAbstraction
 				this->thelock = new Mutex();
 			}
 
-
 			RunQueue(const RunQueue&) = delete;
 			RunQueue& operator = (const RunQueue&) = delete;
 
-			RunQueue(const RunQueue&& copy)
+			RunQueue(RunQueue&& copy)
 			{
-				if(this->thelock)	delete this->thelock;
 				this->thelock = copy.thelock;
+				copy.thelock = 0;
 			}
 
-			RunQueue& operator = (const RunQueue&& copy)
+			RunQueue& operator = (RunQueue&& copy)
 			{
-				if(this->thelock)	delete this->thelock;
 				this->thelock = copy.thelock;
-
+				copy.thelock = 0;
 				return *this;
 			}
 
@@ -113,12 +111,12 @@ namespace HardwareAbstraction
 			void lock()
 			{
 				DisableScheduler();
-				LockMutex(this->thelock);
+				LockMutex(*this->thelock);
 			}
 
 			void unlock()
 			{
-				UnlockMutex(this->thelock);
+				UnlockMutex(*this->thelock);
 				EnableScheduler();
 			}
 

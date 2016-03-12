@@ -10,7 +10,7 @@ using namespace Kernel::HardwareAbstraction;
 namespace Kernel {
 namespace JobDispatch
 {
-	static Mutex* queueMtx = 0;
+	static Mutex queueMtx;
 	static rde::list<Job>* jobQueue = 0;
 
 
@@ -49,7 +49,7 @@ namespace JobDispatch
 	void Initialise()
 	{
 		jobQueue = new rde::list<Job>();
-		queueMtx = new Mutex();
+		// queueMtx = new Mutex();
 
 		Multitasking::Thread* th = Multitasking::CreateKernelThread(DispatcherThread, 2);
 		Multitasking::AddToQueue(th);

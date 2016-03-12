@@ -184,7 +184,7 @@ namespace NIC
 		this->CurrentTxBuffer++;
 		this->CurrentTxBuffer %= 4;
 
-		auto m = AutoMutex(this->transmitbuffermtx[usebuf]);
+		AutoMutex mtx(*this->transmitbuffermtx[usebuf]);
 
 		// copy the data to the transmit buffer.
 		Memory::Copy((void*) (this->TransmitBuffers[usebuf].virt), data, bytes);

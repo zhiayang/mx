@@ -177,8 +177,8 @@ namespace Kernel
 
 #define DEBUG_NEW 0
 
-void operator delete(void* p) _GLIBCXX_USE_NOEXCEPT;
-void operator delete[](void* p) _GLIBCXX_USE_NOEXCEPT;
+void operator delete(void* p) noexcept; // _GLIBCXX_USE_NOEXCEPT;
+void operator delete[](void* p) noexcept; // _GLIBCXX_USE_NOEXCEPT;
 void* operator new(size_t size);
 void* operator new[](size_t size);
 

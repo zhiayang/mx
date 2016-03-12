@@ -7,6 +7,8 @@
 #include <HardwareAbstraction/Devices.hpp>
 #include <Utility.hpp>
 
+#include <stdlib.h>
+
 // in ms
 #define TCP_TIMEOUT		2000
 #define TCP_MAXWINDOW	8 * 1024

@@ -34,7 +34,7 @@ namespace Virtual
 		assert(vas->mtx);
 		// assert(vas->regions);
 
-		auto m = AutoMutex(vas->mtx);
+		AutoMutex mtx(*vas->mtx);
 
 		for(MemRegion* region : vas->regions)
 		{
@@ -193,7 +193,7 @@ namespace Virtual
 		assert(vas->mtx);
 		// assert(vas->regions);
 
-		auto m = AutoMutex(vas->mtx);
+		AutoMutex mtx(*vas->mtx);
 
 
 		MemRegion* offending = 0;
@@ -456,7 +456,7 @@ namespace Virtual
 		assert(dest);
 
 		// no need to lock source, but lock dest.
-		LOCK(dest->mtx);
+		LOCK(*dest->mtx);
 
 		assert(dest->regions.size() == 0);
 
@@ -505,7 +505,7 @@ namespace Virtual
 		}
 
 
-		UNLOCK(dest->mtx);
+		UNLOCK(*dest->mtx);
 		return dest;
 	}
 

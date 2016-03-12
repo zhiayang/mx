@@ -8,6 +8,7 @@
 #include <HardwareAbstraction/Network.hpp>
 
 #include <defs/_errnos.h>
+#include <stdlib.h>
 
 using namespace Library;
 using namespace Kernel::HardwareAbstraction::Filesystems::VFS;

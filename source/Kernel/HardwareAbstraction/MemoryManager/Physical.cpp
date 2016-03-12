@@ -44,7 +44,7 @@ namespace Physical
 	static uint64_t ReservedRegionIndex = 0;
 	// End legacy crud
 
-	static Mutex* mtx;
+	static Mutex mutex;
 
 
 	uint64_t PageAlignDown(uint64_t x)
@@ -71,7 +71,7 @@ namespace Physical
 		// See InitialiseFPLs() for an in-depth explanation on this
 		// FPL system.
 
-		mtx = new Mutex();
+		// mtx = new Mutex();
 		PageList = new rde::deque<Pair*>();
 
 		InitialiseFPLs(Kernel::K_MemoryMap);
@@ -84,7 +84,7 @@ namespace Physical
 		if(!DidInit)
 			return AllocateFromReserved(size);
 
-		auto mut = AutoMutex(mtx);
+		AutoMutex mtx(mutex);
 		OpsSinceLastCoalesce++;
 		size_t trycount = 0;
 		auto len = PageList->size();
@@ -142,7 +142,7 @@ namespace Physical
 
 	void FreePage(uint64_t page, uint64_t size)
 	{
-		auto mut = AutoMutex(mtx);
+		AutoMutex mtx(mutex);
 		OpsSinceLastCoalesce++;
 
 		uint64_t end = page + (size * 0x1000);
@@ -315,7 +315,7 @@ namespace Physical
 			return;
 
 		Log("Coalesced FPLs");
-		auto mut = AutoMutex(mtx);
+		AutoMutex mtx(mutex);
 		OpsSinceLastCoalesce = 0;
 
 		// O(n^2) time.

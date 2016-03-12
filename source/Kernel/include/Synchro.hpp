@@ -17,8 +17,11 @@ namespace Kernel
 
 	class Mutex
 	{
+		Mutex& operator=(Mutex&)				= delete;
+		const Mutex& operator=(const Mutex&)	= delete;
+
 		public:
-			rde::vector<HardwareAbstraction::Multitasking::Thread*> contestants;
+			HardwareAbstraction::Multitasking::Thread* nextOwner = 0;
 			HardwareAbstraction::Multitasking::Thread* owner = 0;
 			uint64_t recursion = 0;
 			uint64_t lock = false;
@@ -27,16 +30,26 @@ namespace Kernel
 
 	class AutoMutex
 	{
-		Mutex* lock;
+		Mutex& lock;
 		public:
-			explicit AutoMutex(Mutex* l);
-			AutoMutex(const AutoMutex& m);
+			explicit AutoMutex(Mutex& l);
+			AutoMutex& operator = (AutoMutex&&);
+
 			~AutoMutex();
+
+
+		AutoMutex& operator = (const AutoMutex&) = delete;
+		AutoMutex(const AutoMutex& m) = delete;
 	};
 
-	bool TryLockMutex(Mutex* lock);
-	void LockMutex(Mutex* lock);
-	void UnlockMutex(Mutex* lock);
+	bool TryLockMutex(Mutex& lock);
+	void LockMutex(Mutex& lock);
+	void UnlockMutex(Mutex& lock);
+
+
+
+
+
 
 
 
@@ -44,6 +57,9 @@ namespace Kernel
 
 	class Semaphore
 	{
+		Semaphore& operator=(Semaphore&)				= delete;
+		const Semaphore& operator=(const Semaphore&)	= delete;
+
 		public:
 			explicit Semaphore(int64_t maxval) : value(maxval) { }
 			rde::vector<HardwareAbstraction::Multitasking::Thread*> contestants;
@@ -52,16 +68,20 @@ namespace Kernel
 
 	class AutoSemaphore
 	{
-		Semaphore* sem;
+		Semaphore& sem;
 		public:
-			explicit AutoSemaphore(Semaphore* _sem);
-			AutoSemaphore(const AutoSemaphore& as);
+			explicit AutoSemaphore(Semaphore& _sem);
+			AutoSemaphore& operator = (AutoSemaphore&&);
+
 			~AutoSemaphore();
+
+		AutoSemaphore& operator = (const AutoSemaphore&) = delete;
+		AutoSemaphore(const AutoSemaphore& as) = delete;
 	};
 
-	bool TrySemaphore(Semaphore* sem);
-	void AquireSemaphore(Semaphore* sem);
-	void ReleaseSemaphore(Semaphore* sem);
+	bool TrySemaphore(Semaphore& sem);
+	void AquireSemaphore(Semaphore& sem);
+	void ReleaseSemaphore(Semaphore& sem);
 }
 
 

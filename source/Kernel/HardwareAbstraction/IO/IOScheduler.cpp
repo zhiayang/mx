@@ -33,7 +33,7 @@ namespace IO
 	};
 
 	static rde::vector<IOTransfer>* Transfers;
-	static Mutex* listmtx;
+	static Mutex listmtx;
 
 	static void Scheduler()
 	{
@@ -131,7 +131,7 @@ namespace IO
 	void Initialise()
 	{
 		Transfers = new rde::vector<IOTransfer>();
-		listmtx = new Mutex();
+		// listmtx = new Mutex();
 
 		Multitasking::AddToQueue(Multitasking::CreateKernelThread(Scheduler, 2));
 	}
@@ -176,7 +176,7 @@ namespace IO
 		IOTransfer req;
 		if(pos == 0x1D6A)
 		{
-			MemoryManager::KernelHeap::Print();
+			// MemoryManager::KernelHeap::Print();
 			UHALT();
 		}
 		req.device			= dev;

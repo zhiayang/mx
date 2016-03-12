@@ -265,10 +265,7 @@ namespace Kernel
 
 		// after everything is done, make sure shit works
 		{
-			// uint64_t m = KernelHeap::GetFirstHeapMetadataPhysPage();
 			uint64_t h = KernelHeap::GetFirstHeapPhysPage();
-
-			// Virtual::ForceInsertALPTuple(KernelHeapMetadata, 1, m);
 			Virtual::ForceInsertALPTuple(KernelHeapAddress, 1, h);
 		}
 
@@ -310,7 +307,7 @@ namespace Kernel
 				else if(PCI::MatchVendorDevice(VideoDev, 0x1234, 0x1111) || PCI::MatchVendorDevice(VideoDev, 0x80EE, 0xBEEF))
 				{
 					// QEMU, Bochs and VBox's BGA card.
-					DeviceManager::AddDevice(new BochsGraphicsAdapter(VideoDev), DeviceType::FramebufferVideoCard);
+					// DeviceManager::AddDevice(new BochsGraphicsAdapter(VideoDev), DeviceType::FramebufferVideoCard);
 					Log("Bochs Graphics Adapter (BGA) compatible card found, driver loaded");
 					found = true;
 				}
@@ -446,14 +443,14 @@ namespace Kernel
 
 		#if TEST_MUTEXES
 		{
-			static mtxtest = new Mutex();
+			static Mutex mtxtest;
 			auto func1 = []()
 			{
 				PrintFmt("locking mutex\n");
 				LOCK(mtxtest);
 
-				PrintFmt("sleeping for 2 seconds\n");
-				SLEEP(2000);
+				PrintFmt("sleeping for 4 seconds\n");
+				SLEEP(4000);
 				PrintFmt("lock released\n");
 				UNLOCK(mtxtest);
 			};
@@ -465,7 +462,7 @@ namespace Kernel
 				PrintFmt("trying mutex\n");
 
 				while(!TryLockMutex(mtxtest))
-					; // PrintFmt("x");
+					PrintFmt("x");
 
 				PrintFmt("locked!\n");
 				UNLOCK(mtxtest);
@@ -510,7 +507,7 @@ namespace Kernel
 					cur, total);
 			}
 
-			// Log("<< %s >>", whole);
+			Log("<< %s >>", whole);
 			// Utilities::DumpBytes((uintptr_t) (whole + 101880), 1024);
 
 			Log(3, "end: %ld ms", et = Time::Now());

@@ -5,7 +5,9 @@
 #include <Kernel.hpp>
 #include <Console.hpp>
 #include <StandardIO.hpp>
+
 #include <stdio.h>
+#include <stdlib.h>
 
 namespace Kernel {
 namespace TTY
