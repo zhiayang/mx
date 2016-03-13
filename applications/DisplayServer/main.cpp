@@ -60,29 +60,41 @@ int main(int argc, char** argv)
 	height		= (uint64_t) argv[3];
 	bpp			= (uint64_t) argv[4] / 8;		// kernel gives us BITS per pixel, but we really only care about BYTES per pixel.
 
-	printf("Display server online\n");
-	printf("Forking process...\n");
-	int res = fork();
+	// printf("Display server online\n");
+	// printf("Forking process...\n");
+
+
 
 	// while(true)
 	// {
-	// 	usleep(500 * 1000);
-	// 	printf(".\n");
+	// 	usleep(10 * 1000);
+	// 	printf(".");
+	// 	fflush(stdout);
 	// }
 
+
+
+
+	// int res = fork();
+	int res = 4;
 	if(res == 0)
 	{
-		// do_child();
-		// exit(0);
-
-		printf("in child\n");
+		printf("in child\n\n");
+		fflush(stdout);
 		while(1);
 	}
 	else
 	{
-		printf("parent: child proc has pid %d, continuing\n", res);
+		// char d[10] = { 0 };
+		printf("parent: child proc has pid %%%%\n");
+		fflush(stdout);
 		while(1);
 	}
+
+
+
+
+
 
 	// printf("opening shit\n");
 	// {
@@ -129,9 +141,6 @@ int main(int argc, char** argv)
 	// 	fflush(stdout);
 	// }
 
-	{
-
-	}
 
 
 

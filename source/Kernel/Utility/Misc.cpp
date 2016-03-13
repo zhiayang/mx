@@ -62,10 +62,11 @@ namespace Kernel
 
 			LOCK(dumping_mtx);
 
-			Log("Stack dump of %x%s:", ptr, fromTop ? " (reverse)" : "");
+			Log("");
+			Log("Stack dump of %lx%s:", ptr, fromTop ? " (reverse)" : "");
 
 			for(int i = 0; i < num; i++)
-				Log("%d: %x", i, fromTop ? *--ptr : *ptr++);
+				Log("%02d: %018lx", i, fromTop ? *--ptr : *ptr++);
 
 			UNLOCK(dumping_mtx);
 		}

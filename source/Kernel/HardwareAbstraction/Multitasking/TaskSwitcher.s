@@ -73,9 +73,6 @@ StageOne:
 	mov %ax, %ds
 	mov %ax, %es
 
-
-
-
 	movq %rsp, %rdi
 
 	call SwitchProcess

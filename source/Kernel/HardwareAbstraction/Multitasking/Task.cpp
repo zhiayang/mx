@@ -224,31 +224,6 @@ namespace Multitasking
 		return thread;
 	}
 
-	Thread* CloneThread(Thread* orig)
-	{
-		Thread* ret			= new Thread();
-		ret->ThreadID		= (pid_t) NumThreads, NumThreads++;
-		ret->StackPointer	= orig->StackPointer;
-		ret->TopOfStack		= orig->TopOfStack;
-		ret->StackSize		= orig->StackSize;
-		ret->State			= orig->State;
-		ret->Sleep			= orig->Sleep;
-		ret->Priority		= orig->Priority;
-		ret->flags			= orig->flags;
-		ret->ExecutionTime	= orig->ExecutionTime;
-		ret->Parent			= orig->Parent;
-		ret->currenterrno	= orig->currenterrno;
-		ret->returnval		= orig->returnval;
-		ret->funcpointer	= orig->funcpointer;
-		ret->CrashState		= new ThreadRegisterState_type;
-		ret->tlsptr			= new uint8_t[1600 * orig->Parent->tlssize];
-		Memory::Copy(ret->tlsptr, orig->tlsptr, orig->Parent->tlssize);
-
-		return ret;
-	}
-
-
-
 	Thread* CreateKernelThread(void (*Function)(), uint8_t Priority, void* p1, void* p2, void* p3, void* p4, void* p5, void* p6)
 	{
 		return CreateThread(Kernel::KernelProcess, Function, Priority, p1, p2, p3, p4, p5, p6);
@@ -322,6 +297,32 @@ namespace Multitasking
 	}
 
 
+	Thread* CloneThread(Thread* orig)
+	{
+		Thread* ret			= new Thread();
+		ret->ThreadID		= (pid_t) NumThreads, NumThreads++;
+		ret->StackPointer	= orig->StackPointer;
+		ret->TopOfStack		= orig->TopOfStack;
+		ret->StackSize		= orig->StackSize;
+		ret->State			= orig->State;
+		ret->Sleep			= orig->Sleep;
+		ret->Priority		= orig->Priority;
+		ret->flags			= orig->flags;
+		ret->ExecutionTime	= orig->ExecutionTime;
+		ret->Parent			= orig->Parent;
+		ret->currenterrno	= orig->currenterrno;
+		ret->returnval		= orig->returnval;
+		ret->funcpointer	= orig->funcpointer;
+		ret->CrashState		= new ThreadRegisterState_type;
+		ret->tlsptr			= new uint8_t[orig->Parent->tlssize];
+
+		Memory::Copy(ret->tlsptr, orig->tlsptr, orig->Parent->tlssize);
+
+		return ret;
+	}
+
+
+
 	// copy all the mappings to the current space.
 	// in fact, just copy the entire VAS map set + bookkeeping.
 	// the only thread shall be the current thread.
@@ -361,14 +362,9 @@ namespace Multitasking
 		// copy the thread.
 		Thread* newt = CloneThread(curthr);
 		newt->Parent = proc;
-		assert(newt->StackPointer == newt->TopOfStack - 160);
-
-		// todo: does nothing.
-		newt->StackPointer = newt->TopOfStack - 160;
-
+		// assert(newt->StackPointer == newt->TopOfStack - 160);
 
 		proc->Threads.push_back(newt);
-
 
 		// hacky? maybe.
 		// works? not really
@@ -387,22 +383,111 @@ namespace Multitasking
 		return proc;
 	}
 
+
+
+	// todo: zero reentrancy-safe.
+	static uint64_t saved_rip = 0;
+	static uint64_t saved_ss = 0;
+	static uint64_t saved_cs = 0;
+	static uint64_t saved_rfl = 0;
+	static uint64_t saved_usp = 0;
+
+	static ThreadRegisterState_type saved_registers;
+	extern "C" void __syscall_internal_save_registers(uint64_t rsp)
+	{
+		uint64_t* stack = (uint64_t*) rsp;
+
+		saved_registers.rdi	= *stack++;
+		saved_registers.rsi	= *stack++;
+		saved_registers.rbp	= *stack++;
+
+		saved_registers.rax	= *stack++;
+		saved_registers.rbx	= *stack++;
+		saved_registers.rcx	= *stack++;
+		saved_registers.rdx	= *stack++;
+
+		saved_registers.r8	= *stack++;
+		saved_registers.r9	= *stack++;
+		saved_registers.r10	= *stack++;
+		saved_registers.r11	= *stack++;
+		saved_registers.r12	= *stack++;
+		saved_registers.r13	= *stack++;
+		saved_registers.r14	= *stack++;
+		saved_registers.r15	= *stack++;
+
+		// skip rbp pushed.
+		stack++;
+
+		saved_rip			= *stack++;
+		saved_cs			= *stack++;
+		saved_rfl			= *stack++;
+		saved_usp			= *stack++;
+		saved_ss			= *stack++;
+
+		// Log("%p / %p / %p / %p / %p", saved_rip, saved_cs, saved_rfl, saved_usp, saved_ss);
+	}
+
 	extern "C" int64_t Syscall_ForkProcess()
 	{
-		Process* proc = ForkProcess(GetCurrentProcess()->Name, 0);
+		Process* cur = GetCurrentProcess();
+		Process* proc = ForkProcess(cur->Name, 0);
 		Multitasking::AddToQueue(proc);
 
+		// we access the saved registers here.
+		// proc has the things set up, but we need to retroactively screw with the registers on stack.
+		{
+			// get a temporary mapping.
+			uint64_t begin = proc->Threads.front()->StackPointer & ~((uint64_t) 0xFFF);
+			uint64_t sz = 1;
 
-		// fuck around with the stack of the child process
-		// check if we are *not* the child process.
-		if(proc->ProcessID != GetCurrentProcess()->ProcessID)
-		{
-			return (int64_t) proc->ProcessID;
+			if(proc->Threads.front()->StackPointer + 160 > begin + 0x1000)
+				sz = 2;
+
+			// map... hopefully.
+			uint64_t phys = Virtual::GetVirtualPhysical(begin, &proc->VAS);
+			uint64_t virt = Virtual::AllocateVirtual(sz);
+
+			Virtual::MapRegion(virt, phys, sz, 0x07);
+
+			uint64_t stackptr = virt + (proc->Threads.front()->StackPointer - begin);
+
+			uint64_t* stack = (uint64_t*) (stackptr + 160);
+
+			*--stack = saved_ss;
+			*--stack = saved_usp;
+			*--stack = saved_rfl;
+			*--stack = saved_cs;
+			*--stack = saved_rip;
+
+			*--stack = saved_registers.r15;		// R15 (-48)
+			*--stack = saved_registers.r14;		// R14 (-56)
+			*--stack = saved_registers.r13;		// R13 (-64)
+			*--stack = saved_registers.r12;		// R12 (-72)
+			*--stack = saved_registers.r11;		// R11 (-80)
+			*--stack = saved_registers.r10;		// R10 (-88)
+			*--stack = saved_registers.r9;		// R9 (-96)
+			*--stack = saved_registers.r8;		// R8 (-104)
+
+			*--stack = saved_registers.rdx;		// RDX (-112)
+			*--stack = saved_registers.rcx;		// RCX (-120)
+			*--stack = saved_registers.rbx;		// RBX (-128)
+			*--stack = 0;						// RAX (-136)
+
+			*--stack = saved_registers.rbp;		// RBP (-144)
+			*--stack = saved_registers.rsi;		// RSI (-152)
+			*--stack = saved_registers.rdi;		// RDI (-160)
+
+			Virtual::UnmapRegion(virt, sz);
+			Virtual::FreeVirtual(virt, sz);
 		}
-		else
-		{
-			return 0;
-		}
+		// done.
+
+
+		// since the child will never actually execute this part,
+		// always return the child's PID, to the parent.
+
+		assert(proc->ProcessID != cur->ProcessID);
+		return (int64_t) proc->ProcessID;
 	}
 }
 }

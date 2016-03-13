@@ -210,16 +210,21 @@ namespace Multitasking
 		}
 	}
 
+	static int counter = 0;
 	void DisableScheduler()
 	{
+		counter++;
 		SchedulerEnabled = false;
 	}
 
 	void EnableScheduler()
 	{
-		SchedulerEnabled = true;
-	}
+		if(counter > 0)
+			counter--;
 
+		if(counter == 0)
+			SchedulerEnabled = true;
+	}
 }
 }
 }

@@ -12,7 +12,7 @@ using namespace Kernel::HardwareAbstraction::MemoryManager;
 using namespace Library;
 
 #define MaximumHeapSizeInPages		0xFFFFFFFF
-#define Alignment					32
+#define Alignment					64
 #define MetadataSize				32
 #define Paranoid					1
 #define MapFlags					0x7
@@ -486,7 +486,6 @@ namespace KernelHeap
 		} while((hdr = next(hdr)) != 0);
 	}
 
-	// uint64_t GetFirstHeapMetadataPhysPage();
 	uint64_t GetFirstHeapPhysPage()
 	{
 		return FirstHeapPhysPage;

@@ -295,7 +295,7 @@ namespace Virtual
 		vas->regions.push_back(r1);
 		vas->regions.push_back(r2);
 
-		// vas->mtx = new Mutex();
+		vas->mtx = new Mutex();
 		return vas;
 	}
 

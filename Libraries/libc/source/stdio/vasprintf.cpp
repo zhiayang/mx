@@ -53,7 +53,7 @@ extern "C" int vasprintf(char** result_ptr, const char* format, va_list list)
 	if(!(state.string = (char*) malloc(state.string_length * sizeof(char))))
 		return *result_ptr = NULL, -1;
 
-	vprintf_callback(vasprintf_callback, &state, format, list);
+	vcbprintf(&state, vasprintf_callback, format, list);
 	if(!state.string)
 		return *result_ptr = NULL, -1;
 

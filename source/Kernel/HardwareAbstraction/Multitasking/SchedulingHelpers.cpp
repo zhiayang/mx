@@ -164,9 +164,6 @@ namespace Multitasking
 		assert(thread);
 		GetRunQueue().lock();
 
-		Log(1, "waking thread %d (%p) // %d // %x // %p", thread->ThreadID, thread, thread->State, thread->StackSize, thread->Parent);
-		Log(1, "%p, %p", __builtin_return_address(1), __builtin_return_address(2));
-
 		auto list = GetThreadList(thread);
 		if(thread->State != STATE_BLOCKING && thread->State != STATE_SUSPEND)
 		{

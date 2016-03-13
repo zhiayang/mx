@@ -24,7 +24,7 @@ extern "C" int fprintf(FILE* stream, const char* format, ...)
 
 extern "C" int vfprintf(FILE* file, const char* format, va_list ap)
 {
-	size_t result = vprintf_callback(FileWriteCallback, file, format, ap);
+	size_t result = vcbprintf(file, FileWriteCallback, format, ap);
 	if(result == LONG_MAX)
 		return -1;
 	return (int) result;
