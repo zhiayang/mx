@@ -75,19 +75,27 @@ int main(int argc, char** argv)
 
 
 
-	// int res = fork();
-	int res = 4;
+	int res = fork();
 	if(res == 0)
 	{
-		printf("in child\n\n");
-		fflush(stdout);
+		printf("in child, forking again.\n");
+
+		int r2 = fork();
+		if(r2 == 0)
+		{
+			printf("in child of child\n");
+		}
+		else
+		{
+			printf("in parent of child's child: pid = %d\n", r2);
+		}
+
 		while(1);
 	}
 	else
 	{
 		// char d[10] = { 0 };
-		printf("parent: child proc has pid %%%%\n");
-		fflush(stdout);
+		printf("parent: child proc has pid %d\n", res);
 		while(1);
 	}
 
