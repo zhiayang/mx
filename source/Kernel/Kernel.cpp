@@ -421,7 +421,7 @@ namespace Kernel
 			using namespace Network;
 			ARP::Initialise();
 			IP::Initialise();
-			TCP::Initialise();
+			TCP::Initialise();			// todo: tcp stack is not reliable
 			UDP::Initialise();
 			DHCP::Initialise();			// todo: dhcp is a little broken
 			DNS::Initialise();			// todo: dns is also wonky
@@ -433,8 +433,8 @@ namespace Kernel
 
 		// Console::ClearScreen();
 
-		#define TEST_USERSPACE_PROG		0
-		#define TEST_LARGE_FILE_READ	1
+		#define TEST_USERSPACE_PROG		1
+		#define TEST_LARGE_FILE_READ	0
 		#define TEST_NETWORK_IRC		0
 		#define TEST_MUTEXES			0
 

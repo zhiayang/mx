@@ -834,7 +834,6 @@ namespace Filesystems
 		auto buf = MemoryManager::Virtual::AllocatePage(lookahead == 0 ? 1 : (512 * lookahead) / 0x1000);
 		if(buf == 0) assert("failed to allocate buffer" == 0);
 
-		Log("allocated buffer.");
 		uint32_t ClusterMultFactor = (this->FATKind == FAT16 ? 2 : 4);
 
 		uint32_t lastReadSector = 0;

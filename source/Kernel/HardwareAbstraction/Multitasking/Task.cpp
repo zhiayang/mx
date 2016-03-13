@@ -196,7 +196,7 @@ namespace Multitasking
 		thread->StackSize			= DefaultRing3StackSize;
 		thread->TopOfStack			= k + ustacksz;
 		thread->StackPointer		= thread->TopOfStack;
-		thread->Thread				= Function;
+		thread->funcpointer			= Function;
 		thread->State				= STATE_NORMAL;
 		thread->ThreadID			= (pid_t) NumThreads, NumThreads++;
 		thread->Parent				= Parent;
@@ -239,7 +239,7 @@ namespace Multitasking
 		ret->Parent			= orig->Parent;
 		ret->currenterrno	= orig->currenterrno;
 		ret->returnval		= orig->returnval;
-		ret->Thread			= orig->Thread;
+		ret->funcpointer	= orig->funcpointer;
 		ret->CrashState		= new ThreadRegisterState_type;
 		ret->tlsptr			= new uint8_t[1600 * orig->Parent->tlssize];
 		Memory::Copy(ret->tlsptr, orig->tlsptr, orig->Parent->tlssize);

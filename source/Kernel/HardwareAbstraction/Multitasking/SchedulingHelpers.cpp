@@ -161,14 +161,16 @@ namespace Multitasking
 
 	void WakeForMessage(Thread* thread)
 	{
-		GetRunQueue().lock();
 		assert(thread);
+		GetRunQueue().lock();
+
+		Log(1, "waking thread %d (%p) // %d // %x // %p", thread->ThreadID, thread, thread->State, thread->StackSize, thread->Parent);
+		Log(1, "%p, %p", __builtin_return_address(1), __builtin_return_address(2));
 
 		auto list = GetThreadList(thread);
 		if(thread->State != STATE_BLOCKING && thread->State != STATE_SUSPEND)
 		{
 			assert(list.contains(thread));
-			// list->insert(list->begin(), FetchAndRemoveThread(thread));
 			list.push_back(FetchAndRemoveThread(thread));
 		}
 		else
@@ -178,7 +180,6 @@ namespace Multitasking
 
 			SleepList.remove(thread);
 			thread->State = STATE_NORMAL;
-			// GetThreadList(thread)->insert(GetThreadList(thread)->begin(), thread);
 			GetThreadList(thread).push_back(thread);
 		}
 

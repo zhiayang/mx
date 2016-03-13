@@ -21,7 +21,6 @@ namespace Kernel
 		const Mutex& operator=(const Mutex&)	= delete;
 
 		public:
-			HardwareAbstraction::Multitasking::Thread* nextOwner = 0;
 			HardwareAbstraction::Multitasking::Thread* owner = 0;
 			uint64_t recursion = 0;
 			uint64_t lock = false;

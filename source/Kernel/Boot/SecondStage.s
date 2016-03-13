@@ -40,15 +40,7 @@ KernelBootstrap:
 
 
 
-	// Setup SSE
-	mov %cr0, %rax
-	and $0xFFFB, %ax			// clear coprocessor emulation CR0.EM
-	or $0x02, %ax				// set coprocessor monitoring  CR0.MP
-	mov %rax, %cr0
-	mov %cr4, %rax
-	// orq $0x10600, %rax		// set CR4.OSFXSR, CR4.OSXMMEXCPT and CR4.FSGSBASE at the same time
-	orq $0x600, %rax
-	mov %rax, %cr4
+
 
 
 

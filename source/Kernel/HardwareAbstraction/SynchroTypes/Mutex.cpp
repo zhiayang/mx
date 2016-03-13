@@ -15,7 +15,6 @@ namespace Kernel
 	AutoMutex::~AutoMutex() { UnlockMutex(this->lock); }
 	AutoMutex& AutoMutex::operator = (AutoMutex&& other)
 	{
-		this->lock.nextOwner	= other.lock.nextOwner;
 		this->lock.owner		= other.lock.owner;
 		this->lock.lock			= other.lock.lock;
 		this->lock.recursion	= other.lock.recursion;
@@ -34,12 +33,6 @@ namespace Kernel
 		{
 			mtx.recursion++;
 			return;
-		}
-
-		if(mtx.lock)
-		{
-			if(mtx.nextOwner == 0)
-				mtx.nextOwner = GetCurrentThread();
 		}
 
 		while(__sync_lock_test_and_set(&mtx.lock, 1))
@@ -64,24 +57,9 @@ namespace Kernel
 			return;
 		}
 
-		Thread* o = mtx.owner;
-
 		mtx.owner = 0;
 		mtx.recursion = 0;
 		__sync_lock_release(&mtx.lock);
-
-		if(mtx.nextOwner != 0)
-		{
-			if(mtx.nextOwner != o)
-			{
-				mtx.nextOwner = 0;
-				WakeForMessage(mtx.nextOwner);
-			}
-			else
-			{
-				mtx.nextOwner = 0;
-			}
-		}
 	}
 
 	bool TryLockMutex(Mutex& mtx)
@@ -142,7 +120,7 @@ namespace Kernel
 		Mutex* m = (*mtxmap)[id];
 		assert(m);
 
-		if(m->lock || m->nextOwner != 0)
+		if(m->lock)
 		{
 			SetThreadErrno(EBUSY);
 			return;

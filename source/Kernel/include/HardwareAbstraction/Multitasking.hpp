@@ -34,11 +34,11 @@ namespace HardwareAbstraction
 			uint64_t StackPointer	= 0;
 			uint64_t TopOfStack		= 0;
 			uint64_t StackSize		= 0;
-			uint8_t State			= 0;
 			uint32_t Sleep			= 0;
 			uint8_t Priority		= 0;
 			uint8_t flags			= 0;
 			uint16_t ExecutionTime	= 0;
+			uint64_t State			= 0;
 
 			void* tlsptr			= 0;
 			Process* Parent			= 0;
@@ -48,14 +48,22 @@ namespace HardwareAbstraction
 
 			rde::list<uintptr_t> messagequeue;
 
-			ThreadRegisterState_type* CrashState;
+			ThreadRegisterState_type* CrashState = 0;
 
 			rde::vector<Thread*> watchers;
 			rde::vector<Thread*> watching;
 
 
-			void* returnval;
-			void (*Thread)();
+			void* returnval = 0;
+			void (*funcpointer)() = 0;
+
+			Thread() { }
+
+			Thread(const Thread&) = delete;
+			Thread(Thread&&) = delete;
+
+			Thread& operator =(const Thread&) = delete;
+			Thread& operator =(Thread&&) = delete;
 		};
 
 		struct Process
@@ -101,13 +109,6 @@ namespace HardwareAbstraction
 				return *this;
 			}
 
-
-
-
-
-
-
-
 			void lock()
 			{
 				DisableScheduler();
@@ -125,10 +126,11 @@ namespace HardwareAbstraction
 		};
 
 
-		#define STATE_SUSPEND		0
-		#define STATE_NORMAL		1
-		#define STATE_AWAITDEATH	2
-		#define STATE_BLOCKING		3
+		#define STATE_INVALID		0
+		#define STATE_SUSPEND		1
+		#define STATE_NORMAL		2
+		#define STATE_AWAITDEATH	3
+		#define STATE_BLOCKING		4
 
 		#define STATE_DEAD			255
 

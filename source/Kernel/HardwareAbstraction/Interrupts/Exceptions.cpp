@@ -347,7 +347,7 @@ namespace Interrupts
 			return;
 
 
-		if(Multitasking::GetCurrentThread()->State & 0x1)
+		if(Multitasking::GetCurrentThread()->State & STATE_NORMAL)
 		{
 			Log(1, "Terminated thread %d belonging to parent %s, for exception: %s", Multitasking::GetCurrentThread()->ThreadID,
 				Multitasking::GetCurrentThread()->Parent->Name, ExceptionMessages[r->InterruptID]);
