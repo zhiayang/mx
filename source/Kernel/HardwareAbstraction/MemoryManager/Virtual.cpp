@@ -321,7 +321,7 @@ namespace Virtual
 
 			uint64_t end = region->start + (region->length * 0x1000);
 
-			if(virt >= region->start && virt <= end)
+			if(virt >= region->start && virt < end)
 			{
 				assert(region->phys > 0);
 				return region->phys + (virt - region->start);
@@ -362,7 +362,6 @@ namespace Virtual
 
 		VirtualAddressSpace* from = &Multitasking::GetProcess(0)->VAS;
 
-
 		size_t numPages			= (bytes + 0xFFF) / 0x1000;
 		uint64_t toAligned		= toAddr & I_AlignMask;
 		uint64_t beginOffset	= toAddr - toAligned;
@@ -378,12 +377,14 @@ namespace Virtual
 
 		// allocate some temporary virt pages in the local address space
 		// then map the physical pages behind toAddr to our local space
-		uint64_t toVirtTemp		= AllocateVirtual(numPages, 0, from, toPhys);
+		uint64_t toVirtTemp = AllocateVirtual(numPages, 0, from, toPhys);
+		assert(toVirtTemp != 0);
+
 		Virtual::MapRegion(toVirtTemp, toPhys, numPages, 0x3);
 
 		// then copy it.
-		// Log("Copied %d bytes from %x to %x (%x, %x, %x)", bytes, fromAddr, toAddr, beginOffset, toPhys, to->PML4);
-		Memory::Copy((void*) (toVirtTemp + beginOffset), (void*) fromAddr, bytes);
+		Log("Copying %d bytes from %p to %p (%x, %x, %x)", bytes, fromAddr, toAddr, beginOffset, toPhys, to->PML4);
+		Memory::CopyOverlap((void*) (toVirtTemp + beginOffset), (void*) fromAddr, bytes);
 
 		FreeVirtual(toVirtTemp, numPages);
 		Virtual::UnmapRegion(toVirtTemp, numPages);

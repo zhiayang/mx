@@ -173,8 +173,8 @@ namespace Multitasking
 		else
 		{
 			assert(SleepList.contains(thread));
-			// thread is blocking, shoo it out of the blocking queue.
 
+			// thread is blocking, shoo it out of the blocking queue.
 			SleepList.remove(thread);
 			thread->State = STATE_NORMAL;
 			GetThreadList(thread).push_back(thread);
@@ -401,7 +401,8 @@ namespace Multitasking
 	void Kill(Process* p)
 	{
 		assert(p);
-		Log("Killing process %s, disposing of %d thread%s", p->Name, p->Threads.size(), p->Threads.size() == 1 ? "" : "s");
+		Log("Killing process %s (pid %d), disposing of %d thread%s", p->Name, p->ProcessID, p->Threads.size(),
+			p->Threads.size() == 1 ? "" : "s");
 
 		// in the process of dying.
 		// p->Flags |= FLAG_DYING;

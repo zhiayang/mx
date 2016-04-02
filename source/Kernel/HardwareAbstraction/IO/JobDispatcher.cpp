@@ -35,9 +35,16 @@ namespace JobDispatch
 			size_t s = jobQueue->size();
 			for(size_t i = 0; i < s; i++)
 			{
+				// Log("in job dispatcher, delta %ld", Kernel::TickCounter() - __debug_flag__);
+				// __debug_flag__ = Kernel::TickCounter();
+
 				LOCK(queueMtx);
 				Job job = jobQueue->pop_front();
 				UNLOCK(queueMtx);
+
+
+				// Log("dispatching job, delta %ld", Kernel::TickCounter() - __debug_flag__);
+				// __debug_flag__ = Kernel::TickCounter();
 
 				job.handle(job.param);
 			}

@@ -46,7 +46,7 @@
 #define DefaultRing3StackSize	0x20000
 
 // Global IRQ0 tickrate.
-#define GlobalTickRate		20
+#define GlobalTickRate		500
 #define GlobalMilliseconds	1000
 
 // Configuration paramaters
@@ -126,7 +126,7 @@ namespace Kernel
 	extern HardwareAbstraction::Random* KernelRandom;
 
 
-	extern bool __debug_flag__;
+	extern volatile uint64_t __debug_flag__;
 
 
 	void Idle();
@@ -145,6 +145,8 @@ namespace Kernel
 	uint64_t GetTrueLFBAddress();
 	uint64_t GetLFBLengthInPages();
 	void PrintVersion();
+
+	uint64_t TickCounter();
 
 	namespace Utilities
 	{

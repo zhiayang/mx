@@ -26,8 +26,8 @@ namespace Heap
 	static uint64_t SizeOfHeap;
 	static uint64_t SizeOfMeta;
 
-	const uint64_t MetaOffset = 32;
-	const uint64_t Alignment = 32;
+	const uint64_t MetaOffset = 64;
+	const uint64_t Alignment = 64;
 
 	struct Chunk
 	{
@@ -242,7 +242,7 @@ namespace Heap
 		Chunk* last = index(ChunksInHeap - 1);
 		if(last->offset + size(last) != (SizeOfHeap * 0x1000))
 		{
-			fprintf(stderr, "failure: %lx + %lx != %lx\n", last->offset, size(last), SizeOfHeap * 0x1000);
+			fprintf(stderr, "failure (1): %lx + %lx != %lx\n", last->offset, size(last), SizeOfHeap * 0x1000);
 			fail();
 		}
 
@@ -346,7 +346,7 @@ namespace Heap
 			Chunk* left = index(o - 1);
 			if(left->offset + size(left) != self->offset)
 			{
-				fprintf(stderr, "failure: %lx + %lx != %lx\n", left->offset, size(left), self->offset);
+				fprintf(stderr, "failure (2): %lx + %lx != %lx\n", left->offset, size(left), self->offset);
 				fail();
 			}
 
@@ -400,7 +400,6 @@ namespace Heap
 
 	void Print()
 	{
-		// for(size_t i = 0; i < ChunksInHeap; i++)
 		for(long i = ChunksInHeap - 1; i >= 0; i--)
 		{
 			Chunk* c = index(i);

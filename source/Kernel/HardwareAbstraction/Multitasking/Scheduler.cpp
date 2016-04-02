@@ -5,6 +5,7 @@
 
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Devices/IOPort.hpp>
+#include <HardwareAbstraction/Devices/SerialPort.hpp>
 #include <String.hpp>
 #include <stdlib.h>
 #include <stl/vector.h>
@@ -131,11 +132,15 @@ namespace Multitasking
 
 
 
+
+
 		// 0x2610 stores the thread's current errno.
 		// we therefore need to save it before switching threads.
 		CurrentThread->currenterrno = *((int64_t*) 0x2610);
 		CurrentThread = GetNextThread();
 
+		// if(CurrentThread->Parent->ProcessID == 2)
+		// 	Log("have pid 2???");
 
 
 		if(CurrentThread->Parent->Flags & 0x1)
@@ -174,6 +179,11 @@ namespace Multitasking
 
 	extern "C" void VerifySchedule()
 	{
+		// if(CurrentThread->Parent->ProcessID == 2)
+		// 	HardwareAbstraction::Devices::SerialPort::WriteString("[2]");
+
+		// if(CurrentThread->Parent->ProcessID == 1)
+		// 	HardwareAbstraction::Devices::SerialPort::WriteString("[1]");
 	}
 
 	extern "C" void YieldCPU()

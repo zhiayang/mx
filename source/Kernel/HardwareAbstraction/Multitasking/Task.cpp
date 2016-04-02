@@ -431,7 +431,6 @@ namespace Multitasking
 	{
 		Process* cur = GetCurrentProcess();
 		Process* proc = ForkProcess(cur->Name, 0);
-		Multitasking::AddToQueue(proc);
 
 		// we access the saved registers here.
 		// proc has the things set up, but we need to retroactively screw with the registers on stack.
@@ -487,6 +486,8 @@ namespace Multitasking
 		// always return the child's PID, to the parent.
 
 		assert(proc->ProcessID != cur->ProcessID);
+		Multitasking::AddToQueue(proc);
+
 		return (int64_t) proc->ProcessID;
 	}
 }

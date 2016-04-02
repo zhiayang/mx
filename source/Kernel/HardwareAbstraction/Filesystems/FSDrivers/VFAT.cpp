@@ -696,6 +696,8 @@ namespace Filesystems
 
 		rde::vector<VFS::vnode*> ret;
 
+		// Utilities::DumpBytes(buf, dirsize);
+
 		for(uint64_t addr = buf; addr < buf + dirsize;)
 		{
 			rde::string name;
@@ -705,9 +707,13 @@ namespace Filesystems
 			uint8_t* raw = (uint8_t*) addr;
 			auto dirent = (DirectoryEntry*) raw;
 
-			if(dirent->name[0] == 0)
-				break;
+			// Log("dirent: %x // %s", raw, tovnd(node)->name.c_str());
+			// Utilities::DumpBytes(buf, 32);
 
+			if(dirent->name[0] == 0)
+			{
+				break;
+			}
 			else if((uint8_t) dirent->name[0] == FIRSTCHAR_DELETED)
 			{
 				addr += sizeof(LFNEntry);

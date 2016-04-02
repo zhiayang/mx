@@ -387,6 +387,7 @@ namespace Filesystems
 		assert(path);
 		auto ctx = getctx();
 
+		Log("VFS OPEN %s", path);
 		auto fe = VFS::OpenFile(ctx, path, flags);
 		return fe ? fe->fd : -1;
 	}

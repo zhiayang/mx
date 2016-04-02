@@ -60,7 +60,7 @@ namespace TTY
 
 		do
 		{
-			asm volatile("pause");
+			// asm volatile("pause");
 			if(tty->buffer.size() == 0)
 				continue;
 
@@ -133,10 +133,21 @@ namespace TTY
 				tty->buffer.push_back(buf[i]);
 		}
 
+
+		// Log("TTY has data, delta %ld", Kernel::TickCounter() - __debug_flag__);
+		// __debug_flag__ = Kernel::TickCounter();
+
 		if(tty->echomode)
 		{
 			stdout_write(ttys->find(1)->second, buf, length);
+
+			// Log("wrote to stdout, delta %ld", Kernel::TickCounter() - __debug_flag__);
+			// __debug_flag__ = Kernel::TickCounter();
+
 			stdout_flush(ttys->find(1)->second);
+
+			// Log("flushed stdout, delta %ld", Kernel::TickCounter() - __debug_flag__);
+			__debug_flag__ = 0;
 		}
 
 		return length;
@@ -245,9 +256,15 @@ namespace TTY
 	uint64_t WriteTTY(long ttyid, uint8_t* data, uint64_t length)
 	{
 		assert(ttys);
+		// Log("writing to TTY, delta %ld", Kernel::TickCounter() - __debug_flag__);
+		// __debug_flag__ = Kernel::TickCounter();
+
 		if(ttys->find(ttyid) != ttys->end())
 		{
 			TTYObject* tty = ttys->find(ttyid)->second;
+
+			// Log("found TTY, delta %ld", Kernel::TickCounter() - __debug_flag__);
+			// __debug_flag__ = Kernel::TickCounter();
 			return tty->out(tty, data, length);
 		}
 		else

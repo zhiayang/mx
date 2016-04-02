@@ -92,7 +92,7 @@ namespace Kernel
 	// devices
 	Random* KernelRandom;
 
-	bool __debug_flag__ = false;
+	volatile uint64_t __debug_flag__ = 0;
 
 	static uint64_t VER_MAJOR;
 	static uint64_t VER_MINOR;
@@ -416,16 +416,16 @@ namespace Kernel
 
 		// init network stuff
 		// if we have an nic, that is
-		if(DeviceManager::GetDevice(DeviceType::EthernetNIC) != 0)
-		{
-			using namespace Network;
-			ARP::Initialise();
-			IP::Initialise();
-			TCP::Initialise();			// todo: tcp stack is not reliable
-			UDP::Initialise();
-			DHCP::Initialise();			// todo: dhcp is a little broken
-			DNS::Initialise();			// todo: dns is also wonky
-		}
+		// if(DeviceManager::GetDevice(DeviceType::EthernetNIC) != 0)
+		// {
+		// 	using namespace Network;
+		// 	ARP::Initialise();
+		// 	IP::Initialise();
+		// 	TCP::Initialise();			// todo: tcp stack is not reliable
+		// 	UDP::Initialise();
+		// 	DHCP::Initialise();			// todo: dhcp is a little broken
+		// 	DNS::Initialise();			// todo: dns is also wonky
+		// }
 
 		PS2::Initialise();
 		TTY::Initialise();
@@ -474,53 +474,6 @@ namespace Kernel
 		#endif
 
 
-		#if TEST_LARGE_FILE_READ
-		{
-			using namespace Filesystems;
-
-			fd_t file = OpenFile("/texts/big.txt", 0);
-			assert(file > 0);
-
-			struct stat s;
-			Stat(file, &s);
-
-			uint64_t st = 0;
-			uint64_t et = 0;
-
-			Log(3, "(%d) s.st_size: %ld", file, s.st_size);
-
-			const uint64_t blocksz = s.st_size;
-			uint8_t* fl = new uint8_t[blocksz + 1];
-			uint8_t* whole = new uint8_t[s.st_size + 1];
-
-			uint64_t total = s.st_size;
-			Log(3, "start: %ld ms", st = Time::Now());
-
-			for(uint64_t cur = 0; cur < total; )
-			{
-				uint64_t read = Read(file, fl, blocksz);
-
-				memcpy(whole + cur, fl, read);
-				cur += read;
-
-				PrintFmt("\r\t\t\t\t\t\t\t\t\t\t\t\r(%02.2d%%) %d/%d", (size_t) (((double) cur / (double) total) * 100.0),
-					cur, total);
-			}
-
-			Log("<< %s >>", whole);
-			// Utilities::DumpBytes((uintptr_t) (whole + 101880), 1024);
-
-			Log(3, "end: %ld ms", et = Time::Now());
-			Log(3, "time taken: %ld ms", et - st);
-		}
-		#endif
-
-
-
-
-
-
-
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
 
 		#if TEST_USERSPACE_PROG
@@ -538,8 +491,64 @@ namespace Kernel
 				GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
 
 			Multitasking::AddToQueue(proc);
+
+
+			// using namespace Filesystems;
+			// fd_t file = OpenFile("/texts/1984.txt", 0);
+			// struct stat s;
+
+			// Stat(file, &s);
+
+			// Log("file is %zu bytes.", s.st_size);
 		}
 		#endif
+
+
+
+		#if TEST_LARGE_FILE_READ
+		{
+			using namespace Filesystems;
+
+			fd_t file = OpenFile("/texts/1984.txt", 0);
+			assert(file > 0);
+
+			struct stat s;
+			Stat(file, &s);
+
+			uint64_t st = 0;
+			uint64_t et = 0;
+
+			Log("(%d) s.st_size: %ld", file, s.st_size);
+
+			const uint64_t blocksz = s.st_size;
+			uint8_t* fl = new uint8_t[blocksz + 1];
+			uint8_t* whole = new uint8_t[s.st_size + 1];
+
+			uint64_t total = s.st_size;
+			Log("start: %ld ms", st = Time::Now());
+
+			for(uint64_t cur = 0; cur < total; )
+			{
+				uint64_t read = Read(file, fl, blocksz);
+
+				memcpy(whole + cur, fl, read);
+				cur += read;
+
+				// PrintFmt("\r\t\t\t\t\t\t\t\t\t\t\t\r(%02.2d%%) %d/%d", (size_t) (((double) cur / (double) total) * 100.0),
+				// 	cur, total);
+			}
+
+			// Log("<< %s >>", whole);
+			// Utilities::DumpBytes((uintptr_t) (whole + 101880), 1024);
+
+			Log("end: %ld ms", et = Time::Now());
+			Log("time taken: %ld ms", et - st);
+		}
+		#endif
+
+
+
+
 
 
 		PrintFmt("[mx] has completed initialisation.\n");
@@ -659,12 +668,6 @@ namespace Kernel
 
 
 
-
-
-
-
-
-
 		// kernel stops here
 		// for now.
 
@@ -697,7 +700,7 @@ namespace Kernel
 	{
 		while(true)
 		{
-			asm volatile("pause; hlt");
+			// asm volatile("pause");
 			YieldCPU();
 		}
 	}

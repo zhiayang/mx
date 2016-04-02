@@ -60,8 +60,8 @@ int main(int argc, char** argv)
 	height		= (uint64_t) argv[3];
 	bpp			= (uint64_t) argv[4] / 8;		// kernel gives us BITS per pixel, but we really only care about BYTES per pixel.
 
-	// printf("Display server online\n");
-	// printf("Forking process...\n");
+	printf("\n\nDisplay server online\n");
+	printf("Forking process...\n\n");
 
 
 
@@ -75,28 +75,55 @@ int main(int argc, char** argv)
 
 
 
-	int res = fork();
+	// int res = fork();
+	int res = 0;
 	if(res == 0)
 	{
 		printf("in child, forking again.\n");
+		fflush(stdout);
 
-		int r2 = fork();
-		if(r2 == 0)
-		{
-			printf("in child of child\n");
-		}
-		else
-		{
-			printf("in parent of child's child: pid = %d\n", r2);
-		}
+		// usleep(50 * 1000);
 
-		while(1);
+		printf("reading file.\n");
+
+		FILE* orwell = fopen("/texts/1984.txt", "r");
+		struct stat s;
+
+		fstat(orwell->__fd, &s);
+		printf("read %zu bytes.\n", s.st_size);
+
+		uint8_t* buf = new uint8_t[s.st_size];
+
+		size_t read = fread(buf, 1, s.st_size, orwell);
+		if(read != s.st_size)
+			printf("failed to read -- got %zu bytes, expected %zu\n", read, s.st_size);
+
+		printf("read %zu bytes.\n", read);
+		printf("%s\n", buf);
+
+		fclose(orwell);
+
+
+		// int r2 = fork();
+		// if(r2 == 0)
+		// {
+		// 	printf("in child of child\n");
+		// 	fflush(stdout);
+		// }
+		// else
+		// {
+		// 	printf("in parent of child's child: (pid = %d)\n", r2);
+		// 	fflush(stdout);
+		// }
+
+		// while(1);
 	}
 	else
 	{
 		// char d[10] = { 0 };
-		printf("parent: child proc has pid %d\n", res);
-		while(1);
+		printf("parent: child proc (pid = %d)\n", res);
+		fflush(stdout);
+		// while(1);
 	}
 
 

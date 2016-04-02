@@ -38,6 +38,9 @@ namespace Devices
 		while(!(IOPort::ReadByte(PS2::CommandPort) & (1 << 0)))
 			;
 
+		// Log("PS/2 ready, delta %ld", Kernel::TickCounter() - __debug_flag__);
+		// __debug_flag__ = Kernel::TickCounter();
+
 		uint8_t thing = IOPort::ReadByte(PS2::DataPort);
 		if(thing == 0xFA || thing == 0xFE)
 			return;
@@ -46,6 +49,9 @@ namespace Devices
 
 		if(thing != 0xE1 && thing != 0xF0 && thing != 0xE0)
 		{
+			// Log("Adding job, delta %ld", Kernel::TickCounter() - __debug_flag__);
+			// __debug_flag__ = Kernel::TickCounter();
+
 			JobDispatch::AddJob(JobDispatch::Job(&JobHandler, this, 0));
 		}
 	}
@@ -81,6 +87,9 @@ namespace Devices
 
 		bool isE0 = false;
 		bool isF0 = false;
+
+		// Log("in key decoder, delta %ld", Kernel::TickCounter() - __debug_flag__);
+		// __debug_flag__ = Kernel::TickCounter();
 
 
 		if(buf == 0xE0)
