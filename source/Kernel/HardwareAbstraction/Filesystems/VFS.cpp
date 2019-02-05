@@ -1,5 +1,5 @@
 // VFS.cpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <string.h>
@@ -25,23 +25,20 @@ namespace Filesystems
 		const char* FS_STDERR_MOUNTPOINT = "/dev/stderr";
 		const char* FS_SOCKET_MOUNTPOINT = "/dev/socketfs";
 
-
-
-
-
-
 		static id_t curid = 0;
 		static id_t curfeid = 0;
 		static fd_t FirstFreeFD = 0;
 
-		static rde::vector<Filesystem*>* mountedfses;
-		static rde::hash_map<id_t, vnode*>* vnodepool;
+		static rde::vector<Filesystem*> mountedfses;
+		static rde::hash_map<id_t, vnode*> vnodepool;
 
-		static FSDriver* driver_console;
-		static FSDriver* driver_stdin;
-		static FSDriver* driver_stdout;
-		static FSDriver* driver_stderr;
-		static FSDriver* driver_socketfs;
+		static FSDriver* driver_console = 0;
+		static FSDriver* driver_stdin = 0;
+		static FSDriver* driver_stdout = 0;
+		static FSDriver* driver_stderr = 0;
+		static FSDriver* driver_socketfs = 0;
+
+		static Mutex mtx;
 
 		static IOContext* getctx()
 		{
@@ -54,7 +51,7 @@ namespace Filesystems
 
 		static Filesystem* getfs(rde::string& path)
 		{
-			for(auto v : *mountedfses)
+			for(auto v : mountedfses)
 			{
 				if(String::Compare(path.substr(0, __min(path.length(), v->mountpoint->length())).c_str(), v->mountpoint->c_str()) == 0)
 					return v;
@@ -73,8 +70,10 @@ namespace Filesystems
 
 		void Initialise()
 		{
-			mountedfses = new rde::vector<Filesystem*>();
-			vnodepool = new rde::hash_map<id_t, vnode*>();
+			// mountedfses = new rde::vector<Filesystem*>();
+			// vnodepool = new rde::hash_map<id_t, vnode*>();
+
+			// mtx = new Mutex();
 		}
 
 		void InitIO()
@@ -101,8 +100,8 @@ namespace Filesystems
 		// this fetches from the pool. used mainly by fsdrivers to avoid creating duplicate vnodes.
 		vnode* NodeFromID(id_t id)
 		{
-			auto v = vnodepool->find(id);
-			if(v == vnodepool->end())
+			auto v = vnodepool.find(id);
+			if(v == vnodepool.end())
 				return nullptr;
 
 			return v->second;
@@ -150,7 +149,7 @@ namespace Filesystems
 
 			// add the node to the pool.
 			node->id = curid++;
-			(*vnodepool)[node->id] = node;
+			vnodepool[node->id] = node;
 			return node;
 		}
 
@@ -196,7 +195,7 @@ namespace Filesystems
 			_fs->mountpoint = new rde::string(path);
 			_fs->partition = part;
 
-			mountedfses->push_back(_fs);
+			mountedfses.push_back(_fs);
 		}
 
 		void Unmount(const char* path)
@@ -256,13 +255,8 @@ namespace Filesystems
 			assert(ioctx);
 			assert(path);
 
-			if(!mountedfses)
-				return nullptr;
-
-
 			rde::string pth = rde::string(path);
 			Filesystem* fs = getfs(pth);
-
 
 			if(fs == nullptr || fs->ismounted == false)
 			{
@@ -393,6 +387,7 @@ namespace Filesystems
 		assert(path);
 		auto ctx = getctx();
 
+		Log("VFS OPEN %s", path);
 		auto fe = VFS::OpenFile(ctx, path, flags);
 		return fe ? fe->fd : -1;
 	}

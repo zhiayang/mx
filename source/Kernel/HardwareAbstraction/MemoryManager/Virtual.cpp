@@ -1,5 +1,5 @@
 // Virtual.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 
@@ -14,10 +14,12 @@ namespace HardwareAbstraction {
 namespace MemoryManager {
 namespace Virtual
 {
-	static uint64_t FinaliseRegion(MemRegion* region, uint64_t phys, void* x)
+	static uint64_t FinaliseRegion(MemRegion* region, uint64_t phys, void* pml4)
 	{
 		region->used = 1;
 		region->phys = phys;
+
+		// Log(1, "allocated %d pages at %x, in pml %x", region->length, region->start, pml4);
 
 		return region->start;
 	}
@@ -30,11 +32,11 @@ namespace Virtual
 
 		assert(vas);
 		assert(vas->mtx);
-		assert(vas->regions);
+		// assert(vas->regions);
 
-		auto m = AutoMutex(vas->mtx);
+		AutoMutex mtx(*vas->mtx);
 
-		for(MemRegion* region : *vas->regions)
+		for(MemRegion* region : vas->regions)
 		{
 			assert(region->length > 0);
 			assert(region->start > 0);
@@ -72,7 +74,7 @@ namespace Virtual
 								newr->used = 0;
 								newr->phys = 0;
 
-								vas->regions->push_back(newr);
+								vas->regions.push_back(newr);
 
 								region->length = size;
 
@@ -90,7 +92,7 @@ namespace Virtual
 							front->length = (addr - region->start) / 0x1000;
 							front->used = 0;
 							front->phys = 0;
-							vas->regions->push_back(front);
+							vas->regions.push_back(front);
 
 							region->start = addr;
 							region->length -= front->length;
@@ -112,7 +114,7 @@ namespace Virtual
 								assert(back->start > 0);
 								assert(back->length > 0);
 
-								vas->regions->push_back(back);
+								vas->regions.push_back(back);
 							}
 
 							return FinaliseRegion(region, phys, vas->PML4);
@@ -141,7 +143,7 @@ namespace Virtual
 						newr->used = 0;
 						newr->phys = 0;
 
-						vas->regions->push_back(newr);
+						vas->regions.push_back(newr);
 
 						region->length = size;
 
@@ -172,43 +174,50 @@ namespace Virtual
 	uint64_t AllocatePage(uint64_t size, uint64_t addr, uint64_t flags)
 	{
 		uint64_t phys = Physical::AllocatePage(size);
-		uint64_t virt = AllocateVirtual(size, addr, 0, phys);
 
-		MapRegion(virt, phys, size, flags);
+		// store the 'flags' we used in the 'phys' field.
+		uint64_t virt = AllocateVirtual(size, addr, 0, phys | flags);
+
+		MapRegion(virt, phys & ((uint64_t) ~0xFFF), size, flags);
 
 		return virt;
 	}
 
 	static MemRegion* _FreeVirtual(uint64_t addr, uint64_t size, VirtualAddressSpace* _v)
 	{
+		if(size == 0) return 0;
+
 		VirtualAddressSpace* vas = (_v ? _v : &Multitasking::GetCurrentProcess()->VAS);
 
 		assert(vas);
 		assert(vas->mtx);
-		assert(vas->regions);
+		// assert(vas->regions);
 
-		auto m = AutoMutex(vas->mtx);
+		AutoMutex mtx(*vas->mtx);
 
 
 		MemRegion* offending = 0;
 
-		for(MemRegion* region : *vas->regions)
+		for(MemRegion* region : vas->regions)
 		{
 			if(region->start == addr && region->length == size)
 			{
 				assert(region->used);
-				vas->regions->remove(region);
+				vas->regions.remove(region);
 
 				offending = region;
 				break;
 			}
 		}
 
+		if(offending == 0)
+			return 0;
+
 		assert(offending);
 		offending->used = 1;
 
 		// loop through again.
-		for(MemRegion* region : *vas->regions)
+		for(MemRegion* region : vas->regions)
 		{
 			// simple things:
 			// check if we can either fit in below, or above
@@ -231,7 +240,7 @@ namespace Virtual
 
 		// else.
 		offending->used = 0;
-		vas->regions->push_back(offending);
+		vas->regions.push_back(offending);
 		return offending;	// can't delete region.
 	}
 
@@ -245,10 +254,13 @@ namespace Virtual
 
 	void FreePage(uint64_t addr, uint64_t size)
 	{
+		// Log(1, "trying to free %d pages at %x (%x)", size, addr, __builtin_return_address(0));
 		MemRegion* region = _FreeVirtual(addr, size, 0);
 		assert(region);
 
-		uint64_t phys = region->phys;
+		// note: we stored the flags we used to map in 'phys'. throw it away.
+		uint64_t phys = region->phys & ((uint64_t) ~0xFFF);
+
 		assert(phys > 0);
 		assert(region->length > 0);
 
@@ -262,7 +274,8 @@ namespace Virtual
 	VirtualAddressSpace* SetupVAS(VirtualAddressSpace* vas)
 	{
 		assert(vas);
-		vas->regions = new rde::vector<MemRegion*>();
+		// vas->regions = new stl::vector<MemRegion*>();
+		vas->regions = rde::vector<MemRegion*>();
 
 		// Max 48-bit virtual address space (current implementations)
 		MemRegion* r1 = new MemRegion();
@@ -279,8 +292,8 @@ namespace Virtual
 		r2->used = 0;
 		r2->phys = 0;
 
-		vas->regions->push_back(r1);
-		vas->regions->push_back(r2);
+		vas->regions.push_back(r1);
+		vas->regions.push_back(r2);
 
 		vas->mtx = new Mutex();
 		return vas;
@@ -298,9 +311,9 @@ namespace Virtual
 	{
 		VirtualAddressSpace* vas = v ? v : &Multitasking::GetCurrentProcess()->VAS;
 		assert(vas);
-		assert(vas->regions);
+		// assert(vas->regions);
 
-		for(MemRegion* region : *vas->regions)
+		for(MemRegion* region : vas->regions)
 		{
 			// assert(region);
 			assert(region->start > 0);
@@ -308,7 +321,7 @@ namespace Virtual
 
 			uint64_t end = region->start + (region->length * 0x1000);
 
-			if(virt >= region->start && virt <= end)
+			if(virt >= region->start && virt < end)
 			{
 				assert(region->phys > 0);
 				return region->phys + (virt - region->start);
@@ -349,7 +362,6 @@ namespace Virtual
 
 		VirtualAddressSpace* from = &Multitasking::GetProcess(0)->VAS;
 
-
 		size_t numPages			= (bytes + 0xFFF) / 0x1000;
 		uint64_t toAligned		= toAddr & I_AlignMask;
 		uint64_t beginOffset	= toAddr - toAligned;
@@ -365,12 +377,14 @@ namespace Virtual
 
 		// allocate some temporary virt pages in the local address space
 		// then map the physical pages behind toAddr to our local space
-		uint64_t toVirtTemp		= AllocateVirtual(numPages, 0, from, toPhys);
+		uint64_t toVirtTemp = AllocateVirtual(numPages, 0, from, toPhys);
+		assert(toVirtTemp != 0);
+
 		Virtual::MapRegion(toVirtTemp, toPhys, numPages, 0x3);
 
 		// then copy it.
-		// Log("Copied %d bytes from %x to %x (%x, %x, %x)", bytes, fromAddr, toAddr, beginOffset, toPhys, to->PML4);
-		Memory::Copy((void*) (toVirtTemp + beginOffset), (void*) fromAddr, bytes);
+		Log("Copying %d bytes from %p to %p (%x, %x, %x)", bytes, fromAddr, toAddr, beginOffset, toPhys, to->PML4);
+		Memory::CopyOverlap((void*) (toVirtTemp + beginOffset), (void*) fromAddr, bytes);
 
 		FreeVirtual(toVirtTemp, numPages);
 		Virtual::UnmapRegion(toVirtTemp, numPages);
@@ -439,40 +453,61 @@ namespace Virtual
 
 	VirtualAddressSpace* CopyVAS(VirtualAddressSpace* src, VirtualAddressSpace* dest)
 	{
-		// todo
+		assert(src);
+		assert(dest);
 
-		(void) src;
-		(void) dest;
+		// no need to lock source, but lock dest.
+		LOCK(*dest->mtx);
 
+		assert(dest->regions.size() == 0);
+
+		// shitty, manual old-school stuff.
+		// enter the matrix of the recursive thing
+		// which i probably didn't do properly.
+		{
+
+			// I_RECURSIVE_SLOT
+		}
+
+
+
+
+
+
+
+
+
+		// proper, clean stuff.
+		for(auto pair : src->regions)
+		{
+			MemRegion* reg = new MemRegion();
+			reg->length	= pair->length;
+			reg->phys	= pair->phys;
+			reg->start	= pair->start;
+			reg->used	= pair->used;
+
+			if(pair->used)
+			{
+				uint64_t p = Physical::AllocatePage(pair->length);
+
+				// todo: use Copy-on-write (COW) for this instead of allocating a new page
+				Virtual::MapRegion(pair->start, p, pair->length, (pair->phys & 0xFFF) | 0x7, dest->PML4);
+
+				Virtual::MapRegion(TemporaryVirtualMapping, p, pair->length, 0x07);
+
+				// copy contents.
+				Memory::CopyOverlap((void*) TemporaryVirtualMapping, (void*) pair->start, pair->length * 0x1000);
+
+				Virtual::UnmapRegion(TemporaryVirtualMapping, pair->length);
+				reg->phys = p | (pair->phys & 0xFFF);
+			}
+
+			dest->regions.push_back(reg);
+		}
+
+
+		UNLOCK(*dest->mtx);
 		return dest;
-
-		// for(auto p : src->pairs)
-		// 	dest->pairs.push_back(p);
-
-		// for(auto _pair : src->used)
-		// {
-		// 	// todo: workaround... investigate
-		// 	// if(!_pair)
-		// 	// 	continue;
-
-		// 	ALPTuple pair = ALPTuple(_pair);
-
-		// 	// dest->used.push_back(pair);
-
-		// 	uint64_t p = Physical::AllocatePage(pair.length);
-
-		// 	Virtual::MapRegion(pair.start, /*pair->phys*/ p, pair.length, 0x07, dest->PML4);
-		// 	Virtual::MapRegion(TemporaryVirtualMapping, p, pair.length, 0x07);
-		// 	Memory::CopyOverlap((void*) TemporaryVirtualMapping, (void*) pair.start, pair.length * 0x1000);
-
-
-		// 	Virtual::UnmapRegion(TemporaryVirtualMapping, pair.length);
-		// 	pair.phys = p;
-
-		// 	dest->used.push_back(pair);
-		// }
-
-		// return dest;
 	}
 
 	bool HandlePageFault(uint64_t cr2, uint64_t cr3, uint64_t errorcode)

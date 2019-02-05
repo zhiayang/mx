@@ -1,5 +1,5 @@
 // HPET.cpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
@@ -58,7 +58,7 @@ namespace Devices
 		Log("Initialising HPET Device, base address %x", table->baseAddress.baseAddress);
 		Log("ACPI address type: %s, register width: %d bits, register offset: %d bits", table->baseAddress.isMemMapped ? "memory mapped" : "io memory", table->baseAddress.regBitWidth, table->baseAddress.regBitOffset);
 
-		Log("%d HPET timer%s present", table->compCount, table->compCount == 1 ? "" : "s");
+		Log("%d HPET timer%s present", (int) table->compCount, table->compCount == 1 ? "" : "s");
 
 		if(table->isLegacy)
 		{

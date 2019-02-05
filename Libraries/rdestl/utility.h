@@ -1,18 +1,15 @@
 #ifndef RDESTL_UTILITY_H
 #define RDESTL_UTILITY_H
 
+#include <stdint.h>
+
 #include "rdestl_common.h"
 #include "int_to_type.h"
 // #include <new>
 
-namespace Kernel
-{
-	void Log(uint8_t level, const char* str, ...);
-	void Log(const char* str, ...);
-}
 
-void operator delete(void* p) _GLIBCXX_USE_NOEXCEPT;
-void operator delete[](void* p) _GLIBCXX_USE_NOEXCEPT;
+void operator delete(void* p) noexcept;// _GLIBCXX_USE_NOEXCEPT;
+void operator delete[](void* p) noexcept;// _GLIBCXX_USE_NOEXCEPT;
 void* operator new(size_t size);
 void* operator new[](size_t size);
 

@@ -1,5 +1,5 @@
 // userspace/String.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include "HeaderFiles/String.hpp"
@@ -116,6 +116,11 @@ extern "C" char* strncpy(char* destination, const char* source, size_t len)
 extern "C" int strcmp(const char* str1, const char* str2)
 {
 	return String::Compare(str1, str2);
+}
+
+extern "C" int strncmp(const char* s1, const char* s2, size_t n)
+{
+	return Memory::Compare(s1, s2, n);
 }
 
 extern "C" char* strcat(char* dest, const char* src)

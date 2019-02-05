@@ -1,5 +1,5 @@
 // DefaultSignalHandlers.cpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
@@ -17,7 +17,7 @@ namespace IPC
 	using namespace Kernel::HardwareAbstraction::Multitasking;
 	void TerminateProcess(int sig)
 	{
-		Library::StandardIO::PrintFormatted("Terminated PID %d: Signal %d", GetCurrentProcess()->ProcessID, sig);
+		StdIO::PrintFmt("Terminated PID %d: Signal %d", GetCurrentProcess()->ProcessID, sig);
 		Kill(GetCurrentProcess());
 
 		while(true);

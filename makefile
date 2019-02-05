@@ -31,12 +31,12 @@ WARNINGS			= -Wno-padded -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-cast-
 GWARNINGS			= -Wno-padded -Wno-cast-align -Wno-unreachable-code -Wno-switch-enum -Wno-packed -Wno-missing-noreturn -Wno-float-equal -Wno-old-style-cast -Wno-unused-macros -Wno-unknown-pragmas -Wno-attributes
 
 
-CXXFLAGS			= -m64 -g -Weverything -msse3 -integrated-as -O2 -fno-omit-frame-pointer -fno-strict-aliasing -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -mcmodel=kernel -c
+CXXFLAGS			= -m64 -g -Weverything -msse3 -integrated-as -O2 -fno-omit-frame-pointer -fno-strict-aliasing -std=gnu++14 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -I./source/Kernel/include -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -target x86_64-elf -mcmodel=kernel -c
 
-GXXFLAGS			= -m64 -g -Wall -msse3 -O2 -fno-omit-frame-pointer -fno-strict-aliasing -std=gnu++11 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti  -I./source/Kernel/HeaderFiles -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -mcmodel=kernel -c
+GXXFLAGS			= -m64 -g -Wall -msse3 -O2 -fno-omit-frame-pointer -fno-strict-aliasing -std=gnu++14 -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -I./source/Kernel/include -I./Libraries/Iris/HeaderFiles -I./Libraries/ -I$(SYSROOT)/usr/include -I$(SYSROOT)/usr/include/c++ -DORION_KERNEL=1 -mcmodel=kernel -c
 
 
-LDFLAGS				= --gc-sections -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib
+LDFLAGS				= -z max-page-size=0x1000 -L$(SYSROOT)/usr/lib
 
 
 MEMORY				= 1024
@@ -54,17 +54,16 @@ CXXDEPS				= $(CXXOBJ:.o=.d)
 -include $(CXXDEPS)
 
 
-
 NUMFILES			= $$(($(words $(CXXSRC)) + $(words $(SSRC))))
 
 
 
-LIBRARIES			= -liris -lrdestl
+LIBRARIES			= -liris -lrdestl -lkstl
 OUTPUT				= build/kernel64.elf
 
 
 
-QEMU_FLAGS			= -s -vga cirrus -no-reboot -m $(MEMORY) -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap     -drive file=build/disk.img,format=raw
+QEMU_FLAGS			= -s -vga std -no-reboot -m $(MEMORY) -rtc base=utc -net nic,model=rtl8139 -net user -net dump,file=build/netdump.wcap     -drive file=build/disk.img,format=raw
 
 .PHONY: builduserspace buildlib mountdisk clean all cleandisk copyheader
 
@@ -109,8 +108,8 @@ $(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) $(FLAXM
 	@$(LD) $(LDFLAGS) -T loader.ld -o build/fxloader64.elf source/Loader/Start.s.o $(shell find source/Loader -name "*.o" ! -name "Start.s.o")
 
 	@echo # Performing objcopy
-	@$(OBJCOPY) -g -O elf32-i386 build/fxloader64.elf build/fxloader.mxa
-	@cp build/fxloader.mxa $(shell tools/getpath.sh)/boot/fxloader.mxa
+	@$(OBJCOPY) -g -O elf32-i386 build/fxloader64.elf build/fxloader.oxf
+	@cp build/fxloader.oxf $(shell tools/getpath.sh)/boot/fxloader.oxf
 
 	@echo # Copying any extra files
 	@cp -R build/diskroot/* $(shell tools/getpath.sh)/ || :
@@ -121,7 +120,7 @@ $(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) $(FLAXM
 	@# use objcopy to strip debug symbols from the final executable -- saves about 1.3mb
 
 	@$(OBJCOPY) -g $(OUTPUT) build/kernel64.uncompressed
-	@# cp $(OUTPUT) build/kernel64.uncompressed
+	@# @cp $(OUTPUT) build/kernel64.uncompressed
 
 
 
@@ -169,7 +168,7 @@ $(OUTPUT): mountdisk copyheader $(SYSROOT)/usr/lib/%.a $(SOBJ) $(CXXOBJ) $(FLAXM
 
 
 builduserspace:
-	@printf "\n# Building userspace applications"
+	@printf "\n# Building userspace applications\n"
 	@$(MAKE) -C applications/
 
 copyheader:
@@ -199,9 +198,15 @@ cleandisk:
 	@find $(MOUNTPATH) -name "*.mxa" | xargs rm -f
 	@find $(MOUNTPATH) -name "*.x" | xargs rm -f
 
+cleanlib:
+	@find Libraries -name "*.a" | xargs rm -f
+	@find Libraries -name "*.o" | xargs rm -f
+	@find Libraries -name "*.cpp.d" | xargs rm -f
+
 cleanall: cleandisk clean
 	@echo "# Cleaning directory tree"
 	@find Libraries -name "*.o" | xargs rm -f
+	@find Libraries -name "*.cpp.d" | xargs rm -f
 	@find Libraries -name "*.a" | xargs rm -f
 	@find applications -name "*.o" | xargs rm -f
 

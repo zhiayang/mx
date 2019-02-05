@@ -1,5 +1,5 @@
 // CircularBuffer.hpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 
@@ -30,6 +30,8 @@ namespace Devices
 			// before this, we don't exactly know for sure. So it's kinda like a
 			// "keyboard on demand" thing.
 
+			Log("received initial INT at %ld", __debug_flag__ = Kernel::TickCounter());
+
 			rde::vector<Device*> kbs = GetDevices(DeviceType::Keyboard);
 			Keyboard* thekb = 0;
 
@@ -47,6 +49,9 @@ namespace Devices
 				thekb = new PS2Keyboard();
 				AddDevice(thekb, DeviceType::Keyboard);
 			}
+
+			Log("dispatching INT to PS/2, delta %ld", Kernel::TickCounter() - __debug_flag__);
+			__debug_flag__ = Kernel::TickCounter();
 
 			thekb->HandleKeypress();
 		}

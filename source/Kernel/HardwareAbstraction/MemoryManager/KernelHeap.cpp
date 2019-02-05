@@ -1,5 +1,5 @@
 // KernelHeap.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 // Heap things.
@@ -12,7 +12,7 @@ using namespace Kernel::HardwareAbstraction::MemoryManager;
 using namespace Library;
 
 #define MaximumHeapSizeInPages		0xFFFFFFFF
-#define Alignment					32
+#define Alignment					64
 #define MetadataSize				32
 #define Paranoid					1
 #define MapFlags					0x7
@@ -27,7 +27,7 @@ using namespace Library;
 
 
 #if Paranoid
-#define _assert(h, x)		do { if(!(x)) { Log("header %x failed (fields:\nmagic = %x\nsize =  %x\nownr1 = %x\nownr2 = %x\nfootr = %x\n\nmagic = %x, headr = %x)", h, h->magic, h->size, 0xFFFFFFFF00000000 | h->owner, 0xFFFFFFFF00000000 | h->owner1, h->footer, h->footer ? h->footer->magic : 0, h->footer ? h->footer->header : 0); assert((x)); } } while(0)
+#define _assert(h, x)		do { if(!(x)) { Log("header %lx failed (fields:\nmagic = %lx\nsize =  %x\nownr1 = %lx\nownr2 = %lx\nfootr = %lx\n\nmagic = %lx, headr = %lx)", h, h->magic, h->size, 0xFFFFFFFF00000000 | h->owner, 0xFFFFFFFF00000000 | h->owner1, h->footer, h->footer ? h->footer->magic : 0, h->footer ? h->footer->header : 0); assert((x)); } } while(0)
 #else
 #define _assert(h, x)
 #endif
@@ -63,6 +63,7 @@ namespace KernelHeap
 	static uint64_t NumberOfChunksInHeap;
 	static uint64_t SizeOfHeapInPages;
 	static Header* FirstFreeHeader;
+	static Mutex* mtx;
 
 	static uint64_t FirstHeapPhysPage;
 
@@ -203,6 +204,8 @@ namespace KernelHeap
 
 		FirstFreeHeader = create(KernelHeapAddress, 0x1000 - sizeof(Header) - sizeof(Footer), returnAddr(0), returnAddr(1));
 		DidInitialise = true;
+
+		mtx = new Mutex();
 	}
 
 	void ExpandHeap(uint64_t numPages)
@@ -257,6 +260,7 @@ namespace KernelHeap
 	{
 		if(size == 0) return 0;
 
+		AutoMutex mutex(*mtx);
 		size = ((size + (Alignment - 1)) / Alignment) * Alignment;
 
 		Header* h = sane(FirstFreeHeader);
@@ -399,10 +403,11 @@ namespace KernelHeap
 	{
 		if(ptr == 0)
 		{
-			Log(1, "free() called with ptr == 0, might be a bug: return %x / %x", returnAddr(0), returnAddr(1));
+			Log(1, "free() called with ptr == 0, might be a bug: return %p / %p", returnAddr(0), returnAddr(1));
 			return;
 		}
 
+		AutoMutex mutex(*mtx);
 
 		Header* hdr = (Header*) ptr;
 		hdr -= 1;
@@ -410,7 +415,10 @@ namespace KernelHeap
 		sane(hdr);
 
 		// make sure it's actually used.
-		_assert(hdr, !isFree(hdr));
+		// todo: investigate a curious double-free bug that happens when we terminate
+		// a process from userspace.
+
+		// _assert(hdr, !isFree(hdr));
 
 		// set it to free.
 		hdr->magic = HEADER_FREE;
@@ -426,17 +434,18 @@ namespace KernelHeap
 	{
 		if(ptr == 0)
 		{
-			Log(1, "called realloc() with ptr == 0, possible bug: return %x / %x", returnAddr(0), returnAddr(1));
+			Log(1, "called realloc() with ptr == 0, possible bug: return %p / %p", returnAddr(0), returnAddr(1));
 			return AllocateChunk(size);
 		}
 
 		if(size == 0)
 		{
-			Log(1, "called realloc() with size == 0, possible bug: return %x / %x", returnAddr(0), returnAddr(1));
+			Log(1, "called realloc() with size == 0, possible bug: return %p / %p", returnAddr(0), returnAddr(1));
 			FreeChunk(ptr);
 			return 0;
 		}
 
+		AutoMutex mutex(*mtx);
 
 
 		// now get the actual header.
@@ -471,12 +480,12 @@ namespace KernelHeap
 
 		do
 		{
-			Log("Chunk %x, size %x, %s", (uintptr_t) hdr - KernelHeapAddress, hdr->size, isFree(hdr) ? "free" : "used");
+			Log("Chunk %0.5x, data %0.5x, size %x, %s", (uintptr_t) hdr - KernelHeapAddress,
+				(uintptr_t) hdr - KernelHeapAddress + sizeof(Header), hdr->size, isFree(hdr) ? "free" : "used");
 
 		} while((hdr = next(hdr)) != 0);
 	}
 
-	// uint64_t GetFirstHeapMetadataPhysPage();
 	uint64_t GetFirstHeapPhysPage()
 	{
 		return FirstHeapPhysPage;

@@ -1,5 +1,5 @@
 // DHCP.cpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
@@ -82,7 +82,7 @@ namespace DHCP
 		{
 			Router() : code(OptionCode::Router) {}
 			OptionCode code;
-			uint8_t length;
+			uint8_t length = 0;
 
 			Library::IPv4Address mainrouter;
 
@@ -92,7 +92,7 @@ namespace DHCP
 		{
 			DNSServer() : code(OptionCode::DNSServer) {}
 			OptionCode code;
-			uint8_t length;
+			uint8_t length = 0;
 
 			Library::IPv4Address mainserver;
 
@@ -102,9 +102,9 @@ namespace DHCP
 		{
 			DomainName() : code(OptionCode::DomainName) {}
 			OptionCode code;
-			uint8_t length;
+			uint8_t length = 0;
 
-			const char* str;
+			const char* str = 0;
 
 		} __attribute__((packed));
 
@@ -114,7 +114,7 @@ namespace DHCP
 			OptionCode code;
 			uint8_t length;
 
-			uint32_t time;
+			uint32_t time = 0;
 
 		} __attribute__((packed));
 
@@ -124,7 +124,7 @@ namespace DHCP
 			OptionCode code;
 			uint8_t length;
 
-			uint8_t type;
+			uint8_t type = 0;
 
 		} __attribute__((packed));
 
@@ -143,8 +143,8 @@ namespace DHCP
 			ParameterRequest() : code(OptionCode::ParameterRequest) {}
 
 			OptionCode code;
-			uint8_t length;
-			uint8_t options[16];
+			uint8_t length = 0;
+			uint8_t options[16] = { 0 };
 
 		} __attribute__((packed));
 	}

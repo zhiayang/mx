@@ -1,5 +1,5 @@
 // errno.h
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #ifndef _STDC_ERRNO_H_
@@ -11,7 +11,7 @@
 
 __BEGIN_DECLS
 
-extern __thread int _errno;
+extern /*__thread*/ int _errno;
 #define errno			_errno
 
 __END_DECLS

@@ -40,15 +40,7 @@ KernelBootstrap:
 
 
 
-	// Setup SSE
-	mov %cr0, %rax
-	and $0xFFFB, %ax			// clear coprocessor emulation CR0.EM
-	or $0x02, %ax				// set coprocessor monitoring  CR0.MP
-	mov %rax, %cr0
-	mov %cr4, %rax
-	// orq $0x10600, %rax		// set CR4.OSFXSR, CR4.OSXMMEXCPT and CR4.FSGSBASE at the same time
-	orq $0x600, %rax
-	mov %rax, %cr4
+
 
 
 
@@ -119,31 +111,8 @@ KernelBootstrap:
 	call KernelInit
 
 
-	// now with the heap and everything setup, we can call the constructors.
-	mov $StartConstructors, %rbx
-	jmp 2f
-
-1:
-	call *(%rbx)
-	add $8, %rbx
-2:
-	cmp $EndConstructors, %rbx
-	jb 1b
-
-
 	// call the kernel thread setup.
 	call KernelThreadInit
-
-
-	mov $EndDestructors, %rbx
-	jmp 4f
-
-3:
-	sub $8, %rbx
-	call *(%rbx)
-4:
-	cmp $StartDestructors, %rbx
-	ja 3b
 
 
 

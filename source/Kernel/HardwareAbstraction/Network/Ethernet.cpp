@@ -1,12 +1,11 @@
 // Ethernet.cpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Network.hpp>
 #include <StandardIO.hpp>
 
-using namespace Library::StandardIO;
 
 namespace Kernel {
 namespace HardwareAbstraction {
@@ -26,7 +25,6 @@ namespace Ethernet
 	static uint32_t CalculateCRC(uint8_t* message, uint64_t length)
 	{
 		uint64_t i = 0;
-		uint32_t byte = 0;
 		uint32_t crc = 0;
 		uint32_t mask = 0;
 
@@ -35,7 +33,7 @@ namespace Ethernet
 		while(i < length)
 		{
 			// Get next byte.
-			byte = message[i];
+			uint32_t byte = message[i];
 
 			crc = crc ^ byte;
 			for(int j = 0; j < 8; j++)

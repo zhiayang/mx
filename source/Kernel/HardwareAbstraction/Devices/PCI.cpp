@@ -1,5 +1,5 @@
 // PCI.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 
@@ -35,13 +35,18 @@ namespace PCI
 
 	rde::list<PCIDevice*>* SearchByVendorDevice(uint16_t VendorID, uint16_t DeviceID)
 	{
-		uint16_t bus = 0, slot = 0;
-		uint8_t func = 0;
-		uint16_t vendor = 0, device = 0;
 		rde::list<PCIDevice*>* ret = new rde::list<PCIDevice*>();
 
 		for(auto dev : *PCIDevice::PCIDevices)
 		{
+
+			uint16_t bus 	= 0;
+			uint16_t slot	= 0;
+			uint8_t func	= 0;
+			uint16_t vendor	= 0;
+			uint16_t device	= 0;
+
+
 			bus = dev->GetBus();
 			slot = dev->GetSlot();
 			func = dev->GetFunction();
@@ -58,14 +63,17 @@ namespace PCI
 
 	rde::list<PCIDevice*>* SearchByClassSubclass(uint8_t c, uint8_t sc)
 	{
-		uint16_t bus = 0, slot = 0;
-		uint8_t func = 0;
-		uint16_t tClass = 0, tSubclass = 0;
 		rde::list<PCIDevice*>* ret = new rde::list<PCIDevice*>();
 
 
 		for(auto dev : *PCIDevice::PCIDevices)
 		{
+			uint16_t bus		= 0;
+			uint16_t slot		= 0;
+			uint8_t func		= 0;
+			uint16_t tClass		= 0;
+			uint16_t tSubclass	= 0;
+
 			bus = dev->GetBus();
 			slot = dev->GetSlot();
 			func = dev->GetFunction();
@@ -371,7 +379,7 @@ namespace PCI
 
 	void PCIDevice::PrintPCIDeviceInfo()
 	{
-		Library::StandardIO::PrintFormatted("\t%s=> /dev/pci%d%s%s > %d:%d, v:%#04x, d:%#04x, c:%#02x:%#02x h:%#02x int:%02d", (this->GetFunction() > 0) ? "\t" : "",	(this->GetBus() * 32 + this->GetSlot()), (this->GetFunction() > 0 ? "f" : ""), (this->GetFunction() > 0 ? (Library::Utility::ConvertToString(this->GetFunction())) : ((char*)"")), this->GetBus(), this->GetSlot(), this->GetVendorID(), this->GetDeviceID(), this->GetClass(), this->GetSubclass(), this->GetHeaderType(), this->GetRegisterData(0x3C, 0, 1));
+		StdIO::PrintFmt("\t%s=> /dev/pci%d%s%s > %d:%d, v:%#04x, d:%#04x, c:%#02x:%#02x h:%#02x int:%02d", (this->GetFunction() > 0) ? "\t" : "",	(this->GetBus() * 32 + this->GetSlot()), (this->GetFunction() > 0 ? "f" : ""), (this->GetFunction() > 0 ? (Library::Utility::ConvertToString(this->GetFunction())) : ((char*)"")), this->GetBus(), this->GetSlot(), this->GetVendorID(), this->GetDeviceID(), this->GetClass(), this->GetSubclass(), this->GetHeaderType(), this->GetRegisterData(0x3C, 0, 1));
 	}
 
 

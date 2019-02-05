@@ -1,5 +1,5 @@
 // MemoryMap.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 
@@ -9,7 +9,6 @@
 #include <StandardIO.hpp>
 
 using namespace Kernel;
-using namespace Library::StandardIO;
 using namespace HardwareAbstraction::MemoryManager::MemoryMap;
 
 extern MemoryMap_type* K_MemoryMap;
@@ -80,7 +79,7 @@ namespace MemoryMap
 		// Check if the fields are valid:
 		if(!(MBTStruct->flags & (1 << 6)))
 		{
-			PrintFormatted("FLAGS: %d", MBTStruct->flags);
+			StdIO::PrintFmt("FLAGS: %d", MBTStruct->flags);
 			HALT("No Multiboot Memory Map!");
 		}
 

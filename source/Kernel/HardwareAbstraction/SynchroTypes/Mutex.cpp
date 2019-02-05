@@ -1,5 +1,5 @@
 // Scheduler.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 
@@ -11,84 +11,68 @@ using namespace Kernel::HardwareAbstraction::Multitasking;
 
 namespace Kernel
 {
-	AutoMutex::AutoMutex(Mutex* l) { lock = l; LockMutex(l); }
-	AutoMutex::AutoMutex(const AutoMutex& m) { this->lock = m.lock; LockMutex(this->lock); }
-	AutoMutex::~AutoMutex() { UnlockMutex(lock); }
+	AutoMutex::AutoMutex(Mutex& l) : lock(l) { LockMutex(l); }
+	AutoMutex::~AutoMutex() { UnlockMutex(this->lock); }
+	AutoMutex& AutoMutex::operator = (AutoMutex&& other)
+	{
+		this->lock.owner		= other.lock.owner;
+		this->lock.lock			= other.lock.lock;
+		this->lock.recursion	= other.lock.recursion;
+		this->lock.type			= other.lock.type;
+
+		return *this;
+	}
 
 
-	void LockMutex(Mutex* Lock)
+	void LockMutex(Mutex& mtx)
 	{
 		if(NumThreads <= 1) { return; }
-		assert(Lock);
 
 		// check if we already own this mutex
-		if(Lock->owner == GetCurrentThread() && Lock->lock)
+		if(mtx.owner == GetCurrentThread() && mtx.lock)
 		{
-			Lock->recursion++;
+			mtx.recursion++;
 			return;
 		}
 
-		if(Lock->lock)
-		{
-			Lock->contestants.push_back(GetCurrentThread());
-		}
-
-		while(__sync_lock_test_and_set(&Lock->lock, 1))
+		while(__sync_lock_test_and_set(&mtx.lock, 1))
 			BLOCK();
 
-		__sync_lock_test_and_set(&Lock->lock, 1);
-		Lock->owner = GetCurrentThread();
-		Lock->recursion = 1;
+		__sync_lock_test_and_set(&mtx.lock, 1);
+		mtx.owner = GetCurrentThread();
+		mtx.recursion = 1;
 	}
 
-	void UnlockMutex(Mutex* Lock)
+	void UnlockMutex(Mutex& mtx)
 	{
 		if(NumThreads <= 1) { return; }
-		assert(Lock);
 
-		if(Lock->owner != GetCurrentThread())
+		if(mtx.owner != GetCurrentThread())
 			return;
 
 		// check if this is but one dream in the sequence
-		if(Lock->recursion > 1)
+		if(mtx.recursion > 1)
 		{
-			Lock->recursion--;
+			mtx.recursion--;
 			return;
 		}
 
-		Thread* o = Lock->owner;
-
-		Lock->owner = 0;
-		Lock->recursion = 0;
-		__sync_lock_release(&Lock->lock);
-
-		if(Lock->contestants.size() > 0)
-		{
-			if(Lock->contestants.front() != o)
-			{
-				auto front = Lock->contestants.front();
-				Lock->contestants.erase(Lock->contestants.begin());
-				WakeForMessage(front);
-			}
-			else
-			{
-				Lock->contestants.erase(Lock->contestants.begin());
-			}
-		}
+		mtx.owner = 0;
+		mtx.recursion = 0;
+		__sync_lock_release(&mtx.lock);
 	}
 
-	bool TryLockMutex(Mutex* Lock)
+	bool TryLockMutex(Mutex& mtx)
 	{
 		if(NumThreads <= 1) { return true; }
-		assert(Lock);
 
 		// if current was 1, since CheckLock gives us the old value then it's still locked.
 		// since this is a trylock, return.
-		if(__sync_lock_test_and_set(&Lock->lock, 1))
+		if(__sync_lock_test_and_set(&mtx.lock, 1))
 			return false;
 
-		Lock->owner = GetCurrentThread();
-		Lock->recursion = 1;
+		mtx.owner = GetCurrentThread();
+		mtx.recursion = 1;
 
 		// if not, we already locked it.
 		return true;
@@ -136,7 +120,7 @@ namespace Kernel
 		Mutex* m = (*mtxmap)[id];
 		assert(m);
 
-		if(m->lock || m->contestants.size() > 0)
+		if(m->lock)
 		{
 			SetThreadErrno(EBUSY);
 			return;
@@ -167,7 +151,7 @@ namespace Kernel
 			}
 		}
 
-		LockMutex(m);
+		LockMutex(*m);
 		return 0;
 	}
 
@@ -188,7 +172,7 @@ namespace Kernel
 			return -1;
 		}
 
-		UnlockMutex(m);
+		UnlockMutex(*m);
 		return 0;
 	}
 
@@ -203,7 +187,7 @@ namespace Kernel
 		Mutex* m = (*mtxmap)[id];
 		assert(m);
 
-		bool result = TryLockMutex(m);
+		bool result = TryLockMutex(*m);
 		if(result)
 			return 0;
 

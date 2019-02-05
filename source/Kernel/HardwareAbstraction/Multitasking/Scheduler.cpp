@@ -1,12 +1,14 @@
 // Scheduler.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Devices/IOPort.hpp>
+#include <HardwareAbstraction/Devices/SerialPort.hpp>
 #include <String.hpp>
 #include <stdlib.h>
+#include <stl/vector.h>
 
 using namespace Kernel;
 using namespace Library;
@@ -17,38 +19,35 @@ namespace HardwareAbstraction {
 namespace Multitasking
 {
 	static bool IsFirst = true;
-	static rde::vector<Thread*>* PendingSleepList;
-	static RunQueue* mainRunQueue;
+	static rde::vector<Thread*> PendingSleepList;
+
+	static RunQueue mainRunQueue;
 	static Thread* CurrentThread = 0;
+
 	static uint64_t CurrentCR3 = 0;
 	static uint64_t ScheduleCount = 0;
 
-	rde::vector<Thread*>* SleepList;
-	rde::vector<Process*>* ProcessList;
+	rde::vector<Thread*> SleepList;
+	rde::vector<Process*> ProcessList;
 
 	bool SchedulerEnabled = true;
 
 	void Initialise()
 	{
 		CurrentCR3 = GetKernelCR3();
-		SleepList = new rde::vector<Thread*>();
-		ProcessList = new rde::vector<Process*>();
-		PendingSleepList = new rde::vector<Thread*>();
 
-		mainRunQueue = new RunQueue();
-		mainRunQueue->queue = new rde::vector<Thread*>*[NUM_PRIO];
-
-		for(int i = 0; i < NUM_PRIO; i++)
-			mainRunQueue->queue[i] = new rde::vector<Thread*>();
+		mainRunQueue = RunQueue();
+		// mainRunQueue.queue = new rde::vector<Thread*>[NUM_PRIO];
 
 		*((int64_t*) 0x2610) = 0;
 	}
 
-	Process* GetCurrentProcess()		{ return CurrentThread ? CurrentThread->Parent : Kernel::KernelProcess; }
-	Thread* GetCurrentThread()			{ return CurrentThread; }
+
+	Process* GetCurrentProcess()	{ return CurrentThread ? CurrentThread->Parent : Kernel::KernelProcess; }
+	Thread* GetCurrentThread()		{ return CurrentThread; }
 	pid_t GetCurrentThreadID()		{ return CurrentThread->ThreadID; }
 	pid_t GetCurrentProcessID()		{ return CurrentThread->Parent->ProcessID; }
-	RunQueue* getRunQueue()				{ return mainRunQueue; }
+	RunQueue& GetRunQueue()			{ return mainRunQueue; }
 
 	// if, after N number of switches, processes in the low/norm queue don't get to run, run them all to completion.
 	// todo: fix scheduler. starvation still happens (unable to prevent cross-starvation)
@@ -56,16 +55,17 @@ namespace Multitasking
 
 	Thread* GetNextThread()
 	{
-		auto theQueue = getRunQueue();
+		auto& theQueue = GetRunQueue();
 		Thread* r = CurrentThread;
-		theQueue->lock();
+		theQueue.lock();
+
 		for(int i = 0; i < NUM_PRIO; i++)
 		{
-			if(!theQueue->queue[i]->empty() && (ScheduleCount % StarvationThresholds[i]) == 0)
+			if(!theQueue.queue[i].empty() && (ScheduleCount % StarvationThresholds[i]) == 0)
 			{
-				r = theQueue->queue[i]->front();
-				theQueue->queue[i]->erase(theQueue->queue[i]->begin());
-				theQueue->queue[i]->push_back(r);
+				r = theQueue.queue[i].front();
+				theQueue.queue[i].erase(theQueue.queue[i].begin());
+				theQueue.queue[i].push_back(r);
 				break;
 			}
 		}
@@ -79,7 +79,7 @@ namespace Multitasking
 			assert(r);
 		}
 
-		theQueue->unlock();
+		theQueue.unlock();
 
 		ScheduleCount++;
 		return r;
@@ -89,15 +89,16 @@ namespace Multitasking
 	{
 		if(BOpt_Likely(!IsFirst))
 		{
-			if(PendingSleepList->size() > 0)
+			if(PendingSleepList.size() > 0)
 			{
-				for(uint64_t i = 0, s = PendingSleepList->size(); i < s; i++)
+				assert(PendingSleepList.size() == 1 && "no, it can't be!");
+				for(uint64_t i = 0, s = PendingSleepList.size(); i < s; i++)
 				{
-					auto front = PendingSleepList->front();
-					PendingSleepList->erase_unordered(PendingSleepList->begin());
-					SleepList->push_back(front);
+					auto front = PendingSleepList.front();
+					PendingSleepList.erase_unordered(PendingSleepList.begin());
+					SleepList.push_back(front);
 
-					SleepList->back()->StackPointer = context;
+					SleepList.back()->StackPointer = context;
 				}
 			}
 			else
@@ -106,7 +107,9 @@ namespace Multitasking
 			}
 		}
 		else
+		{
 			IsFirst = false;
+		}
 
 
 
@@ -127,10 +130,18 @@ namespace Multitasking
 		}
 
 
+
+
+
+
 		// 0x2610 stores the thread's current errno.
 		// we therefore need to save it before switching threads.
 		CurrentThread->currenterrno = *((int64_t*) 0x2610);
 		CurrentThread = GetNextThread();
+
+		// if(CurrentThread->Parent->ProcessID == 2)
+		// 	Log("have pid 2???");
+
 
 		if(CurrentThread->Parent->Flags & 0x1)
 		{
@@ -149,27 +160,30 @@ namespace Multitasking
 
 		if((uint64_t) CurrentThread->Parent->VAS.PML4 != CurrentCR3)
 		{
+			using namespace MemoryManager;
+
 			// Only change the value in cr3 if we need to, to avoid trashing the TLB.
 			*((uint64_t*) 0x2600) = (uint64_t) CurrentThread->Parent->VAS.PML4;
-
 			CurrentCR3 = (uint64_t) CurrentThread->Parent->VAS.PML4;
-			MemoryManager::Virtual::SwitchPML4T((MemoryManager::Virtual::PageMapStructure*) CurrentCR3);
+			Virtual::SwitchPML4T((Virtual::PageMapStructure*) CurrentCR3);
 		}
 		else
 		{
 			*((uint64_t*) 0x2600) = 0;
 		}
 
+
+
 		return CurrentThread->StackPointer;
 	}
 
 	extern "C" void VerifySchedule()
 	{
-		if(0 && CurrentThread->ThreadID == 1)
-		{
-			Utilities::StackDump((uint64_t*) CurrentThread->StackPointer, 20);
-			// HALT("");
-		}
+		// if(CurrentThread->Parent->ProcessID == 2)
+		// 	HardwareAbstraction::Devices::SerialPort::WriteString("[2]");
+
+		// if(CurrentThread->Parent->ProcessID == 1)
+		// 	HardwareAbstraction::Devices::SerialPort::WriteString("[1]");
 	}
 
 	extern "C" void YieldCPU()
@@ -177,7 +191,7 @@ namespace Multitasking
 		asm volatile("int $0xF7");
 	}
 
-	void Sleep(int64_t time)
+	void Sleep(int64_t t)
 	{
 		if(CurrentThread->Sleep != 0)
 		{
@@ -186,9 +200,10 @@ namespace Multitasking
 
 		Thread* p = FetchAndRemoveThread(CurrentThread);
 
-		p->Sleep = (uint32_t) __abs(time);
-		PendingSleepList->push_back(p);
+		p->Sleep = (uint32_t) __abs(t);
+		PendingSleepList.push_back(p);
 
+		// todo: what does this comment mean?
 		// if time is negative, we called from userspace, so don't nest interrupts.
 		YieldCPU();
 	}
@@ -205,16 +220,21 @@ namespace Multitasking
 		}
 	}
 
+	static int counter = 0;
 	void DisableScheduler()
 	{
+		counter++;
 		SchedulerEnabled = false;
 	}
 
 	void EnableScheduler()
 	{
-		SchedulerEnabled = true;
-	}
+		if(counter > 0)
+			counter--;
 
+		if(counter == 0)
+			SchedulerEnabled = true;
+	}
 }
 }
 }

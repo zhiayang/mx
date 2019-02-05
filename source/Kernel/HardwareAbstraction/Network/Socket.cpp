@@ -1,5 +1,5 @@
 // Socket.cpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
@@ -8,6 +8,7 @@
 #include <HardwareAbstraction/Network.hpp>
 
 #include <defs/_errnos.h>
+#include <stdlib.h>
 
 using namespace Library;
 using namespace Kernel::HardwareAbstraction::Filesystems::VFS;
@@ -41,7 +42,9 @@ namespace Network
 
 		if(fe->node->info->driver->GetType() != FSDriverType::Socket)
 		{
-			Log(1, "Cannot perform socket operations on a non-socket FD!");
+			Log(1, "Cannot perform socket operations on a non-socket FD! (Type = %d) (%p // %p)", fe->node->info->driver->GetType(),
+				__builtin_return_address(0), __builtin_return_address(1));
+
 			Multitasking::SetThreadErrno(ENOTSOCK);
 
 			return 0;
@@ -88,7 +91,8 @@ namespace Network
 		assert(socketfs);
 		assert(socketfs->driver);
 
-		assert(socketfs->driver->GetType() == FSDriverType::Socket);
+		FSDriverType fdt = socketfs->driver->GetType();
+		assert(fdt == FSDriverType::Socket);
 
 		if(!((SocketVFS*) socketfs->driver)->interface)
 			((SocketVFS*) socketfs->driver)->interface = interface;
@@ -206,6 +210,7 @@ namespace Network
 	SocketVFS::SocketVFS() : FSDriver(nullptr, FSDriverType::Socket)
 	{
 		this->_seekable = false;
+		this->interface = 0;
 	}
 
 	SocketVFS::~SocketVFS()
@@ -517,9 +522,9 @@ namespace Network
 
 	}
 
-	iris::vector<VFS::vnode*> SocketVFS::ReadDir(VFS::vnode*)
+	rde::vector<VFS::vnode*> SocketVFS::ReadDir(VFS::vnode*)
 	{
-		return iris::vector<VFS::vnode*>();
+		return rde::vector<VFS::vnode*>();
 	}
 }
 }

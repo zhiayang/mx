@@ -131,8 +131,7 @@ public:
 
 	// @note: allocator is not copied from rhs.
 	// @note: will not perform default constructor for newly created objects.
-	vector(const vector& rhs, const allocator_type& allocator = allocator_type())
-	:	TStorage(allocator)
+	vector(const vector& rhs, const allocator_type& allocator = allocator_type()) : TStorage(allocator)
 	{
         if(rhs.size() == 0) // nothing to do
             return;
@@ -143,6 +142,7 @@ public:
 		TStorage::record_high_watermark();
 		RDE_ASSERT(invariant());
 	}
+
 	explicit vector(e_noinitialize n)
 	:	TStorage(n)
 	{
@@ -273,7 +273,7 @@ public:
 		RDE_ASSERT(count > 0);
 		clear();
 		if(m_begin + count > m_capacityEnd)
-			reallocate_discard_old(compute_new_capacity(count));
+			TStorage::reallocate_discard_old(compute_new_capacity(count));
 
 		rde::copy_n(first, count, m_begin);
 		m_end = m_begin + count;
@@ -523,6 +523,53 @@ public:
 	{
 		return TStorage::get_high_watermark();
 	}
+
+
+
+
+
+
+
+	static vector _mergesort(vector& a, vector& b)
+	{
+		vector result;
+		size_t i = 0;
+		size_t j = 0;
+		while(i < a.size() && j < b.size())
+		{
+			if(a[i] <= b[j])
+				result.push_back(a[i++]);
+
+			else
+				result.push_back(b[j++]);
+		}
+
+		// Copy tail. Only one of these loops will execute per invocation
+		while(i < a.size())
+			result.push_back(a[i++]);
+
+		while(j < b.size())
+			result.push_back(b[j++]);
+
+		return result;
+	}
+
+	inline void merge_sort()
+	{
+		// split in half.
+		if(this->size() <= 1)
+			return;
+
+		iterator middle = this->begin() + (this->size() / 2);
+		vector left(this->begin(), middle);
+		vector right(middle, this->end());
+
+		assert(left.size() + right.size() == this->size());
+		auto result = _mergesort(left, right);
+
+		*this = result;
+	}
+
 
 private:
 	size_type compute_new_capacity(size_type newMinCapacity) const

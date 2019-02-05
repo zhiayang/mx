@@ -1,5 +1,5 @@
 // PIO.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 
@@ -20,7 +20,6 @@ namespace Storage {
 namespace ATA {
 namespace PIO
 {
-
 	const uint8_t ATA_ReadSectors28		= 0x20;
 	const uint8_t ATA_ReadSectors48		= 0x24;
 
@@ -71,9 +70,8 @@ namespace PIO
 
 	}
 
-	void SendCommandData(ATADrive* dev, uint64_t Sector, uint8_t SecCount, bool IsDMA)
+	void SendCommandData(ATADrive* dev, uint64_t Sector, uint32_t SecCount, bool isDMA)
 	{
-		if(!IsDMA)
 		{
 			uint16_t timeout = 0;
 			// read the alt. status port to check if the drive is ready
@@ -86,9 +84,6 @@ namespace PIO
 
 				Log(1, "(0): %x", __builtin_return_address(0));
 				Log(1, "(1): %x", __builtin_return_address(1));
-				Log(1, "(2): %x", __builtin_return_address(2));
-				Log(1, "(3): %x", __builtin_return_address(3));
-				Log(1, "(4): %x", __builtin_return_address(4));
 
 				// abort.
 				Log(1, "ABORT CMD");
@@ -108,20 +103,26 @@ namespace PIO
 			}
 		}
 
+		if((isDMA && SecCount == 256) || (!isDMA && SecCount == 65536))
+			SecCount = 0;
+
+		else if((isDMA && SecCount > 256) || (!isDMA && SecCount > 65536))
+			HALT("Too many sectors.");
 
 		// don't use LBA48 unless required
-		if(Sector > 0x0FFFFFFF)
+		if(Sector > 0x0FFFFFFF || SecCount > UINT8_MAX)
 		{
 			// init
 			IOPort::WriteByte(dev->GetBaseIO() + 6, dev->IsSlave() ? 0x50 : 0x40);
 
-			// high sector count (0)
-			IOPort::WriteByte(dev->GetBaseIO() + 2, 0);
+			// high sector count
+			// must write 0 for DMA, because stupid.
+			IOPort::WriteByte(dev->GetBaseIO() + 2, isDMA ? 0 : ((SecCount & 0xFF00) >> 8));
 
 			// send high bytes of LBA
-			IOPort::WriteByte(dev->GetBaseIO() + 3, (uint8_t)(Sector >> 24));
-			IOPort::WriteByte(dev->GetBaseIO() + 4, (uint8_t)(Sector >> 32));
-			IOPort::WriteByte(dev->GetBaseIO() + 5, (uint8_t)(Sector >> 40));
+			IOPort::WriteByte(dev->GetBaseIO() + 3, (uint8_t) (Sector >> 24));
+			IOPort::WriteByte(dev->GetBaseIO() + 4, (uint8_t) (Sector >> 32));
+			IOPort::WriteByte(dev->GetBaseIO() + 5, (uint8_t) (Sector >> 40));
 		}
 		else
 		{
@@ -129,13 +130,13 @@ namespace PIO
 			IOPort::WriteByte(dev->GetBaseIO() + 6, (dev->IsSlave() ? 0xF0 : 0xE0) | ((Sector >> 24) & 0x0F));
 		}
 
-		// sector count
-		IOPort::WriteByte(dev->GetBaseIO() + 2, SecCount);
+		// low sector count
+		IOPort::WriteByte(dev->GetBaseIO() + 2, SecCount & 0xFF);
 
 		// send low bytes of LBA
 		IOPort::WriteByte(dev->GetBaseIO() + 3, (uint8_t) Sector);
-		IOPort::WriteByte(dev->GetBaseIO() + 4, (uint8_t)(Sector >> 8));
-		IOPort::WriteByte(dev->GetBaseIO() + 5, (uint8_t)(Sector >> 16));
+		IOPort::WriteByte(dev->GetBaseIO() + 4, (uint8_t) (Sector >> 8));
+		IOPort::WriteByte(dev->GetBaseIO() + 5, (uint8_t) (Sector >> 16));
 	}
 
 

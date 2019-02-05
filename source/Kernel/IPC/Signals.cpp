@@ -1,5 +1,5 @@
 // Signals.cpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under Creative Commons Attribution ShareAlike 3.0 Unported.
 
 #include <Kernel.hpp>
@@ -143,6 +143,8 @@ namespace IPC
 			asm volatile("mov %%rsp, %[sp]" : [sp]"=m"(stackptr) :: "memory");
 
 			uint64_t* rbp = (uint64_t*) stackptr;
+			if(rbp == 0)
+				HALT("stackptr is null");
 
 			#define STACK_MAGIC_CANARY 0xFFFFFFFFDEADBEEF
 

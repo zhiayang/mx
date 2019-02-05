@@ -10,17 +10,24 @@ SECTIONS
 	{
 		*(.text*)
 		*(.gnu.linkonce.t*)
+	}
+
+	.rodata ALIGN(0x1000) : AT(ADDR(.rodata) - Kernel_VMA)
+	{
 		*(.rodata*)
 		*(.gnu.linkonce.r*)
+	}
 
-		StartConstructors = .;
-		*(SORT(.Constructors*))
-		EndConstructors = .;
+	.stuff ALIGN(0x1000) : AT(ADDR(.stuff) - Kernel_VMA)
+	{
+		start_ctors = .;
+		*(SORT(.ctors))
+		*(SORT(.ctors*))
+		end_ctors = .;
 
-
-		StartDestructors = .;
-		*(SORT(.Destructors))
-		EndDestructors = .;
+		start_dtors = .;
+		*(SORT(.dtors))
+		end_dtors = .;
 	}
 
 	.data ALIGN(0x1000) : AT(ADDR(.data) - Kernel_VMA)
@@ -37,5 +44,6 @@ SECTIONS
 		*(.gnu.linkonce.b*)
 		EndBSS = .;
 	}
+
 	KernelEnd = .;
 }

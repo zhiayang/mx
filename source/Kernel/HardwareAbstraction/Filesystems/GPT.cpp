@@ -1,5 +1,5 @@
 // GPT.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
@@ -9,7 +9,6 @@
 
 using namespace Kernel::HardwareAbstraction::Devices::Storage::ATA;
 using namespace Kernel::HardwareAbstraction::Devices::Storage;
-using namespace Library::StandardIO;
 
 namespace Kernel {
 namespace HardwareAbstraction {
@@ -25,7 +24,10 @@ namespace GPT
 
 		// 0x5452415020494645
 		if(*((uint64_t*) gpt) != 0x5452415020494645)
-			PrintFormatted("Invalid GPT disk signature: expected [%x], got [%x] instead -- Check your disk.\n", 0x5452415020494645, *((uint64_t*) gpt));
+		{
+			StdIO::PrintFmt("Invalid GPT disk signature: expected [%x], got [%x] instead -- Check your disk.\n",
+				0x5452415020494645, *((uint64_t*) gpt));
+		}
 
 
 		uint32_t number = 4;

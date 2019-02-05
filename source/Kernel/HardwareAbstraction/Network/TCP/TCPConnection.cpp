@@ -1,11 +1,13 @@
 // TCPConnection.cpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
 #include <HardwareAbstraction/Network.hpp>
 #include <HardwareAbstraction/Devices.hpp>
 #include <Utility.hpp>
+
+#include <stdlib.h>
 
 // in ms
 #define TCP_TIMEOUT		2000
@@ -62,6 +64,10 @@ namespace TCP
 		this->state = ConnectionState::Disconnected;
 
 		this->mtx = new Mutex();
+
+		this->error = ConnectionError::NoError;
+		this->serversequence = 0;
+		this->servercumlsequence = 0;
 	}
 
 	TCPConnection::TCPConnection(Socket* skt, Library::IPv4Address dest, uint16_t srcport, uint16_t destport) : TCPConnection(skt, srcport, destport)

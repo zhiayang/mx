@@ -1,5 +1,5 @@
 // Interrupts.c
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 
@@ -13,7 +13,6 @@
 
 using namespace Kernel;
 using namespace Library;
-using namespace StandardIO;
 using namespace Kernel::HardwareAbstraction::Devices;
 
 

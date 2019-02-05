@@ -1,5 +1,5 @@
 // UDP.cpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 // implements a set of functions to support processing UDP packets
@@ -159,8 +159,8 @@ namespace UDP
 		if(found)
 		{
 			// send into socket buffer.
-			Log("writing received data (%d bytes) (from %d.%d.%d.%d) into socket", actuallength, source.b1, source.b2, source.b3, source.b4);
 			skt->recvbuffer.Write((uint8_t*) packet + sizeof(UDPPacket), actuallength);
+			Log("wrote received data (%d bytes) (from %d.%d.%d.%d) into socket", actuallength, source.b1, source.b2, source.b3, source.b4);
 
 			return;
 		}

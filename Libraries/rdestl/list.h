@@ -131,7 +131,7 @@ public:
 	typedef size_t 												size_type;
 	typedef node_iterator<node*, T*, T&>						iterator;
 	typedef node_iterator<const node*, const T*, const T&>	const_iterator;
-	static const std::size_t									kNodeSize = sizeof(node);
+	static const size_t											kNodeSize = sizeof(node);
 
 	explicit list(const allocator_type& allocator = allocator_type())
 	:	m_allocator(allocator)

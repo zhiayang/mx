@@ -1,22 +1,31 @@
 # [mx] #
 
+Update (2019-02-06): rewrite six, \[nx\], can be [found here](https://github.com/zhiayang/nx).
+
+
+------------------
+
+<br />
+<br />
+
+
 
 The fifth rewrite of what never was, OrionOS.
-As of version 0.9.0, [mx] has surpassed Orion-X4 in its featureset.
+As of version 0.9.0, \[mx\] has surpassed Orion-X4 in its featureset.
 
 #### Disclaimer ####
-[mx] often faces stretches of active development followed by complete abandonment.
+\[mx\] often faces stretches of active development followed by complete abandonment.
 This project will never die (only rewritten), fear not.
 
 ## Current Features ##
 
-- Long mode (x86-64) + Higher Half, thanks to [fx] loader.
+- Long mode (x86-64) + Higher Half, thanks to \[fx\] loader.
 - BGA Support, works in QEMU, VirtualBox and Bochs.
 - Working IPC system									-> rewrite in progress
 - Basic networking support (DHCP, DNS, IPv4, TCP/UDP)
 - Somewhat complete libc written
-- New in 0.8.2: [fx] loader! Now loads the [mx] kernel (as a GRUB module)... it's basically a stripped down version of Orion-X3/4 TBH.
-- Also new in 0.8.2: [mx] runs in Bochs!
+- New in 0.8.2: \[fx\] loader! Now loads the \[mx\] kernel (as a GRUB module)... it's basically a stripped down version of Orion-X3/4 TBH.
+- Also new in 0.8.2: \[mx\] runs in Bochs!
 
 
 ## TODO List ##
@@ -34,7 +43,7 @@ This project will never die (only rewritten), fear not.
 
 
 
-## Trying out [mx] ##
+## Trying out \[mx\] ##
 #### Required Software ####
 - QEMU
 - C++ compiler (that targets your own platform)

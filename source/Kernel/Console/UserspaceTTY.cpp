@@ -1,11 +1,13 @@
 // UserspaceTTY.cpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
 #include <Console.hpp>
 #include <StandardIO.hpp>
+
 #include <stdio.h>
+#include <stdlib.h>
 
 namespace Kernel {
 namespace TTY
@@ -21,10 +23,9 @@ namespace TTY
 
 	static rde::hash_map<long, TTYObject*>* ttys;
 
-	TTYObject::TTYObject(uint8_t bufmode, uint64_t (*read)(TTYObject*, uint8_t*, uint64_t), uint64_t (*write)(TTYObject*, uint8_t*, uint64_t), void (*flsh)(TTYObject*))
+	TTYObject::TTYObject(uint8_t bufmode, uint64_t (*read)(TTYObject*, uint8_t*, uint64_t),
+		uint64_t (*write)(TTYObject*, uint8_t*, uint64_t), void (*flsh)(TTYObject*))
 	{
-		// this->buffer = new rde::vector<uint8_t>();
-		// this->internalbuffer = new rde::vector<uint8_t>();
 		this->BufferMode = bufmode;
 		this->in = read;
 		this->out = write;
@@ -59,7 +60,7 @@ namespace TTY
 
 		do
 		{
-			asm volatile("pause");
+			// asm volatile("pause");
 			if(tty->buffer.size() == 0)
 				continue;
 
@@ -132,10 +133,21 @@ namespace TTY
 				tty->buffer.push_back(buf[i]);
 		}
 
+
+		// Log("TTY has data, delta %ld", Kernel::TickCounter() - __debug_flag__);
+		// __debug_flag__ = Kernel::TickCounter();
+
 		if(tty->echomode)
 		{
 			stdout_write(ttys->find(1)->second, buf, length);
+
+			// Log("wrote to stdout, delta %ld", Kernel::TickCounter() - __debug_flag__);
+			// __debug_flag__ = Kernel::TickCounter();
+
 			stdout_flush(ttys->find(1)->second);
+
+			// Log("flushed stdout, delta %ld", Kernel::TickCounter() - __debug_flag__);
+			__debug_flag__ = 0;
 		}
 
 		return length;
@@ -145,6 +157,7 @@ namespace TTY
 	uint64_t stdout_write(TTYObject* tty, uint8_t* buf, uint64_t length)
 	{
 		assert(tty);
+
 		if(tty->BufferMode & _IOLBF)
 		{
 			// todo: might want an 'in-house' buffer that handles newline flushing etc. better.
@@ -160,8 +173,8 @@ namespace TTY
 					Memory::Copy(tempout, tty->buffer.data(), bc);
 					tty->buffer.clear();
 
-					total += Library::StandardIO::PrintString((const char*) tempout, bc);
-					total += Library::StandardIO::PrintString("\n", 1);
+					total += StdIO::PrintStr((const char*) tempout, bc);
+					total += StdIO::PrintStr("\n", 1);
 
 					delete[] tempout;
 				}
@@ -180,13 +193,13 @@ namespace TTY
 
 			if(tty->buffer.size() >= tty->buffersize)
 			{
-				Library::StandardIO::PrintString((const char*) tty->buffer.data(), tty->buffer.size());
+				StdIO::PrintStr((const char*) tty->buffer.data(), tty->buffer.size());
 				tty->buffer.clear();
 			}
 		}
 		else
 		{
-			return Library::StandardIO::PrintString((const char*) buf, length);
+			return StdIO::PrintStr((const char*) buf, length);
 		}
 
 		return length;
@@ -201,7 +214,7 @@ namespace TTY
 		Memory::Copy(tempout, tty->buffer.data(), bc);
 		tty->buffer.clear();
 
-		Library::StandardIO::PrintString((const char*) tempout, bc);
+		StdIO::PrintStr((const char*) tempout, bc);
 		delete[] tempout;
 	}
 
@@ -243,9 +256,15 @@ namespace TTY
 	uint64_t WriteTTY(long ttyid, uint8_t* data, uint64_t length)
 	{
 		assert(ttys);
+		// Log("writing to TTY, delta %ld", Kernel::TickCounter() - __debug_flag__);
+		// __debug_flag__ = Kernel::TickCounter();
+
 		if(ttys->find(ttyid) != ttys->end())
 		{
 			TTYObject* tty = ttys->find(ttyid)->second;
+
+			// Log("found TTY, delta %ld", Kernel::TickCounter() - __debug_flag__);
+			// __debug_flag__ = Kernel::TickCounter();
 			return tty->out(tty, data, length);
 		}
 		else

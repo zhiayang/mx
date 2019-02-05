@@ -1,5 +1,5 @@
 // sprintf.cpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include "../../include/stdio.h"
@@ -18,8 +18,7 @@ typedef struct vsnprintf_struct
 
 } vsnprintf_t;
 
-static size_t StringPrintCallback(void* user, const char* string,
-                                  size_t stringlen)
+static size_t StringPrintCallback(void* user, const char* string, size_t stringlen)
 {
 	vsnprintf_t* info = (vsnprintf_t*) user;
 	if(info->produced < info->size)
@@ -50,12 +49,13 @@ extern "C" int vsnprintf(char* str, size_t size, const char* format, va_list lis
 	info.size = size ? size-1 : 0;
 	info.produced = 0;
 	info.written = 0;
-	vprintf_callback(StringPrintCallback, &info, format, list);
+	vcbprintf(&info, StringPrintCallback, format, list);
 	if(size)
 		info.str[info.written] = '\0';
 
 	return (int) info.produced;
 }
+
 
 
 

@@ -1,5 +1,5 @@
 // Kernel.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
@@ -17,11 +17,12 @@
 #include <Bootscreen.hpp>
 #include "../../.build.h"
 
+
 using namespace Kernel;
 using namespace Kernel::HardwareAbstraction;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
 using namespace Library;
-using namespace Library::StandardIO;
+using namespace StdIO;
 
 
 extern "C" uint64_t KernelEnd;
@@ -32,6 +33,9 @@ extern "C" uint64_t EndBSS;
 static uint64_t LoadedCursorX = 1;
 static uint64_t LoadedCursorY = 1;
 
+extern "C" uint64_t start_ctors;
+extern "C" uint64_t end_ctors;
+
 extern "C" void TaskSwitcherCoOp();
 extern "C" void ProcessTimerInterrupt();
 extern "C" void HandleSyscall();
@@ -41,6 +45,22 @@ extern "C" void KernelInit(uint64_t MultibootMagic, uint64_t MBTAddr, uint64_t c
 	LoadedCursorY = cy;
 
 	KernelCore((uint32_t) MultibootMagic, (uint32_t) MBTAddr);
+
+
+	uint64_t* ctorListBegin = &start_ctors;
+	uint64_t* ctorListEnd = &end_ctors;
+
+	Log("Calling Constructors:");
+
+	size_t i = 0;
+	while(ctorListBegin != ctorListEnd)
+	{
+		Log("%d: %p", i, *ctorListBegin);
+		void (*fn)() = (void(*)()) (*ctorListBegin);
+		fn();
+
+		ctorListBegin++, i++;
+	}
 }
 
 extern "C" void KernelThreadInit()
@@ -61,7 +81,7 @@ namespace Kernel
 	static uint64_t LFBAddr;
 	static uint64_t LFBInPages;
 	static uint64_t CR3Value = 0x3000;
-	static fd_t aSock = 0;
+	// static fd_t aSock = 0;
 
 	// things
 	Multitasking::Process* KernelProcess;
@@ -69,11 +89,10 @@ namespace Kernel
 	ACPI::RootTable* RootACPITable;
 	CPUID::CPUIDData* KernelCPUID;
 
-
 	// devices
 	Random* KernelRandom;
 
-	bool __debug_flag__ = false;
+	volatile uint64_t __debug_flag__ = 0;
 
 	static uint64_t VER_MAJOR;
 	static uint64_t VER_MINOR;
@@ -107,7 +126,7 @@ namespace Kernel
 		{
 			uint64_t v = X_BUILD_NUMBER;
 
-			VER_MAJOR = 4;
+			VER_MAJOR = 5;
 			VER_MINOR = v / 10000;
 			VER_REVSN = (v - (VER_MINOR * 10000)) / 100;
 			VER_MINRV = (v - (VER_MINOR * 10000) - (VER_REVSN * 100)) / 1;
@@ -119,14 +138,14 @@ namespace Kernel
 		// Initalise various subsystems.
 		SerialPort::Initialise();			// most important.
 
-		Log("[mx] kernel has control");
-
 		// Read GRUB memory map and init memory managers
 		MemoryMap::Initialise(MBTStruct);
 		Virtual::Initialise();
 		Physical::Bootstrap();
 		KernelHeap::Initialise();
 
+
+		Log("[mx] kernel has control");
 		// copy kernel CR3 to somewhere sane-r
 		{
 			uint64_t oldcr3 = Virtual::GetRawCR3();
@@ -164,22 +183,22 @@ namespace Kernel
 		Kernel::KernelCPUID = CPUID::Initialise(Kernel::KernelCPUID);
 		if(!KernelCPUID->SSE3Instructions())
 		{
-			PrintFormatted("I don't know how you got this far.\n");
-			PrintFormatted("[mx] requires your CPU to support SSE3 instructions.\n");
+			StdIO::PrintFmt("I don't know how you got this far.\n");
+			StdIO::PrintFmt("[mx] requires your CPU to support SSE3 instructions.\n");
 			UHALT();
 		}
 		if(!KernelCPUID->OnboardAPIC())
 		{
-			PrintFormatted("[mx] requires your CPU to have an APIC chip.");
+			StdIO::PrintFmt("[mx] requires your CPU to have an APIC chip.");
 			UHALT();
 		}
 
 		// check if we have enough memory.
 		if(K_SystemMemoryInBytes < 0x02000000)
 		{
-			PrintFormatted("[mx] requires at least 64 Megabytes (67 108 864 bytes) of memory to operate.\n");
-			PrintFormatted("Only %d bytes of memory detected.\n", K_SystemMemoryInBytes);
-			PrintFormatted("Install more RAM, or increase the amount of memory in your Virtual Machine.");
+			StdIO::PrintFmt("[mx] requires at least 64 Megabytes (67 108 864 bytes) of memory to operate.\n");
+			StdIO::PrintFmt("Only % bytes of memory detected.\n", K_SystemMemoryInBytes);
+			StdIO::PrintFmt("Install more RAM, or increase the amount of memory in your Virtual Machine.");
 			UHALT();
 		}
 
@@ -194,7 +213,7 @@ namespace Kernel
 		}
 
 
-		PrintFormatted("Loading [mx]...\n");
+		PrintFmt("Loading [mx]...\n");
 		Log("Initialising Kernel subsystem");
 	}
 
@@ -246,10 +265,7 @@ namespace Kernel
 
 		// after everything is done, make sure shit works
 		{
-			// uint64_t m = KernelHeap::GetFirstHeapMetadataPhysPage();
 			uint64_t h = KernelHeap::GetFirstHeapPhysPage();
-
-			// Virtual::ForceInsertALPTuple(KernelHeapMetadata, 1, m);
 			Virtual::ForceInsertALPTuple(KernelHeapAddress, 1, h);
 		}
 
@@ -291,7 +307,7 @@ namespace Kernel
 				else if(PCI::MatchVendorDevice(VideoDev, 0x1234, 0x1111) || PCI::MatchVendorDevice(VideoDev, 0x80EE, 0xBEEF))
 				{
 					// QEMU, Bochs and VBox's BGA card.
-					DeviceManager::AddDevice(new BochsGraphicsAdapter(VideoDev), DeviceType::FramebufferVideoCard);
+					// DeviceManager::AddDevice(new BochsGraphicsAdapter(VideoDev), DeviceType::FramebufferVideoCard);
 					Log("Bochs Graphics Adapter (BGA) compatible card found, driver loaded");
 					found = true;
 				}
@@ -315,7 +331,7 @@ namespace Kernel
 			}
 		}
 
-		PrintFormatted("Initialising RTC...\n");
+		PrintFmt("Initialising RTC...\n");
 		Devices::RTC::Initialise(+8);
 		Log("RTC Initialised");
 
@@ -346,7 +362,7 @@ namespace Kernel
 				LFBBufferAddr = LFBAddr;
 
 				// Set video mode
-				PrintFormatted("\nInitialising Linear Framebuffer at %x...", LFBAddr);
+				PrintFmt("\nInitialising Linear Framebuffer at %x...", LFBAddr);
 				vd->SetMode(PrefResX, PrefResY, 32);
 				VideoOutput::LinearFramebuffer::Initialise();
 
@@ -393,24 +409,23 @@ namespace Kernel
 
 				// mount root fs from partition 0 at /
 				VFS::Mount(f1->Partitions.front(), fs, "/");
-				Log("Root FS (fat32) Mounted at /");
+				Log("Root FS vfat [%d] Mounted at /", fs->GetFATSize());
 			}
-
 		}
 
 
 		// init network stuff
 		// if we have an nic, that is
-		if(DeviceManager::GetDevice(DeviceType::EthernetNIC) != 0)
-		{
-			using namespace Network;
-			ARP::Initialise();
-			IP::Initialise();
-			TCP::Initialise();
-			UDP::Initialise();
-			DHCP::Initialise();			// todo: dhcp is a little broken
-			DNS::Initialise();			// todo: dns is also wonky
-		}
+		// if(DeviceManager::GetDevice(DeviceType::EthernetNIC) != 0)
+		// {
+		// 	using namespace Network;
+		// 	ARP::Initialise();
+		// 	IP::Initialise();
+		// 	TCP::Initialise();			// todo: tcp stack is not reliable
+		// 	UDP::Initialise();
+		// 	DHCP::Initialise();			// todo: dhcp is a little broken
+		// 	DNS::Initialise();			// todo: dns is also wonky
+		// }
 
 		PS2::Initialise();
 		TTY::Initialise();
@@ -418,11 +433,50 @@ namespace Kernel
 
 		// Console::ClearScreen();
 
+		#define TEST_USERSPACE_PROG		1
+		#define TEST_LARGE_FILE_READ	0
+		#define TEST_NETWORK_IRC		0
+		#define TEST_MUTEXES			0
+
+
+
+
+		#if TEST_MUTEXES
+		{
+			static Mutex mtxtest;
+			auto func1 = []()
+			{
+				PrintFmt("locking mutex\n");
+				LOCK(mtxtest);
+
+				PrintFmt("sleeping for 4 seconds\n");
+				SLEEP(4000);
+				PrintFmt("lock released\n");
+				UNLOCK(mtxtest);
+			};
+
+			auto func2 = []()
+			{
+				PrintFmt("waiting for lock...");
+				SLEEP(500);
+				PrintFmt("trying mutex\n");
+
+				while(!TryLockMutex(mtxtest))
+					PrintFmt("x");
+
+				PrintFmt("locked!\n");
+				UNLOCK(mtxtest);
+			};
+
+			Multitasking::AddToQueue(Multitasking::CreateKernelThread(func2));
+			Multitasking::AddToQueue(Multitasking::CreateKernelThread(func1));
+		}
+		#endif
 
 
 		Log("Initialising LaunchDaemons from /System/Library/LaunchDaemons...");
 
-		if(0)
+		#if TEST_USERSPACE_PROG
 		{
 			// setup args:
 			// 0: prog name (duh)
@@ -437,19 +491,25 @@ namespace Kernel
 				GetFramebufferAddress(), LinearFramebuffer::GetResX(), LinearFramebuffer::GetResY(), 32 });
 
 			Multitasking::AddToQueue(proc);
+
+
+			// using namespace Filesystems;
+			// fd_t file = OpenFile("/texts/1984.txt", 0);
+			// struct stat s;
+
+			// Stat(file, &s);
+
+			// Log("file is %zu bytes.", s.st_size);
 		}
-
-		PrintFormatted("[mx] has completed initialisation.\n");
-		Log("Kernel init complete\n----------------------------\n");
+		#endif
 
 
 
-
-		if(0)
+		#if TEST_LARGE_FILE_READ
 		{
 			using namespace Filesystems;
 
-			fd_t file = OpenFile("/texts/big.txt", 0);
+			fd_t file = OpenFile("/texts/1984.txt", 0);
 			assert(file > 0);
 
 			struct stat s;
@@ -458,14 +518,14 @@ namespace Kernel
 			uint64_t st = 0;
 			uint64_t et = 0;
 
-			Log(3, "(%d) s.st_size: %d", file, s.st_size);
+			Log("(%d) s.st_size: %ld", file, s.st_size);
 
-			const uint64_t blocksz = 16384;
+			const uint64_t blocksz = s.st_size;
 			uint8_t* fl = new uint8_t[blocksz + 1];
 			uint8_t* whole = new uint8_t[s.st_size + 1];
 
 			uint64_t total = s.st_size;
-			Log(3, "start: %d ms", st = Time::Now());
+			Log("start: %ld ms", st = Time::Now());
 
 			for(uint64_t cur = 0; cur < total; )
 			{
@@ -474,13 +534,25 @@ namespace Kernel
 				memcpy(whole + cur, fl, read);
 				cur += read;
 
-				PrintFormatted("\r\t\t\t\t\t\t\t\t\t\t\t\r(%02.2f%%) %d, %d/%d", (((double) cur / (double) total) * 100.0),
-					read, cur, total);
+				// PrintFmt("\r\t\t\t\t\t\t\t\t\t\t\t\r(%02.2d%%) %d/%d", (size_t) (((double) cur / (double) total) * 100.0),
+				// 	cur, total);
 			}
 
-			Log(3, "end: %d ms", et = Time::Now());
-			Log(3, "time taken: %d ms", et - st);
+			// Log("<< %s >>", whole);
+			// Utilities::DumpBytes((uintptr_t) (whole + 101880), 1024);
+
+			Log("end: %ld ms", et = Time::Now());
+			Log("time taken: %ld ms", et - st);
 		}
+		#endif
+
+
+
+
+
+
+		PrintFmt("[mx] has completed initialisation.\n");
+		Log("Kernel init complete\n----------------------------\n");
 
 
 
@@ -490,8 +562,7 @@ namespace Kernel
 
 
 
-
-		if(1)
+		#if TEST_NETWORK_IRC
 		{
 			using namespace Network;
 			// IPv4Address fn = DNS::QueryDNSv4(rde::string("www.example.com"));
@@ -504,14 +575,16 @@ namespace Kernel
 			fn.b3 = 222;
 			fn.b4 = 109;
 
-			PrintFormatted("irc.freenode.net is at %d.%d.%d.%d\n", fn.b1, fn.b2, fn.b3, fn.b4);
+			PrintFmt("irc.freenode.net is at %d.%d.%d.%d\n", fn.b1, fn.b2, fn.b3, fn.b4);
 
 			fd_t thesock = OpenSocket(SocketProtocol::TCP, 0);
 			ConnectSocket(thesock, fn, 6667);
-			aSock = thesock;
+			static fd_t aSock = thesock;
 
 			auto other = []()
 			{
+				PrintFmt("sock = %d\n", aSock);
+
 				uint8_t* output = new uint8_t[256];
 				while(true)
 				{
@@ -521,7 +594,7 @@ namespace Kernel
 						size_t read = ReadSocket(aSock, output, 256);
 
 						output[(read == 256) ? (read - 1) : read] = 0;
-						PrintFormatted("%s", output);
+						PrintFmt("%s", output);
 					}
 				}
 			};
@@ -534,19 +607,21 @@ namespace Kernel
 
 			strncpy((char*) data, "NICK zhiayang|tcp\r\n", 256);
 			WriteSocket(thesock, data, strlen((char*) data));
-			PrintFormatted("> %s", data);
+			PrintFmt("> %s\n", data);
 
 			memset(data, 0, 256);
 			strncpy((char*) data, "USER zhiayang 8 * : zhiayang\r\n", 256);
 			WriteSocket(thesock, data, strlen((char*) data));
-			PrintFormatted("> %s", data);
+			PrintFmt("> %s\n", data);
 
-			SLEEP(15000);
+
+			SLEEP(12000);
+
 
 			memset(data, 0, 256);
 			strncpy((char*) data, "JOIN #learnprogramming\r\n", 256);
 			WriteSocket(thesock, data, strlen((char*) data));
-			PrintFormatted("> %s", data);
+			PrintFmt("> %s\n", data);
 
 
 			SLEEP(1000);
@@ -554,7 +629,7 @@ namespace Kernel
 			{
 				static const char* msgs[] =
 				{
-					"PRIVMSG #learnprogramming :testing\r\n",
+					"PRIVMSG #learnprogramming :boohoo\r\n",
 					// "PRIVMSG #flax-lang :another mindless crime.\r\n",
 					// "PRIVMSG #flax-lang :behind the curtain,\r\n",
 					// "PRIVMSG #flax-lang :in the pantomime.\r\n",
@@ -568,45 +643,23 @@ namespace Kernel
 					memset(data, 0, 256);
 					strncpy((char*) data, msgs[i], 256);
 					WriteSocket(thesock, data, strlen((char*) data));
-					PrintFormatted("> %s", data);
+					PrintFmt("> %s\n", data);
 
 					SLEEP(800);
 				}
 			}
 
 
-
-
-
 			memset(data, 0, 256);
 			strncpy((char*) data, "QUIT\r\n", 256);
 			WriteSocket(thesock, data, strlen((char*) data));
-			PrintFormatted("> %s", data);
+			PrintFmt("> %s\n", data);
 
 			SLEEP(500);
 			Kill(thr);
 			CloseSocket(thesock);
 		}
-
-		// Log("Socket test\n");
-		// {
-		// 	using namespace Network;
-
-		// 	auto other = []()
-		// 	{
-		// 		fd_t skt = OpenSocket(SocketProtocol::IPC, 0);
-		// 		ConnectSocket(skt, "/some/socket");
-		// 		Log("socket connected");
-
-		// 		uint64_t x = 0;
-		// 		while(true)
-		// 		{
-		// 			WriteSocket(skt, (void*) &x, 8);
-		// 			YieldCPU();
-
-		// 			x++;
-		// 		}
-		// 	};
+		#endif
 
 
 
@@ -614,64 +667,6 @@ namespace Kernel
 
 
 
-
-		// 	// open a socket
-		// 	fd_t skt = OpenSocket(SocketProtocol::IPC, 0);
-		// 	Log("socket opened: %d", skt);
-
-		// 	BindSocket(skt, "/some/socket");
-		// 	Log("socket bound");
-
-		// 	Multitasking::AddToQueue(Multitasking::CreateKernelThread(other, 2));
-
-		// 	while(true)
-		// 	{
-		// 		uint64_t d = 0;
-		// 		ReadSocket(skt, &d, 8);
-
-		// 		if(d != 0)
-		// 			PrintFormatted("%x\n", d);
-		// 	}
-		// }
-
-
-
-
-
-
-		// PrintFormatted("mutex tests\n");
-		// {
-		// 	static Mutex* test = new Mutex;
-		// 	auto func1 = []()
-		// 	{
-		// 		PrintFormatted("locking mutex\n");
-		// 		LOCK(test);
-
-		// 		PrintFormatted("sleeping for 2 seconds\n");
-		// 		SLEEP(2000);
-		// 		PrintFormatted("lock released\n");
-		// 		UNLOCK(test);
-		// 	};
-
-		// 	auto func2 = []()
-		// 	{
-		// 		PrintFormatted("waiting for lock...");
-		// 		SLEEP(1000);
-		// 		PrintFormatted("trying mutex\n");
-
-		// 		// while(!TryLockMutex(test))
-		// 		// 	PrintFormatted("x");
-
-		// 		PrintFormatted("locked!\n");
-		// 		UNLOCK(test);
-		// 	};
-
-		// 	Multitasking::AddToQueue(Multitasking::CreateKernelThread(func2));
-		// 	Multitasking::AddToQueue(Multitasking::CreateKernelThread(func1));
-		// }
-
-
-		// KernelHeap::Print();
 
 		// kernel stops here
 		// for now.
@@ -705,17 +700,16 @@ namespace Kernel
 	{
 		while(true)
 		{
-			asm volatile("pause; hlt");
+			// asm volatile("pause");
 			YieldCPU();
 		}
 	}
 
 	void HaltSystem(const char* message, const char* filename, uint64_t line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%d, RA(0): %x, RA(1): %x, RA(2): %x, RA(3): %x", message, filename, line,
-			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2), __builtin_return_address(3));
+		Log("System Halted: %s, %s:%d, RA(0): %p, RA(1): %p", message, filename, line, __builtin_return_address(0));
 
-		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
+		PrintFmt("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %d (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0), __builtin_return_address(1));
 
 
 		UHALT();
@@ -723,10 +717,9 @@ namespace Kernel
 
 	void HaltSystem(const char* message, const char* filename, const char* line, const char* reason)
 	{
-		Log("System Halted: %s, %s:%s, RA(0): %x, RA(1): %x, RA(2): %x, RA(3): %x", message, filename, line,
-			__builtin_return_address(0), __builtin_return_address(1), __builtin_return_address(2), __builtin_return_address(3));
+		Log("System Halted: %s, %s:%s, RA(0): %p, RA(1): %p", message, filename, line, __builtin_return_address(0));
 
-		PrintFormatted("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %s (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0));
+		PrintFmt("\n\nFATAL ERROR: %s\nReason: %s\n%s -- Line %s (%x)\n\n[mx] has met an unresolvable error, and will now halt.", message, !reason ? "None" : reason, filename, line, __builtin_return_address(0), __builtin_return_address(1));
 
 		UHALT();
 	}

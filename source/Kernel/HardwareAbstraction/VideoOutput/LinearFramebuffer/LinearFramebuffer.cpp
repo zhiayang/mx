@@ -1,5 +1,5 @@
 // LinearFrameBuffer.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
@@ -104,13 +104,12 @@ namespace LinearFramebuffer
 		}
 
 		uint32_t* rowAddress = 0;
-		uint32_t* columnAddress = 0;
 
 		rowAddress = (uint32_t *) Kernel::GetFramebufferAddress() + y * GetResX() + x;
 		for(int row = 0; row < CharHeight; row++)
 		{
 			uint8_t data = CurrentFont[c][row];
-			columnAddress = rowAddress;
+			uint32_t* columnAddress = rowAddress;
 
 			int col = 0;
 			for(data = CurrentFont[c][row]; col < CharWidth; data <<= 1, col++)

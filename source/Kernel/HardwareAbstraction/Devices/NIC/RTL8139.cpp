@@ -1,5 +1,5 @@
 // RTL8139.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under Creative Commons 3.0 Unported.
 
 #include <Kernel.hpp>
@@ -83,7 +83,9 @@ namespace NIC
 
 
 		uint32_t mmio = (uint32_t) this->pcidev->GetBAR(0);
-		assert(this->pcidev->IsBARIOPort(0));
+		bool isIO = this->pcidev->IsBARIOPort(0);
+		assert(isIO);
+
 		Log("Initialised Busmastering RTL8139 NIC with BaseIO %x", mmio);
 
 		this->ioaddr = (uint16_t) mmio;
@@ -182,7 +184,7 @@ namespace NIC
 		this->CurrentTxBuffer++;
 		this->CurrentTxBuffer %= 4;
 
-		auto m = AutoMutex(this->transmitbuffermtx[usebuf]);
+		AutoMutex mtx(*this->transmitbuffermtx[usebuf]);
 
 		// copy the data to the transmit buffer.
 		Memory::Copy((void*) (this->TransmitBuffers[usebuf].virt), data, bytes);
@@ -247,7 +249,7 @@ namespace NIC
 				Ethernet::HandlePacket(this, &recvBuffer[ReadOffset + 4], length - 4);
 
 				if(length > 2000)
-					HALT("What");
+					Log(1, "Packet length of %d exceeds sane length", length);
 
 				ReadOffset += length + 4;
 				ReadOffset = (ReadOffset + 3) & ((uint64_t) ~3);	// align to 4 bytes
@@ -269,6 +271,8 @@ namespace NIC
 		}
 
 		this->SeenOfs = ReadOffset;
+
+
 
 		// According to thePowersGang, "i dunno" -> "- 0x10"
 		// EDIT: well. exerpt from QEMU source (copyright as necessary)

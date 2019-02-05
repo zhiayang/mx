@@ -1,5 +1,5 @@
 // Time.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
@@ -7,8 +7,6 @@
 #include <HardwareAbstraction/Devices/RTC.hpp>
 #include <HardwareAbstraction/Devices/IOPort.hpp>
 #include <StandardIO.hpp>
-
-using namespace Library::StandardIO;
 
 namespace Kernel {
 namespace Time
@@ -402,11 +400,11 @@ namespace Time
 				PrintString(spaces.c_str());
 				Console::MoveCursor(xpos, 0);
 
-				PrintFormatted("%s[ %d.%02d %s ", Kernel::SystemTime->Hour12F < 10 ? " " : "", Kernel::SystemTime->Hour12F + Kernel::SystemTime->UTCOffset, Kernel::SystemTime->Minute, IsAM() ? "am" : "pm");
+				PrintFmt("%s[ %d.%02d %s ", Kernel::SystemTime->Hour12F < 10 ? " " : "", Kernel::SystemTime->Hour12F + Kernel::SystemTime->UTCOffset, Kernel::SystemTime->Minute, IsAM() ? "am" : "pm");
 
 				if(PrintSeconds)
 				{
-					PrintFormatted("%02ds ]", Kernel::SystemTime->Second);
+					PrintFmt("%02ds ]", Kernel::SystemTime->Second);
 				}
 				else
 				{

@@ -1,5 +1,5 @@
 // Console.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 
@@ -42,7 +42,7 @@ namespace Console
 	static bool HasFramebuffer = false;
 	static uint16_t OffsetLeft = 4;
 
-	static Mutex* mtx;
+	static Mutex mtx;
 
 	void Initialise()
 	{
@@ -63,7 +63,7 @@ namespace Console
 
 		VT_DidInit = true;
 
-		mtx = new Mutex();
+		// mtx = new Mutex();
 
 		Log("Console Initialised");
 	}
@@ -259,7 +259,7 @@ namespace Console
 		{
 			if(x <= CharsPerLine && y <= CharsPerColumn)
 			{
-				AutoMutex lk = AutoMutex(mtx);
+				AutoMutex lk(mtx);
 				VT_CursorX = x;
 				VT_CursorY = y;
 			}

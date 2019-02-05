@@ -1,5 +1,5 @@
 // Log.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 
@@ -9,8 +9,6 @@
 #include <HardwareAbstraction/Devices/SerialPort.hpp>
 
 using namespace Library;
-using namespace Library::StandardIO;
-
 
 namespace Kernel
 {
@@ -39,40 +37,35 @@ namespace Kernel
 		if(LOGSPAM)
 			level = 3;
 
-		// std::string tm;
-		// // Time::GetHumanReadableTime(tm);
-
-		// if(tm.length() > 0)
-		// 	tm.insert(0, " - ");
 		switch(level)
 		{
 			case 0:
 			default:
-				PrintFormatted(pfso, "[INFO]: ");
+				StdIO::PrintFmt(pfso, "[INFO]: ");
 
-				PrintFormatted(pfso, str, args);
-				PrintString("\n", 0, pfso);
+				StdIO::PrintFmt(pfso, str, args);
+				StdIO::PrintFmt(pfso, "\n");
 				break;
 
 			case 1:
-				PrintFormatted(pfso, "[WARN]: ");
+				StdIO::PrintFmt(pfso, "[WARN]: ");
 
-				PrintFormatted(pfso, str, args);
-				PrintString("\n", 0, pfso);
+				StdIO::PrintFmt(pfso, str, args);
+				StdIO::PrintFmt(pfso, "\n");
 				break;
 
 			case 2:
-				PrintFormatted(pfsc, "[SEVR]: ");
+				StdIO::PrintFmt(pfsc, "[SEVR]: ");
 
-				PrintFormatted(pfsc, str, args);
-				PrintString("\n", 0, pfsc);
+				StdIO::PrintFmt(pfsc, str, args);
+				StdIO::PrintFmt(pfsc, "\n");
 				break;
 
 			case 3:
-				PrintFormatted(pfsc, "[CRIT]: ");
+				StdIO::PrintFmt(pfsc, "[CRIT]: ");
 
-				PrintFormatted(pfsc, str, args);
-				PrintString("\n", 0, pfsc);
+				StdIO::PrintFmt(pfsc, str, args);
+				StdIO::PrintFmt(pfsc, "\n");
 				break;
 		}
 	}

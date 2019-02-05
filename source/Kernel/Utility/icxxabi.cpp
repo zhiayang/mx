@@ -1,5 +1,5 @@
 // icxxabi.cpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <icxxabi.h>
@@ -19,22 +19,15 @@ extern "C" void __cxa_pure_virtual()
 
 extern "C" int __cxa_guard_acquire(__guard* g)
 {
-	using namespace Kernel;
-	Mutex* m = (Mutex*) g;
-	if(!m->lock)
-	{
-		LockMutex(m);
-		return 1;
-	}
-	else
-	{
+	if(__sync_lock_test_and_set(g, 1))
 		return 0;
-	}
+
+	return 1;
 }
 
 extern "C" void __cxa_guard_release(__guard* g)
 {
-	UnlockMutex((Kernel::Mutex*) g);
+	__sync_lock_release(g);
 }
 
 extern "C" void __cxa_guard_abort(__guard *)

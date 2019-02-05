@@ -1,5 +1,5 @@
 // Syscall.s
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 
@@ -47,19 +47,46 @@ HandleSyscall:
 
 		However, we use %r13 to transmit errno information.
 		So there.
+
+
+
+		edit:
 	*/
 
 	push %rbp
 	mov %rsp, %rbp
 
 
+	// push %r10
+	// push %rdi
+	// push %rsi
+	// push %rdx
+	// push %rcx
+	// push %r8
+	// push %r9
+
+	push %r15
+	push %r14
+	push %r13
+	push %r12
+	push %r11
 	push %r10
-	push %rdi
-	push %rsi
+	push %r9
+	push %r8
 	push %rdx
 	push %rcx
-	push %r8
-	push %r9
+	push %rbx
+	push %rax
+	push %rbp
+	push %rsi
+	push %rdi
+
+	mov %rsp, %rdi
+	call __syscall_internal_save_registers
+
+	// unclobber this.
+	mov (%rsp), %rdi
+
 
 	// push a constant, so we know where to stop on stack backtrace.
 	pushq $0xFFFFFFFFDEADBEEF
@@ -120,13 +147,27 @@ CleanUp:
 	// remove the constant we pushed
 	addq $8, %rsp
 
-	pop %r9
-	pop %r8
+
+	pop %rdi
+	pop %rsi
+	pop %rbp
+
+	// don't restore rax, that's the return value.
+	// pop %rax
+	addq $8, %rsp
+
+	pop %rbx
 	pop %rcx
 	pop %rdx
-	pop %rsi
-	pop %rdi
+	pop %r8
+	pop %r9
 	pop %r10
+	pop %r11
+	pop %r12
+	pop %r13
+	pop %r14
+	pop %r15
+
 
 	// any errno set by a syscall is stored in 0x2610 and preserved across context switches.
 	// since all accesses to this are done via asm, we can just fetch the value out in userspace.

@@ -1,5 +1,5 @@
 // Console.cpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
@@ -72,9 +72,9 @@ namespace Filesystems
 	{
 	}
 
-	iris::vector<VFS::vnode*> FSDriverConsole::ReadDir(VFS::vnode*)
+	rde::vector<VFS::vnode*> FSDriverConsole::ReadDir(VFS::vnode*)
 	{
-		return iris::vector<VFS::vnode*>();
+		return rde::vector<VFS::vnode*>();
 	}
 }
 }

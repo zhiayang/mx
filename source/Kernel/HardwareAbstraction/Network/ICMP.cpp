@@ -1,5 +1,5 @@
 // // ICMP.cpp
-// // Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// // Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // // Licensed under the Apache License Version 2.0.
 
 // #include <Kernel.hpp>
@@ -37,7 +37,7 @@
 // 		echo->basic.checksum = SwapEndian16(IP::CalculateIPChecksum((void*) packet, len));
 
 // 		// random id number (419)
-// 		// PrintFormatted("sent ICMP\n");
+// 		// PrintFmt("sent ICMP\n");
 // 		IP::SendIPv4Packet(interface, echo, len, 419, dest, IP::ProtocolType::ICMP);
 // 	}
 

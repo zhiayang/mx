@@ -8,8 +8,7 @@
 // comment
 #if RDESTL_STANDALONE
 #   include <assert.h>
-#   include <cstdlib>
-#   include <cstring>
+#   include <string.h>
 #	define RDE_FORCEINLINE	inline
 
 #	ifdef _DEBUG

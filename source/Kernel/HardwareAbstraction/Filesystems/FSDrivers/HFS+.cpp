@@ -1,11 +1,10 @@
 // HFS+.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
 #include <StandardIO.hpp>
 using namespace Kernel::HardwareAbstraction::MemoryManager;
-using namespace Library::StandardIO;
 
 #define bswap16(x)						__builtin_bswap16(x)
 #define bswap32(x)						__builtin_bswap32(x)
@@ -130,12 +129,16 @@ namespace Filesystems
 		(void) statlink;
 	}
 
-
-	// returns a list of items inside the directory, as vnodes.
-	iris::vector<VFS::vnode*> FSDriverHFSPlus::ReadDir(VFS::vnode* node)
+	void FSDriverHFSPlus::Close(VFS::vnode* node)
 	{
 		(void) node;
-		return iris::vector<VFS::vnode*>();
+	}
+
+	// returns a list of items inside the directory, as vnodes.
+	rde::vector<VFS::vnode*> FSDriverHFSPlus::ReadDir(VFS::vnode* node)
+	{
+		(void) node;
+		return rde::vector<VFS::vnode*>();
 	}
 
 }

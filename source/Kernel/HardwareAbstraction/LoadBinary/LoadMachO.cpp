@@ -1,5 +1,5 @@
 // LoadMachO.cpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
@@ -20,7 +20,7 @@ namespace LoadBinary
 	// 	// display 28 bytes of the header.
 	// 	// for(int i = 0; i < 28; i++)
 	// 	{
-	// 		StandardIO::PrintFormatted("%#08x ", ((uint32_t*) this->buf)[0]);
+	// 		StandardIO::PrintFmt("%#08x ", ((uint32_t*) this->buf)[0]);
 	// 	}
 	// }
 

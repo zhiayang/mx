@@ -1,5 +1,5 @@
 // ACPITables.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
@@ -10,7 +10,6 @@
 #include <HardwareAbstraction/Devices/APIC.hpp>
 
 using namespace Library;
-using namespace Library::StandardIO;
 
 namespace Kernel {
 namespace HardwareAbstraction {
@@ -45,10 +44,10 @@ namespace ACPI
 		if(!found)
 		{
 			// search from 0xE0000 to 0xFFFFF
-			uint8_t* x = (uint8_t*)0xE0000;
+			uint8_t* x = (uint8_t*) 0xE0000;
 			uint64_t i = 0;
 
-			while((uintptr_t) x < 0xFFFFF)
+			while((uintptr_t) x + i < 0xFFFFF)
 			{
 				if(x[i] == 'R' && x[i + 1] == 'S' && x[i + 2] == 'D' && x[i + 3] == ' ' && x[i + 4] == 'P' && x[i + 5] == 'T' && x[i + 6] == 'R' && x[i + 7] == ' ')
 				{

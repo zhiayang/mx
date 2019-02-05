@@ -1,5 +1,5 @@
 // ATA.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
@@ -36,6 +36,13 @@ namespace Storage
 
 		PrimaryCommand		= PrimaryBaseIO + 7;
 		SecondaryCommand	= SecondaryBaseIO + 7;
+
+		this->PRDTable		= 0;
+		this->ParentPCI		= 0;
+		this->MaxSectors	= 0;
+		this->IsGPT			= false;
+
+		memset(this->Data, 0, 512);
 	}
 
 
@@ -54,14 +61,15 @@ namespace Storage
 	uint32_t ATADrive::GetSectorSize()			{ return this->SectorSize; }
 	uint16_t ATADrive::GetBaseIO()				{ return this->BaseIO; }
 
-	IOResult ATADrive::Read(uint64_t LBA, uint64_t Buffer, uint64_t Bytes)
+	IOResult ATADrive::Read(uint64_t LBA, uint64_t buf, uint64_t Bytes)
 	{
-		return ATA::DMA::ReadBytes(this, Buffer, LBA, Bytes);
+		(void) buf;
+		return ATA::DMA::ReadBytes(this, LBA, Bytes);
 	}
 
-	IOResult ATADrive::Write(uint64_t LBA, uint64_t Buffer, uint64_t Bytes)
+	IOResult ATADrive::Write(uint64_t LBA, uint64_t data, uint64_t Bytes)
 	{
-		return ATA::DMA::WriteBytes(this, Buffer, LBA, Bytes);
+		return ATA::DMA::WriteBytes(this, LBA, data, Bytes);
 	}
 
 	namespace ATA
@@ -73,7 +81,7 @@ namespace Storage
 			uint64_t index = Library::Utility::ReduceBinaryUnits(ata->GetSectors() * ata->GetSectorSize());
 			uint64_t mem = Library::Utility::GetReducedMemory(ata->GetSectors() * ata->GetSectorSize());
 
-			Library::StandardIO::PrintFormatted("\t-> %s Bus, %s Drive: [%d sectors, size: %d %s, %s]\n", !ata->GetBus() ? "Primary" : "Secondary", !ata->GetDrive() ? "Master" : "Slave", ata->GetSectors(), mem, Kernel::K_BinaryUnits[index], ata->GetIsGPT() ? "GPT Drive" : "MBR Drive");
+			StdIO::PrintFmt("\t-> %s Bus, %s Drive: [%d sectors, size: %d %s, %s]\n", !ata->GetBus() ? "Primary" : "Secondary", !ata->GetDrive() ? "Master" : "Slave", ata->GetSectors(), mem, Kernel::K_BinaryUnits[index], ata->GetIsGPT() ? "GPT Drive" : "MBR Drive");
 		}
 
 		void Initialise()
@@ -86,7 +94,7 @@ namespace Storage
 
 			if(devlist->size() == 0)
 			{
-				Library::StandardIO::PrintFormatted("ERROR: No IDE Controller found on the PCI bus, which is impossible.");
+				StdIO::PrintFmt("ERROR: No IDE Controller found on the PCI bus, which is impossible.");
 				UHALT();
 			}
 
@@ -166,9 +174,9 @@ namespace Storage
 
 			// read status port
 			uint16_t exist = IOPort::ReadByte(BaseIO + 7);
-			uint8_t pollcount = 0;
 			if(exist)
 			{
+				uint8_t pollcount = 0;
 				while(pollcount < (uint8_t)(-1))
 				{
 					if(IOPort::ReadByte(BaseIO + 7) & (1 << 7))

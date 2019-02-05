@@ -1,5 +1,5 @@
 // DMA.cpp
-// Copyright (c) 2013 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2013 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
@@ -10,8 +10,8 @@
 #include <StandardIO.hpp>
 
 #include <orion.h>
+#include <stdlib.h>
 
-using namespace Library::StandardIO;
 using namespace Kernel::HardwareAbstraction::MemoryManager;
 
 namespace Kernel {
@@ -55,7 +55,7 @@ namespace DMA
 	};
 
 	#define MaxCachedTables 16
-	static iris::vector<PRDTableCache>* cachedPRDTables;
+	static rde::vector<PRDTableCache> cachedPRDTables;
 
 	void Initialise()
 	{
@@ -71,7 +71,8 @@ namespace DMA
 		uint32_t mmio = (uint32_t) ata->GetBAR(4);
 		assert(ata->IsBARIOPort(4));
 
-		cachedPRDTables = new iris::vector<PRDTableCache>();
+		cachedPRDTables = rde::vector<PRDTableCache>();
+
 		for(int i = 0; i < MaxCachedTables; i++)
 		{
 			// precreate these
@@ -80,7 +81,7 @@ namespace DMA
 			tcache.length = 0x1000;
 			tcache.used = 0;
 
-			cachedPRDTables->push_back(tcache);
+			cachedPRDTables.push_back(tcache);
 		}
 
 		IOPort::WriteByte((uint16_t) mmio + 2, 0x4);
@@ -95,11 +96,54 @@ namespace DMA
 
 
 
-	extern "C" void _sane(void* p);
-	IOResult ReadBytes(ATADrive* dev, uint64_t Buffer, uint64_t Sector, uint64_t Bytes)
-	{
-		(void) Buffer;
 
+
+
+	static IOResult PerformDMARead(ATADrive* dev, uint64_t Sector, uint64_t Bytes);
+
+	IOResult ReadBytes(ATADrive* dev, uint64_t Sector, uint64_t Bytes)
+	{
+		const uint64_t MaxBytesPerOp = 256 * 512;
+		if(Bytes > MaxBytesPerOp)
+		{
+			// allocate a new buffer.
+			DMAAddr paddr = Physical::AllocateDMA((Bytes + 0xFFF) / 0x1000);
+
+			uint64_t done = 0;
+			while(done < Bytes)
+			{
+				uint64_t runlength = __min(MaxBytesPerOp, Bytes - done);
+
+				IOResult res = PerformDMARead(dev, Sector + (done / 512), runlength);
+				Memory::Copy((void*) (paddr.virt + done), (void*) res.allocatedBuffer.virt, runlength);
+
+				done += runlength;
+
+				// if the bufferSizeInPages is zero, then we don't free anything
+				assert(res.bufferSizeInPages > 0);
+				Physical::FreeDMA(res.allocatedBuffer, res.bufferSizeInPages);
+			}
+
+			return IOResult(Bytes, paddr, (Bytes + 0xFFF) / 0x1000);
+		}
+		else
+		{
+			return PerformDMARead(dev, Sector, Bytes);
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+	static IOResult PerformDMARead(ATADrive* dev, uint64_t Sector, uint64_t Bytes)
+	{
 		if(Bytes <= 512)
 		{
 			uint64_t sectors = (Bytes + 511) / 512;
@@ -119,7 +163,6 @@ namespace DMA
 			}
 
 			return IOResult(Bytes, a, (Bytes + 0xFFF) / 0x1000);
-			// return IOResult(Bytes, a, 0);
 		}
 
 
@@ -128,7 +171,7 @@ namespace DMA
 		// get a prd
 		bool found = false;
 		PRDTableCache prdCache;
-		for(PRDTableCache& cache : *cachedPRDTables)
+		for(PRDTableCache& cache : cachedPRDTables)
 		{
 			if(!cache.used)
 			{
@@ -145,20 +188,21 @@ namespace DMA
 			prdCache.length = 0x1000;
 			prdCache.used = 1;
 
-			cachedPRDTables->push_back(prdCache);
+			cachedPRDTables.push_back(prdCache);
 		}
 
 
+		COMPILE_TIME_ASSERT(UINT16_MAX == 65535);
+		COMPILE_TIME_ASSERT(INT16_MAX == 32767);
+
 		PRDEntry* prd = (PRDEntry*) prdCache.address.virt;
 		DMAAddr paddr = Physical::AllocateDMA((Bytes + 0xFFF) / 0x1000);
-		// Log("dma read: (v = %x, p = %x) (%d pages)", paddr.virt, paddr.phys, (Bytes + 0xFFF) / 0x1000);
+		// Log("dma read: (v = %x, p = %x) (%d pages, %d bytes)", paddr.virt, paddr.phys, (Bytes + 0xFFF) / 0x1000, Bytes);
 
 		uint64_t numprds = (Bytes + (UINT16_MAX - 1)) / UINT16_MAX;
 		if(numprds > (0x1000 / sizeof(PRDEntry)))
 			HALT("Too many bytes!");
 
-		COMPILE_TIME_ASSERT(UINT16_MAX == 65535);
-		COMPILE_TIME_ASSERT(INT16_MAX == 32767);
 
 		for(uint64_t i = 0, done = 0; i < numprds; i++)
 		{
@@ -185,18 +229,30 @@ namespace DMA
 		// todo
 		PreviousDevice = dev;
 
-		// Log("sending cmd data: sector %d, %d sectors", Sector, (uint8_t) (Bytes / dev->GetSectorSize()));
-		PIO::SendCommandData(dev, Sector, (uint8_t) (Bytes / dev->GetSectorSize()));
+		if(Bytes / dev->GetSectorSize() > UINT16_MAX + 1)
+			HALT("Too many bytes!");
+
+		uint32_t SecCount = (uint32_t) Bytes / dev->GetSectorSize();
+		// Log(">> reading %d sectors (%x | %x)", SecCount, (SecCount & 0xFF00) >> 8, SecCount & 0xFF);
+
+		PIO::SendCommandData(dev, Sector, SecCount, true);
 
 		IOPort::WriteByte(dev->GetBaseIO() + 7, Sector > 0x0FFFFFFF ? ATA_ReadSectors48DMA : ATA_ReadSectors28DMA);
-		IOPort::WriteByte((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 0), DMA::DMACommandRead | DMA::DMACommandStart);
+		IOPort::WriteByte((uint16_t) (mmio + (dev->GetBus() ? 8 : 0) + 0), DMA::DMACommandRead | DMA::DMACommandStart);
 
 		_WaitingDMA14 = !dev->GetBus();
 		_WaitingDMA15 = dev->GetBus();
 
 
 		uint64_t no = Time::Now();
-		while((_WaitingDMA14 || _WaitingDMA15) && Time::Now() < no + 1000);
+		while(_WaitingDMA14 || _WaitingDMA15)
+		{
+			if(no + 5000 < Time::Now())
+			{
+				Log(1, "DMA Operation timeout (waited 5000 ms)");
+				break;
+			}
+		}
 
 		_WaitingDMA14 = false;
 		_WaitingDMA15 = false;
@@ -204,7 +260,7 @@ namespace DMA
 		// stop
 		IOPort::WriteByte((uint16_t) (mmio + (dev->GetBus() ? 8 : 0) + 0), DMA::DMACommandRead | DMA::DMACommandStop);
 
-		// Utilities::DumpBytes(paddr.virt, __min(32784, Bytes));
+		// Utilities::DumpBytes(paddr.virt, Bytes);
 
 		// release cache
 		prdCache.used = 0;
@@ -236,73 +292,79 @@ namespace DMA
 
 
 
-	IOResult WriteBytes(ATADrive* dev, uint64_t Buffer, uint64_t Sector, uint64_t Bytes)
+	// sector, data, size.
+	IOResult WriteBytes(ATADrive*, uint64_t, uint64_t, uint64_t)
 	{
 		// todo: something
 		HALT("DMA WRITE NOT SUPPORTED");
 		return IOResult();
 
-		uint32_t mmio = (uint32_t) dev->ParentPCI->GetBAR(4);
+		// uint32_t mmio = (uint32_t) dev->ParentPCI->GetBAR(4);
 
-		// get a prd
-		bool found = false;
-		PRDTableCache prdCache;
-		for(PRDTableCache& cache : *cachedPRDTables)
-		{
-			if(!cache.used)
-			{
-				prdCache = cache;
-				cache.used = true;
-				found = 1;
-				break;
-			}
-		}
+		// // get a prd
+		// bool found = false;
+		// PRDTableCache prdCache;
+		// for(PRDTableCache& cache : cachedPRDTables)
+		// {
+		// 	if(!cache.used)
+		// 	{
+		// 		prdCache = cache;
+		// 		cache.used = true;
+		// 		found = 1;
+		// 		break;
+		// 	}
+		// }
 
-		if(!found)
-		{
-			prdCache.address = Physical::AllocateDMA(1);
-			prdCache.length = 0x1000;
-			prdCache.used = 1;
+		// if(!found)
+		// {
+		// 	prdCache.address = Physical::AllocateDMA(1);
+		// 	prdCache.length = 0x1000;
+		// 	prdCache.used = 1;
 
-			cachedPRDTables->push_back(prdCache);
-		}
+		// 	cachedPRDTables.push_back(prdCache);
+		// }
 
-		PRDEntry* prd = (PRDEntry*) prdCache.address.virt;
+		// PRDEntry* prd = (PRDEntry*) prdCache.address.virt;
 
-		// allocate a buffer that we know is a good deal
-		DMAAddr paddr = Physical::AllocateDMA((Bytes + 0xFFF) / 0x1000);
+		// // allocate a buffer that we know is a good deal
+		// DMAAddr paddr = Physical::AllocateDMA((Bytes + 0xFFF) / 0x1000);
 
-		prd->bufferPhysAddr = (uint32_t) paddr.phys;
-		prd->byteCount = (uint16_t) Bytes;
-		prd->lastEntry = 0x8000;
+		// prd->bufferPhysAddr = (uint32_t) paddr.phys;
+		// prd->byteCount = (uint16_t) Bytes;
+		// prd->lastEntry = 0x8000;
 
-		// write the bytes of address into register
-		IOPort::Write32((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 4), (uint32_t) prdCache.address.phys);
+		// // write the bytes of address into register
+		// IOPort::Write32((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 4), (uint32_t) prdCache.address.phys);
 
-		PreviousDevice = dev;
-		PIO::SendCommandData(dev, Sector, (uint8_t)(Bytes / dev->GetSectorSize()));
+		// PreviousDevice = dev;
 
-		IOPort::WriteByte(dev->GetBaseIO() + 7, Sector > 0x0FFFFFFF ? ATA_WriteSectors48DMA : ATA_WriteSectors28DMA);
-		IOPort::WriteByte((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 0), DMA::DMACommandWrite | DMA::DMACommandStart);
+		// // Log("sending cmd data: sector %d, %d sectors", Sector, (uint8_t) (Bytes / dev->GetSectorSize()));
+		// if(Bytes / dev->GetSectorSize() > UINT16_MAX + 1)
+		// 	HALT("Too many bytes!");
 
-		_WaitingDMA14 = !dev->GetBus();
-		_WaitingDMA15 = dev->GetBus();
+		// PIO::SendCommandData(dev, Sector, (uint32_t) (Bytes / dev->GetSectorSize()), true);
 
-		uint64_t no = Time::Now();
-		uint64_t t1 = 100000000;
-		while((_WaitingDMA14 || _WaitingDMA15) && Time::Now() < no + 100 && t1 > 0)
-			t1--;
+		// IOPort::WriteByte(dev->GetBaseIO() + 7, Sector > 0x0FFFFFFF ? ATA_WriteSectors48DMA : ATA_WriteSectors28DMA);
+		// IOPort::WriteByte((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 0), DMA::DMACommandWrite | DMA::DMACommandStart);
+
+		// _WaitingDMA14 = !dev->GetBus();
+		// _WaitingDMA15 = dev->GetBus();
+
+		// uint64_t no = Time::Now();
+		// uint64_t t1 = 100000000;
+		// while((_WaitingDMA14 || _WaitingDMA15) && Time::Now() < no + 100 && t1 > 0)
+		// 	t1--;
 
 
-		_WaitingDMA14 = false;
-		_WaitingDMA15 = false;
+		// _WaitingDMA14 = false;
+		// _WaitingDMA15 = false;
 
-		// stop
-		IOPort::WriteByte((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 0), DMA::DMACommandWrite | DMA::DMACommandStop);
+		// // stop
+		// IOPort::WriteByte((uint16_t)(mmio + (dev->GetBus() ? 8 : 0) + 0), DMA::DMACommandWrite | DMA::DMACommandStop);
 
-		// copy over
-		Memory::Copy((void*) Buffer, (void*) paddr.virt, Bytes);
-		Physical::FreeDMA(paddr, (Bytes + 0xFFF) / 0x1000);
+		// // copy over
+		// Memory::Copy((void*) Buffer, (void*) paddr.virt, Bytes);
+		// Physical::FreeDMA(paddr, (Bytes + 0xFFF) / 0x1000);
 	}
 
 
@@ -318,17 +380,15 @@ namespace DMA
 			uint32_t mmio = (uint32_t) dev->ParentPCI->GetBAR(4);
 			uint8_t status = IOPort::ReadByte((uint16_t) (mmio + (dev->GetBus() ? 8 : 0) + 2));
 
+			if(status & 0x2)
+				Log(3, "DMA Transfer failed???");
+
 			if(!(status & 0x4))
 			{
 				if(dev->GetBus()) _WaitingDMA15 = true;
 				else _WaitingDMA14 = true;
-			}
-			else
-			{
-				if(status & 0x2)
-				{
-					Log(3, "DMA Transfer failed???");
-				}
+
+				return;
 			}
 
 			IOPort::WriteByte((uint16_t) (mmio + (dev->GetBus() ? 8 : 0) + 2), status | 0x4);

@@ -7,7 +7,10 @@
 CXXFLAGS	= -g -Wall -O2 -fPIC -std=gnu++11 -mno-red-zone -fno-exceptions -fno-rtti -c
 
 CXXSRC	= $(shell find . -name "*.cpp")
-CXXOBJ	:= $(CXXSRC:.cpp=.o)
+CXXOBJ	= $(CXXSRC:.cpp=.o)
+CXXDEPS	= $(CXXOBJ:.o=.cpp.d)
+
+-include $(CXXDEPS)
 
 
 all: $(SYSROOT)/usr/lib/librdestl.a
@@ -18,7 +21,7 @@ $(SYSROOT)/usr/lib/librdestl.a: $(CXXOBJ)
 	@$(AR) rcs $(SYSROOT)/usr/lib/librdestl.a $(CXXOBJ)
 
 %.o: %.cpp
-	@$(CXX) $(CXXFLAGS) -o $@ $<
+	@$(CXX) $(CXXFLAGS) -MMD -MP -o $@ $<
 
 
 

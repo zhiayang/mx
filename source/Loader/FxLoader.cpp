@@ -1,10 +1,12 @@
 // main.cpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <stdint.h>
 #include "FxLoader.hpp"
 #include "ELF.hpp"
+
+#include "../.build.h"
 
 #include "heatshrink/heatshrink_decoder.h"
 
@@ -114,8 +116,23 @@ extern "C" uint64_t LoaderBootstrap(uint64_t MultibootMagic, uint64_t MBTAddr)
 	Console::Print("Loading kernel...\n");
 	uint64_t entry = LoadKernelELF(kernelAddress, kernelLength);
 
+
+
+	// 'compute' the version number from the build number.
+	{
+		uint64_t v = X_BUILD_NUMBER;
+
+		uint64_t VER_MAJOR = 5;
+		uint64_t VER_MINOR = v / 10000;
+		uint64_t VER_REVSN = (v - (VER_MINOR * 10000)) / 100;
+		// uint64_t VER_MINRV = (v - (VER_MINOR * 10000) - (VER_REVSN * 100)) / 1;
+
+		Console::Print("Loaded orionx-compatible kernel: version %d.%d.%d\n", VER_MAJOR, VER_MINOR, VER_REVSN);
+	}
+
+
 	Console::Print("Entry point: %x\n", entry);
-	Console::Print("Handling control to [mx] kernel\n-------------------------------\n\n");
+	Console::Print("Handling control to kernel\n--------------------------\n\n");
 
 
 	// bottom 32 bits: entry point.

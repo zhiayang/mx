@@ -1,5 +1,5 @@
 // Semaphore.cpp
-// Copyright (c) 2014 - The Foreseeable Future, zhiayang@gmail.com
+// Copyright (c) 2014 - 2016, zhiayang@gmail.com
 // Licensed under the Apache License Version 2.0.
 
 #include <Kernel.hpp>
@@ -7,68 +7,64 @@ using namespace Kernel::HardwareAbstraction::Multitasking;
 
 namespace Kernel
 {
-	AutoSemaphore::AutoSemaphore(Semaphore* _sem)
+	AutoSemaphore::AutoSemaphore(Semaphore& _sem) : sem(_sem)
 	{
-		this->sem = _sem;
-		assert(this->sem);
 		AquireSemaphore(this->sem);
 	}
 
-	AutoSemaphore::AutoSemaphore(const AutoSemaphore& as)
+	AutoSemaphore& AutoSemaphore::operator = (AutoSemaphore&& other)
 	{
-		this->sem = as.sem;
-		assert(this->sem);
+		this->sem.contestants	= other.sem.contestants;
+		this->sem.value			= other.sem.value;
+
 		AquireSemaphore(this->sem);
+		return *this;
 	}
 
 	AutoSemaphore::~AutoSemaphore()
 	{
-		assert(this->sem);
 		ReleaseSemaphore(this->sem);
 	}
 
-	void AquireSemaphore(Semaphore* sem)
+	void AquireSemaphore(Semaphore& sem)
 	{
 		if(NumThreads <= 1) { return; }
-		assert(sem);
 
 		// check if we have zero shits left to give
-		if(__sync_fetch_and_sub(&sem->value, 1) < 0)
+		if(__sync_fetch_and_sub(&sem.value, 1) < 0)
 		{
 			// we do
 			// queue up for the toilet.
 
 			// add ourselves to the waiting list
-			sem->contestants.push_back(GetCurrentThread());
+			sem.contestants.push_back(GetCurrentThread());
 		}
 
-		while(sem->value <= 0)
+		while(sem.value <= 0)
 			BLOCK();
 	}
 
-	void ReleaseSemaphore(Semaphore* sem)
+	void ReleaseSemaphore(Semaphore& sem)
 	{
 		if(NumThreads <= 1) { return; }
-		assert(sem);
 
-		__sync_add_and_fetch(&sem->value, 1);
-		if(sem->value < 0 && sem->contestants.size() > 0)
+		__sync_add_and_fetch(&sem.value, 1);
+		if(sem.value < 0 && sem.contestants.size() > 0)
 		{
-			auto front = sem->contestants.front();
-			sem->contestants.erase(sem->contestants.begin());
+			auto front = sem.contestants.front();
+			sem.contestants.erase(sem.contestants.begin());
 			WakeForMessage(front);
 		}
 	}
 
-	bool TrySemaphore(Semaphore* sem)
+	bool TrySemaphore(Semaphore& sem)
 	{
 		if(NumThreads <= 1) { return true; }
-		assert(sem);
 
-		if(sem->value <= 0)
+		if(sem.value <= 0)
 			return false;
 
-		__sync_sub_and_fetch(&sem->value, 1);
+		__sync_sub_and_fetch(&sem.value, 1);
 		return true;
 	}
 }
